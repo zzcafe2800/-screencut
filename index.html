@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -10,108 +11,105 @@ body {
   margin: 0;
   font-family: sans-serif;
   background: url("oubo.png") center/cover no-repeat;
+  height: 100vh;
   color: white;
 }
 
 /* タイトル */
 .title-wrap {
+  position: absolute;
+  top: 0;
+  width: 100%;
   text-align: center;
   padding-top: 30px;
-  position: relative;
   background: linear-gradient(rgba(0,0,0,0.6), transparent);
 }
 
 .title {
-  font-size: clamp(22px, 5vw, 40px);
+  font-size: clamp(22px, 5vw, 42px);
 }
 
 .sub {
   position: absolute;
-  right: 20px;
-  bottom: 0;
+  left: 10px;
+  bottom: 10px;
   font-size: 12px;
 }
 
 /* 中央 */
 .center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   text-align: center;
-  margin-top: 40px;
 }
 
-.date {
-  font-size: 18px;
-  margin-bottom: 10px;
+.join-btn {
+  font-size: clamp(20px, 4vw, 28px);
+  border-bottom: 2px solid white;
+  cursor: pointer;
 }
 
-/* フェード */
-.fade {
-  height: 40px;
-  background: linear-gradient(rgba(0,0,0,0.4), transparent);
+/* モーダル */
+.modal {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  backdrop-filter: blur(8px);
+  display: none;
+  justify-content: center;
+  align-items: center;
 }
 
-/* カード */
 .card {
-  width: min(92%, 600px);
-  margin: 20px auto;
+  width: min(90%, 600px);
   background: white;
   color: black;
   border-radius: 12px;
-  padding: 15px;
+  padding: 20px;
 }
 
-/* 上 */
-.top {
+/* ヘッダー */
+.card-header {
+  background: #d8f3ff;
+  margin: -20px -20px 10px -20px;
+  padding: 6px;
   display: flex;
   justify-content: space-between;
-  font-size: 14px;
-  margin-bottom: 10px;
 }
 
-/* アイコン */
 .users {
   display: flex;
-  gap: 10px;
-  overflow: hidden;
-}
-
-.wrap {
   flex-wrap: wrap;
+  gap: 10px;
 }
 
 .user {
-  width: 55px;
+  width: 60px;
   text-align: center;
   position: relative;
 }
 
 .cat {
-  width: 45px;
-  height: 45px;
+  width: 50px;
+  height: 50px;
   background: #eaf9ff;
   border-radius: 50%;
   margin: auto;
 }
 
 .name {
-  font-size: 9px;
+  font-size: 10px;
   white-space: nowrap;
   overflow: hidden;
 }
 
-/* 自分削除 */
 .remove {
   position: absolute;
   top: -5px;
   right: -5px;
   cursor: pointer;
-}
-
-/* +表示 */
-.more {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  font-size: 14px;
 }
 
 /* 入力 */
@@ -126,16 +124,17 @@ input {
 }
 
 .submit {
-  margin-top: 8px;
-  cursor: pointer;
+  margin-top: 10px;
   color: #00a;
+  cursor: pointer;
 }
 
-/* 成功 */
+/* メッセージ */
 .success {
   text-align: center;
   color: #0077aa;
-  font-size: 13px;
+  font-size: 14px;
+  margin-bottom: 10px;
 }
 </style>
 </head>
@@ -144,31 +143,33 @@ input {
 
 <div class="title-wrap">
   <div class="title">第１回コスプレイベント『天気の子』</div>
-  <div class="sub">非公式</div>
 </div>
+
+<div class="sub">非公式</div>
 
 <div class="center">
-  <div class="date">10日 21時</div>
+  <div>10日 21時</div>
+  <div class="join-btn" onclick="openModal()">参加する</div>
 </div>
 
-<div class="fade"></div>
+<div class="modal" id="modal">
+  <div class="card">
 
-<div class="card">
+    <div class="card-header">
+      <div>参加者</div>
+      <div onclick="closeModal()">✕</div>
+    </div>
 
-  <div class="top">
-    <div>参加者</div>
-    <div id="count">0 / 16（残り16枠）</div>
+    <div id="success" class="success"></div>
+
+    <div class="users" id="users"></div>
+
+    <div class="input-area" id="inputArea">
+      <input id="name" placeholder="自分だと分かる名前">
+      <div class="submit" onclick="join()">参加予定</div>
+    </div>
+
   </div>
-
-  <div id="users" class="users"></div>
-
-  <div id="success" class="success"></div>
-
-  <div class="input-area" id="inputArea">
-    <input id="name" placeholder="自分だと分かる名前">
-    <div class="submit" onclick="join()">参加予定</div>
-  </div>
-
 </div>
 
 <script type="module">
@@ -178,31 +179,43 @@ import {
   onSnapshot, deleteDoc, doc, getDocs
 } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
-const config = {
+const firebaseConfig = {
   apiKey: "AIzaSy...",
   authDomain: "oubo-b776a.firebaseapp.com",
   projectId: "oubo-b776a"
 };
 
-const app = initializeApp(config);
+const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const ref = collection(db, "participants");
 
 let myId = localStorage.getItem("myId");
-let expanded = false;
+
+/* モーダル */
+window.openModal = () => {
+  document.getElementById("modal").style.display = "flex";
+};
+
+window.closeModal = () => {
+  document.getElementById("modal").style.display = "none";
+};
 
 /* 参加 */
 window.join = async () => {
   const name = document.getElementById("name").value.trim();
   if (!name) return alert("名前を入れてください");
 
-  const snap = await getDocs(ref);
+  const snapshot = await getDocs(ref);
 
-  if (snap.size >= 16) return alert("定員です");
+  if (snapshot.size >= 16) {
+    alert("定員です（最大16人）");
+    return;
+  }
 
-  for (const d of snap.docs) {
+  for (const d of snapshot.docs) {
     if (d.data().name === name) {
-      return alert("同じ名前は使えません");
+      alert("同じ名前は使えません");
+      return;
     }
   }
 
@@ -215,6 +228,7 @@ window.join = async () => {
 
 /* 削除 */
 window.removeMe = async () => {
+  if (!myId) return;
   await deleteDoc(doc(db, "participants", myId));
   localStorage.removeItem("myId");
   myId = null;
@@ -222,80 +236,39 @@ window.removeMe = async () => {
   document.getElementById("inputArea").style.display = "block";
 };
 
-/* 成功 */
+/* 成功UI */
 function showSuccess() {
   document.getElementById("success").innerText =
     "参加予定になりました\nコスプレアバターの準備をお願いします【任意】";
   document.getElementById("inputArea").style.display = "none";
 }
 
-/* 展開 */
-window.toggle = () => {
-  expanded = !expanded;
-  render(lastData);
-};
-
-let lastData = [];
-
 /* 表示 */
 onSnapshot(ref, (snap) => {
-  let arr = [];
-
-  snap.forEach(d => {
-    arr.push({ id: d.id, name: d.data().name });
-  });
-
-  /* 自分を先頭 */
-  arr.sort((a) => (a.id === myId ? -1 : 1));
-
-  lastData = arr;
-  render(arr);
-
-  /* 人数 */
-  const count = arr.length;
-  document.getElementById("count").innerText =
-    `${count} / 16（残り${16 - count}枠）`;
-
-  if (arr.find(v => v.id === myId)) showSuccess();
-});
-
-/* 描画 */
-function render(arr) {
   const users = document.getElementById("users");
   users.innerHTML = "";
 
-  const isMobile = window.innerWidth < 600;
-  let list = arr;
+  let foundMe = false;
 
-  if (isMobile && !expanded && arr.length > 5) {
-    list = arr.slice(0, 5);
-  }
+  snap.forEach((d) => {
+    const data = d.data();
 
-  list.forEach(v => {
+    if (d.id === myId) foundMe = true;
+
     const el = document.createElement("div");
     el.className = "user";
 
     el.innerHTML = `
-      ${v.id === myId ? `<div class="remove" onclick="removeMe()">×</div>` : ""}
+      ${d.id === myId ? `<div class="remove" onclick="removeMe()">×</div>` : ""}
       <div class="cat"></div>
-      <div class="name">${v.name}</div>
+      <div class="name">${data.name}</div>
     `;
+
     users.appendChild(el);
   });
 
-  /* 省略UI */
-  if (isMobile && arr.length > 5) {
-    const more = document.createElement("div");
-    more.className = "more";
-    more.onclick = toggle;
-
-    more.innerText = expanded ? "＜" : `+${arr.length - 5} ＞`;
-
-    users.appendChild(more);
-  }
-
-  users.classList.toggle("wrap", expanded);
-}
+  if (foundMe) showSuccess();
+});
 </script>
 
 </body>

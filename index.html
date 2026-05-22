@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+@property --fill { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -18,6 +20,7 @@
   --fg-faint: #b8b3a6;
   --line: #d9d3c5;
   --line-soft: #e6e1d4;
+  --panel: rgba(255,255,255,0.4);
   --serif: 'Cormorant Garamond', 'Noto Serif JP', serif;
   --sans: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -35,14 +38,9 @@ body {
   grid-template-columns: 280px 1fr;
 }
 
-/* Sidebar */
-aside {
-  border-right: 1px solid var(--line);
-  overflow-y: auto;
-  background: var(--bg);
-}
+/* ========== Sidebar ========== */
+aside { border-right: 1px solid var(--line); overflow-y: auto; background: var(--bg); }
 aside::-webkit-scrollbar { width: 6px; }
-aside::-webkit-scrollbar-track { background: transparent; }
 aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
 
 .brand {
@@ -58,7 +56,6 @@ aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
 
 .category { border-top: 1px solid var(--line-soft); }
 .category:last-child { border-bottom: 1px solid var(--line-soft); }
-
 .category-header {
   padding: 13px 28px;
   cursor: pointer;
@@ -68,180 +65,211 @@ aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
   user-select: none;
   transition: color 0.2s, background 0.2s;
   font-size: 12.5px;
-  font-weight: 400;
 }
 .category-header:hover { color: var(--fg-muted); }
 .category-header .arrow {
-  font-family: var(--serif);
-  font-style: italic;
-  color: var(--fg-faint);
-  font-size: 14px;
+  font-family: var(--serif); font-style: italic;
+  color: var(--fg-faint); font-size: 14px;
   transition: transform 0.25s ease;
-  display: inline-block;
 }
 .category.open .arrow { transform: rotate(90deg); }
-
 .items { display: none; padding: 4px 0 14px; }
 .category.open .items { display: block; }
 
 .item {
   display: grid;
   grid-template-columns: 24px 1fr auto;
-  grid-template-areas:
-    "icon label ratio"
-    ".    note  note";
+  grid-template-areas: "icon label ratio" ".    note  note";
   gap: 0 10px;
   align-items: center;
   padding: 7px 28px 7px 22px;
   cursor: pointer;
-  transition: color 0.15s, background 0.15s, box-shadow 0.15s;
-  position: relative;
+  transition: background 0.15s, box-shadow 0.15s;
 }
 .item:hover { background: var(--bg-soft); }
 .item.active { box-shadow: inset 2px 0 0 var(--fg); }
 
 .item-icon-slot {
   grid-area: icon;
-  width: 24px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  width: 24px; height: 16px;
+  display: flex; align-items: center;
   overflow: hidden;
 }
 .item-icon {
-  height: 14px;
-  width: auto;
-  max-width: 24px;
-  object-fit: contain;
-  display: block;
-  opacity: 0.85;
+  height: 14px; width: auto; max-width: 24px;
+  object-fit: contain; display: block; opacity: 0.85;
 }
-
-.item-label {
-  grid-area: label;
-  font-size: 12px;
-  line-height: 1.35;
-}
+.item-label { grid-area: label; font-size: 12px; line-height: 1.35; }
 .item-ratio {
   grid-area: ratio;
-  font-family: var(--serif);
-  font-style: italic;
-  color: var(--fg-faint);
-  font-size: 13px;
+  font-family: var(--serif); font-style: italic;
+  color: var(--fg-faint); font-size: 13px;
   white-space: nowrap;
-  font-weight: 400;
 }
 .item.active .item-ratio { color: var(--fg-muted); }
 .item-note {
   grid-area: note;
-  font-size: 9.5px;
-  color: var(--fg-faint);
-  letter-spacing: 0;
-  margin-top: 2px;
-  line-height: 1.3;
+  font-size: 9.5px; color: var(--fg-faint);
+  margin-top: 2px; line-height: 1.3;
 }
 
-/* Main */
+/* ========== Main ========== */
 main {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr auto auto;
   overflow: hidden;
   min-width: 0;
 }
 
 header.info {
-  padding: 32px 44px 8px;
+  padding: 26px 40px 10px;
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 24px;
   flex-wrap: wrap;
 }
-.ratio-label {
-  font-family: var(--serif);
-  font-size: 28px;
-  font-weight: 400;
-  font-style: italic;
-  letter-spacing: -0.01em;
-  line-height: 1;
+.ratio-label { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ratio-row { display: flex; align-items: center; gap: 12px; }
+.ratio-icon-slot {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
-.ratio-label .colon { margin: 0 6px; color: var(--fg-faint); font-style: normal; }
-.ratio-label .name {
-  font-family: var(--sans);
-  font-style: normal;
-  font-size: 12px;
-  color: var(--fg-muted);
+.ratio-icon-slot:empty { display: none; }
+.ratio-icon-slot img {
+  height: 24px; width: auto; max-width: 28px;
+  object-fit: contain; opacity: 0.85;
+}
+.ratio-text {
+  font-family: var(--serif);
+  font-size: 28px; font-weight: 400; font-style: italic;
+  letter-spacing: -0.01em; line-height: 1;
+}
+.ratio-text .colon { margin: 0 4px; color: var(--fg-faint); font-style: normal; }
+.ratio-name {
+  font-size: 12px; color: var(--fg-muted);
   letter-spacing: 0.04em;
-  display: block;
-  margin-top: 6px;
-  font-weight: 400;
 }
-.size-hint {
-  font-size: 15px;
-  color: var(--fg-muted);
-  font-family: var(--serif);
-  font-style: italic;
-  text-align: right;
-}
-.size-hint .px { color: var(--fg-faint); font-size: 11px; margin-left: 3px; }
 
+.info-box {
+  border: 1px solid var(--line);
+  padding: 12px 18px;
+  background: var(--panel);
+  text-align: right;
+  font-family: var(--serif);
+  min-width: 200px;
+}
+.file-size {
+  font-style: italic; font-size: 22px;
+  color: var(--fg); letter-spacing: -0.01em;
+  line-height: 1; margin-bottom: 8px;
+}
+.dim-line {
+  font-style: italic; font-size: 13px;
+  color: var(--fg-muted); line-height: 1.3;
+}
+.dim-line .px { color: var(--fg-faint); font-size: 10px; margin-left: 2px; }
+.dim-line .label {
+  font-family: var(--sans); font-style: normal;
+  font-size: 9.5px; color: var(--fg-faint);
+  letter-spacing: 0.1em; text-transform: uppercase;
+  margin-right: 8px;
+}
+
+/* ========== Canvas wrap ========== */
 .canvas-wrap {
   position: relative;
-  margin: 20px 44px;
+  margin: 6px 40px;
   overflow: hidden;
   min-height: 0;
-}
-#previewImg {
-  position: absolute;
-  display: none;
-  user-select: none;
-  -webkit-user-drag: none;
-  pointer-events: none;
-}
-#previewImg.shown { display: block; }
-#canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  touch-action: none;
-  cursor: grab;
-}
-#canvas.dragging { cursor: grabbing; }
-#canvas.empty { cursor: default; }
-
-.empty-msg {
-  position: absolute;
-  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
-  gap: 8px;
+}
+#canvas {
+  display: none;
+  background: transparent;
+  touch-action: none;
+  max-width: 100%;
+  max-height: 100%;
+}
+#canvas.shown { display: block; }
+.empty-msg {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 8px;
   color: var(--fg-faint);
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 18px;
+  font-family: var(--serif); font-style: italic; font-size: 18px;
   pointer-events: none;
 }
 .empty-msg.hidden { display: none; }
 .empty-msg .sub {
-  font-family: var(--sans);
-  font-style: normal;
-  font-size: 11px;
-  letter-spacing: 0.05em;
+  font-family: var(--sans); font-style: normal;
+  font-size: 11px; letter-spacing: 0.05em;
 }
 
+/* ========== Image tools (flip/rotate/brightness) ========== */
+.image-tools {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 0 4px;
+}
+.tool-btn {
+  width: 38px; height: 38px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--fg);
+  transition: all 0.2s ease;
+  padding: 0;
+}
+.tool-btn:hover:not(:disabled) {
+  border-color: var(--fg);
+  background: rgba(255,255,255,0.65);
+}
+.tool-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.tool-btn svg { display: block; }
+
+.tool-divider { width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
+
+.brightness-btn {
+  --fill: 0deg;
+  position: relative;
+  width: 40px; height: 40px;
+  border: none; background: none;
+  cursor: pointer; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--fg);
+  padding: 0;
+  transition: --fill 0.35s ease;
+}
+.brightness-btn::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from -90deg, var(--fg) var(--fill), var(--line) 0);
+  -webkit-mask: radial-gradient(circle, transparent 14.5px, black 15px, black 19px, transparent 19.5px);
+  mask: radial-gradient(circle, transparent 14.5px, black 15px, black 19px, transparent 19.5px);
+  pointer-events: none;
+}
+.brightness-btn:hover:not(:disabled) { background: rgba(255,255,255,0.35); }
+.brightness-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.brightness-btn svg { position: relative; z-index: 1; }
+
+/* ========== Footer controls ========== */
 footer.controls {
-  padding: 20px 44px 28px;
+  padding: 14px 40px 26px;
   display: flex;
   align-items: center;
   gap: 28px;
   border-top: 1px solid var(--line-soft);
   flex-wrap: wrap;
 }
-
 .btn {
   font-family: var(--sans);
   font-size: 11px;
@@ -258,19 +286,11 @@ footer.controls {
   white-space: nowrap;
 }
 .btn:hover:not(:disabled) { background: var(--fg); color: var(--bg); }
-.btn:disabled {
-  border-color: var(--fg-faint);
-  color: var(--fg-faint);
-  cursor: not-allowed;
-}
+.btn:disabled { border-color: var(--fg-faint); color: var(--fg-faint); cursor: not-allowed; }
 .btn .fmt {
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 13px;
-  letter-spacing: 0;
-  text-transform: lowercase;
-  margin-left: 6px;
-  opacity: 0.7;
+  font-family: var(--serif); font-style: italic;
+  font-size: 13px; letter-spacing: 0;
+  text-transform: lowercase; margin-left: 6px; opacity: 0.7;
 }
 
 .split-controls {
@@ -280,47 +300,33 @@ footer.controls {
   margin-left: auto;
 }
 .split-controls label {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  font-size: 11px;
-  color: var(--fg-muted);
-  letter-spacing: 0.06em;
+  display: flex; align-items: baseline; gap: 10px;
+  font-size: 11px; color: var(--fg-muted); letter-spacing: 0.06em;
 }
 .split-controls input {
-  width: 52px;
-  padding: 6px 4px;
-  border: none;
-  border-bottom: 1px solid var(--line);
+  width: 52px; padding: 6px 4px;
+  border: none; border-bottom: 1px solid var(--line);
   background: transparent;
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 18px;
-  font-weight: 500;
-  text-align: center;
-  color: var(--fg);
+  font-family: var(--serif); font-style: italic;
+  font-size: 18px; font-weight: 500;
+  text-align: center; color: var(--fg);
   transition: border-color 0.2s;
 }
-.split-controls input:focus {
-  outline: none;
-  border-bottom-color: var(--fg);
-}
+.split-controls input:focus { outline: none; border-bottom-color: var(--fg); }
 .split-controls input::-webkit-outer-spin-button,
-.split-controls input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
+.split-controls input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .split-controls input[type=number] { -moz-appearance: textfield; }
 
 @media (max-width: 760px) {
-  body { grid-template-columns: 1fr; grid-template-rows: 220px 1fr; }
+  body { grid-template-columns: 1fr; grid-template-rows: 200px 1fr; }
   aside { border-right: none; border-bottom: 1px solid var(--line); }
-  .brand { padding: 18px 22px 14px; font-size: 24px; }
-  header.info { padding: 18px 22px 4px; flex-direction: column; align-items: flex-start; gap: 6px; }
-  .size-hint { text-align: left; }
-  .canvas-wrap { margin: 14px 22px; }
-  footer.controls { padding: 16px 22px 22px; gap: 18px; }
-  .split-controls { margin-left: 0; gap: 18px; }
+  .brand { padding: 16px 22px 12px; font-size: 24px; }
+  header.info { padding: 16px 22px 8px; gap: 12px; }
+  .info-box { min-width: 0; padding: 10px 14px; }
+  .file-size { font-size: 18px; }
+  .canvas-wrap { margin: 6px 22px; }
+  footer.controls { padding: 12px 22px 18px; gap: 16px; }
+  .split-controls { margin-left: 0; gap: 16px; }
 }
 </style>
 </head>
@@ -333,20 +339,62 @@ footer.controls {
 
 <main>
   <header class="info">
-    <div class="ratio-label" id="ratioLabel">
-      <span id="ratioText">—<span class="colon">:</span>—</span>
-      <span class="name" id="ratioName">比率を選択してください</span>
+    <div class="ratio-label">
+      <div class="ratio-row">
+        <span class="ratio-icon-slot" id="ratioIconSlot"></span>
+        <span class="ratio-text" id="ratioText">—<span class="colon">:</span>—</span>
+      </div>
+      <span class="ratio-name" id="ratioName">比率を選択してください</span>
     </div>
-    <div class="size-hint" id="sizeHint"></div>
+    <div class="info-box">
+      <div class="file-size" id="fileSize">—</div>
+      <div class="dim-line" id="dimLine"><span class="label">全体</span>— × —</div>
+    </div>
   </header>
 
   <div class="canvas-wrap" id="canvasWrap">
-    <img id="previewImg" alt="">
-    <canvas id="canvas" class="empty"></canvas>
+    <canvas id="canvas"></canvas>
     <div class="empty-msg" id="emptyMsg">
       <span>no image</span>
       <span class="sub">左から比率を選び、画像 / GIF を読み込んでください</span>
     </div>
+  </div>
+
+  <div class="image-tools">
+    <button class="tool-btn" id="flipH" title="左右反転" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7l4 5-4 5z" fill="currentColor"/>
+        <path d="M21 7l-4 5 4 5z" fill="currentColor"/>
+        <line x1="12" y1="3" x2="12" y2="21" stroke-dasharray="2 2"/>
+      </svg>
+    </button>
+    <button class="tool-btn" id="flipV" title="上下反転" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 3l5 4 5-4z" fill="currentColor"/>
+        <path d="M7 21l5-4 5 4z" fill="currentColor"/>
+        <line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2 2"/>
+      </svg>
+    </button>
+    <button class="tool-btn" id="rotate" title="90°回転" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-3.5-7.1"/>
+        <polyline points="21 4 21 10 15 10"/>
+      </svg>
+    </button>
+    <div class="tool-divider"></div>
+    <button class="brightness-btn" id="brightness" title="明るさ" disabled>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="4"/>
+        <line x1="12" y1="2.5" x2="12" y2="5"/>
+        <line x1="12" y1="19" x2="12" y2="21.5"/>
+        <line x1="5" y1="5" x2="6.8" y2="6.8"/>
+        <line x1="17.2" y1="17.2" x2="19" y2="19"/>
+        <line x1="2.5" y1="12" x2="5" y2="12"/>
+        <line x1="19" y1="12" x2="21.5" y2="12"/>
+        <line x1="5" y1="19" x2="6.8" y2="17.2"/>
+        <line x1="17.2" y1="6.8" x2="19" y2="5"/>
+      </svg>
+    </button>
   </div>
 
   <footer class="controls">
@@ -366,36 +414,23 @@ footer.controls {
 <script>
 /* =====================================================================
    ICONS — 各アイテムにアイコン画像を追加する方法
-   ---------------------------------------------------------------------
-   下の CATEGORIES 配列で、各アイテムに `icon` プロパティを追加するだけ
-   で、項目名の左に小さな画像が表示されます（縦14px固定で自動縮小）。
-   
-   icon に指定できるもの:
-     - 相対パス:   icon: 'icons/blackboard.png'
-     - 外部URL:    icon: 'https://example.com/x.png'
-     - data URI:   icon: 'data:image/svg+xml;utf8,<svg ...></svg>'
-   
-   アイコンが無いアイテムでも左端にスロットが確保されているので、
-   後から好きなアイテムだけアイコンを足しても整列は崩れません。
+   下の CATEGORIES で各アイテムに `icon` プロパティを追加するだけで
+   サイドバー左端 と プレビュー上部の名前の横 に同じアイコンが出ます
+   icon: 相対パス / URL / data URI (svg・png 等) どれでも可
    ===================================================================== */
-
-/* デモ用の極小SVGアイコン（参考用。差し替え自由） */
 const ICON = {
   blackboard: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14' fill='none' stroke='%237a766d' stroke-width='1'><rect x='1' y='1' width='18' height='12' rx='0.5'/></svg>",
   phone: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16' fill='none' stroke='%237a766d' stroke-width='1'><rect x='1' y='1' width='8' height='14' rx='1'/><line x1='4' y1='13' x2='6' y2='13'/></svg>",
   clock: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237a766d' stroke-width='1'><circle cx='8' cy='8' r='7'/><line x1='8' y1='8' x2='8' y2='4'/><line x1='8' y1='8' x2='11' y2='8'/></svg>",
 };
 
-/* =====================================================================
-   CATEGORIES — アスペクト比一覧
-   ===================================================================== */
 const CATEGORIES = [
   { name: '壁掛け家具', items: [
-    { name: '学校の黒板', w: 1729, h: 1136, icon: ICON.blackboard },  /* ← アイコン例 */
+    { name: '学校の黒板', w: 1729, h: 1136, icon: ICON.blackboard },
     { name: 'ホワイトボード', w: 1147, h: 828 },
   ]},
   { name: 'その他', items: [
-    { name: 'ネオン時計', w: 1, h: 1, icon: ICON.clock },              /* ← アイコン例 */
+    { name: 'ネオン時計', w: 1, h: 1, icon: ICON.clock },
     { name: 'カレンダー', w: 50, h: 39 },
   ]},
   { name: 'キッチン', items: [
@@ -410,7 +445,7 @@ const CATEGORIES = [
     { name: '24インチモニタ', w: 521, h: 282 },
   ]},
   { name: 'スクリーン', items: [
-    { name: 'スマホ', w: 61, h: 133, icon: ICON.phone },               /* ← アイコン例 */
+    { name: 'スマホ', w: 61, h: 133, icon: ICON.phone },
     { name: 'スマホスタンド A', w: 61, h: 136 },
     { name: 'スマホスタンド B', w: 5, h: 11 },
     { name: 'タブレットスタンド', w: 51, h: 55 },
@@ -579,68 +614,80 @@ const CATEGORIES = [
   ]},
 ];
 
+/* ===== Brightness configuration ===== */
+const BRIGHTNESS_STEP = 0.10;   // each level adds +10%
+const BRIGHTNESS_MAX  = 5;      // levels 0..5
+
 /* ===== State ===== */
 const state = {
   ratio: null,
-  fileType: null,      // 'image' | 'gif'
+  fileType: null,
+  fileSize: 0,
   naturalW: 0, naturalH: 0,
+  sourceImage: null,        // HTMLImageElement (static) OR HTMLCanvasElement (gif first frame)
+  transformedSource: null,  // canvas with rotation+flip baked in (brightness applied at draw time)
+  effectiveW: 0, effectiveH: 0,
   gifBuffer: null,
   gifDecoded: null,
-  imgUrl: null,
+  rotation: 0, flipH: false, flipV: false,
+  brightness: 0,
   splitW: 1, splitH: 1,
   canvasW: 0, canvasH: 0,
-  imgX: 0, imgY: 0, imgW: 0, imgH: 0,
   frameX: 0, frameY: 0, frameW: 0, frameH: 0,
   dragging: false, dragOffX: 0, dragOffY: 0,
+  resizing: false, resizeAnchorX: 0, resizeAnchorY: 0,
   activeItemEl: null,
   loaded: false,
   _gifWorkerUrl: null,
 };
 
+const HANDLE_R = 7;
+const HANDLE_HIT_R = 14;
+const MIN_FRAME = 24;
+
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const wrap = document.getElementById('canvasWrap');
-const previewImg = document.getElementById('previewImg');
 const emptyMsg = document.getElementById('emptyMsg');
+const ratioIconSlot = document.getElementById('ratioIconSlot');
 const ratioText = document.getElementById('ratioText');
 const ratioName = document.getElementById('ratioName');
-const sizeHint = document.getElementById('sizeHint');
+const fileSizeEl = document.getElementById('fileSize');
+const dimLine = document.getElementById('dimLine');
 const saveBtn = document.getElementById('save');
 const fileInput = document.getElementById('file');
 const splitWInput = document.getElementById('splitW');
 const splitHInput = document.getElementById('splitH');
+const flipHBtn = document.getElementById('flipH');
+const flipVBtn = document.getElementById('flipV');
+const rotateBtn = document.getElementById('rotate');
+const brightnessBtn = document.getElementById('brightness');
 
 /* ===== Sidebar ===== */
 function renderSidebar() {
   const root = document.getElementById('categories');
-  CATEGORIES.forEach((cat) => {
-    const wrap = document.createElement('div');
-    wrap.className = 'category';
-    const header = document.createElement('div');
-    header.className = 'category-header';
-    header.innerHTML = `<span>${cat.name}</span><span class="arrow">›</span>`;
-    header.addEventListener('click', () => wrap.classList.toggle('open'));
+  CATEGORIES.forEach(cat => {
+    const w = document.createElement('div');
+    w.className = 'category';
+    const h = document.createElement('div');
+    h.className = 'category-header';
+    h.innerHTML = `<span>${cat.name}</span><span class="arrow">›</span>`;
+    h.addEventListener('click', () => w.classList.toggle('open'));
     const items = document.createElement('div');
     items.className = 'items';
     cat.items.forEach(it => {
       const el = document.createElement('div');
       el.className = 'item';
-      const iconHtml = it.icon
+      const ic = it.icon
         ? `<span class="item-icon-slot"><img class="item-icon" src="${it.icon}" alt=""></span>`
         : `<span class="item-icon-slot"></span>`;
-      const noteHtml = it.note ? `<span class="item-note">${it.note}</span>` : '';
-      el.innerHTML = `
-        ${iconHtml}
-        <span class="item-label">${it.name}</span>
-        <span class="item-ratio">${it.w} : ${it.h}</span>
-        ${noteHtml}
-      `;
+      const nt = it.note ? `<span class="item-note">${it.note}</span>` : '';
+      el.innerHTML = `${ic}<span class="item-label">${it.name}</span><span class="item-ratio">${it.w} : ${it.h}</span>${nt}`;
       el.addEventListener('click', () => selectItem(it, el));
       items.appendChild(el);
     });
-    wrap.appendChild(header);
-    wrap.appendChild(items);
-    root.appendChild(wrap);
+    w.appendChild(h); w.appendChild(items);
+    root.appendChild(w);
   });
 }
 
@@ -649,45 +696,60 @@ function selectItem(item, el) {
   if (state.activeItemEl) state.activeItemEl.classList.remove('active');
   el.classList.add('active');
   state.activeItemEl = el;
-
   ratioText.innerHTML = `${item.w}<span class="colon">:</span>${item.h}`;
   ratioName.textContent = item.name;
+  ratioIconSlot.innerHTML = item.icon ? `<img src="${item.icon}" alt="">` : '';
   recalculateFrame();
-  updatePreviewImg();
   draw();
-  updateSizeHint();
+  updateDimLine();
   updateSaveBtn();
 }
 
-/* ===== Layout ===== */
-function resizeCanvas() {
+/* ===== Transform & layout ===== */
+function rebuildTransform() {
+  if (!state.sourceImage) return;
+  const srcW = state.naturalW, srcH = state.naturalH;
+  const isRot90 = (state.rotation === 90 || state.rotation === 270);
+  const outW = isRot90 ? srcH : srcW;
+  const outH = isRot90 ? srcW : srcH;
+  state.effectiveW = outW;
+  state.effectiveH = outH;
+  const c = document.createElement('canvas');
+  c.width = outW; c.height = outH;
+  const ic = c.getContext('2d');
+  ic.save();
+  ic.translate(outW / 2, outH / 2);
+  ic.rotate(state.rotation * Math.PI / 180);
+  ic.scale(state.flipH ? -1 : 1, state.flipV ? -1 : 1);
+  ic.drawImage(state.sourceImage, -srcW / 2, -srcH / 2);
+  ic.restore();
+  state.transformedSource = c;
+}
+
+function recomputeLayout() {
   const cw = wrap.clientWidth;
   const ch = wrap.clientHeight;
   if (cw <= 0 || ch <= 0) return;
-  const dpr = window.devicePixelRatio || 1;
-  canvas.style.width = cw + 'px';
-  canvas.style.height = ch + 'px';
-  canvas.width = Math.floor(cw * dpr);
-  canvas.height = Math.floor(ch * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  state.canvasW = cw;
-  state.canvasH = ch;
-  recalculateImageLayout();
-  recalculateFrame();
-  updatePreviewImg();
-  draw();
-  updateSizeHint();
-}
-
-function recalculateImageLayout() {
-  if (!state.loaded) return;
-  const cw = state.canvasW, ch = state.canvasH;
-  const r = state.naturalW / state.naturalH;
+  if (!state.loaded) {
+    canvas.classList.remove('shown');
+    return;
+  }
+  // Fit effective image dims into wrap
+  const r = state.effectiveW / state.effectiveH;
   let dw = cw, dh = cw / r;
   if (dh > ch) { dh = ch; dw = ch * r; }
-  state.imgW = dw; state.imgH = dh;
-  state.imgX = (cw - dw) / 2;
-  state.imgY = (ch - dh) / 2;
+  state.canvasW = dw;
+  state.canvasH = dh;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = dw + 'px';
+  canvas.style.height = dh + 'px';
+  canvas.width = Math.floor(dw * dpr);
+  canvas.height = Math.floor(dh * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  canvas.classList.add('shown');
+  recalculateFrame();
+  draw();
+  updateDimLine();
 }
 
 function getEffectiveRatio() {
@@ -697,46 +759,37 @@ function getEffectiveRatio() {
 
 function recalculateFrame() {
   if (!state.loaded || !state.ratio) return;
-  const target = getEffectiveRatio();
-  let fw = state.imgW, fh = fw / target;
-  if (fh > state.imgH) { fh = state.imgH; fw = fh * target; }
-  state.frameW = fw;
-  state.frameH = fh;
-  state.frameX = state.imgX + (state.imgW - fw) / 2;
-  state.frameY = state.imgY + (state.imgH - fh) / 2;
+  const t = getEffectiveRatio();
+  let fw = state.canvasW, fh = fw / t;
+  if (fh > state.canvasH) { fh = state.canvasH; fw = fh * t; }
+  state.frameW = fw; state.frameH = fh;
+  state.frameX = (state.canvasW - fw) / 2;
+  state.frameY = (state.canvasH - fh) / 2;
 }
 
-function updatePreviewImg() {
-  if (!state.loaded) {
-    previewImg.classList.remove('shown');
-    return;
-  }
-  previewImg.style.left = state.imgX + 'px';
-  previewImg.style.top = state.imgY + 'px';
-  previewImg.style.width = state.imgW + 'px';
-  previewImg.style.height = state.imgH + 'px';
-  previewImg.classList.add('shown');
-}
-
-/* ===== Draw mask + frame ===== */
+/* ===== Draw ===== */
 function draw() {
+  if (!state.canvasW || !state.canvasH) return;
   ctx.clearRect(0, 0, state.canvasW, state.canvasH);
-  if (!state.loaded || !state.ratio) return;
+  if (!state.loaded) return;
 
-  // Dark mask outside frame (only over image area)
-  ctx.fillStyle = 'rgba(20, 20, 20, 0.5)';
-  if (state.frameY > state.imgY)
-    ctx.fillRect(state.imgX, state.imgY, state.imgW, state.frameY - state.imgY);
-  const fBottom = state.frameY + state.frameH;
-  const iBottom = state.imgY + state.imgH;
-  if (fBottom < iBottom)
-    ctx.fillRect(state.imgX, fBottom, state.imgW, iBottom - fBottom);
-  if (state.frameX > state.imgX)
-    ctx.fillRect(state.imgX, state.frameY, state.frameX - state.imgX, state.frameH);
-  const fRight = state.frameX + state.frameW;
-  const iRight = state.imgX + state.imgW;
-  if (fRight < iRight)
-    ctx.fillRect(fRight, state.frameY, iRight - fRight, state.frameH);
+  // Source with brightness filter
+  if (state.brightness > 0) {
+    ctx.filter = `brightness(${1 + state.brightness * BRIGHTNESS_STEP})`;
+  }
+  ctx.drawImage(state.transformedSource, 0, 0, state.canvasW, state.canvasH);
+  ctx.filter = 'none';
+
+  if (!state.ratio) return;
+
+  // Dark mask outside frame
+  ctx.fillStyle = 'rgba(20,20,20,0.5)';
+  if (state.frameY > 0) ctx.fillRect(0, 0, state.canvasW, state.frameY);
+  const fB = state.frameY + state.frameH;
+  if (fB < state.canvasH) ctx.fillRect(0, fB, state.canvasW, state.canvasH - fB);
+  if (state.frameX > 0) ctx.fillRect(0, state.frameY, state.frameX, state.frameH);
+  const fR = state.frameX + state.frameW;
+  if (fR < state.canvasW) ctx.fillRect(fR, state.frameY, state.canvasW - fR, state.frameH);
 
   // Frame border
   ctx.strokeStyle = '#ffffff';
@@ -747,7 +800,7 @@ function draw() {
   if (state.splitW > 1 || state.splitH > 1) {
     ctx.save();
     ctx.setLineDash([4, 4]);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.85)';
     ctx.lineWidth = 1;
     for (let i = 1; i < state.splitW; i++) {
       const x = state.frameX + (state.frameW * i) / state.splitW;
@@ -759,121 +812,209 @@ function draw() {
     }
     ctx.restore();
   }
+
+  // Resize handle at top-right
+  const hx = state.frameX + state.frameW;
+  const hy = state.frameY;
+  ctx.fillStyle = 'rgba(0,0,0,0.18)';
+  ctx.beginPath(); ctx.arc(hx, hy, HANDLE_R + 1.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(hx, hy, HANDLE_R, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.arc(hx, hy, HANDLE_R, 0, Math.PI * 2); ctx.stroke();
 }
 
-function updateSizeHint() {
-  if (!state.ratio) { sizeHint.textContent = ''; return; }
-  if (state.loaded) {
-    const sx = state.naturalW / state.imgW;
-    const sy = state.naturalH / state.imgH;
-    const cellW = Math.round((state.frameW / state.splitW) * sx);
-    const cellH = Math.round((state.frameH / state.splitH) * sy);
-    const totalW = Math.round(state.frameW * sx);
-    const totalH = Math.round(state.frameH * sy);
-    sizeHint.innerHTML = `1セル ${cellW} × ${cellH} <span class="px">px</span> ／ 全体 ${totalW} × ${totalH} <span class="px">px</span>`;
-  } else {
-    sizeHint.innerHTML = `${state.ratio.w} : ${state.ratio.h}`;
+/* ===== Info updates ===== */
+function formatBytes(b) {
+  if (b == null) return '—';
+  if (b < 1024) return b + ' B';
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+  return (b / 1024 / 1024).toFixed(2) + ' MB';
+}
+
+function updateFileSize() {
+  fileSizeEl.textContent = state.loaded ? formatBytes(state.fileSize) : '—';
+}
+
+function updateDimLine() {
+  if (!state.ratio || !state.loaded) {
+    dimLine.innerHTML = `<span class="label">全体</span>— × —`;
+    return;
   }
+  const sx = state.effectiveW / state.canvasW;
+  const sy = state.effectiveH / state.canvasH;
+  const tw = Math.round(state.frameW * sx);
+  const th = Math.round(state.frameH * sy);
+  dimLine.innerHTML = `<span class="label">全体</span>${tw} × ${th} <span class="px">px</span>`;
 }
 
 function updateEmpty() {
-  if (state.loaded) {
-    emptyMsg.classList.add('hidden');
-    canvas.classList.remove('empty');
-  } else {
-    emptyMsg.classList.remove('hidden');
-    canvas.classList.add('empty');
-  }
+  emptyMsg.classList.toggle('hidden', state.loaded);
 }
 
 function updateSaveBtn() {
   const enabled = state.loaded && state.ratio;
   saveBtn.disabled = !enabled;
-  if (!enabled) {
-    saveBtn.innerHTML = '保存';
-    return;
-  }
+  if (!enabled) { saveBtn.innerHTML = '保存'; return; }
   const total = state.splitW * state.splitH;
-  let fmt;
-  if (total === 1) fmt = state.fileType === 'gif' ? 'gif' : 'png';
-  else fmt = 'zip';
+  const fmt = total === 1 ? (state.fileType === 'gif' ? 'gif' : 'png') : 'zip';
   saveBtn.innerHTML = `保存<span class="fmt">${fmt}</span>`;
 }
 
+function updateToolBtns() {
+  const en = state.loaded;
+  [flipHBtn, flipVBtn, rotateBtn, brightnessBtn].forEach(b => b.disabled = !en);
+}
+
+function updateBrightnessGauge() {
+  const fill = (state.brightness / BRIGHTNESS_MAX) * 360;
+  brightnessBtn.style.setProperty('--fill', fill + 'deg');
+}
+
 /* ===== File loading ===== */
-fileInput.addEventListener('change', (e) => {
+fileInput.addEventListener('change', e => {
   const f = e.target.files[0];
-  if (!f) return;
-  loadFile(f);
+  if (f) loadFile(f);
 });
 
-function loadFile(file) {
+async function loadFile(file) {
   const isGif = file.type === 'image/gif' || /\.gif$/i.test(file.name);
   state.fileType = isGif ? 'gif' : 'image';
+  state.fileSize = file.size;
   state.gifBuffer = null;
   state.gifDecoded = null;
+  state.loaded = false;
+  // reset transforms on new file
+  state.rotation = 0;
+  state.flipH = false;
+  state.flipV = false;
+  state.brightness = 0;
+  updateBrightnessGauge();
 
-  if (state.imgUrl) URL.revokeObjectURL(state.imgUrl);
-  state.imgUrl = URL.createObjectURL(file);
+  canvas.classList.remove('shown');
+  updateEmpty();
+  updateFileSize();
 
-  previewImg.onload = () => {
-    state.naturalW = previewImg.naturalWidth;
-    state.naturalH = previewImg.naturalHeight;
+  try {
+    if (isGif) {
+      state.gifBuffer = await file.arrayBuffer();
+      state.gifDecoded = decodeGif(state.gifBuffer);
+      // Use the first frame canvas directly as the source
+      state.sourceImage = state.gifDecoded.frames[0].canvas;
+      state.naturalW = state.sourceImage.width;
+      state.naturalH = state.sourceImage.height;
+    } else {
+      const url = URL.createObjectURL(file);
+      const img = await new Promise((res, rej) => {
+        const i = new Image();
+        i.onload = () => res(i);
+        i.onerror = rej;
+        i.src = url;
+      });
+      state.sourceImage = img;
+      state.naturalW = img.naturalWidth;
+      state.naturalH = img.naturalHeight;
+      // keep url alive for the lifetime of img
+    }
     state.loaded = true;
-    recalculateImageLayout();
-    recalculateFrame();
+    rebuildTransform();
     updateEmpty();
-    updatePreviewImg();
-    draw();
-    updateSizeHint();
+    updateFileSize();
+    updateToolBtns();
+    recomputeLayout();
     updateSaveBtn();
-  };
-  previewImg.onerror = () => {
-    alert('画像を読み込めませんでした');
-  };
-  previewImg.src = state.imgUrl;
-
-  // GIF の場合は元データを保持（保存時にフレーム分解する）
-  if (isGif) {
-    file.arrayBuffer().then(buf => { state.gifBuffer = buf; });
+  } catch (err) {
+    console.error(err);
+    alert('ファイルの読み込みに失敗しました: ' + err.message);
   }
 }
 
-/* ===== Drag ===== */
+/* ===== Pointer / drag / resize ===== */
 function localPos(e) {
   const r = canvas.getBoundingClientRect();
   return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
 
-canvas.addEventListener('pointerdown', (e) => {
+function isOnHandle(x, y) {
+  const hx = state.frameX + state.frameW;
+  const hy = state.frameY;
+  return Math.hypot(x - hx, y - hy) <= HANDLE_HIT_R;
+}
+
+function isInFrame(x, y) {
+  return x >= state.frameX && x <= state.frameX + state.frameW &&
+         y >= state.frameY && y <= state.frameY + state.frameH;
+}
+
+canvas.addEventListener('pointerdown', e => {
   if (!state.loaded || !state.ratio) return;
   const { x, y } = localPos(e);
-  if (x >= state.frameX && x <= state.frameX + state.frameW &&
-      y >= state.frameY && y <= state.frameY + state.frameH) {
+  if (isOnHandle(x, y)) {
+    state.resizing = true;
+    // anchor at bottom-left corner of frame
+    state.resizeAnchorX = state.frameX;
+    state.resizeAnchorY = state.frameY + state.frameH;
+    canvas.style.cursor = 'nesw-resize';
+    canvas.setPointerCapture(e.pointerId);
+  } else if (isInFrame(x, y)) {
     state.dragging = true;
     state.dragOffX = x - state.frameX;
     state.dragOffY = y - state.frameY;
-    canvas.classList.add('dragging');
+    canvas.style.cursor = 'grabbing';
     canvas.setPointerCapture(e.pointerId);
   }
 });
-canvas.addEventListener('pointermove', (e) => {
-  if (!state.dragging) return;
+
+canvas.addEventListener('pointermove', e => {
   const { x, y } = localPos(e);
-  let nx = x - state.dragOffX;
-  let ny = y - state.dragOffY;
-  nx = Math.max(state.imgX, Math.min(state.imgX + state.imgW - state.frameW, nx));
-  ny = Math.max(state.imgY, Math.min(state.imgY + state.imgH - state.frameH, ny));
+  if (state.resizing) doResize(x, y);
+  else if (state.dragging) doDrag(x, y);
+  else if (state.loaded && state.ratio) {
+    canvas.style.cursor = isOnHandle(x, y) ? 'nesw-resize' : (isInFrame(x, y) ? 'grab' : 'default');
+  }
+});
+
+function doDrag(px, py) {
+  let nx = px - state.dragOffX;
+  let ny = py - state.dragOffY;
+  nx = Math.max(0, Math.min(state.canvasW - state.frameW, nx));
+  ny = Math.max(0, Math.min(state.canvasH - state.frameH, ny));
   state.frameX = nx; state.frameY = ny;
   draw();
-});
-function endDrag() {
-  if (!state.dragging) return;
-  state.dragging = false;
-  canvas.classList.remove('dragging');
 }
-canvas.addEventListener('pointerup', endDrag);
-canvas.addEventListener('pointercancel', endDrag);
+
+function doResize(px, py) {
+  const aspect = getEffectiveRatio();
+  const ax = state.resizeAnchorX;
+  const ay = state.resizeAnchorY;
+  let w = Math.max(MIN_FRAME, px - ax);
+  let h = Math.max(MIN_FRAME, ay - py);
+  // aspect-lock: pick whichever axis demands the larger frame
+  if (w / h > aspect) h = w / aspect;
+  else w = h * aspect;
+  // constrain to canvas
+  const maxW = state.canvasW - ax;
+  const maxH = ay;
+  if (w > maxW) { w = maxW; h = w / aspect; }
+  if (h > maxH) { h = maxH; w = h * aspect; }
+  if (w < MIN_FRAME) w = MIN_FRAME;
+  if (h < MIN_FRAME) h = MIN_FRAME;
+  state.frameX = ax;
+  state.frameY = ay - h;
+  state.frameW = w; state.frameH = h;
+  draw();
+  updateDimLine();
+}
+
+function endInteraction() {
+  if (state.dragging || state.resizing) {
+    state.dragging = false; state.resizing = false;
+    canvas.style.cursor = 'default';
+  }
+}
+canvas.addEventListener('pointerup', endInteraction);
+canvas.addEventListener('pointercancel', endInteraction);
 
 /* ===== Split inputs ===== */
 function readSplits() {
@@ -888,86 +1029,113 @@ function readSplits() {
   state.splitW = w; state.splitH = h;
   recalculateFrame();
   draw();
-  updateSizeHint();
+  updateDimLine();
   updateSaveBtn();
 }
-splitWInput.addEventListener('input', readSplits);
-splitHInput.addEventListener('input', readSplits);
-splitWInput.addEventListener('change', readSplits);
-splitHInput.addEventListener('change', readSplits);
+['input', 'change'].forEach(ev => {
+  splitWInput.addEventListener(ev, readSplits);
+  splitHInput.addEventListener(ev, readSplits);
+});
 
-/* ===== GIF decode (gifuct-js) → 全フレームを合成済みキャンバスとして保持 ===== */
+/* ===== Image transform buttons ===== */
+flipHBtn.addEventListener('click', () => {
+  state.flipH = !state.flipH;
+  rebuildTransform();
+  draw();
+});
+flipVBtn.addEventListener('click', () => {
+  state.flipV = !state.flipV;
+  rebuildTransform();
+  draw();
+});
+rotateBtn.addEventListener('click', () => {
+  state.rotation = (state.rotation + 90) % 360;
+  rebuildTransform();
+  recomputeLayout();
+});
+brightnessBtn.addEventListener('click', () => {
+  state.brightness = (state.brightness + 1) % (BRIGHTNESS_MAX + 1);
+  updateBrightnessGauge();
+  draw();
+});
+
+/* ===== GIF decode ===== */
 function decodeGif(arrayBuffer) {
   const parsed = gifuct.parseGIF(arrayBuffer);
-  const rawFrames = gifuct.decompressFrames(parsed, true);
-  const w = parsed.lsd.width;
-  const h = parsed.lsd.height;
-
-  const composite = document.createElement('canvas');
-  composite.width = w; composite.height = h;
-  const cctx = composite.getContext('2d');
-
+  const raw = gifuct.decompressFrames(parsed, true);
+  const W = parsed.lsd.width, H = parsed.lsd.height;
+  const work = document.createElement('canvas');
+  work.width = W; work.height = H;
+  const wctx = work.getContext('2d');
   const out = [];
   let saved = null;
-  for (const fr of rawFrames) {
-    // 復元用にスナップショット
-    if (fr.disposalType === 3) {
-      saved = cctx.getImageData(0, 0, w, h);
-    }
-    // パッチを合成
+  for (const fr of raw) {
+    if (fr.disposalType === 3) saved = wctx.getImageData(0, 0, W, H);
     const patch = document.createElement('canvas');
     patch.width = fr.dims.width; patch.height = fr.dims.height;
     const pctx = patch.getContext('2d');
-    const imgData = pctx.createImageData(fr.dims.width, fr.dims.height);
-    imgData.data.set(fr.patch);
-    pctx.putImageData(imgData, 0, 0);
-    cctx.drawImage(patch, fr.dims.left, fr.dims.top);
-
-    // 現在の合成フレームを保存
+    const id = pctx.createImageData(fr.dims.width, fr.dims.height);
+    id.data.set(fr.patch);
+    pctx.putImageData(id, 0, 0);
+    wctx.drawImage(patch, fr.dims.left, fr.dims.top);
     const snap = document.createElement('canvas');
-    snap.width = w; snap.height = h;
-    snap.getContext('2d').drawImage(composite, 0, 0);
+    snap.width = W; snap.height = H;
+    snap.getContext('2d').drawImage(work, 0, 0);
     out.push({ canvas: snap, delay: Math.max(20, fr.delay || 100) });
-
-    // 廃棄処理
-    if (fr.disposalType === 2) {
-      cctx.clearRect(fr.dims.left, fr.dims.top, fr.dims.width, fr.dims.height);
-    } else if (fr.disposalType === 3 && saved) {
-      cctx.putImageData(saved, 0, 0);
-    }
+    if (fr.disposalType === 2) wctx.clearRect(fr.dims.left, fr.dims.top, fr.dims.width, fr.dims.height);
+    else if (fr.disposalType === 3 && saved) wctx.putImageData(saved, 0, 0);
   }
-  return { width: w, height: h, frames: out };
+  return { width: W, height: H, frames: out };
 }
 
 async function getGifWorkerUrl() {
   if (state._gifWorkerUrl) return state._gifWorkerUrl;
-  const url = 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js';
-  const resp = await fetch(url);
-  const text = await resp.text();
-  state._gifWorkerUrl = URL.createObjectURL(new Blob([text], { type: 'application/javascript' }));
+  const r = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
+  const t = await r.text();
+  state._gifWorkerUrl = URL.createObjectURL(new Blob([t], { type: 'application/javascript' }));
   return state._gifWorkerUrl;
 }
 
-function cropGifToBlob(decoded, sx, sy, sw, sh) {
+/* Transform a single frame canvas (apply rotation+flip) */
+function transformFrameCanvas(srcCanvas) {
+  const sw = srcCanvas.width, sh = srcCanvas.height;
+  const isRot90 = (state.rotation === 90 || state.rotation === 270);
+  const outW = isRot90 ? sh : sw;
+  const outH = isRot90 ? sw : sh;
+  const c = document.createElement('canvas');
+  c.width = outW; c.height = outH;
+  const cx = c.getContext('2d');
+  cx.save();
+  cx.translate(outW / 2, outH / 2);
+  cx.rotate(state.rotation * Math.PI / 180);
+  cx.scale(state.flipH ? -1 : 1, state.flipV ? -1 : 1);
+  cx.drawImage(srcCanvas, -sw / 2, -sh / 2);
+  cx.restore();
+  return c;
+}
+
+async function cropGifToBlob(decoded, sx, sy, sw, sh) {
   const w = Math.max(1, Math.round(sw));
   const h = Math.max(1, Math.round(sh));
-  return getGifWorkerUrl().then(workerUrl => new Promise((resolve, reject) => {
-    const gif = new GIF({
-      workers: 2,
-      quality: 10,
-      workerScript: workerUrl,
-      width: w, height: h,
-    });
+  const workerUrl = await getGifWorkerUrl();
+  const brightnessFilter = state.brightness > 0
+    ? `brightness(${1 + state.brightness * BRIGHTNESS_STEP})`
+    : null;
+  return new Promise((resolve, reject) => {
+    const gif = new GIF({ workers: 2, quality: 10, workerScript: workerUrl, width: w, height: h });
     for (const fr of decoded.frames) {
+      const transformed = transformFrameCanvas(fr.canvas);
       const c = document.createElement('canvas');
       c.width = w; c.height = h;
-      c.getContext('2d').drawImage(fr.canvas, sx, sy, sw, sh, 0, 0, w, h);
+      const cx = c.getContext('2d');
+      if (brightnessFilter) cx.filter = brightnessFilter;
+      cx.drawImage(transformed, sx, sy, sw, sh, 0, 0, w, h);
       gif.addFrame(c, { delay: fr.delay, copy: true });
     }
-    gif.on('finished', blob => resolve(blob));
+    gif.on('finished', resolve);
     gif.on('abort', () => reject(new Error('aborted')));
     gif.render();
-  }));
+  });
 }
 
 /* ===== Save ===== */
@@ -987,65 +1155,54 @@ async function save() {
   const total = state.splitW * state.splitH;
   const isGif = state.fileType === 'gif';
   const baseName = sanitize(state.ratio.name);
-
   saveBtn.disabled = true;
-  const original = saveBtn.innerHTML;
-
+  const orig = saveBtn.innerHTML;
   try {
-    // 共通: 各セルのソース座標を計算
-    const sxRatio = state.naturalW / state.imgW;
-    const syRatio = state.naturalH / state.imgH;
-    const cellDispW = state.frameW / state.splitW;
-    const cellDispH = state.frameH / state.splitH;
+    // Source pixel coordinates per cell, in effective (post-rotation) space
+    const sxR = state.effectiveW / state.canvasW;
+    const syR = state.effectiveH / state.canvasH;
+    const cellW = state.frameW / state.splitW;
+    const cellH = state.frameH / state.splitH;
     const cells = [];
     for (let j = 0; j < state.splitH; j++) {
       for (let i = 0; i < state.splitW; i++) {
         cells.push({
-          x: (state.frameX + i * cellDispW - state.imgX) * sxRatio,
-          y: (state.frameY + j * cellDispH - state.imgY) * syRatio,
-          w: cellDispW * sxRatio,
-          h: cellDispH * syRatio,
+          x: (state.frameX + i * cellW) * sxR,
+          y: (state.frameY + j * cellH) * syR,
+          w: cellW * sxR,
+          h: cellH * syR,
         });
       }
     }
-
     if (isGif) {
-      // GIF を展開（キャッシュあり）
-      if (!state.gifDecoded) {
-        if (!state.gifBuffer) {
-          // 念のため再取得
-          const resp = await fetch(state.imgUrl);
-          state.gifBuffer = await resp.arrayBuffer();
-        }
-        saveBtn.innerHTML = 'GIF解析中…';
-        state.gifDecoded = decodeGif(state.gifBuffer);
-      }
-      const decoded = state.gifDecoded;
       const blobs = [];
       for (let k = 0; k < cells.length; k++) {
         saveBtn.innerHTML = `書き出し ${k + 1}/${cells.length}`;
         const c = cells[k];
-        const blob = await cropGifToBlob(decoded, c.x, c.y, c.w, c.h);
-        blobs.push(blob);
+        blobs.push(await cropGifToBlob(state.gifDecoded, c.x, c.y, c.w, c.h));
       }
       if (total === 1) {
         download(blobs[0], baseName + '.gif');
       } else {
         saveBtn.innerHTML = 'zip 生成中…';
         const zip = new JSZip();
-        const padLen = Math.max(2, String(total).length);
-        blobs.forEach((b, i) => zip.file(String(i + 1).padStart(padLen, '0') + '.gif', b));
-        const zipBlob = await zip.generateAsync({ type: 'blob' });
-        download(zipBlob, baseName + `_${state.splitW}x${state.splitH}.zip`);
+        const pad = Math.max(2, String(total).length);
+        blobs.forEach((b, i) => zip.file(String(i + 1).padStart(pad, '0') + '.gif', b));
+        const zb = await zip.generateAsync({ type: 'blob' });
+        download(zb, baseName + `_${state.splitW}x${state.splitH}.zip`);
       }
     } else {
-      // 静止画 → PNG
+      const brightnessFilter = state.brightness > 0
+        ? `brightness(${1 + state.brightness * BRIGHTNESS_STEP})`
+        : null;
       const blobs = [];
       for (const c of cells) {
         const off = document.createElement('canvas');
         off.width = Math.max(1, Math.round(c.w));
         off.height = Math.max(1, Math.round(c.h));
-        off.getContext('2d').drawImage(previewImg, c.x, c.y, c.w, c.h, 0, 0, off.width, off.height);
+        const octx = off.getContext('2d');
+        if (brightnessFilter) octx.filter = brightnessFilter;
+        octx.drawImage(state.transformedSource, c.x, c.y, c.w, c.h, 0, 0, off.width, off.height);
         const blob = await new Promise(res => off.toBlob(res, 'image/png'));
         blobs.push(blob);
       }
@@ -1053,30 +1210,31 @@ async function save() {
         download(blobs[0], baseName + '.png');
       } else {
         const zip = new JSZip();
-        const padLen = Math.max(2, String(total).length);
-        blobs.forEach((b, i) => zip.file(String(i + 1).padStart(padLen, '0') + '.png', b));
-        const zipBlob = await zip.generateAsync({ type: 'blob' });
-        download(zipBlob, baseName + `_${state.splitW}x${state.splitH}.zip`);
+        const pad = Math.max(2, String(total).length);
+        blobs.forEach((b, i) => zip.file(String(i + 1).padStart(pad, '0') + '.png', b));
+        const zb = await zip.generateAsync({ type: 'blob' });
+        download(zb, baseName + `_${state.splitW}x${state.splitH}.zip`);
       }
     }
   } catch (err) {
     console.error(err);
     alert('保存に失敗しました: ' + err.message);
   } finally {
-    saveBtn.innerHTML = original;
+    saveBtn.innerHTML = orig;
     updateSaveBtn();
   }
 }
-
 saveBtn.addEventListener('click', save);
 
 /* ===== Init ===== */
 renderSidebar();
-window.addEventListener('resize', resizeCanvas);
-new ResizeObserver(resizeCanvas).observe(wrap);
-resizeCanvas();
+window.addEventListener('resize', recomputeLayout);
+new ResizeObserver(recomputeLayout).observe(wrap);
+recomputeLayout();
 updateEmpty();
 updateSaveBtn();
+updateToolBtns();
+updateBrightnessGauge();
 </script>
 </body>
 </html>

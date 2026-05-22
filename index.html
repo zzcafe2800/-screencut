@@ -450,11 +450,22 @@ footer.controls {
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <script>
 /* =====================================================================
-   設定: GIF worker のパス
-   gif.worker.js をこのHTMLと同じフォルダに置いてください。
-   ダウンロード元: https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js
+   設定: gif.worker.js の URL
+   HTMLと同じフォルダに gif.worker.js を置いてください。
+   入手元: https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js
+
+   重要:
+   - github.com/.../blob/... の URL は HTML ページを返すため使えません
+   - CDN から読み込んだ gif.js では相対パスが正しく解決されないことがあるため、
+     document.baseURI から絶対 URL を構築します(GitHub Pages 環境でも動作)
+   - ローカル配置が無理な場合は raw URL を直接指定することも可能(下記コメント)
    ===================================================================== */
-const GIF_WORKER_PATH = './gif.worker.js';
+const GIF_WORKER_PATH = new URL('gif.worker.js', document.baseURI).href;
+
+// 上が動かない場合は ↓ を有効化(raw URL を直接指定):
+// const GIF_WORKER_PATH = 'https://raw.githubusercontent.com/zzcafe2800/-screencut/main/gif.worker.js';
+
+console.info('[aspect] gif.worker.js URL =', GIF_WORKER_PATH);
 
 /* =====================================================================
    アイコン追加方法
@@ -1081,12 +1092,11 @@ brightnessBtn.addEventListener('click', () => {
 
 /* ===== GIF decode (gifuct-js) ===== */
 function decodeGif(arrayBuffer) {
-if (typeof parseGIF === 'undefined' || typeof decompressFrames === 'undefined') {
-  throw new Error('GIFパーサーが利用できません');
-}
-
-const parsed = parseGIF(arrayBuffer);
-const raw = decompressFrames(parsed, true);
+  if (typeof gifuct === 'undefined') {
+    throw new Error('GIFパーサーが利用できません');
+  }
+  const parsed = gifuct.parseGIF(arrayBuffer);
+  const raw = gifuct.decompressFrames(parsed, true);
   const W = parsed.lsd.width, H = parsed.lsd.height;
   const work = document.createElement('canvas');
   work.width = W; work.height = H;
@@ -1137,12 +1147,28 @@ function cropGifToBlob(decoded, sx, sy, sw, sh) {
     ? `brightness(${1 + state.brightness * BRIGHTNESS_STEP})`
     : null;
   return new Promise((resolve, reject) => {
-    const gif = new GIF({
-      workers: 2,
-      quality: 10,
-      workerScript: GIF_WORKER_PATH,
-      width: w, height: h,
-    });
+    let gif;
+    try {
+      gif = new GIF({
+        workers: 2,
+        quality: 10,
+        workerScript: GIF_WORKER_PATH,
+        width: w, height: h,
+      });
+    } catch (err) {
+      reject(new Error('GIF Worker 作成失敗: ' + err.message));
+      return;
+    }
+
+    // worker がロードできず無反応の場合に備えてタイムアウトを設定
+    const timeout = setTimeout(() => {
+      reject(new Error(
+        'gif.worker.js の読み込みに失敗しています。\n' +
+        '実際の URL: ' + GIF_WORKER_PATH + '\n' +
+        'このファイルが HTML と同じフォルダにあるか確認してください。'
+      ));
+    }, 30000);
+
     for (const fr of decoded.frames) {
       const transformed = transformFrameCanvas(fr.canvas);
       const c = document.createElement('canvas');
@@ -1152,9 +1178,15 @@ function cropGifToBlob(decoded, sx, sy, sw, sh) {
       cx.drawImage(transformed, sx, sy, sw, sh, 0, 0, w, h);
       gif.addFrame(c, { delay: fr.delay, copy: true });
     }
-    gif.on('finished', resolve);
-    gif.on('abort', () => reject(new Error('aborted')));
-    gif.render();
+    gif.on('finished', (blob) => { clearTimeout(timeout); resolve(blob); });
+    gif.on('abort', () => { clearTimeout(timeout); reject(new Error('aborted')); });
+
+    try {
+      gif.render();
+    } catch (err) {
+      clearTimeout(timeout);
+      reject(new Error('GIF render 失敗: ' + err.message));
+    }
   });
 }
 

@@ -13,14 +13,15 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #f4f1ea;
-  --bg-soft: #ede9df;
-  --fg: #1a1a1a;
-  --fg-muted: #7a766d;
-  --fg-faint: #b8b3a6;
-  --line: #d9d3c5;
-  --line-soft: #e6e1d4;
-  --panel: rgba(255,255,255,0.4);
+  --bg: #f5f8fa;
+  --bg-soft: #ebf2f6;
+  --fg: #2c3e50;
+  --fg-muted: #6e8290;
+  --fg-faint: #aabbc4;
+  --line: #cfdce4;
+  --line-soft: #e2eaee;
+  --accent: #5b9cb8;
+  --accent-soft: #c4dde8;
   --serif: 'Cormorant Garamond', 'Noto Serif JP', serif;
   --sans: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -38,8 +39,12 @@ body {
   grid-template-columns: 280px 1fr;
 }
 
-/* ========== Sidebar ========== */
-aside { border-right: 1px solid var(--line); overflow-y: auto; background: var(--bg); }
+/* ===== Sidebar ===== */
+aside {
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+  background: var(--bg);
+}
 aside::-webkit-scrollbar { width: 6px; }
 aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
 
@@ -51,8 +56,9 @@ aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
   letter-spacing: -0.01em;
   padding: 36px 28px 24px;
   line-height: 1;
+  color: var(--fg);
 }
-.brand .dot { color: var(--fg-faint); }
+.brand .dot { color: var(--accent); }
 
 .category { border-top: 1px solid var(--line-soft); }
 .category:last-child { border-bottom: 1px solid var(--line-soft); }
@@ -65,14 +71,18 @@ aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
   user-select: none;
   transition: color 0.2s, background 0.2s;
   font-size: 12.5px;
+  color: var(--fg);
 }
-.category-header:hover { color: var(--fg-muted); }
+.category-header:hover { color: var(--accent); }
 .category-header .arrow {
-  font-family: var(--serif); font-style: italic;
-  color: var(--fg-faint); font-size: 14px;
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--fg-faint);
+  font-size: 14px;
   transition: transform 0.25s ease;
 }
-.category.open .arrow { transform: rotate(90deg); }
+.category.open .arrow { transform: rotate(90deg); color: var(--accent); }
+
 .items { display: none; padding: 4px 0 14px; }
 .category.open .items { display: block; }
 
@@ -87,33 +97,16 @@ aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
   transition: background 0.15s, box-shadow 0.15s;
 }
 .item:hover { background: var(--bg-soft); }
-.item.active { box-shadow: inset 2px 0 0 var(--fg); }
+.item.active { box-shadow: inset 2px 0 0 var(--accent); }
 
-.item-icon-slot {
-  grid-area: icon;
-  width: 24px; height: 16px;
-  display: flex; align-items: center;
-  overflow: hidden;
-}
-.item-icon {
-  height: 14px; width: auto; max-width: 24px;
-  object-fit: contain; display: block; opacity: 0.85;
-}
-.item-label { grid-area: label; font-size: 12px; line-height: 1.35; }
-.item-ratio {
-  grid-area: ratio;
-  font-family: var(--serif); font-style: italic;
-  color: var(--fg-faint); font-size: 13px;
-  white-space: nowrap;
-}
-.item.active .item-ratio { color: var(--fg-muted); }
-.item-note {
-  grid-area: note;
-  font-size: 9.5px; color: var(--fg-faint);
-  margin-top: 2px; line-height: 1.3;
-}
+.item-icon-slot { grid-area: icon; width: 24px; height: 16px; display: flex; align-items: center; overflow: hidden; }
+.item-icon { height: 14px; width: auto; max-width: 24px; object-fit: contain; display: block; opacity: 0.85; }
+.item-label { grid-area: label; font-size: 12px; line-height: 1.35; color: var(--fg); }
+.item-ratio { grid-area: ratio; font-family: var(--serif); font-style: italic; color: var(--fg-faint); font-size: 13px; white-space: nowrap; }
+.item.active .item-ratio { color: var(--accent); }
+.item-note { grid-area: note; font-size: 9.5px; color: var(--fg-faint); margin-top: 2px; line-height: 1.3; }
 
-/* ========== Main ========== */
+/* ===== Main ===== */
 main {
   display: grid;
   grid-template-rows: auto 1fr auto auto;
@@ -122,105 +115,105 @@ main {
 }
 
 header.info {
-  padding: 26px 40px 10px;
+  padding: 26px 40px 8px;
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 24px;
   flex-wrap: wrap;
 }
-.ratio-label { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.ratio-row { display: flex; align-items: center; gap: 12px; }
+.ratio-label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.name-row { display: flex; align-items: center; gap: 12px; }
 .ratio-icon-slot {
   width: 28px; height: 28px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 .ratio-icon-slot:empty { display: none; }
-.ratio-icon-slot img {
-  height: 24px; width: auto; max-width: 28px;
-  object-fit: contain; opacity: 0.85;
-}
-.ratio-text {
-  font-family: var(--serif);
-  font-size: 28px; font-weight: 400; font-style: italic;
-  letter-spacing: -0.01em; line-height: 1;
-}
-.ratio-text .colon { margin: 0 4px; color: var(--fg-faint); font-style: normal; }
-.ratio-name {
-  font-size: 12px; color: var(--fg-muted);
-  letter-spacing: 0.04em;
-}
+.ratio-icon-slot img { height: 24px; width: auto; max-width: 28px; object-fit: contain; opacity: 0.85; }
 
-.info-box {
-  border: 1px solid var(--line);
-  padding: 12px 18px;
-  background: var(--panel);
+.item-big {
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--fg);
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+.ratio-small {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--fg-muted);
+  letter-spacing: 0;
+}
+.ratio-small .colon { margin: 0 3px; color: var(--fg-faint); font-style: normal; }
+
+.file-info {
   text-align: right;
   font-family: var(--serif);
-  min-width: 200px;
+  font-style: italic;
+  color: var(--fg-muted);
+  line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
 }
-.file-size {
-  font-style: italic; font-size: 22px;
-  color: var(--fg); letter-spacing: -0.01em;
-  line-height: 1; margin-bottom: 8px;
-}
-.dim-line {
-  font-style: italic; font-size: 13px;
-  color: var(--fg-muted); line-height: 1.3;
-}
-.dim-line .px { color: var(--fg-faint); font-size: 10px; margin-left: 2px; }
-.dim-line .label {
-  font-family: var(--sans); font-style: normal;
-  font-size: 9.5px; color: var(--fg-faint);
-  letter-spacing: 0.1em; text-transform: uppercase;
-  margin-right: 8px;
-}
+.file-info .size { font-size: 14px; color: var(--fg); }
+.file-info .dim { font-size: 12px; color: var(--fg-muted); }
 
-/* ========== Canvas wrap ========== */
+/* ===== Canvas/Preview ===== */
 .canvas-wrap {
   position: relative;
-  margin: 6px 40px;
+  margin: 4px 40px;
   overflow: hidden;
   min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-#canvas {
+.preview-stack {
+  position: relative;
   display: none;
-  background: transparent;
-  touch-action: none;
-  max-width: 100%;
-  max-height: 100%;
 }
-#canvas.shown { display: block; }
+.preview-stack.shown { display: block; }
+.preview-img {
+  position: absolute;
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+.overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: default;
+}
 .empty-msg {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
-  flex-direction: column; gap: 8px;
   color: var(--fg-faint);
-  font-family: var(--serif); font-style: italic; font-size: 18px;
+  font-family: var(--serif); font-style: italic; font-size: 16px;
   pointer-events: none;
+  letter-spacing: 0.02em;
 }
 .empty-msg.hidden { display: none; }
-.empty-msg .sub {
-  font-family: var(--sans); font-style: normal;
-  font-size: 11px; letter-spacing: 0.05em;
-}
 
-/* ========== Image tools (flip/rotate/brightness) ========== */
+/* ===== Image tools ===== */
 .image-tools {
   display: flex;
   justify-content: center;
   align-items: center;
   gap: 16px;
-  padding: 6px 0 4px;
+  padding: 8px 0 4px;
 }
 .tool-btn {
-  width: 38px; height: 38px;
+  width: 40px; height: 40px;
   border: 1px solid var(--line);
-  background: var(--panel);
+  background: rgba(255,255,255,0.6);
   cursor: pointer;
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -229,8 +222,9 @@ header.info {
   padding: 0;
 }
 .tool-btn:hover:not(:disabled) {
-  border-color: var(--fg);
-  background: rgba(255,255,255,0.65);
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(255,255,255,0.9);
 }
 .tool-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .tool-btn svg { display: block; }
@@ -246,27 +240,27 @@ header.info {
   display: flex; align-items: center; justify-content: center;
   color: var(--fg);
   padding: 0;
-  transition: --fill 0.35s ease;
+  transition: --fill 0.35s ease, color 0.15s;
 }
 .brightness-btn::before {
   content: '';
   position: absolute; inset: 0;
   border-radius: 50%;
-  background: conic-gradient(from -90deg, var(--fg) var(--fill), var(--line) 0);
+  background: conic-gradient(from -90deg, var(--accent) var(--fill), var(--line) 0);
   -webkit-mask: radial-gradient(circle, transparent 14.5px, black 15px, black 19px, transparent 19.5px);
   mask: radial-gradient(circle, transparent 14.5px, black 15px, black 19px, transparent 19.5px);
   pointer-events: none;
 }
-.brightness-btn:hover:not(:disabled) { background: rgba(255,255,255,0.35); }
+.brightness-btn:hover:not(:disabled) { color: var(--accent); }
 .brightness-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .brightness-btn svg { position: relative; z-index: 1; }
 
-/* ========== Footer controls ========== */
+/* ===== Footer controls ===== */
 footer.controls {
   padding: 14px 40px 26px;
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 24px;
   border-top: 1px solid var(--line-soft);
   flex-wrap: wrap;
 }
@@ -285,7 +279,11 @@ footer.controls {
   border-radius: 0;
   white-space: nowrap;
 }
-.btn:hover:not(:disabled) { background: var(--fg); color: var(--bg); }
+.btn:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
 .btn:disabled { border-color: var(--fg-faint); color: var(--fg-faint); cursor: not-allowed; }
 .btn .fmt {
   font-family: var(--serif); font-style: italic;
@@ -293,40 +291,63 @@ footer.controls {
   text-transform: lowercase; margin-left: 6px; opacity: 0.7;
 }
 
-.split-controls {
+.splits {
+  display: flex; gap: 22px;
+  margin-left: auto; align-items: center;
+}
+.split-field {
+  display: flex; align-items: center;
+  gap: 7px;
+}
+.split-field .lbl {
+  font-size: 11px; color: var(--fg-muted);
+  letter-spacing: 0.06em;
+}
+.split-field .num {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 22px;
+  color: var(--fg);
+  min-width: 18px;
+  text-align: center;
+  line-height: 1;
+  user-select: none;
+}
+.split-field .unit {
+  font-size: 11px;
+  color: var(--fg-faint);
+}
+.arrows {
   display: flex;
-  gap: 28px;
-  align-items: center;
-  margin-left: auto;
+  flex-direction: column;
+  margin-left: 2px;
 }
-.split-controls label {
-  display: flex; align-items: baseline; gap: 10px;
-  font-size: 11px; color: var(--fg-muted); letter-spacing: 0.06em;
+.arr {
+  width: 16px;
+  height: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--fg-faint);
+  font-size: 8px;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.15s, transform 0.1s;
+  user-select: none;
 }
-.split-controls input {
-  width: 52px; padding: 6px 4px;
-  border: none; border-bottom: 1px solid var(--line);
-  background: transparent;
-  font-family: var(--serif); font-style: italic;
-  font-size: 18px; font-weight: 500;
-  text-align: center; color: var(--fg);
-  transition: border-color 0.2s;
-}
-.split-controls input:focus { outline: none; border-bottom-color: var(--fg); }
-.split-controls input::-webkit-outer-spin-button,
-.split-controls input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.split-controls input[type=number] { -moz-appearance: textfield; }
+.arr:hover { color: var(--accent); }
+.arr:active { transform: scale(0.85); }
 
 @media (max-width: 760px) {
   body { grid-template-columns: 1fr; grid-template-rows: 200px 1fr; }
   aside { border-right: none; border-bottom: 1px solid var(--line); }
   .brand { padding: 16px 22px 12px; font-size: 24px; }
-  header.info { padding: 16px 22px 8px; gap: 12px; }
-  .info-box { min-width: 0; padding: 10px 14px; }
-  .file-size { font-size: 18px; }
-  .canvas-wrap { margin: 6px 22px; }
+  header.info { padding: 16px 22px 6px; gap: 12px; align-items: flex-start; }
+  .item-big { font-size: 20px; }
+  .file-info { align-items: flex-start; text-align: left; }
+  .canvas-wrap { margin: 4px 22px; }
   footer.controls { padding: 12px 22px 18px; gap: 16px; }
-  .split-controls { margin-left: 0; gap: 16px; }
+  .splits { margin-left: 0; gap: 18px; }
 }
 </style>
 </head>
@@ -340,24 +361,24 @@ footer.controls {
 <main>
   <header class="info">
     <div class="ratio-label">
-      <div class="ratio-row">
+      <div class="name-row">
         <span class="ratio-icon-slot" id="ratioIconSlot"></span>
-        <span class="ratio-text" id="ratioText">—<span class="colon">:</span>—</span>
+        <span class="item-big" id="ratioName">比率を選択</span>
       </div>
-      <span class="ratio-name" id="ratioName">比率を選択してください</span>
+      <span class="ratio-small" id="ratioText">—<span class="colon">:</span>—</span>
     </div>
-    <div class="info-box">
-      <div class="file-size" id="fileSize">—</div>
-      <div class="dim-line" id="dimLine"><span class="label">全体</span>— × —</div>
+    <div class="file-info">
+      <span class="size" id="fileSize">—</span>
+      <span class="dim" id="dimLine">— × — px</span>
     </div>
   </header>
 
   <div class="canvas-wrap" id="canvasWrap">
-    <canvas id="canvas"></canvas>
-    <div class="empty-msg" id="emptyMsg">
-      <span>no image</span>
-      <span class="sub">左から比率を選び、画像 / GIF を読み込んでください</span>
+    <div class="preview-stack" id="previewStack">
+      <img class="preview-img" id="previewImg" alt="">
+      <canvas class="overlay" id="canvas"></canvas>
     </div>
+    <div class="empty-msg" id="emptyMsg">画像 / GIF を読み込む</div>
   </div>
 
   <div class="image-tools">
@@ -401,27 +422,51 @@ footer.controls {
     <input type="file" id="file" accept="image/*,.gif" hidden>
     <label for="file" class="btn">画像 / GIF</label>
     <button id="save" class="btn" disabled>保存</button>
-    <div class="split-controls">
-      <label>横 <input type="number" id="splitW" min="1" value="1"></label>
-      <label>縦 <input type="number" id="splitH" min="1" value="1"></label>
+    <div class="splits">
+      <div class="split-field">
+        <span class="lbl">横</span>
+        <span class="num" id="splitWNum">1</span>
+        <span class="unit">枚</span>
+        <div class="arrows">
+          <button class="arr" data-target="W" data-delta="1">▲</button>
+          <button class="arr" data-target="W" data-delta="-1">▼</button>
+        </div>
+      </div>
+      <div class="split-field">
+        <span class="lbl">縦</span>
+        <span class="num" id="splitHNum">1</span>
+        <span class="unit">枚</span>
+        <div class="arrows">
+          <button class="arr" data-target="H" data-delta="1">▲</button>
+          <button class="arr" data-target="H" data-delta="-1">▼</button>
+        </div>
+      </div>
     </div>
   </footer>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/dist/gifuct-js.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/dist/gifuct-js.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <script>
 /* =====================================================================
-   ICONS — 各アイテムにアイコン画像を追加する方法
-   下の CATEGORIES で各アイテムに `icon` プロパティを追加するだけで
-   サイドバー左端 と プレビュー上部の名前の横 に同じアイコンが出ます
-   icon: 相対パス / URL / data URI (svg・png 等) どれでも可
+   設定: GIF worker のパス
+   gif.worker.js をこのHTMLと同じフォルダに置いてください。
+   ダウンロード元: https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js
+   ===================================================================== */
+const GIF_WORKER_PATH = './gif.worker.js';
+
+/* =====================================================================
+   アイコン追加方法
+   各アイテムに icon プロパティを追加するだけで、サイドバー左端 と
+   プレビュー上部の名前の横 に同じアイコン(縦14px相当)が表示されます。
+   例: icon: 'icons/blackboard.png'
+       icon: 'data:image/svg+xml;utf8,<svg ...></svg>'
    ===================================================================== */
 const ICON = {
-  blackboard: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14' fill='none' stroke='%237a766d' stroke-width='1'><rect x='1' y='1' width='18' height='12' rx='0.5'/></svg>",
-  phone: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16' fill='none' stroke='%237a766d' stroke-width='1'><rect x='1' y='1' width='8' height='14' rx='1'/><line x1='4' y1='13' x2='6' y2='13'/></svg>",
-  clock: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%237a766d' stroke-width='1'><circle cx='8' cy='8' r='7'/><line x1='8' y1='8' x2='8' y2='4'/><line x1='8' y1='8' x2='11' y2='8'/></svg>",
+  blackboard: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 14' fill='none' stroke='%236e8290' stroke-width='1'><rect x='1' y='1' width='18' height='12' rx='0.5'/></svg>",
+  phone: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16' fill='none' stroke='%236e8290' stroke-width='1'><rect x='1' y='1' width='8' height='14' rx='1'/><line x1='4' y1='13' x2='6' y2='13'/></svg>",
+  clock: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%236e8290' stroke-width='1'><circle cx='8' cy='8' r='7'/><line x1='8' y1='8' x2='8' y2='4'/><line x1='8' y1='8' x2='11' y2='8'/></svg>",
 };
 
 const CATEGORIES = [
@@ -614,19 +659,15 @@ const CATEGORIES = [
   ]},
 ];
 
-/* ===== Brightness configuration ===== */
-const BRIGHTNESS_STEP = 0.10;   // each level adds +10%
-const BRIGHTNESS_MAX  = 5;      // levels 0..5
+const BRIGHTNESS_STEP = 0.08;
+const BRIGHTNESS_MAX  = 5;
 
-/* ===== State ===== */
 const state = {
   ratio: null,
   fileType: null,
   fileSize: 0,
   naturalW: 0, naturalH: 0,
-  sourceImage: null,        // HTMLImageElement (static) OR HTMLCanvasElement (gif first frame)
-  transformedSource: null,  // canvas with rotation+flip baked in (brightness applied at draw time)
-  effectiveW: 0, effectiveH: 0,
+  fileUrl: null,
   gifBuffer: null,
   gifDecoded: null,
   rotation: 0, flipH: false, flipV: false,
@@ -638,7 +679,6 @@ const state = {
   resizing: false, resizeAnchorX: 0, resizeAnchorY: 0,
   activeItemEl: null,
   loaded: false,
-  _gifWorkerUrl: null,
 };
 
 const HANDLE_R = 7;
@@ -648,6 +688,8 @@ const MIN_FRAME = 24;
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const wrap = document.getElementById('canvasWrap');
+const previewStack = document.getElementById('previewStack');
+const previewImg = document.getElementById('previewImg');
 const emptyMsg = document.getElementById('emptyMsg');
 const ratioIconSlot = document.getElementById('ratioIconSlot');
 const ratioText = document.getElementById('ratioText');
@@ -656,8 +698,8 @@ const fileSizeEl = document.getElementById('fileSize');
 const dimLine = document.getElementById('dimLine');
 const saveBtn = document.getElementById('save');
 const fileInput = document.getElementById('file');
-const splitWInput = document.getElementById('splitW');
-const splitHInput = document.getElementById('splitH');
+const splitWNum = document.getElementById('splitWNum');
+const splitHNum = document.getElementById('splitHNum');
 const flipHBtn = document.getElementById('flipH');
 const flipVBtn = document.getElementById('flipV');
 const rotateBtn = document.getElementById('rotate');
@@ -705,51 +747,57 @@ function selectItem(item, el) {
   updateSaveBtn();
 }
 
-/* ===== Transform & layout ===== */
-function rebuildTransform() {
-  if (!state.sourceImage) return;
-  const srcW = state.naturalW, srcH = state.naturalH;
-  const isRot90 = (state.rotation === 90 || state.rotation === 270);
-  const outW = isRot90 ? srcH : srcW;
-  const outH = isRot90 ? srcW : srcH;
-  state.effectiveW = outW;
-  state.effectiveH = outH;
-  const c = document.createElement('canvas');
-  c.width = outW; c.height = outH;
-  const ic = c.getContext('2d');
-  ic.save();
-  ic.translate(outW / 2, outH / 2);
-  ic.rotate(state.rotation * Math.PI / 180);
-  ic.scale(state.flipH ? -1 : 1, state.flipV ? -1 : 1);
-  ic.drawImage(state.sourceImage, -srcW / 2, -srcH / 2);
-  ic.restore();
-  state.transformedSource = c;
-}
-
+/* ===== Layout ===== */
 function recomputeLayout() {
-  const cw = wrap.clientWidth;
-  const ch = wrap.clientHeight;
-  if (cw <= 0 || ch <= 0) return;
   if (!state.loaded) {
-    canvas.classList.remove('shown');
+    previewStack.classList.remove('shown');
     return;
   }
-  // Fit effective image dims into wrap
-  const r = state.effectiveW / state.effectiveH;
+  const cw = wrap.clientWidth, ch = wrap.clientHeight;
+  if (cw <= 0 || ch <= 0) return;
+  const isRot90 = state.rotation === 90 || state.rotation === 270;
+  const effW = isRot90 ? state.naturalH : state.naturalW;
+  const effH = isRot90 ? state.naturalW : state.naturalH;
+  const r = effW / effH;
   let dw = cw, dh = cw / r;
   if (dh > ch) { dh = ch; dw = ch * r; }
+
   state.canvasW = dw;
   state.canvasH = dh;
+
+  previewStack.classList.add('shown');
+  previewStack.style.width = dw + 'px';
+  previewStack.style.height = dh + 'px';
+
+  // img element pre-rotation dimensions (for the CSS rotate to land in the box)
+  let preW, preH;
+  if (isRot90) { preW = dh; preH = dw; }
+  else { preW = dw; preH = dh; }
+  previewImg.style.width = preW + 'px';
+  previewImg.style.height = preH + 'px';
+  previewImg.style.left = '50%';
+  previewImg.style.top = '50%';
+  updatePreviewTransform();
+
   const dpr = window.devicePixelRatio || 1;
-  canvas.style.width = dw + 'px';
-  canvas.style.height = dh + 'px';
   canvas.width = Math.floor(dw * dpr);
   canvas.height = Math.floor(dh * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  canvas.classList.add('shown');
+
   recalculateFrame();
   draw();
   updateDimLine();
+}
+
+function updatePreviewTransform() {
+  if (!state.loaded) return;
+  const sx = state.flipH ? -1 : 1;
+  const sy = state.flipV ? -1 : 1;
+  previewImg.style.transform =
+    `translate(-50%, -50%) rotate(${state.rotation}deg) scale(${sx}, ${sy})`;
+  previewImg.style.filter = state.brightness > 0
+    ? `brightness(${1 + state.brightness * BRIGHTNESS_STEP})`
+    : '';
 }
 
 function getEffectiveRatio() {
@@ -767,23 +815,14 @@ function recalculateFrame() {
   state.frameY = (state.canvasH - fh) / 2;
 }
 
-/* ===== Draw ===== */
+/* ===== Draw overlay (mask + frame + handle) ===== */
 function draw() {
   if (!state.canvasW || !state.canvasH) return;
   ctx.clearRect(0, 0, state.canvasW, state.canvasH);
-  if (!state.loaded) return;
-
-  // Source with brightness filter
-  if (state.brightness > 0) {
-    ctx.filter = `brightness(${1 + state.brightness * BRIGHTNESS_STEP})`;
-  }
-  ctx.drawImage(state.transformedSource, 0, 0, state.canvasW, state.canvasH);
-  ctx.filter = 'none';
-
-  if (!state.ratio) return;
+  if (!state.loaded || !state.ratio) return;
 
   // Dark mask outside frame
-  ctx.fillStyle = 'rgba(20,20,20,0.5)';
+  ctx.fillStyle = 'rgba(20,30,40,0.45)';
   if (state.frameY > 0) ctx.fillRect(0, 0, state.canvasW, state.frameY);
   const fB = state.frameY + state.frameH;
   if (fB < state.canvasH) ctx.fillRect(0, fB, state.canvasW, state.canvasH - fB);
@@ -813,7 +852,7 @@ function draw() {
     ctx.restore();
   }
 
-  // Resize handle at top-right
+  // Resize handle top-right
   const hx = state.frameX + state.frameW;
   const hy = state.frameY;
   ctx.fillStyle = 'rgba(0,0,0,0.18)';
@@ -839,14 +878,17 @@ function updateFileSize() {
 
 function updateDimLine() {
   if (!state.ratio || !state.loaded) {
-    dimLine.innerHTML = `<span class="label">全体</span>— × —`;
+    dimLine.textContent = '— × — px';
     return;
   }
-  const sx = state.effectiveW / state.canvasW;
-  const sy = state.effectiveH / state.canvasH;
+  const isRot90 = state.rotation === 90 || state.rotation === 270;
+  const effW = isRot90 ? state.naturalH : state.naturalW;
+  const effH = isRot90 ? state.naturalW : state.naturalH;
+  const sx = effW / state.canvasW;
+  const sy = effH / state.canvasH;
   const tw = Math.round(state.frameW * sx);
   const th = Math.round(state.frameH * sy);
-  dimLine.innerHTML = `<span class="label">全体</span>${tw} × ${th} <span class="px">px</span>`;
+  dimLine.textContent = `${tw} × ${th} px`;
 }
 
 function updateEmpty() {
@@ -872,7 +914,8 @@ function updateBrightnessGauge() {
   brightnessBtn.style.setProperty('--fill', fill + 'deg');
 }
 
-/* ===== File loading ===== */
+/* ===== File loading: GIFは img にそのまま渡してアニメ再生 =====
+   gifuct のデコードは「保存時のみ」遅延実行する。これで読み込みは常に成功する。 */
 fileInput.addEventListener('change', e => {
   const f = e.target.files[0];
   if (f) loadFile(f);
@@ -885,63 +928,53 @@ async function loadFile(file) {
   state.gifBuffer = null;
   state.gifDecoded = null;
   state.loaded = false;
-  // reset transforms on new file
   state.rotation = 0;
   state.flipH = false;
   state.flipV = false;
   state.brightness = 0;
   updateBrightnessGauge();
-
-  canvas.classList.remove('shown');
+  previewStack.classList.remove('shown');
   updateEmpty();
   updateFileSize();
 
+  if (state.fileUrl) URL.revokeObjectURL(state.fileUrl);
+  state.fileUrl = URL.createObjectURL(file);
+
+  // GIF の場合は保存時用に ArrayBuffer をバックグラウンド取得しておく
+  if (isGif) {
+    file.arrayBuffer().then(buf => { state.gifBuffer = buf; }).catch(()=>{});
+  }
+
   try {
-    if (isGif) {
-      state.gifBuffer = await file.arrayBuffer();
-      state.gifDecoded = decodeGif(state.gifBuffer);
-      // Use the first frame canvas directly as the source
-      state.sourceImage = state.gifDecoded.frames[0].canvas;
-      state.naturalW = state.sourceImage.width;
-      state.naturalH = state.sourceImage.height;
-    } else {
-      const url = URL.createObjectURL(file);
-      const img = await new Promise((res, rej) => {
-        const i = new Image();
-        i.onload = () => res(i);
-        i.onerror = rej;
-        i.src = url;
-      });
-      state.sourceImage = img;
-      state.naturalW = img.naturalWidth;
-      state.naturalH = img.naturalHeight;
-      // keep url alive for the lifetime of img
-    }
+    await new Promise((res, rej) => {
+      previewImg.onload = () => res();
+      previewImg.onerror = () => rej(new Error('load failed'));
+      previewImg.src = state.fileUrl;
+    });
+    state.naturalW = previewImg.naturalWidth;
+    state.naturalH = previewImg.naturalHeight;
     state.loaded = true;
-    rebuildTransform();
-    updateEmpty();
     updateFileSize();
+    updateEmpty();
     updateToolBtns();
     recomputeLayout();
     updateSaveBtn();
   } catch (err) {
     console.error(err);
-    alert('ファイルの読み込みに失敗しました: ' + err.message);
+    alert('画像を読み込めませんでした');
   }
 }
 
-/* ===== Pointer / drag / resize ===== */
+/* ===== Pointer interactions ===== */
 function localPos(e) {
   const r = canvas.getBoundingClientRect();
   return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
-
 function isOnHandle(x, y) {
   const hx = state.frameX + state.frameW;
   const hy = state.frameY;
   return Math.hypot(x - hx, y - hy) <= HANDLE_HIT_R;
 }
-
 function isInFrame(x, y) {
   return x >= state.frameX && x <= state.frameX + state.frameW &&
          y >= state.frameY && y <= state.frameY + state.frameH;
@@ -952,7 +985,6 @@ canvas.addEventListener('pointerdown', e => {
   const { x, y } = localPos(e);
   if (isOnHandle(x, y)) {
     state.resizing = true;
-    // anchor at bottom-left corner of frame
     state.resizeAnchorX = state.frameX;
     state.resizeAnchorY = state.frameY + state.frameH;
     canvas.style.cursor = 'nesw-resize';
@@ -965,7 +997,6 @@ canvas.addEventListener('pointerdown', e => {
     canvas.setPointerCapture(e.pointerId);
   }
 });
-
 canvas.addEventListener('pointermove', e => {
   const { x, y } = localPos(e);
   if (state.resizing) doResize(x, y);
@@ -974,7 +1005,6 @@ canvas.addEventListener('pointermove', e => {
     canvas.style.cursor = isOnHandle(x, y) ? 'nesw-resize' : (isInFrame(x, y) ? 'grab' : 'default');
   }
 });
-
 function doDrag(px, py) {
   let nx = px - state.dragOffX;
   let ny = py - state.dragOffY;
@@ -983,30 +1013,25 @@ function doDrag(px, py) {
   state.frameX = nx; state.frameY = ny;
   draw();
 }
-
 function doResize(px, py) {
   const aspect = getEffectiveRatio();
   const ax = state.resizeAnchorX;
   const ay = state.resizeAnchorY;
   let w = Math.max(MIN_FRAME, px - ax);
   let h = Math.max(MIN_FRAME, ay - py);
-  // aspect-lock: pick whichever axis demands the larger frame
   if (w / h > aspect) h = w / aspect;
   else w = h * aspect;
-  // constrain to canvas
   const maxW = state.canvasW - ax;
   const maxH = ay;
   if (w > maxW) { w = maxW; h = w / aspect; }
   if (h > maxH) { h = maxH; w = h * aspect; }
   if (w < MIN_FRAME) w = MIN_FRAME;
   if (h < MIN_FRAME) h = MIN_FRAME;
-  state.frameX = ax;
-  state.frameY = ay - h;
+  state.frameX = ax; state.frameY = ay - h;
   state.frameW = w; state.frameH = h;
   draw();
   updateDimLine();
 }
-
 function endInteraction() {
   if (state.dragging || state.resizing) {
     state.dragging = false; state.resizing = false;
@@ -1016,51 +1041,49 @@ function endInteraction() {
 canvas.addEventListener('pointerup', endInteraction);
 canvas.addEventListener('pointercancel', endInteraction);
 
-/* ===== Split inputs ===== */
-function readSplits() {
-  let w = parseInt(splitWInput.value, 10);
-  let h = parseInt(splitHInput.value, 10);
-  if (!Number.isFinite(w) || w < 1) w = 1;
-  if (!Number.isFinite(h) || h < 1) h = 1;
-  if (w > 50) w = 50;
-  if (h > 50) h = 50;
-  splitWInput.value = w;
-  splitHInput.value = h;
-  state.splitW = w; state.splitH = h;
-  recalculateFrame();
-  draw();
-  updateDimLine();
-  updateSaveBtn();
-}
-['input', 'change'].forEach(ev => {
-  splitWInput.addEventListener(ev, readSplits);
-  splitHInput.addEventListener(ev, readSplits);
+/* ===== Split arrows (▲▼) ===== */
+document.querySelectorAll('.arr').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const t = btn.dataset.target;
+    const d = parseInt(btn.dataset.delta, 10);
+    if (t === 'W') {
+      state.splitW = Math.max(1, Math.min(50, state.splitW + d));
+      splitWNum.textContent = state.splitW;
+    } else {
+      state.splitH = Math.max(1, Math.min(50, state.splitH + d));
+      splitHNum.textContent = state.splitH;
+    }
+    recalculateFrame();
+    draw();
+    updateDimLine();
+    updateSaveBtn();
+  });
 });
 
 /* ===== Image transform buttons ===== */
 flipHBtn.addEventListener('click', () => {
   state.flipH = !state.flipH;
-  rebuildTransform();
-  draw();
+  updatePreviewTransform();
 });
 flipVBtn.addEventListener('click', () => {
   state.flipV = !state.flipV;
-  rebuildTransform();
-  draw();
+  updatePreviewTransform();
 });
 rotateBtn.addEventListener('click', () => {
   state.rotation = (state.rotation + 90) % 360;
-  rebuildTransform();
   recomputeLayout();
 });
 brightnessBtn.addEventListener('click', () => {
   state.brightness = (state.brightness + 1) % (BRIGHTNESS_MAX + 1);
   updateBrightnessGauge();
-  draw();
+  updatePreviewTransform();
 });
 
-/* ===== GIF decode ===== */
+/* ===== GIF decode (gifuct-js) ===== */
 function decodeGif(arrayBuffer) {
+  if (typeof gifuct === 'undefined') {
+    throw new Error('GIFパーサーが利用できません');
+  }
   const parsed = gifuct.parseGIF(arrayBuffer);
   const raw = gifuct.decompressFrames(parsed, true);
   const W = parsed.lsd.width, H = parsed.lsd.height;
@@ -1088,18 +1111,10 @@ function decodeGif(arrayBuffer) {
   return { width: W, height: H, frames: out };
 }
 
-async function getGifWorkerUrl() {
-  if (state._gifWorkerUrl) return state._gifWorkerUrl;
-  const r = await fetch('https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js');
-  const t = await r.text();
-  state._gifWorkerUrl = URL.createObjectURL(new Blob([t], { type: 'application/javascript' }));
-  return state._gifWorkerUrl;
-}
-
-/* Transform a single frame canvas (apply rotation+flip) */
+/* ローカル gif.worker.js を直接参照(CORSや fetch 失敗を回避) */
 function transformFrameCanvas(srcCanvas) {
   const sw = srcCanvas.width, sh = srcCanvas.height;
-  const isRot90 = (state.rotation === 90 || state.rotation === 270);
+  const isRot90 = state.rotation === 90 || state.rotation === 270;
   const outW = isRot90 ? sh : sw;
   const outH = isRot90 ? sw : sh;
   const c = document.createElement('canvas');
@@ -1114,21 +1129,25 @@ function transformFrameCanvas(srcCanvas) {
   return c;
 }
 
-async function cropGifToBlob(decoded, sx, sy, sw, sh) {
+function cropGifToBlob(decoded, sx, sy, sw, sh) {
   const w = Math.max(1, Math.round(sw));
   const h = Math.max(1, Math.round(sh));
-  const workerUrl = await getGifWorkerUrl();
-  const brightnessFilter = state.brightness > 0
+  const brightness = state.brightness > 0
     ? `brightness(${1 + state.brightness * BRIGHTNESS_STEP})`
     : null;
   return new Promise((resolve, reject) => {
-    const gif = new GIF({ workers: 2, quality: 10, workerScript: workerUrl, width: w, height: h });
+    const gif = new GIF({
+      workers: 2,
+      quality: 10,
+      workerScript: GIF_WORKER_PATH,
+      width: w, height: h,
+    });
     for (const fr of decoded.frames) {
       const transformed = transformFrameCanvas(fr.canvas);
       const c = document.createElement('canvas');
       c.width = w; c.height = h;
       const cx = c.getContext('2d');
-      if (brightnessFilter) cx.filter = brightnessFilter;
+      if (brightness) cx.filter = brightness;
       cx.drawImage(transformed, sx, sy, sw, sh, 0, 0, w, h);
       gif.addFrame(c, { delay: fr.delay, copy: true });
     }
@@ -1157,10 +1176,13 @@ async function save() {
   const baseName = sanitize(state.ratio.name);
   saveBtn.disabled = true;
   const orig = saveBtn.innerHTML;
+
   try {
-    // Source pixel coordinates per cell, in effective (post-rotation) space
-    const sxR = state.effectiveW / state.canvasW;
-    const syR = state.effectiveH / state.canvasH;
+    const isRot90 = state.rotation === 90 || state.rotation === 270;
+    const effW = isRot90 ? state.naturalH : state.naturalW;
+    const effH = isRot90 ? state.naturalW : state.naturalH;
+    const sxR = effW / state.canvasW;
+    const syR = effH / state.canvasH;
     const cellW = state.frameW / state.splitW;
     const cellH = state.frameH / state.splitH;
     const cells = [];
@@ -1174,7 +1196,16 @@ async function save() {
         });
       }
     }
+
     if (isGif) {
+      if (!state.gifDecoded) {
+        saveBtn.innerHTML = 'GIF解析中…';
+        if (!state.gifBuffer) {
+          const r = await fetch(state.fileUrl);
+          state.gifBuffer = await r.arrayBuffer();
+        }
+        state.gifDecoded = decodeGif(state.gifBuffer);
+      }
       const blobs = [];
       for (let k = 0; k < cells.length; k++) {
         saveBtn.innerHTML = `書き出し ${k + 1}/${cells.length}`;
@@ -1192,17 +1223,25 @@ async function save() {
         download(zb, baseName + `_${state.splitW}x${state.splitH}.zip`);
       }
     } else {
-      const brightnessFilter = state.brightness > 0
-        ? `brightness(${1 + state.brightness * BRIGHTNESS_STEP})`
-        : null;
+      // Static: render source with transforms baked, then crop cells
+      const tw = effW, th = effH;
+      const sourceCanvas = document.createElement('canvas');
+      sourceCanvas.width = tw; sourceCanvas.height = th;
+      const scx = sourceCanvas.getContext('2d');
+      if (state.brightness > 0) scx.filter = `brightness(${1 + state.brightness * BRIGHTNESS_STEP})`;
+      scx.save();
+      scx.translate(tw / 2, th / 2);
+      scx.rotate(state.rotation * Math.PI / 180);
+      scx.scale(state.flipH ? -1 : 1, state.flipV ? -1 : 1);
+      scx.drawImage(previewImg, -state.naturalW / 2, -state.naturalH / 2);
+      scx.restore();
+
       const blobs = [];
       for (const c of cells) {
         const off = document.createElement('canvas');
         off.width = Math.max(1, Math.round(c.w));
         off.height = Math.max(1, Math.round(c.h));
-        const octx = off.getContext('2d');
-        if (brightnessFilter) octx.filter = brightnessFilter;
-        octx.drawImage(state.transformedSource, c.x, c.y, c.w, c.h, 0, 0, off.width, off.height);
+        off.getContext('2d').drawImage(sourceCanvas, c.x, c.y, c.w, c.h, 0, 0, off.width, off.height);
         const blob = await new Promise(res => off.toBlob(res, 'image/png'));
         blobs.push(blob);
       }

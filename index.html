@@ -1081,11 +1081,12 @@ brightnessBtn.addEventListener('click', () => {
 
 /* ===== GIF decode (gifuct-js) ===== */
 function decodeGif(arrayBuffer) {
-  if (typeof gifuct === 'undefined') {
-    throw new Error('GIFパーサーが利用できません');
-  }
-  const parsed = gifuct.parseGIF(arrayBuffer);
-  const raw = gifuct.decompressFrames(parsed, true);
+if (typeof parseGIF === 'undefined' || typeof decompressFrames === 'undefined') {
+  throw new Error('GIFパーサーが利用できません');
+}
+
+const parsed = parseGIF(arrayBuffer);
+const raw = decompressFrames(parsed, true);
   const W = parsed.lsd.width, H = parsed.lsd.height;
   const work = document.createElement('canvas');
   work.width = W; work.height = H;

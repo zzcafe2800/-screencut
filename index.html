@@ -1,275 +1,863 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>応募ページ</title>
-
+<title>aspect</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400;1,500&family=Noto+Sans+JP:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f4f1ea;
+  --bg-soft: #ede9df;
+  --fg: #1a1a1a;
+  --fg-muted: #7a766d;
+  --fg-faint: #b8b3a6;
+  --line: #d9d3c5;
+  --line-soft: #e6e1d4;
+  --serif: 'Cormorant Garamond', 'Noto Serif JP', serif;
+  --sans: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html, body { height: 100%; overflow: hidden; }
+
 body {
-  margin: 0;
-  font-family: sans-serif;
-  background: url("oubo.png") center/cover no-repeat;
-  height: 100vh;
-  color: white;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-weight: 300;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  display: grid;
+  grid-template-columns: 260px 1fr;
 }
 
-/* タイトル */
-.title-wrap {
-  position: absolute;
-  top: 0;
-  width: 100%;
-  text-align: center;
-  padding-top: 30px;
-  background: linear-gradient(rgba(0,0,0,0.6), transparent);
+/* Sidebar */
+aside {
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+  background: var(--bg);
 }
+aside::-webkit-scrollbar { width: 6px; }
+aside::-webkit-scrollbar-track { background: transparent; }
+aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
 
-.title {
-  font-size: clamp(22px, 5vw, 42px);
+.brand {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  padding: 36px 28px 24px;
+  line-height: 1;
 }
+.brand .dot { color: var(--fg-faint); }
 
-.sub {
-  position: absolute;
-  left: 10px;
-  bottom: 10px;
-  font-size: 12px;
-}
+.category { border-top: 1px solid var(--line-soft); }
+.category:last-child { border-bottom: 1px solid var(--line-soft); }
 
-/* 中央 */
-.center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-}
-
-.join-btn {
-  font-size: clamp(20px, 4vw, 28px);
-  border-bottom: 2px solid white;
+.category-header {
+  padding: 13px 28px;
   cursor: pointer;
-}
-
-/* モーダル */
-.modal {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  backdrop-filter: blur(8px);
-  display: none;
-  justify-content: center;
-  align-items: center;
-}
-
-.card {
-  width: min(90%, 600px);
-  background: white;
-  color: black;
-  border-radius: 12px;
-  padding: 20px;
-}
-
-/* ヘッダー */
-.card-header {
-  background: #d8f3ff;
-  margin: -20px -20px 10px -20px;
-  padding: 6px;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: color 0.2s, background 0.2s;
+  font-size: 12.5px;
+  font-weight: 400;
 }
+.category-header:hover { color: var(--fg-muted); }
+.category-header .arrow {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--fg-faint);
+  font-size: 14px;
+  transition: transform 0.25s ease;
+  display: inline-block;
+}
+.category.open .arrow { transform: rotate(90deg); }
 
-.users {
+.items { display: none; padding: 4px 0 14px; }
+.category.open .items { display: block; }
+
+.item {
+  padding: 7px 28px 7px 36px;
+  cursor: pointer;
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.user {
-  width: 60px;
-  text-align: center;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: baseline;
+  transition: color 0.15s, background 0.15s;
   position: relative;
 }
-
-.cat {
-  width: 50px;
-  height: 50px;
-  background: #eaf9ff;
-  border-radius: 50%;
-  margin: auto;
-}
-
-.name {
-  font-size: 10px;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.remove {
+.item:hover { background: var(--bg-soft); }
+.item.active::before {
+  content: '';
   position: absolute;
-  top: -5px;
-  right: -5px;
+  left: 24px; top: 50%;
+  width: 4px; height: 4px;
+  background: var(--fg);
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+.item.active { color: var(--fg); }
+
+.item-name {
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.item-note {
+  display: block;
+  font-size: 9.5px;
+  color: var(--fg-faint);
+  margin-top: 2px;
+  letter-spacing: 0;
+}
+.item-ratio {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--fg-faint);
+  font-size: 13px;
+  white-space: nowrap;
+  font-weight: 400;
+}
+.item.active .item-ratio { color: var(--fg-muted); }
+
+/* Main */
+main {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  min-width: 0;
+}
+
+header.info {
+  padding: 32px 44px 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 24px;
+}
+.ratio-label {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 400;
+  font-style: italic;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+.ratio-label .colon { margin: 0 6px; color: var(--fg-faint); font-style: normal; }
+.ratio-label .name {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 12px;
+  color: var(--fg-muted);
+  letter-spacing: 0.04em;
+  display: block;
+  margin-top: 6px;
+  font-weight: 400;
+}
+.size-hint {
+  font-size: 12px;
+  color: var(--fg-muted);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 15px;
+  text-align: right;
+}
+.size-hint .px { color: var(--fg-faint); font-size: 11px; margin-left: 3px; }
+
+.canvas-wrap {
+  position: relative;
+  margin: 20px 44px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+#canvas {
+  display: block;
+  touch-action: none;
+  cursor: grab;
+}
+#canvas.dragging { cursor: grabbing; }
+#canvas.empty { cursor: default; }
+
+.empty-msg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--fg-faint);
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 18px;
+  pointer-events: none;
+}
+.empty-msg.hidden { display: none; }
+.empty-msg .sub {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+footer.controls {
+  padding: 20px 44px 28px;
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  border-top: 1px solid var(--line-soft);
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  background: none;
+  border: 1px solid var(--fg);
+  color: var(--fg);
+  padding: 10px 22px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 0;
+}
+.btn:hover:not(:disabled) { background: var(--fg); color: var(--bg); }
+.btn:disabled {
+  border-color: var(--fg-faint);
+  color: var(--fg-faint);
+  cursor: not-allowed;
 }
 
-/* 入力 */
-.input-area {
+.split-controls {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  margin-left: auto;
+}
+.split-controls label {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--fg-muted);
+  letter-spacing: 0.06em;
+}
+.split-controls input {
+  width: 52px;
+  padding: 6px 4px;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 18px;
+  font-weight: 500;
   text-align: center;
-  margin-top: 10px;
+  color: var(--fg);
+  transition: border-color 0.2s;
 }
-
-input {
-  width: 80%;
-  padding: 8px;
+.split-controls input:focus {
+  outline: none;
+  border-bottom-color: var(--fg);
 }
-
-.submit {
-  margin-top: 10px;
-  color: #00a;
-  cursor: pointer;
+.split-controls input::-webkit-outer-spin-button,
+.split-controls input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
+.split-controls input[type=number] { -moz-appearance: textfield; }
 
-/* メッセージ */
-.success {
-  text-align: center;
-  color: #0077aa;
-  font-size: 14px;
-  margin-bottom: 10px;
+@media (max-width: 760px) {
+  body { grid-template-columns: 1fr; grid-template-rows: 220px 1fr; }
+  aside { border-right: none; border-bottom: 1px solid var(--line); }
+  .brand { padding: 18px 22px 14px; font-size: 24px; }
+  header.info { padding: 18px 22px 4px; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .size-hint { text-align: left; }
+  .canvas-wrap { margin: 14px 22px; }
+  footer.controls { padding: 16px 22px 22px; gap: 18px; }
+  .split-controls { margin-left: 0; gap: 18px; }
 }
 </style>
 </head>
-
 <body>
 
-<div class="title-wrap">
-  <div class="title">第１回コスプレイベント『天気の子』</div>
-</div>
+<aside>
+  <div class="brand">aspect<span class="dot">.</span></div>
+  <nav id="categories"></nav>
+</aside>
 
-<div class="sub">非公式</div>
-
-<div class="center">
-  <div>10日 21時</div>
-  <div class="join-btn" onclick="openModal()">参加する</div>
-</div>
-
-<div class="modal" id="modal">
-  <div class="card">
-
-    <div class="card-header">
-      <div>参加者</div>
-      <div onclick="closeModal()">✕</div>
+<main>
+  <header class="info">
+    <div class="ratio-label" id="ratioLabel">
+      <span id="ratioText">—<span class="colon">:</span>—</span>
+      <span class="name" id="ratioName">比率を選択してください</span>
     </div>
+    <div class="size-hint" id="sizeHint"></div>
+  </header>
 
-    <div id="success" class="success"></div>
-
-    <div class="users" id="users"></div>
-
-    <div class="input-area" id="inputArea">
-      <input id="name" placeholder="名前">
-      <div class="submit" onclick="join()">参加予定</div>
+  <div class="canvas-wrap" id="canvasWrap">
+    <canvas id="canvas" class="empty"></canvas>
+    <div class="empty-msg" id="emptyMsg">
+      <span>no image</span>
+      <span class="sub">左から比率を選び、画像を読み込んでください</span>
     </div>
-
   </div>
-</div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
-import {
-  getFirestore, collection, addDoc,
-  onSnapshot, deleteDoc, doc, getDocs
-} from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+  <footer class="controls">
+    <input type="file" id="file" accept="image/*" hidden>
+    <label for="file" class="btn">画像</label>
+    <button id="save" class="btn" disabled>保存 zip</button>
+    <div class="split-controls">
+      <label>横 <input type="number" id="splitW" min="1" value="1"></label>
+      <label>縦 <input type="number" id="splitH" min="1" value="1"></label>
+    </div>
+  </footer>
+</main>
 
-const firebaseConfig = {
-  apiKey: "AIzaSy...",
-  authDomain: "oubo-b776a.firebaseapp.com",
-  projectId: "oubo-b776a"
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+/* ===== Data ===== */
+const CATEGORIES = [
+  { name: '壁掛け家具', items: [
+    { name: '学校の黒板', w: 1729, h: 1136 },
+    { name: 'ホワイトボード', w: 1147, h: 828 },
+  ]},
+  { name: 'その他', items: [
+    { name: 'ネオン時計', w: 1, h: 1 },
+    { name: 'カレンダー', w: 50, h: 39 },
+  ]},
+  { name: 'キッチン', items: [
+    { name: '冷蔵ショーケース', w: 293, h: 126 },
+    { name: 'レコードプレーヤー', w: 1, h: 1 },
+  ]},
+  { name: 'PC', items: [
+    { name: 'ノートPC', w: 150, h: 101 },
+    { name: 'モニタ一体型PC', w: 262, h: 157 },
+    { name: 'スケルトンPC', w: 262, h: 247 },
+    { name: '28インチワイドモニタ', w: 733, h: 349 },
+    { name: '24インチモニタ', w: 521, h: 282 },
+  ]},
+  { name: 'スクリーン', items: [
+    { name: 'スマホ', w: 61, h: 133 },
+    { name: 'スマホスタンド A', w: 61, h: 136 },
+    { name: 'スマホスタンド B', w: 5, h: 11 },
+    { name: 'タブレットスタンド', w: 51, h: 55 },
+    { name: '液タブ', w: 459, h: 262 },
+    { name: 'ガラケー', w: 5, h: 7 },
+    { name: 'テレビ', w: 367, h: 253 },
+    { name: '壁掛けテレビL', w: 113, h: 78 },
+    { name: '壁掛けテレビL 16:9', w: 16, h: 9 },
+    { name: '壁掛けテレビ', w: 734, h: 507 },
+    { name: '壁掛けテレビ 16:9', w: 16, h: 9 },
+    { name: 'プロジェクタースクリーン', w: 2273, h: 1624 },
+    { name: 'プロジェクタースクリーン 16:9', w: 16, h: 9 },
+    { name: 'ブラウン管', w: 201, h: 152 },
+    { name: 'goghスマホスタンド', w: 59, h: 129 },
+  ]},
+  { name: 'ゲーム', items: [
+    { name: 'ゲーム機C', w: 81, h: 52, note: '※上画面のみ' },
+    { name: 'ゲーム機F', w: 12, h: 11 },
+  ]},
+  { name: '印刷物', items: [
+    { name: 'ポスターXL', w: 29, h: 41 },
+    { name: 'ポスターLL', w: 594, h: 841 },
+    { name: 'ポスターL', w: 539, h: 747 },
+    { name: 'ポスターM', w: 99, h: 70 },
+    { name: 'ポスターS', w: 500, h: 353 },
+    { name: 'ポスターSS', w: 313, h: 438 },
+    { name: 'ポスター枠XL', w: 403, h: 579 },
+    { name: 'ポスター枠LL', w: 562, h: 809 },
+    { name: 'ポスター枠L', w: 161, h: 232 },
+    { name: 'ポスター枠M', w: 194, h: 281 },
+    { name: 'ポスター枠S', w: 107, h: 156 },
+    { name: 'ポスター枠SS', w: 265, h: 388 },
+    { name: 'ポスター枠XL (立て掛け)', w: 71, h: 101 },
+    { name: 'ポスター枠LL (立て掛け)', w: 116, h: 163 },
+    { name: 'ポスター枠L (立て掛け)', w: 73, h: 102 },
+    { name: 'ポスター枠M (立て掛け)', w: 203, h: 286 },
+    { name: 'ポスター枠S (立て掛け)', w: 113, h: 160 },
+    { name: 'ポスター枠SS (立て掛け)', w: 283, h: 401 },
+    { name: 'スクロールポスター', w: 584, h: 841 },
+    { name: 'チラシ', w: 70, h: 99 },
+    { name: 'ポストカード', w: 37, h: 25 },
+    { name: '名刺', w: 55, h: 91 },
+    { name: '積みチラシ', w: 213, h: 301 },
+    { name: '大色紙スタンド', w: 242, h: 267 },
+    { name: '小色紙スタンド', w: 7, h: 8 },
+    { name: 'ミニ色紙スタンド', w: 120, h: 133 },
+    { name: '雑な貼り紙', w: 212, h: 299 },
+  ]},
+  { name: 'アート', items: [
+    { name: 'アート額LL', w: 255, h: 217 },
+    { name: 'アート額L', w: 195, h: 149 },
+    { name: 'アート額M', w: 222, h: 313 },
+    { name: 'アート額S', w: 22, h: 17 },
+    { name: 'アート額SS', w: 3, h: 4 },
+    { name: 'アート正方形額L', w: 1, h: 1 },
+    { name: 'アート正方形額M', w: 1, h: 1 },
+    { name: 'アート正方形額S', w: 1, h: 1 },
+    { name: '掛け軸', w: 275, h: 736 },
+    { name: 'キャンバスF30', w: 303, h: 242 },
+    { name: 'キャンバスF20', w: 121, h: 101 },
+    { name: 'キャンバスF10', w: 529, h: 455 },
+    { name: 'キャンバスF6', w: 409, h: 318 },
+    { name: 'キャンバスF4', w: 166, h: 121 },
+    { name: 'キャンバスF30 (立て掛け)', w: 727, h: 896 },
+    { name: 'キャンバスF20 (立て掛け)', w: 606, h: 715 },
+    { name: 'キャンバスF10 (立て掛け)', w: 455, h: 521 },
+    { name: 'キャンバスF6 (立て掛け)', w: 318, h: 403 },
+    { name: 'キャンバスF4 (立て掛け)', w: 242, h: 327 },
+    { name: 'イーゼルL', w: 363, h: 445 },
+    { name: 'イーゼルM', w: 227, h: 259 },
+    { name: 'イーゼルS', w: 140, h: 177 },
+    { name: '額入り賞状', w: 391, h: 273 },
+    { name: 'アート装飾額LL', w: 29, h: 34 },
+    { name: 'アート装飾額L', w: 149, h: 195 },
+    { name: 'アート装飾額M', w: 37, h: 52 },
+    { name: 'アート装飾額S', w: 22, h: 17 },
+    { name: 'アート装飾額SS', w: 119, h: 160 },
+  ]},
+  { name: 'メディア', items: [
+    { name: '音楽CD平・立', w: 131, h: 124 },
+    { name: '積み音楽CD', w: 131, h: 124 },
+    { name: '紙ジャケCD・平', w: 1, h: 1 },
+    { name: '紙ジャケCD・立', w: 128, h: 127 },
+    { name: 'レコード・平', w: 1, h: 1 },
+    { name: 'レコード・立', w: 315, h: 313 },
+    { name: 'PCソフト', w: 187, h: 291 },
+    { name: 'PCソフト・立', w: 1, h: 1 },
+    { name: 'ゲームソフト・平', w: 102, h: 163 },
+    { name: 'ゲームソフト・立', w: 102, h: 163 },
+    { name: '積みゲームソフト', w: 103, h: 164 },
+  ]},
+  { name: 'フォト', items: [
+    { name: 'L判スナップ', w: 89, h: 127 },
+    { name: '2L判スナップ', w: 42, h: 59 },
+    { name: 'ポラロイド', w: 77, h: 78 },
+    { name: 'フォトフレーム', w: 89, h: 125 },
+    { name: '写真立て・横', w: 60, h: 37 },
+    { name: '写真立て・縦', w: 77, h: 115 },
+    { name: '透明フォトフレーム', w: 44, h: 63 },
+    { name: '透明写真立て・横', w: 127, h: 87 },
+    { name: '透明写真立て・縦', w: 89, h: 125 },
+    { name: 'お花フォトフレーム', w: 127, h: 178 },
+    { name: 'お花写真立て・横', w: 178, h: 125 },
+    { name: 'お花写真立て・縦', w: 127, h: 175 },
+    { name: '三角写真立て', w: 57, h: 82 },
+  ]},
+  { name: '本', items: [
+    { name: '文庫・平', w: 51, h: 74 },
+    { name: '文庫・立', w: 34, h: 49 },
+    { name: '積み文庫', w: 80, h: 103 },
+    { name: '単行本・平', w: 121, h: 188 },
+    { name: '単行本・立', w: 121, h: 184 },
+    { name: '洋書・平', w: 124, h: 187 },
+    { name: '洋書・立', w: 124, h: 187 },
+    { name: '積み洋書', w: 124, h: 187 },
+    { name: '文庫版マンガ・平', w: 51, h: 74 },
+    { name: '文庫版マンガ・立', w: 34, h: 49 },
+    { name: '少年少女マンガ・平', w: 125, h: 182 },
+    { name: '少年少女マンガ・立', w: 122, h: 181 },
+    { name: '積み少年少女マンガ', w: 123, h: 182 },
+    { name: '青年マンガ・平', w: 51, h: 74 },
+    { name: '青年マンガ・立', w: 144, h: 209 },
+    { name: 'A5版マンガ・平', w: 70, h: 109 },
+    { name: 'A5版マンガ・立', w: 20, h: 31 },
+    { name: 'B5版マンガ・平', w: 179, h: 257 },
+    { name: 'B5版マンガ・立', w: 179, h: 256 },
+  ]},
+  { name: 'グッズ', items: [
+    { name: '透明スタンドL', w: 21, h: 43 },
+    { name: '透明スタンドM', w: 43, h: 89 },
+    { name: '透明スタンドS', w: 25, h: 52 },
+    { name: 'キーホルダーL', w: 1, h: 1 },
+    { name: 'キーホルダーS', w: 1, h: 1 },
+    { name: 'コースター', w: 1, h: 1 },
+    { name: '缶バッジL', w: 1, h: 1 },
+    { name: '缶バッジM', w: 1, h: 1 },
+    { name: '缶バッジ立て', w: 38, h: 33, note: '※同じ画像が6個になるだけ。個別反映は不可' },
+    { name: 'いぬぬい', w: 215, h: 187 },
+    { name: 'ねこぬい', w: 215, h: 187 },
+    { name: 'うさぬい', w: 215, h: 187 },
+    { name: 'ねずぬい', w: 215, h: 187 },
+    { name: 'フィギュア箱M', w: 34, h: 41, note: '※上下かなり隠れる' },
+    { name: 'カプセルマシーン', w: 171, h: 188 },
+    { name: 'マフラータオル', w: 1099, h: 239 },
+    { name: 'クリアポーチ', w: 23, h: 32, note: '※表面に貼り付けたような感じになる' },
+    { name: '飾り皿', w: 441, h: 436 },
+  ]},
+  { name: '文房具', items: [
+    { name: '張り紙', w: 87, h: 154 },
+  ]},
+  { name: 'スポーツ', items: [
+    { name: 'バスケゴール', w: 331, h: 206 },
+    { name: 'スケートボード', w: 21243, h: 82330 },
+  ]},
+  { name: 'ドリンク', items: [
+    { name: '350ml缶', w: 66, h: 113, note: '※ラベル位置がズレている' },
+    { name: '500ml缶', w: 66, h: 157, note: '※ラベル位置がズレている' },
+    { name: 'PETボトル', w: 1, h: 1 },
+    { name: 'サイダー瓶', w: 47, h: 91 },
+    { name: '瓶ビール', w: 61, h: 91 },
+    { name: 'ワインボトル', w: 74, h: 81 },
+    { name: 'シャンパンボトル', w: 85, h: 64 },
+    { name: '日本酒四合瓶', w: 5, h: 8 },
+    { name: '日本酒一升瓶', w: 5, h: 8 },
+    { name: 'ウィスキーボトル', w: 55, h: 41 },
+  ]},
+];
+
+/* ===== State ===== */
+const state = {
+  ratio: null,       // {name, w, h, note}
+  image: null,
+  splitW: 1,
+  splitH: 1,
+  canvasW: 0, canvasH: 0,
+  imgX: 0, imgY: 0, imgW: 0, imgH: 0,
+  frameX: 0, frameY: 0, frameW: 0, frameH: 0,
+  dragging: false,
+  dragOffX: 0, dragOffY: 0,
+  activeItemEl: null,
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const ref = collection(db, "participants");
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const wrap = document.getElementById('canvasWrap');
+const emptyMsg = document.getElementById('emptyMsg');
+const ratioText = document.getElementById('ratioText');
+const ratioName = document.getElementById('ratioName');
+const sizeHint = document.getElementById('sizeHint');
+const saveBtn = document.getElementById('save');
+const fileInput = document.getElementById('file');
+const splitWInput = document.getElementById('splitW');
+const splitHInput = document.getElementById('splitH');
 
-let myId = localStorage.getItem("myId");
-
-/* モーダル */
-window.openModal = () => {
-  document.getElementById("modal").style.display = "flex";
-};
-
-window.closeModal = () => {
-  document.getElementById("modal").style.display = "none";
-};
-
-/* 参加 */
-window.join = async () => {
-  const name = document.getElementById("name").value.trim();
-  if (!name) return alert("名前を入れてください");
-
-  const snapshot = await getDocs(ref);
-
-  if (snapshot.size >= 16) {
-    alert("定員です（最大16人）");
-    return;
-  }
-
-  for (const d of snapshot.docs) {
-    if (d.data().name === name) {
-      alert("同じ名前は使えません");
-      return;
-    }
-  }
-
-  const docRef = await addDoc(ref, { name });
-  myId = docRef.id;
-  localStorage.setItem("myId", myId);
-
-  showSuccess();
-};
-
-/* 削除 */
-window.removeMe = async () => {
-  if (!myId) return;
-  await deleteDoc(doc(db, "participants", myId));
-  localStorage.removeItem("myId");
-  myId = null;
-  document.getElementById("success").innerText = "";
-  document.getElementById("inputArea").style.display = "block";
-};
-
-/* 成功UI */
-function showSuccess() {
-  document.getElementById("success").innerText =
-    "参加予定になりました\nコスプレアバターの準備をお願いします【任意】";
-  document.getElementById("inputArea").style.display = "none";
+/* ===== Sidebar ===== */
+function renderSidebar() {
+  const root = document.getElementById('categories');
+  CATEGORIES.forEach((cat, ci) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'category';
+    const header = document.createElement('div');
+    header.className = 'category-header';
+    header.innerHTML = `<span>${cat.name}</span><span class="arrow">›</span>`;
+    header.addEventListener('click', () => wrap.classList.toggle('open'));
+    const items = document.createElement('div');
+    items.className = 'items';
+    cat.items.forEach(it => {
+      const el = document.createElement('div');
+      el.className = 'item';
+      el.innerHTML = `
+        <div class="item-name">${it.name}${it.note ? `<span class="item-note">${it.note}</span>` : ''}</div>
+        <div class="item-ratio">${it.w} : ${it.h}</div>
+      `;
+      el.addEventListener('click', () => selectItem(it, el));
+      items.appendChild(el);
+    });
+    wrap.appendChild(header);
+    wrap.appendChild(items);
+    root.appendChild(wrap);
+  });
 }
 
-/* 表示 */
-onSnapshot(ref, (snap) => {
-  const users = document.getElementById("users");
-  users.innerHTML = "";
+function selectItem(item, el) {
+  state.ratio = item;
+  if (state.activeItemEl) state.activeItemEl.classList.remove('active');
+  el.classList.add('active');
+  state.activeItemEl = el;
 
-  let foundMe = false;
+  ratioText.innerHTML = `${item.w}<span class="colon">:</span>${item.h}`;
+  ratioName.textContent = item.name;
+  recalculateFrame();
+  draw();
+  updateSizeHint();
+  updateSaveBtn();
+}
 
-  snap.forEach((d) => {
-    const data = d.data();
+/* ===== Layout ===== */
+function resizeCanvas() {
+  const cw = wrap.clientWidth;
+  const ch = wrap.clientHeight;
+  if (cw <= 0 || ch <= 0) return;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = cw + 'px';
+  canvas.style.height = ch + 'px';
+  canvas.width = Math.floor(cw * dpr);
+  canvas.height = Math.floor(ch * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  state.canvasW = cw;
+  state.canvasH = ch;
+  recalculateImageLayout();
+  recalculateFrame();
+  draw();
+  updateSizeHint();
+}
 
-    if (d.id === myId) foundMe = true;
+function recalculateImageLayout() {
+  if (!state.image) return;
+  const cw = state.canvasW;
+  const ch = state.canvasH;
+  const r = state.image.naturalWidth / state.image.naturalHeight;
+  let dw = cw, dh = cw / r;
+  if (dh > ch) { dh = ch; dw = ch * r; }
+  state.imgW = dw; state.imgH = dh;
+  state.imgX = (cw - dw) / 2;
+  state.imgY = (ch - dh) / 2;
+}
 
-    const el = document.createElement("div");
-    el.className = "user";
+function getEffectiveRatio() {
+  if (!state.ratio) return 1;
+  return (state.ratio.w * state.splitW) / (state.ratio.h * state.splitH);
+}
 
-    el.innerHTML = `
-      ${d.id === myId ? `<div class="remove" onclick="removeMe()">×</div>` : ""}
-      <div class="cat"></div>
-      <div class="name">${data.name}</div>
-    `;
+function recalculateFrame() {
+  if (!state.image || !state.ratio) return;
+  const target = getEffectiveRatio();
+  // Try max width
+  let fw = state.imgW;
+  let fh = fw / target;
+  if (fh > state.imgH) { fh = state.imgH; fw = fh * target; }
+  state.frameW = fw;
+  state.frameH = fh;
+  state.frameX = state.imgX + (state.imgW - fw) / 2;
+  state.frameY = state.imgY + (state.imgH - fh) / 2;
+}
 
-    users.appendChild(el);
-  });
+/* ===== Drawing ===== */
+function draw() {
+  ctx.clearRect(0, 0, state.canvasW, state.canvasH);
+  if (!state.image) return;
 
-  if (foundMe) showSuccess();
+  ctx.drawImage(state.image, state.imgX, state.imgY, state.imgW, state.imgH);
+
+  if (!state.ratio) return;
+
+  // Dark mask outside frame, only over image area
+  ctx.fillStyle = 'rgba(20, 20, 20, 0.5)';
+  // top band
+  if (state.frameY > state.imgY)
+    ctx.fillRect(state.imgX, state.imgY, state.imgW, state.frameY - state.imgY);
+  // bottom band
+  const fBottom = state.frameY + state.frameH;
+  const iBottom = state.imgY + state.imgH;
+  if (fBottom < iBottom)
+    ctx.fillRect(state.imgX, fBottom, state.imgW, iBottom - fBottom);
+  // left
+  if (state.frameX > state.imgX)
+    ctx.fillRect(state.imgX, state.frameY, state.frameX - state.imgX, state.frameH);
+  // right
+  const fRight = state.frameX + state.frameW;
+  const iRight = state.imgX + state.imgW;
+  if (fRight < iRight)
+    ctx.fillRect(fRight, state.frameY, iRight - fRight, state.frameH);
+
+  // Frame border
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(state.frameX + 0.5, state.frameY + 0.5, state.frameW - 1, state.frameH - 1);
+
+  // Split dotted lines
+  if (state.splitW > 1 || state.splitH > 1) {
+    ctx.save();
+    ctx.setLineDash([4, 4]);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < state.splitW; i++) {
+      const x = state.frameX + (state.frameW * i) / state.splitW;
+      ctx.beginPath();
+      ctx.moveTo(x + 0.5, state.frameY);
+      ctx.lineTo(x + 0.5, state.frameY + state.frameH);
+      ctx.stroke();
+    }
+    for (let j = 1; j < state.splitH; j++) {
+      const y = state.frameY + (state.frameH * j) / state.splitH;
+      ctx.beginPath();
+      ctx.moveTo(state.frameX, y + 0.5);
+      ctx.lineTo(state.frameX + state.frameW, y + 0.5);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
+function updateSizeHint() {
+  if (!state.ratio) { sizeHint.textContent = ''; return; }
+  if (state.image) {
+    const sx = state.image.naturalWidth / state.imgW;
+    const sy = state.image.naturalHeight / state.imgH;
+    const cellW = Math.round((state.frameW / state.splitW) * sx);
+    const cellH = Math.round((state.frameH / state.splitH) * sy);
+    const totalW = Math.round(state.frameW * sx);
+    const totalH = Math.round(state.frameH * sy);
+    sizeHint.innerHTML = `1セル ${cellW} × ${cellH} <span class="px">px</span> ／ 全体 ${totalW} × ${totalH} <span class="px">px</span>`;
+  } else {
+    sizeHint.innerHTML = `${state.ratio.w} : ${state.ratio.h}`;
+  }
+}
+
+function updateEmpty() {
+  if (state.image) {
+    emptyMsg.classList.add('hidden');
+    canvas.classList.remove('empty');
+  } else {
+    emptyMsg.classList.remove('hidden');
+    canvas.classList.add('empty');
+  }
+}
+
+function updateSaveBtn() {
+  saveBtn.disabled = !(state.image && state.ratio);
+}
+
+/* ===== Image loading ===== */
+fileInput.addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      state.image = img;
+      recalculateImageLayout();
+      recalculateFrame();
+      updateEmpty();
+      draw();
+      updateSizeHint();
+      updateSaveBtn();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(f);
 });
-</script>
 
+/* ===== Drag ===== */
+function localPos(e) {
+  const r = canvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  if (!state.image || !state.ratio) return;
+  const { x, y } = localPos(e);
+  if (x >= state.frameX && x <= state.frameX + state.frameW &&
+      y >= state.frameY && y <= state.frameY + state.frameH) {
+    state.dragging = true;
+    state.dragOffX = x - state.frameX;
+    state.dragOffY = y - state.frameY;
+    canvas.classList.add('dragging');
+    canvas.setPointerCapture(e.pointerId);
+  }
+});
+canvas.addEventListener('pointermove', (e) => {
+  if (!state.dragging) return;
+  const { x, y } = localPos(e);
+  let nx = x - state.dragOffX;
+  let ny = y - state.dragOffY;
+  nx = Math.max(state.imgX, Math.min(state.imgX + state.imgW - state.frameW, nx));
+  ny = Math.max(state.imgY, Math.min(state.imgY + state.imgH - state.frameH, ny));
+  state.frameX = nx;
+  state.frameY = ny;
+  draw();
+});
+function endDrag() {
+  if (!state.dragging) return;
+  state.dragging = false;
+  canvas.classList.remove('dragging');
+}
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+
+/* ===== Split inputs ===== */
+function readSplits() {
+  let w = parseInt(splitWInput.value, 10);
+  let h = parseInt(splitHInput.value, 10);
+  if (!Number.isFinite(w) || w < 1) w = 1;
+  if (!Number.isFinite(h) || h < 1) h = 1;
+  if (w > 50) w = 50;
+  if (h > 50) h = 50;
+  splitWInput.value = w;
+  splitHInput.value = h;
+  state.splitW = w;
+  state.splitH = h;
+  recalculateFrame();
+  draw();
+  updateSizeHint();
+}
+splitWInput.addEventListener('input', readSplits);
+splitHInput.addEventListener('input', readSplits);
+splitWInput.addEventListener('change', readSplits);
+splitHInput.addEventListener('change', readSplits);
+
+/* ===== Save ===== */
+function sanitize(name) {
+  return name.replace(/[\/\\?%*:|"<>]/g, '_').trim() || 'aspect';
+}
+
+saveBtn.addEventListener('click', async () => {
+  if (!state.image || !state.ratio) return;
+  saveBtn.disabled = true;
+  const original = saveBtn.textContent;
+  saveBtn.textContent = '書き出し中…';
+  try {
+    const zip = new JSZip();
+    const total = state.splitW * state.splitH;
+    const padLen = Math.max(2, String(total).length);
+
+    const sx = state.image.naturalWidth / state.imgW;
+    const sy = state.image.naturalHeight / state.imgH;
+    const cellDispW = state.frameW / state.splitW;
+    const cellDispH = state.frameH / state.splitH;
+
+    let idx = 1;
+    for (let j = 0; j < state.splitH; j++) {
+      for (let i = 0; i < state.splitW; i++) {
+        const srcX = (state.frameX + i * cellDispW - state.imgX) * sx;
+        const srcY = (state.frameY + j * cellDispH - state.imgY) * sy;
+        const srcW = cellDispW * sx;
+        const srcH = cellDispH * sy;
+        const off = document.createElement('canvas');
+        off.width = Math.max(1, Math.round(srcW));
+        off.height = Math.max(1, Math.round(srcH));
+        const octx = off.getContext('2d');
+        octx.drawImage(state.image, srcX, srcY, srcW, srcH, 0, 0, off.width, off.height);
+        const blob = await new Promise(res => off.toBlob(res, 'image/png'));
+        zip.file(String(idx).padStart(padLen, '0') + '.png', blob);
+        idx++;
+      }
+    }
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const filename = sanitize(state.ratio.name) + `_${state.splitW}x${state.splitH}.zip`;
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  } finally {
+    saveBtn.textContent = original;
+    updateSaveBtn();
+  }
+});
+
+/* ===== Init ===== */
+renderSidebar();
+window.addEventListener('resize', resizeCanvas);
+new ResizeObserver(resizeCanvas).observe(wrap);
+resizeCanvas();
+updateEmpty();
+</script>
 </body>
 </html>

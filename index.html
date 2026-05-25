@@ -360,6 +360,8 @@ footer.controls {
   <footer class="controls">
     <input type="file" id="file" accept="image/*,.gif" hidden>
     <label for="file" class="btn">画像 / GIF</label>
+    <input type="file" id="videoFile" accept="video/*" hidden>
+    <label for="videoFile" class="btn">動画→GIF</label>
     <button id="save" class="btn" disabled>保存</button>
     <div class="splits">
       <div class="split-field">
@@ -1647,11 +1649,6 @@ function selectItem(item, el) {
   updateSaveBtn();
 }
 
-
-
-
-
-  
 /* ===== Decode GIF to frame array using omggif ===== */
 function decodeGifToFrames(arrayBuffer) {
   const bytes = new Uint8Array(arrayBuffer);
@@ -1659,53 +1656,40 @@ function decodeGifToFrames(arrayBuffer) {
   const W = reader.width;
   const H = reader.height;
   const numFrames = reader.numFrames();
-
   const composite = document.createElement('canvas');
   composite.width = W;
   composite.height = H;
-
   const cctx = composite.getContext('2d');
-
   // Fill background with transparent
   cctx.clearRect(0, 0, W, H);
-
   const out = [];
   let prev = null;
-
   for (let i = 0; i < numFrames; i++) {
     const info = reader.frameInfo(i);
-
     // Save before drawing if disposal=3 (revert)
     if (info.disposal === 3) {
       prev = cctx.getImageData(0, 0, W, H);
     }
-
     // IMPORTANT:
     // decodeAndBlitFrameRGBA() expects a full logical-screen-size buffer,
     // not only the sub-frame size.
     const px = new Uint8ClampedArray(W * H * 4);
     reader.decodeAndBlitFrameRGBA(i, px);
-
     const imgData = new ImageData(px, W, H);
-
     const patch = document.createElement('canvas');
     patch.width = W;
     patch.height = H;
     patch.getContext('2d').putImageData(imgData, 0, 0);
-
     cctx.drawImage(patch, 0, 0);
-
     // Snapshot composited frame
     const snap = document.createElement('canvas');
     snap.width = W;
     snap.height = H;
     snap.getContext('2d').drawImage(composite, 0, 0);
-
     out.push({
       canvas: snap,
       delay: Math.max(20, (info.delay || 10) * 10)
     });
-
     // Apply disposal
     if (info.disposal === 2) {
       cctx.clearRect(info.x, info.y, info.width, info.height);
@@ -1713,19 +1697,106 @@ function decodeGifToFrames(arrayBuffer) {
       cctx.putImageData(prev, 0, 0);
     }
   }
-
   return { width: W, height: H, frames: out };
 }
 
-
-  
-
-
-  
 /* ===== Load file ===== */
 fileInput.addEventListener('change', e => {
   const f = e.target.files[0];
   if (f) loadFile(f);
+});
+
+/* ===== Video → GIF ===== */
+const videoInput = document.getElementById('videoFile');
+
+async function decodeVideoToFrames(file, onProgress) {
+  const video = document.createElement('video');
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = 'auto';
+  const url = URL.createObjectURL(file);
+  video.src = url;
+  try {
+    await new Promise((resolve, reject) => {
+      video.onloadedmetadata = () => resolve();
+      video.onerror = () => reject(new Error('動画を読み込めません'));
+    });
+    const W = video.videoWidth;
+    const H = video.videoHeight;
+    const duration = video.duration;
+    if (!W || !H || !isFinite(duration) || duration <= 0) {
+      throw new Error('動画のサイズが取得できません');
+    }
+    // Sampling: 10 FPS, max 60 frames (= up to 6s); for longer videos, lower FPS
+    const targetFPS = 10;
+    const maxFrames = 60;
+    let frameCount = Math.max(1, Math.min(maxFrames, Math.round(duration * targetFPS)));
+    const stepSec = duration / frameCount;
+    const frameDelayMs = Math.max(20, Math.round(stepSec * 1000));
+    const frames = [];
+    for (let i = 0; i < frameCount; i++) {
+      const t = Math.min(duration - 0.001, (i + 0.5) * stepSec);
+      await new Promise((resolve, reject) => {
+        const onSeeked = () => { video.removeEventListener('seeked', onSeeked); resolve(); };
+        const onErr = () => { video.removeEventListener('error', onErr); reject(new Error('seek失敗')); };
+        video.addEventListener('seeked', onSeeked);
+        video.addEventListener('error', onErr);
+        video.currentTime = t;
+      });
+      // tiny extra wait so the painted frame is up to date in some browsers
+      await new Promise(r => setTimeout(r, 0));
+      const snap = document.createElement('canvas');
+      snap.width = W;
+      snap.height = H;
+      snap.getContext('2d').drawImage(video, 0, 0);
+      frames.push({ canvas: snap, delay: frameDelayMs });
+      if (onProgress) onProgress(i + 1, frameCount);
+    }
+    return { width: W, height: H, frames };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+videoInput.addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  e.target.value = '';  // allow re-selection of same file
+  state.fileType = 'gif';  // animated → behaves like GIF afterwards
+  state.fileSize = f.size;
+  state.loaded = false;
+  state.rotation = 0;
+  state.flipH = false;
+  state.flipV = false;
+  state.brightness = 0;
+  state.currentFrame = 0;
+  state.frames = [];
+  stopAnimation();
+  updateBrightnessGauge();
+  canvas.classList.remove('shown');
+  updateEmpty();
+  updateFileSize();
+  updateFramesInfo();
+  try {
+    const decoded = await decodeVideoToFrames(f, (cur, total) => {
+      saveBtn.innerHTML = `読み込み ${cur}/${total}`;
+    });
+    state.naturalW = decoded.width;
+    state.naturalH = decoded.height;
+    state.frames = decoded.frames;
+    state.loaded = true;
+    updateFileSize();
+    updateFramesInfo();
+    updateEmpty();
+    updateToolBtns();
+    recomputeLayout();
+    updateSaveBtn();
+    if (state.frames.length > 1) startAnimation();
+  } catch (err) {
+    console.error(err);
+    alert('動画を読み込めませんでした: ' + err.message);
+    updateSaveBtn();
+  }
 });
 
 async function loadFile(file) {
@@ -1949,8 +2020,14 @@ function updateSaveBtn() {
   saveBtn.disabled = !enabled;
   if (!enabled) { saveBtn.innerHTML = '保存'; return; }
   const total = state.splitW * state.splitH;
-  const fmt = total === 1 ? (state.fileType === 'gif' ? 'gif' : 'png') : 'zip';
-  saveBtn.innerHTML = `保存<span class="fmt">${fmt}</span>`;
+  let fmt;
+  if (total === 1) {
+    fmt = state.fileType === 'gif' ? 'gif' : 'png';
+  } else {
+    // Multi-cell: folder save (Chrome等) or zip fallback
+    fmt = window.showDirectoryPicker ? '' : 'zip';
+  }
+  saveBtn.innerHTML = fmt ? `保存<span class="fmt">${fmt}</span>` : '保存';
 }
 function updateToolBtns() {
   const en = state.loaded;
@@ -2087,6 +2164,81 @@ function transformFrameToCanvas(srcCanvas) {
   return c;
 }
 
+/* ===== Sync GIF (タイミング合わせ用): 白フレーム + 最後だけ「今!!」 ===== */
+async function buildSyncGifBlob(framesData) {
+  // Same frame count and delays as the cell GIFs, so playback stays in sync.
+  // The text frame stays visible at the end. If frames are short, extend the
+  // text across multiple final frames so it doesn't just flash by.
+  const SYNC_W = 240;
+  const SYNC_H = 240;
+  const total = framesData.length;
+  const lastDelay = framesData[total - 1].delay;
+  const minVisibleMs = 500;  // text should be visible for ~0.5s
+  const imaCount = Math.max(1, Math.min(
+    Math.ceil(minVisibleMs / lastDelay),
+    Math.max(1, Math.floor(total / 2))
+  ));
+  const firstImaIdx = total - imaCount;
+
+  const syncFrames = [];
+  for (let i = 0; i < total; i++) {
+    const c = document.createElement('canvas');
+    c.width = SYNC_W;
+    c.height = SYNC_H;
+    const cx = c.getContext('2d');
+    cx.fillStyle = '#ffffff';
+    cx.fillRect(0, 0, SYNC_W, SYNC_H);
+    if (i >= firstImaIdx) {
+      cx.fillStyle = '#111';
+      cx.font = 'bold 96px "Hiragino Sans","Yu Gothic",sans-serif';
+      cx.textAlign = 'center';
+      cx.textBaseline = 'middle';
+      cx.fillText('今!!', SYNC_W / 2, SYNC_H / 2);
+    }
+    syncFrames.push({
+      rgba: cx.getImageData(0, 0, SYNC_W, SYNC_H).data,
+      delay: framesData[i].delay,
+    });
+  }
+  const bytes = await encodeAnimatedGIF(SYNC_W, SYNC_H, syncFrames);
+  return new Blob([bytes], { type: 'image/gif' });
+}
+
+/* ===== Direct folder save (Chrome/Edge/Opera). Returns true on success. ===== */
+async function saveFilesToDirectory(files, suggestedName) {
+  if (!window.showDirectoryPicker) return false;
+  let dirHandle;
+  try {
+    dirHandle = await window.showDirectoryPicker({
+      mode: 'readwrite',
+      id: 'aspect-output',
+      startIn: 'downloads',
+    });
+  } catch (err) {
+    if (err.name === 'AbortError') return true;  // user canceled — count as handled
+    return false;
+  }
+  try {
+    // Create a subfolder so multiple saves don't collide
+    let folder;
+    try {
+      folder = await dirHandle.getDirectoryHandle(suggestedName, { create: true });
+    } catch {
+      folder = dirHandle;
+    }
+    for (const f of files) {
+      const fileHandle = await folder.getFileHandle(f.name, { create: true });
+      const writable = await fileHandle.createWritable();
+      await writable.write(f.data);
+      await writable.close();
+    }
+    return true;
+  } catch (err) {
+    console.error('Directory save failed:', err);
+    return false;
+  }
+}
+
 /* ===== 統一処理: 1セル分の切り出し → PNG or GIF =====
    この関数ひとつで、画像なら PNG・GIFなら全フレーム再エンコードを行う。
    - transformedFrames が1枚なら PNG 出力
@@ -2184,19 +2336,35 @@ async function save() {
       saveBtn.innerHTML = `書き出し ${k + 1}/${cells.length}`;
     }
 
-    // 1セル → そのまま保存 / 2セル以上 → zip
+    // 1セル → そのまま保存 / 2セル以上 → フォルダ保存またはzip
     if (total === 1) {
       download(blobs[0], baseName + ext);
     } else {
-      saveBtn.innerHTML = 'zip 生成中…';
       const pad = Math.max(2, String(total).length);
       const files = [];
+      // 動くGIFなら同期用GIFを先頭に同封
+      if (isGif) {
+        saveBtn.innerHTML = '同期GIF…';
+        await new Promise(r => setTimeout(r, 0));
+        const syncFrames = state.frames.map(fr => ({ delay: fr.delay }));
+        const syncBlob = await buildSyncGifBlob(syncFrames);
+        const syncBuf = await syncBlob.arrayBuffer();
+        files.push({ name: '_sync.gif', data: new Uint8Array(syncBuf) });
+      }
       for (let i = 0; i < blobs.length; i++) {
         const buf = await blobs[i].arrayBuffer();
         files.push({ name: String(i + 1).padStart(pad, '0') + ext, data: new Uint8Array(buf) });
       }
-      const zipBlob = makeZip(files);
-      download(zipBlob, baseName + `_${state.splitW}x${state.splitH}.zip`);
+      const folderName = baseName + `_${state.splitW}x${state.splitH}`;
+      // フォルダ保存対応ブラウザ(Chrome/Edge/Opera等)なら直接書き出し
+      saveBtn.innerHTML = '保存先選択…';
+      const directSaved = await saveFilesToDirectory(files, folderName);
+      if (!directSaved) {
+        // 非対応ブラウザ → zip にフォールバック
+        saveBtn.innerHTML = 'zip 生成中…';
+        const zipBlob = makeZip(files);
+        download(zipBlob, folderName + '.zip');
+      }
     }
   } catch (err) {
     console.error(err);

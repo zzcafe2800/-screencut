@@ -1647,6 +1647,11 @@ function selectItem(item, el) {
   updateSaveBtn();
 }
 
+
+
+
+
+  
 /* ===== Decode GIF to frame array using omggif ===== */
 function decodeGifToFrames(arrayBuffer) {
   const bytes = new Uint8Array(arrayBuffer);
@@ -1654,30 +1659,53 @@ function decodeGifToFrames(arrayBuffer) {
   const W = reader.width;
   const H = reader.height;
   const numFrames = reader.numFrames();
+
   const composite = document.createElement('canvas');
-  composite.width = W; composite.height = H;
+  composite.width = W;
+  composite.height = H;
+
   const cctx = composite.getContext('2d');
+
   // Fill background with transparent
   cctx.clearRect(0, 0, W, H);
+
   const out = [];
   let prev = null;
+
   for (let i = 0; i < numFrames; i++) {
     const info = reader.frameInfo(i);
+
     // Save before drawing if disposal=3 (revert)
-    if (info.disposal === 3) prev = cctx.getImageData(0, 0, W, H);
-    const px = new Uint8ClampedArray(info.width * info.height * 4);
+    if (info.disposal === 3) {
+      prev = cctx.getImageData(0, 0, W, H);
+    }
+
+    // IMPORTANT:
+    // decodeAndBlitFrameRGBA() expects a full logical-screen-size buffer,
+    // not only the sub-frame size.
+    const px = new Uint8ClampedArray(W * H * 4);
     reader.decodeAndBlitFrameRGBA(i, px);
-    const imgData = new ImageData(px, info.width, info.height);
-    // Put into a temp canvas at frame position
+
+    const imgData = new ImageData(px, W, H);
+
     const patch = document.createElement('canvas');
-    patch.width = info.width; patch.height = info.height;
+    patch.width = W;
+    patch.height = H;
     patch.getContext('2d').putImageData(imgData, 0, 0);
-    cctx.drawImage(patch, info.x, info.y);
+
+    cctx.drawImage(patch, 0, 0);
+
     // Snapshot composited frame
     const snap = document.createElement('canvas');
-    snap.width = W; snap.height = H;
+    snap.width = W;
+    snap.height = H;
     snap.getContext('2d').drawImage(composite, 0, 0);
-    out.push({ canvas: snap, delay: Math.max(20, (info.delay || 10) * 10) });
+
+    out.push({
+      canvas: snap,
+      delay: Math.max(20, (info.delay || 10) * 10)
+    });
+
     // Apply disposal
     if (info.disposal === 2) {
       cctx.clearRect(info.x, info.y, info.width, info.height);
@@ -1685,9 +1713,15 @@ function decodeGifToFrames(arrayBuffer) {
       cctx.putImageData(prev, 0, 0);
     }
   }
+
   return { width: W, height: H, frames: out };
 }
 
+
+  
+
+
+  
 /* ===== Load file ===== */
 fileInput.addEventListener('change', e => {
   const f = e.target.files[0];

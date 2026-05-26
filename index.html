@@ -266,6 +266,55 @@ header.info {
   margin: 0;
 }
 
+/* Shrink mini-panel */
+.shrink-panel {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(255,255,255,0.95);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px 9px;
+  font-size: 11px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  display: none;
+  z-index: 9;
+  backdrop-filter: blur(4px);
+}
+.shrink-panel.shown { display: block; }
+.shrink-panel .sp-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.shrink-bg-row { display: flex; align-items: center; gap: 8px; }
+.shrink-swatch {
+  width: 22px; height: 22px;
+  border-radius: 4px;
+  border: 1.5px solid var(--line);
+  display: inline-block;
+  flex-shrink: 0;
+}
+.shrink-pick-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.shrink-pick-btn.active {
+  background: #e74c3c;
+}
+.shrink-pick-btn:hover { background: #4a8aa3; }
+.shrink-pick-btn.active:hover { background: #c0392b; }
+canvas.eyedropper-active { cursor: crosshair !important; }
+
 .image-tools {
   display: flex;
   justify-content: center;
@@ -383,6 +432,104 @@ header.info {
 .size-tier-list { display: flex; flex-direction: column; gap: 6px; }
 .size-tier-row { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--fg); }
 .size-tier-row .size-badge { flex: 0 0 70px; text-align: center; font-size: 12px; padding: 3px 8px; }
+
+/* ===== Room Match modal ===== */
+.room-card {
+  max-width: 720px;
+  width: 100%;
+  max-height: 94vh;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 24px 18px;
+}
+.room-illust {
+  width: 100%;
+  height: 80px;
+  margin-bottom: 12px;
+  color: var(--accent);
+}
+.room-illust svg { width: 100%; height: 100%; display: block; }
+.room-files {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px 0;
+}
+.room-file-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(91,156,184,0.06);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.room-file-slot.filled {
+  border-color: var(--accent);
+  background: rgba(91,156,184,0.10);
+}
+.room-file-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+  flex: 0 0 100px;
+}
+.room-file-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.room-file-btn:hover { background: #4a8aa3; }
+.room-file-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--fg);
+  opacity: 0.7;
+  font-family: Georgia, serif;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.room-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 280px;
+  background: #1a2530;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+#roomCanvas {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+.room-status {
+  font-size: 12px;
+  text-align: center;
+  color: var(--fg);
+  opacity: 0.85;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.room-status b { color: var(--accent); font-weight: 700; opacity: 1; }
+.recommend-row button:disabled, .recommend-row label:disabled,
+.recommend-row button[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .quality-info b { color: var(--accent); font-weight: 600; opacity: 1; }
 
 /* ===== Trim panel ===== */
@@ -1129,6 +1276,14 @@ footer.controls {
         <input type="range" id="spEdge" min="0" max="1" step="0.05" value="0.3">
       </div>
     </div>
+    <div class="shrink-panel" id="shrinkPanel">
+      <div class="sp-title">縮小</div>
+      <div class="shrink-bg-row">
+        <span>背景色</span>
+        <span class="shrink-swatch" id="shrinkSwatch" style="background:#fff"></span>
+        <button class="shrink-pick-btn" id="shrinkPickBtn" type="button">スポイト</button>
+      </div>
+    </div>
   </div>
 
   <div class="image-tools">
@@ -1185,6 +1340,16 @@ footer.controls {
       </svg>
       <span class="q-level" id="sLevel"></span>
     </button>
+    <button class="brightness-btn" id="shrink" title="縮小 (背景を付けて中央を小さく)" disabled>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <!-- inward diagonal arrows: >< -->
+        <path d="M4 4l6 6M4 8V4h4"/>
+        <path d="M20 4l-6 6M20 8V4h-4"/>
+        <path d="M4 20l6-6M4 16v4h4"/>
+        <path d="M20 20l-6-6M20 16v4h-4"/>
+      </svg>
+      <span class="q-level" id="shLevel"></span>
+    </button>
     <button class="brightness-btn trim-btn" id="trimToggle" title="長さ調節" hidden>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <!-- timeline with two markers icon -->
@@ -1210,6 +1375,7 @@ footer.controls {
     <input type="file" id="videoFile" accept="video/*,.mp4,.mov,.m4v,.webm,.ogv,.avi,.mkv" hidden>
     <label for="videoFile" class="btn btn-accent">GIF変換君</label>
     <button id="recommend" class="btn btn-accent">オススメ君</button>
+    <button id="roomMatch" class="btn btn-accent">部屋にマッチ君</button>
     <button id="save" class="btn" disabled>保存</button>
     <div class="splits">
       <div class="split-field">
@@ -1233,6 +1399,73 @@ footer.controls {
     </div>
   </footer>
 </main>
+
+<div id="roomMatchOverlay" class="guide-overlay" role="dialog" aria-modal="true">
+  <div class="guide-card room-card">
+    <button id="roomMatchClose" class="guide-close" aria-label="閉じる">×</button>
+    <h3>部屋にマッチ君</h3>
+
+    <div id="roomIntro">
+      <div class="room-illust">
+        <svg viewBox="0 0 220 90" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Room -->
+          <rect x="6" y="14" width="80" height="62" rx="2"/>
+          <path d="M6 50h80" opacity="0.4"/>
+          <text x="46" y="44" font-size="6" stroke="none" fill="currentColor" text-anchor="middle" font-family="Georgia,serif" font-style="italic">お部屋</text>
+          <!-- Inserted picture in room (with marquee) -->
+          <rect x="28" y="22" width="22" height="16" rx="1" stroke-dasharray="2 2" stroke-width="1.2"/>
+          <circle cx="50" cy="22" r="1.8" fill="currentColor" stroke="none"/>
+          <!-- Arrow -->
+          <path d="M96 45h22M112 41l4 4-4 4"/>
+          <!-- Adjusted output -->
+          <rect x="128" y="14" width="80" height="62" rx="2"/>
+          <text x="168" y="46" font-size="7" stroke="none" fill="currentColor" text-anchor="middle" font-family="Georgia,serif" font-style="italic">色を寄せた画像</text>
+          <text x="168" y="56" font-size="5" stroke="none" fill="currentColor" text-anchor="middle" opacity="0.6">明度/暖かさ/色合いを部屋に</text>
+        </svg>
+      </div>
+      <div class="recommend-intro">
+        部屋の画像と、飾る予定の画像 / GIF を入れると、<br>
+        <b>飾る場所の色合い・明るさ・色温度</b>に自動で寄せて<br>
+        部屋になじむように調整します。
+      </div>
+      <div class="room-files">
+        <div class="room-file-slot" id="roomSlotRoom">
+          <span class="room-file-label">① お部屋画像</span>
+          <input type="file" id="roomFileRoom" accept="image/*" hidden>
+          <label for="roomFileRoom" class="room-file-btn">選択</label>
+          <span class="room-file-name" id="roomNameRoom">未選択</span>
+        </div>
+        <div class="room-file-slot" id="roomSlotObj">
+          <span class="room-file-label">② 飾る画像 / GIF</span>
+          <input type="file" id="roomFileObj" accept="image/*,.gif" hidden>
+          <label for="roomFileObj" class="room-file-btn">選択</label>
+          <span class="room-file-name" id="roomNameObj">未選択</span>
+        </div>
+      </div>
+      <div class="recommend-row">
+        <button id="roomStart" class="cancel" disabled>マッチ開始</button>
+        <button class="cancel" id="roomCancel">やめる</button>
+      </div>
+    </div>
+
+    <div id="roomWorkspace" style="display:none">
+      <div class="room-stage">
+        <canvas id="roomCanvas"></canvas>
+      </div>
+      <div class="room-status" id="roomStatus">
+        ドラッグで <b>飾る場所</b> を囲ってください<br>
+        <span style="opacity:0.7;font-size:11px">中央のドラッグで移動、右上の●で大きさ変更。 比率は飾る画像に固定されます。</span>
+      </div>
+      <div class="recommend-row">
+        <button id="roomToggleOrig" class="cancel" type="button">元画像をちらっと見る</button>
+        <button id="roomConfirm" type="button">決定して編集へ</button>
+      </div>
+      <div class="recommend-row">
+        <button class="cancel" id="roomBack" type="button">戻る</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div id="sizeInfoOverlay" class="guide-overlay" role="dialog" aria-modal="true">
   <div class="guide-card" style="max-width: 380px">
@@ -2658,7 +2891,10 @@ const state = {
   simpLevels: 8,         // 色数 (2..16)
   simpSmooth: 2,         // 滑らかさブラー (0..6)
   simpEdge: 0.3,         // 輪郭忠実度 (0..1)
-  _simpCache: null,      // {frameIdx -> canvas} キャッシュ
+  _simpCache: null,
+  shrink: 0,             // 0=オフ, 1..5で 0.85..0.25倍にズーム
+  shrinkBgColor: '#ffffff', // 背景色 (スポイト)
+  eyedropperActive: false,
   trimStart: 0,          // フレーム index 開始 (inclusive)
   trimEnd: 0,            // フレーム index 終了 (inclusive)
   trimOpen: false,       // トリミングパネル開閉
@@ -2708,6 +2944,11 @@ const spEdge = document.getElementById('spEdge');
 const spLevelsVal = document.getElementById('spLevelsVal');
 const spSmoothVal = document.getElementById('spSmoothVal');
 const spEdgeVal = document.getElementById('spEdgeVal');
+const shrinkBtn = document.getElementById('shrink');
+const shLevelEl = document.getElementById('shLevel');
+const shrinkPanel = document.getElementById('shrinkPanel');
+const shrinkSwatch = document.getElementById('shrinkSwatch');
+const shrinkPickBtn = document.getElementById('shrinkPickBtn');
 const trimToggleBtn = document.getElementById('trimToggle');
 const trimPanel = document.getElementById('trimPanel');
 const trimBar = document.getElementById('trimBar');
@@ -2753,14 +2994,14 @@ function showToast(text, durationMs = 1400) {
 /* ===== Overlay open/close helpers ===== */
 function openOverlay(el) {
   // close any other open overlay first to avoid stacking
-  [welcomeOverlay, guideOverlay, shareOverlay, recommendOverlay, sizeInfoOverlay].forEach(o => {
+  [welcomeOverlay, guideOverlay, shareOverlay, recommendOverlay, sizeInfoOverlay, roomMatchOverlay].forEach(o => {
     if (o !== el) o.classList.remove('shown');
   });
   el.classList.add('shown');
 }
 function closeOverlay(el) { el.classList.remove('shown'); }
 function closeAllOverlays() {
-  [welcomeOverlay, guideOverlay, shareOverlay, recommendOverlay, sizeInfoOverlay].forEach(o => o.classList.remove('shown'));
+  [welcomeOverlay, guideOverlay, shareOverlay, recommendOverlay, sizeInfoOverlay, roomMatchOverlay].forEach(o => o.classList.remove('shown'));
 }
 /* size info modal */
 fileSizeEl.addEventListener('click', () => openOverlay(sizeInfoOverlay));
@@ -3170,6 +3411,8 @@ videoInput.addEventListener('change', async e => {
   state.gifBaseSize = 0;
   state.simplify = 0;
   state._simpCache = null;
+  state.shrink = 0;
+  state.eyedropperActive = false;
   state.currentFrame = 0;
   state.frames = [];
   stopAnimation();
@@ -3177,6 +3420,7 @@ videoInput.addEventListener('change', async e => {
   updateQualityGauge();
   updateQualityInfo();
   updateSimplifyGauge();
+  updateShrinkGauge();
   canvas.classList.remove('shown');
   updateEmpty();
   updateFileSize();
@@ -3224,6 +3468,8 @@ async function loadFile(file) {
   state.gifBaseSize = 0;
   state.simplify = 0;
   state._simpCache = null;
+  state.shrink = 0;
+  state.eyedropperActive = false;
   state.currentFrame = 0;
   state.frames = [];
   stopAnimation();
@@ -3231,6 +3477,7 @@ async function loadFile(file) {
   updateQualityGauge();
   updateQualityInfo();
   updateSimplifyGauge();
+  updateShrinkGauge();
   canvas.classList.remove('shown');
   updateEmpty();
   updateFileSize();
@@ -3331,8 +3578,8 @@ function draw() {
   const frame = state.frames[state.currentFrame];
   if (!frame) return;
 
-  // Draw current source frame with rotation/flip/brightness/quality/simplify applied
-  const sourceCanvas = state.simplify > 0 ? getSimplifiedFrame(state.currentFrame) : frame.canvas;
+  // Draw current source frame with rotation/flip/brightness/quality/simplify/shrink applied
+  const sourceCanvas = (state.simplify > 0 || state.shrink > 0) ? getEffectFrame(state.currentFrame) : frame.canvas;
   ctx.save();
   if (state.brightness > 0) {
     ctx.filter = `brightness(${getBrightnessFactor(state.brightness)})`;
@@ -3489,6 +3736,8 @@ function updateToolBtns() {
   qualityBtn.disabled = !en;
   // 単純化: 画像でもGIFでも有効
   simplifyBtn.disabled = !en;
+  // 縮小: 画像でもGIFでも有効
+  shrinkBtn.disabled = !en;
   // 長さ調節ボタンは複数フレームのGIFのときだけ表示
   const showTrim = en && state.frames.length > 1;
   trimToggleBtn.hidden = !showTrim;
@@ -3675,6 +3924,105 @@ function getSimplifiedFrame(idx) {
   return result;
 }
 
+/* ===== Shrink (縮小+背景拡張) ===== */
+const SHRINK_MAX = 5;
+function getShrinkScale(level = state.shrink) {
+  if (level <= 0) return 1;
+  return 1 - level * 0.15;  // L1=0.85, L2=0.70, L3=0.55, L4=0.40, L5=0.25
+}
+function autoSampleBgColor(c) {
+  // 4隅の 6x6 領域を平均
+  const ctx = c.getContext('2d');
+  const corners = [
+    [0, 0], [c.width - 6, 0],
+    [0, c.height - 6], [c.width - 6, c.height - 6],
+  ];
+  let r = 0, g = 0, b = 0, n = 0;
+  for (const [x, y] of corners) {
+    try {
+      const d = ctx.getImageData(Math.max(0, x), Math.max(0, y), 6, 6).data;
+      for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i+1]; b += d[i+2]; n++; }
+    } catch {}
+  }
+  if (n === 0) return '#ffffff';
+  r = Math.round(r / n); g = Math.round(g / n); b = Math.round(b / n);
+  return `rgb(${r},${g},${b})`;
+}
+function applyShrinkToCanvas(srcCanvas) {
+  if (state.shrink === 0) return srcCanvas;
+  const W = srcCanvas.width, H = srcCanvas.height;
+  const out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  const octx = out.getContext('2d');
+  octx.fillStyle = state.shrinkBgColor;
+  octx.fillRect(0, 0, W, H);
+  const sc = getShrinkScale();
+  const sw = W * sc, sh = H * sc;
+  octx.drawImage(srcCanvas, (W - sw) / 2, (H - sh) / 2, sw, sh);
+  return out;
+}
+function getEffectFrame(idx) {
+  // 単純化 → 縮小 の順で適用
+  let c = state.simplify > 0 ? getSimplifiedFrame(idx) : state.frames[idx].canvas;
+  if (state.shrink > 0) c = applyShrinkToCanvas(c);
+  return c;
+}
+function updateShrinkGauge() {
+  const fill = (state.shrink / SHRINK_MAX) * 360;
+  shrinkBtn.style.setProperty('--fill', fill + 'deg');
+  if (state.shrink > 0) {
+    shLevelEl.textContent = state.shrink;
+    shLevelEl.classList.add('shown');
+    shrinkPanel.classList.add('shown');
+    shrinkSwatch.style.background = state.shrinkBgColor;
+  } else {
+    shLevelEl.classList.remove('shown');
+    shrinkPanel.classList.remove('shown');
+    // スポイトモードも解除
+    if (state.eyedropperActive) {
+      state.eyedropperActive = false;
+      canvas.classList.remove('eyedropper-active');
+      shrinkPickBtn.classList.remove('active');
+    }
+  }
+}
+shrinkBtn.addEventListener('click', () => {
+  if (shrinkBtn.disabled) return;
+  // 初回起動時に色を自動サンプル
+  if (state.shrink === 0 && state.frames.length > 0) {
+    state.shrinkBgColor = autoSampleBgColor(state.frames[0].canvas);
+  }
+  state.shrink = (state.shrink + 1) % (SHRINK_MAX + 1);
+  updateShrinkGauge();
+  draw();
+});
+shrinkPickBtn.addEventListener('click', () => {
+  state.eyedropperActive = !state.eyedropperActive;
+  shrinkPickBtn.classList.toggle('active', state.eyedropperActive);
+  canvas.classList.toggle('eyedropper-active', state.eyedropperActive);
+});
+// canvas クリックでスポイト処理 (既存の枠ドラッグより先に判定)
+canvas.addEventListener('pointerdown', e => {
+  if (!state.eyedropperActive) return;
+  e.preventDefault();
+  e.stopPropagation();
+  // canvas ピクセル座標 → 元フレームピクセルへ
+  const rect = canvas.getBoundingClientRect();
+  const cx = ((e.clientX - rect.left) / rect.width) * state.canvasW;
+  const cy = ((e.clientY - rect.top) / rect.height) * state.canvasH;
+  // 表示中の合成キャンバスから直接取る
+  try {
+    const d = ctx.getImageData(Math.max(0, Math.min(state.canvasW - 1, cx)),
+                               Math.max(0, Math.min(state.canvasH - 1, cy)), 1, 1).data;
+    state.shrinkBgColor = `rgb(${d[0]},${d[1]},${d[2]})`;
+    shrinkSwatch.style.background = state.shrinkBgColor;
+    state.eyedropperActive = false;
+    shrinkPickBtn.classList.remove('active');
+    canvas.classList.remove('eyedropper-active');
+    draw();
+  } catch {}
+}, true);  // capture phase で他のハンドラより先に
+
 /* ===== Trim (再生 / 保存範囲の調節) ===== */
 function getTotalDuration() {
   let t = 0;
@@ -3852,12 +4200,14 @@ async function loadVideoAsGif(f) {
   state.rotation = 0; state.flipH = false; state.flipV = false;
   state.brightness = 0; state.quality = 0; state.gifBaseSize = 0;
   state.simplify = 0; state._simpCache = null;
+  state.shrink = 0; state.eyedropperActive = false;
   state.currentFrame = 0; state.frames = [];
   stopAnimation();
   updateBrightnessGauge();
   updateQualityGauge();
   updateQualityInfo();
   updateSimplifyGauge();
+  updateShrinkGauge();
   canvas.classList.remove('shown');
   updateEmpty();
   updateFileSize();
@@ -3951,6 +4301,419 @@ function showRecommendations(targetRatio) {
   recommendIntro.style.display = 'none';
   recommendActionRow.style.display = 'none';
 }
+
+/* ===== 部屋にマッチ君 ===== */
+const roomMatchBtn = document.getElementById('roomMatch');
+const roomMatchOverlay = document.getElementById('roomMatchOverlay');
+const roomMatchCloseBtn = document.getElementById('roomMatchClose');
+const roomCancelBtn = document.getElementById('roomCancel');
+const roomFileRoom = document.getElementById('roomFileRoom');
+const roomFileObj = document.getElementById('roomFileObj');
+const roomNameRoom = document.getElementById('roomNameRoom');
+const roomNameObj = document.getElementById('roomNameObj');
+const roomSlotRoom = document.getElementById('roomSlotRoom');
+const roomSlotObj = document.getElementById('roomSlotObj');
+const roomStartBtn = document.getElementById('roomStart');
+const roomIntroEl = document.getElementById('roomIntro');
+const roomWorkspaceEl = document.getElementById('roomWorkspace');
+const roomCanvas = document.getElementById('roomCanvas');
+const roomToggleOrigBtn = document.getElementById('roomToggleOrig');
+const roomConfirmBtn = document.getElementById('roomConfirm');
+const roomBackBtn = document.getElementById('roomBack');
+const roomStatusEl = document.getElementById('roomStatus');
+
+const roomState = {
+  roomImg: null,        // HTMLImageElement
+  objFrames: null,      // [{canvas, delay}] (静止画は1枚)
+  objW: 0, objH: 0,
+  // 表示は roomCanvas に縮小して描画
+  dispScale: 1,         // roomCanvas 表示倍率
+  // ステージ上の配置矩形 (roomCanvas座標)
+  rect: { x: 0, y: 0, w: 0, h: 0 },
+  // ドラッグ状態
+  drag: null,           // 'move' | 'resize' | 'create' | null
+  dragStart: null,
+  // 色補正 結果フレーム
+  adjustedFrames: null, // [{canvas, delay}]
+  showOriginal: false,
+  currentFrame: 0,
+  _rafId: null,
+  _lastTick: 0,
+};
+
+const HANDLE_R_ROOM = 8;
+const HANDLE_HIT_R_ROOM = 14;
+
+function openRoomMatch() {
+  // Reset
+  roomState.roomImg = null;
+  roomState.objFrames = null;
+  roomState.adjustedFrames = null;
+  roomState.showOriginal = false;
+  roomNameRoom.textContent = '未選択';
+  roomNameObj.textContent = '未選択';
+  roomSlotRoom.classList.remove('filled');
+  roomSlotObj.classList.remove('filled');
+  roomStartBtn.disabled = true;
+  roomIntroEl.style.display = '';
+  roomWorkspaceEl.style.display = 'none';
+  openOverlay(roomMatchOverlay);
+}
+function closeRoomMatch() {
+  stopRoomAnimation();
+  closeOverlay(roomMatchOverlay);
+}
+roomMatchBtn.addEventListener('click', openRoomMatch);
+roomMatchCloseBtn.addEventListener('click', closeRoomMatch);
+roomCancelBtn.addEventListener('click', closeRoomMatch);
+roomMatchOverlay.addEventListener('click', e => { if (e.target === roomMatchOverlay) closeRoomMatch(); });
+roomBackBtn.addEventListener('click', () => {
+  stopRoomAnimation();
+  roomWorkspaceEl.style.display = 'none';
+  roomIntroEl.style.display = '';
+});
+
+function checkRoomReady() {
+  roomStartBtn.disabled = !(roomState.roomImg && roomState.objFrames);
+}
+roomFileRoom.addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = '';
+  const url = URL.createObjectURL(f);
+  try {
+    const img = await new Promise((res, rej) => {
+      const i = new Image();
+      i.onload = () => res(i);
+      i.onerror = rej;
+      i.src = url;
+    });
+    roomState.roomImg = img;
+    roomNameRoom.textContent = f.name;
+    roomSlotRoom.classList.add('filled');
+  } catch (err) {
+    alert('お部屋画像の読み込みに失敗しました');
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+  checkRoomReady();
+});
+roomFileObj.addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return; e.target.value = '';
+  try {
+    const isGif = f.type === 'image/gif' || /\.gif$/i.test(f.name);
+    if (isGif) {
+      const buf = await f.arrayBuffer();
+      const decoded = decodeGifToFrames(buf);
+      roomState.objFrames = decoded.frames;
+      roomState.objW = decoded.width;
+      roomState.objH = decoded.height;
+    } else {
+      const url = URL.createObjectURL(f);
+      const img = await new Promise((res, rej) => {
+        const i = new Image();
+        i.onload = () => res(i);
+        i.onerror = rej;
+        i.src = url;
+      });
+      const c = document.createElement('canvas');
+      c.width = img.naturalWidth; c.height = img.naturalHeight;
+      c.getContext('2d').drawImage(img, 0, 0);
+      URL.revokeObjectURL(url);
+      roomState.objFrames = [{ canvas: c, delay: 0 }];
+      roomState.objW = img.naturalWidth;
+      roomState.objH = img.naturalHeight;
+    }
+    roomNameObj.textContent = f.name;
+    roomSlotObj.classList.add('filled');
+  } catch (err) {
+    console.error(err);
+    alert('飾る画像の読み込みに失敗しました');
+  }
+  checkRoomReady();
+});
+
+roomStartBtn.addEventListener('click', () => {
+  if (!roomState.roomImg || !roomState.objFrames) return;
+  startRoomWorkspace();
+});
+
+function startRoomWorkspace() {
+  // 先にワークスペースを表示してレイアウトを確定
+  roomIntroEl.style.display = 'none';
+  roomWorkspaceEl.style.display = '';
+  // 次フレームで実測してキャンバスをセット
+  requestAnimationFrame(() => {
+    const stage = roomCanvas.parentElement.getBoundingClientRect();
+    const maxW = Math.max(200, stage.width - 16);
+    const maxH = Math.max(160, stage.height - 16);
+    const img = roomState.roomImg;
+    let cw, ch;
+    const imgAR = img.naturalWidth / img.naturalHeight;
+    const maxAR = maxW / maxH;
+    if (imgAR > maxAR) { cw = maxW; ch = maxW / imgAR; }
+    else { ch = maxH; cw = maxH * imgAR; }
+    roomCanvas.width = Math.round(cw);
+    roomCanvas.height = Math.round(ch);
+    roomState.dispScale = roomCanvas.width / img.naturalWidth;
+
+    // デフォルトの矩形: 中央、画面の 1/3 サイズ、オブジェクト比率
+    const objAR = roomState.objW / roomState.objH;
+    let rw = roomCanvas.width * 0.35;
+    let rh = rw / objAR;
+    if (rh > roomCanvas.height * 0.8) { rh = roomCanvas.height * 0.5; rw = rh * objAR; }
+    roomState.rect = {
+      x: (roomCanvas.width - rw) / 2,
+      y: (roomCanvas.height - rh) / 2,
+      w: rw, h: rh,
+    };
+    roomState.adjustedFrames = null;
+    roomState.showOriginal = false;
+    roomState.currentFrame = 0;
+
+    // 自動で色マッチ実行
+    recomputeRoomMatch();
+    drawRoom();
+    if (roomState.objFrames.length > 1) startRoomAnimation();
+  });
+}
+
+/* roomCanvas クリック・ドラッグ: 移動 / リサイズ / 新規作成 */
+function roomPos(e) {
+  const r = roomCanvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - r.left) * (roomCanvas.width / r.width),
+    y: (e.clientY - r.top) * (roomCanvas.height / r.height),
+  };
+}
+function isOnRoomHandle(x, y) {
+  const hx = roomState.rect.x + roomState.rect.w;
+  const hy = roomState.rect.y;
+  return Math.hypot(x - hx, y - hy) <= HANDLE_HIT_R_ROOM;
+}
+function isInRoomRect(x, y) {
+  const r = roomState.rect;
+  return x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+}
+roomCanvas.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  roomCanvas.setPointerCapture(e.pointerId);
+  const p = roomPos(e);
+  if (isOnRoomHandle(p.x, p.y)) {
+    roomState.drag = 'resize';
+  } else if (isInRoomRect(p.x, p.y)) {
+    roomState.drag = 'move';
+    roomState.dragStart = { x: p.x - roomState.rect.x, y: p.y - roomState.rect.y };
+  } else {
+    // 新規作成: 左上を起点
+    roomState.drag = 'create';
+    roomState.dragStart = { x: p.x, y: p.y };
+    const objAR = roomState.objW / roomState.objH;
+    roomState.rect = { x: p.x, y: p.y, w: 1, h: 1 / objAR };
+  }
+});
+roomCanvas.addEventListener('pointermove', e => {
+  if (!roomState.drag) return;
+  const p = roomPos(e);
+  const r = roomState.rect;
+  const objAR = roomState.objW / roomState.objH;
+  if (roomState.drag === 'move') {
+    r.x = Math.max(0, Math.min(roomCanvas.width - r.w, p.x - roomState.dragStart.x));
+    r.y = Math.max(0, Math.min(roomCanvas.height - r.h, p.y - roomState.dragStart.y));
+  } else if (roomState.drag === 'resize') {
+    // 右上ハンドル: 左下を固定して矩形リサイズ、アスペクト比はオブジェクトを維持
+    const anchorX = r.x;
+    const anchorY = r.y + r.h;
+    const nw = Math.max(20, p.x - anchorX);
+    const nh = nw / objAR;
+    r.x = anchorX;
+    r.y = anchorY - nh;
+    r.w = nw;
+    r.h = nh;
+    // 範囲制限
+    if (r.x + r.w > roomCanvas.width) { r.w = roomCanvas.width - r.x; r.h = r.w / objAR; r.y = anchorY - r.h; }
+    if (r.y < 0) { r.y = 0; r.h = anchorY; r.w = r.h * objAR; }
+  } else if (roomState.drag === 'create') {
+    // ドラッグで右下を決定するが、比率はオブジェクトを維持
+    const dx = p.x - roomState.dragStart.x;
+    const dy = p.y - roomState.dragStart.y;
+    // 入力の対角線の大きさから比率に合わせた矩形を構築
+    const nw = Math.max(20, Math.abs(dx));
+    const nh = Math.max(20 / objAR, Math.abs(dy));
+    // 比率を合わせる: 横を基準
+    let w = nw, h = nw / objAR;
+    if (h > nh && h > 0) { /* keep */ }
+    r.x = dx >= 0 ? roomState.dragStart.x : roomState.dragStart.x - w;
+    r.y = dy >= 0 ? roomState.dragStart.y : roomState.dragStart.y - h;
+    r.w = w; r.h = h;
+  }
+  recomputeRoomMatch();
+  drawRoom();
+});
+roomCanvas.addEventListener('pointerup', () => {
+  roomState.drag = null;
+  roomState.dragStart = null;
+});
+
+/* 部屋の矩形領域の平均色を取得 */
+function getRoomMeanInRect() {
+  if (!roomState.roomImg) return [128, 128, 128];
+  const sx = roomState.rect.x / roomState.dispScale;
+  const sy = roomState.rect.y / roomState.dispScale;
+  const sw = roomState.rect.w / roomState.dispScale;
+  const sh = roomState.rect.h / roomState.dispScale;
+  // off-screen で 部屋画像の rect 部分を縮小して取得 (32x32 程度に)
+  const tmp = document.createElement('canvas');
+  tmp.width = 32; tmp.height = 32;
+  const tctx = tmp.getContext('2d');
+  tctx.drawImage(roomState.roomImg, sx, sy, sw, sh, 0, 0, 32, 32);
+  const d = tctx.getImageData(0, 0, 32, 32).data;
+  let r = 0, g = 0, b = 0;
+  const N = d.length / 4;
+  for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i+1]; b += d[i+2]; }
+  return [r / N, g / N, b / N];
+}
+/* オブジェクト画像の平均色 */
+function getCanvasMean(c) {
+  const tmp = document.createElement('canvas');
+  tmp.width = 32; tmp.height = 32;
+  tmp.getContext('2d').drawImage(c, 0, 0, 32, 32);
+  const d = tmp.getContext('2d').getImageData(0, 0, 32, 32).data;
+  let r = 0, g = 0, b = 0;
+  const N = d.length / 4;
+  for (let i = 0; i < d.length; i += 4) { r += d[i]; g += d[i+1]; b += d[i+2]; }
+  return [r / N, g / N, b / N];
+}
+/* オブジェクトの全フレームに色補正 (明度・色温度・色相を寄せる) */
+function recomputeRoomMatch() {
+  if (!roomState.objFrames) return;
+  const target = getRoomMeanInRect();
+  const adjusted = [];
+  for (const fr of roomState.objFrames) {
+    const src = fr.canvas;
+    const objMean = getCanvasMean(src);
+    // 寄せる強さ: 70% (完全置換しすぎないように)
+    const blend = 0.7;
+    // 各チャンネルの加算シフト
+    const shiftR = (target[0] - objMean[0]) * blend;
+    const shiftG = (target[1] - objMean[1]) * blend;
+    const shiftB = (target[2] - objMean[2]) * blend;
+    // 明度: ターゲットの輝度に部分的に寄せる
+    const lumTarget = 0.299 * target[0] + 0.587 * target[1] + 0.114 * target[2];
+    const lumObj = 0.299 * objMean[0] + 0.587 * objMean[1] + 0.114 * objMean[2];
+    const lumRatio = lumObj > 4 ? Math.min(1.6, Math.max(0.4, (lumTarget * 0.5 + lumObj * 0.5) / lumObj)) : 1;
+    const out = document.createElement('canvas');
+    out.width = src.width; out.height = src.height;
+    const octx = out.getContext('2d');
+    octx.drawImage(src, 0, 0);
+    const img = octx.getImageData(0, 0, src.width, src.height);
+    const data = img.data;
+    for (let i = 0; i < data.length; i += 4) {
+      let r = data[i] * lumRatio + shiftR;
+      let g = data[i+1] * lumRatio + shiftG;
+      let b = data[i+2] * lumRatio + shiftB;
+      data[i]   = Math.max(0, Math.min(255, r));
+      data[i+1] = Math.max(0, Math.min(255, g));
+      data[i+2] = Math.max(0, Math.min(255, b));
+    }
+    octx.putImageData(img, 0, 0);
+    adjusted.push({ canvas: out, delay: fr.delay });
+  }
+  roomState.adjustedFrames = adjusted;
+}
+
+/* roomCanvas に部屋画像 + 配置矩形 + オブジェクト を描画 */
+function drawRoom() {
+  if (!roomState.roomImg || !roomCanvas.width) return;
+  const rctx = roomCanvas.getContext('2d');
+  rctx.clearRect(0, 0, roomCanvas.width, roomCanvas.height);
+  // 部屋
+  rctx.drawImage(roomState.roomImg, 0, 0, roomCanvas.width, roomCanvas.height);
+  // 矩形の中にオブジェクトを描画
+  const r = roomState.rect;
+  if (r.w > 0 && r.h > 0 && roomState.objFrames) {
+    rctx.save();
+    rctx.beginPath();
+    rctx.rect(r.x, r.y, r.w, r.h);
+    rctx.clip();
+    const useSrc = roomState.showOriginal
+      ? roomState.objFrames[roomState.currentFrame].canvas
+      : (roomState.adjustedFrames || roomState.objFrames)[roomState.currentFrame].canvas;
+    rctx.drawImage(useSrc, r.x, r.y, r.w, r.h);
+    rctx.restore();
+    // 点線枠
+    rctx.save();
+    rctx.setLineDash([4, 4]);
+    rctx.strokeStyle = 'rgba(255,255,255,0.95)';
+    rctx.lineWidth = 1.5;
+    rctx.strokeRect(r.x, r.y, r.w, r.h);
+    rctx.setLineDash([]);
+    // 右上ハンドル
+    const hx = r.x + r.w, hy = r.y;
+    rctx.fillStyle = 'rgba(0,0,0,0.4)';
+    rctx.beginPath(); rctx.arc(hx, hy, HANDLE_R_ROOM + 2, 0, Math.PI * 2); rctx.fill();
+    rctx.fillStyle = '#ffffff';
+    rctx.beginPath(); rctx.arc(hx, hy, HANDLE_R_ROOM, 0, Math.PI * 2); rctx.fill();
+    rctx.restore();
+  }
+}
+function roomTick(now) {
+  if (!roomState.objFrames || roomState.objFrames.length <= 1) { roomState._rafId = null; return; }
+  const delay = roomState.objFrames[roomState.currentFrame].delay;
+  if (now - roomState._lastTick >= delay) {
+    roomState.currentFrame = (roomState.currentFrame + 1) % roomState.objFrames.length;
+    roomState._lastTick = now;
+    drawRoom();
+  }
+  roomState._rafId = requestAnimationFrame(roomTick);
+}
+function startRoomAnimation() {
+  if (roomState._rafId) return;
+  roomState._lastTick = performance.now();
+  roomState._rafId = requestAnimationFrame(roomTick);
+}
+function stopRoomAnimation() {
+  if (roomState._rafId) { cancelAnimationFrame(roomState._rafId); roomState._rafId = null; }
+}
+
+/* 元画像をちらっと見る: 押してる間 元画像 / 離したら 補正画像 */
+roomToggleOrigBtn.addEventListener('pointerdown', () => { roomState.showOriginal = true; drawRoom(); });
+roomToggleOrigBtn.addEventListener('pointerup', () => { roomState.showOriginal = false; drawRoom(); });
+roomToggleOrigBtn.addEventListener('pointerleave', () => { roomState.showOriginal = false; drawRoom(); });
+roomToggleOrigBtn.addEventListener('pointercancel', () => { roomState.showOriginal = false; drawRoom(); });
+
+/* 決定: 調整済みフレームをメインに流し込む */
+roomConfirmBtn.addEventListener('click', () => {
+  if (!roomState.adjustedFrames) return;
+  // メインのステートに移植 (オブジェクトの元寸法)
+  state.fileType = roomState.objFrames.length > 1 ? 'gif' : 'image';
+  state.fileSize = 0;  // 不明
+  state.naturalW = roomState.objW;
+  state.naturalH = roomState.objH;
+  // 補正済みフレームを deep clone (キャンバスは canvas のままで OK)
+  state.frames = roomState.adjustedFrames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+  state.loaded = true;
+  state.rotation = 0; state.flipH = false; state.flipV = false;
+  state.brightness = 0; state.quality = 0; state.gifBaseSize = 0;
+  state.simplify = 0; state._simpCache = null;
+  state.shrink = 0; state.eyedropperActive = false;
+  state.currentFrame = 0;
+  stopAnimation();
+  resetTrim();
+  updateBrightnessGauge();
+  updateQualityGauge();
+  updateQualityInfo();
+  updateSimplifyGauge();
+  updateShrinkGauge();
+  updateFileSize();
+  updateFramesInfo();
+  updateEmpty();
+  updateToolBtns();
+  recomputeLayout();
+  updateSaveBtn();
+  updateTrimUI();
+  if (state.frames.length > 1) startAnimation();
+  showToast('部屋に合わせて調整しました');
+  closeRoomMatch();
+});
 
 /* ===== Pointer ===== */
 function localPos(e) {
@@ -4210,8 +4973,8 @@ async function save() {
     const hi = Math.max(lo, Math.min(state.trimEnd, state.frames.length - 1));
     const sourceFrames = [];
     for (let i = lo; i <= hi; i++) {
-      // 単純化が有効ならそのフレームの単純化済みキャンバスを使う
-      const c = state.simplify > 0 ? getSimplifiedFrame(i) : state.frames[i].canvas;
+      // 単純化・縮小が有効ならその合成済みキャンバスを使う
+      const c = (state.simplify > 0 || state.shrink > 0) ? getEffectFrame(i) : state.frames[i].canvas;
       sourceFrames.push({ canvas: c, delay: state.frames[i].delay });
     }
     // トリミング後のフレーム数で出力フォーマットを判定
@@ -4301,6 +5064,7 @@ updateSaveBtn();
 updateToolBtns();
 updateBrightnessGauge();
 updateSimplifyGauge();
+updateShrinkGauge();
 
 </script>
 </body>

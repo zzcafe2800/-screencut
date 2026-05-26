@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>便利君【g画像】</title>
+<title>べんり君ーｇ画像</title>
 <style>
 @property --fill { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
 
@@ -313,6 +313,192 @@ header.info {
   pointer-events: none;
 }
 .trim-btn[hidden] { display: none !important; }
+
+/* ===== Search row in sidebar ===== */
+.search-row {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  margin: 0 0 16px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.search-row:focus-within { border-color: var(--accent); }
+.search-row input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--fg);
+}
+.search-row input::placeholder {
+  color: var(--fg);
+  opacity: 0.35;
+  font-family: Georgia, serif;
+  font-style: italic;
+}
+.search-icon {
+  background: transparent;
+  border: none;
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--fg);
+  opacity: 0.55;
+  transition: opacity 0.15s, color 0.15s;
+  padding: 0;
+}
+.search-icon:hover { opacity: 1; color: var(--accent); }
+.search-icon svg { width: 16px; height: 16px; }
+
+/* Search result list */
+.search-list {
+  margin-bottom: 6px;
+}
+.search-list .item { background: rgba(91, 156, 184, 0.06); }
+.search-empty {
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--fg);
+  opacity: 0.5;
+  font-style: italic;
+  font-family: Georgia, serif;
+}
+.search-divider {
+  margin: 14px 0 8px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  color: var(--fg);
+  opacity: 0.45;
+  text-transform: uppercase;
+}
+
+/* ===== Double-label button (top large, sub small) ===== */
+.btn-double {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+  gap: 1px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+.btn-double .top { font-size: 12.5px; font-weight: 500; }
+.btn-double .sub { font-size: 8.5px; opacity: 0.55; letter-spacing: 0.02em; }
+
+/* ===== Recommendation modal ===== */
+.recommend-card { max-width: 460px; padding: 28px 26px 22px; }
+.recommend-intro {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fg);
+  margin-bottom: 16px;
+  opacity: 0.85;
+}
+.recommend-intro b { color: var(--accent); }
+.recommend-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.recommend-row button, .recommend-row label {
+  flex: 1;
+  text-align: center;
+  padding: 10px 12px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+.recommend-row button.cancel, .recommend-row label.cancel {
+  background: #fff;
+  color: var(--fg);
+  border: 1px solid var(--line);
+}
+.recommend-row button:hover:not(.cancel),
+.recommend-row label:hover:not(.cancel) { background: #4a8aa3; }
+.recommend-row button.cancel:hover { border-color: var(--accent); color: var(--accent); }
+.recommend-row button:active, .recommend-row label:active { transform: scale(0.97); }
+
+.recommend-info {
+  font-size: 12px;
+  color: var(--fg);
+  opacity: 0.6;
+  text-align: center;
+  margin: 8px 0 14px;
+  font-family: Georgia, serif;
+}
+.recommend-info b { color: var(--accent); font-weight: 600; opacity: 1; }
+
+.recommend-list {
+  max-height: 360px;
+  overflow-y: auto;
+  border-top: 1px solid var(--line);
+  margin-top: 6px;
+}
+.recommend-list .rec-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.recommend-list .rec-item:hover { background: rgba(91, 156, 184, 0.08); }
+.rec-item .rec-num {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--fg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: Georgia, serif;
+}
+.rec-item .rec-icon {
+  flex: 0 0 26px;
+  width: 26px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rec-item .rec-icon img { max-width: 100%; max-height: 100%; }
+.rec-item .rec-name { flex: 1; font-size: 13px; color: var(--fg); }
+.rec-item .rec-ratio {
+  font-size: 11px;
+  font-family: Georgia, serif;
+  font-style: italic;
+  color: var(--accent);
+  opacity: 0.85;
+}
+.rec-item .rec-diff {
+  font-size: 10px;
+  font-family: Georgia, serif;
+  color: var(--fg);
+  opacity: 0.4;
+  margin-left: 6px;
+}
 
 footer.controls {
   padding: 14px 40px 26px;
@@ -673,6 +859,15 @@ footer.controls {
       </svg>
     </button>
   </div>
+  <div class="search-row">
+    <input type="text" id="searchInput" placeholder="アイテム検索" autocomplete="off">
+    <button id="searchBtn" class="search-icon" aria-label="検索" title="検索">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="11" cy="11" r="7"/>
+        <line x1="20" y1="20" x2="16.65" y2="16.65"/>
+      </svg>
+    </button>
+  </div>
   <nav id="categories"></nav>
 </aside>
 
@@ -765,7 +960,11 @@ footer.controls {
     <input type="file" id="file" accept="image/*,.gif" hidden>
     <label for="file" class="btn">画像 / GIF</label>
     <input type="file" id="videoFile" accept="video/*" hidden>
-    <label for="videoFile" class="btn">動画→GIF</label>
+    <label for="videoFile" class="btn btn-double">
+      <span class="top">GIF変換君</span>
+      <span class="sub">動画→GIF</span>
+    </label>
+    <button id="recommend" class="btn">おすすめ君</button>
     <button id="save" class="btn" disabled>保存</button>
     <div class="splits">
       <div class="split-field">
@@ -789,6 +988,25 @@ footer.controls {
     </div>
   </footer>
 </main>
+
+<div id="recommendOverlay" class="guide-overlay" role="dialog" aria-modal="true">
+  <div class="guide-card recommend-card">
+    <button id="recommendClose" class="guide-close" aria-label="閉じる">×</button>
+    <h3>おすすめ君</h3>
+    <div class="recommend-intro" id="recommendIntro">
+      画像 / 動画 / GIF を読み込むと、<br>
+      その画像の縦横比に<b>近いアイテム</b>を一覧で出します。<br>
+      選んだ後はそのまま編集 / 保存できます。
+    </div>
+    <div class="recommend-row" id="recommendActionRow">
+      <input type="file" id="recommendFile" accept="image/*,video/*,.gif" hidden>
+      <label for="recommendFile">読み込む</label>
+      <button class="cancel" id="recommendCancel">やめる</button>
+    </div>
+    <div class="recommend-info" id="recommendInfo" style="display:none"></div>
+    <div class="recommend-list" id="recommendList" style="display:none"></div>
+  </div>
+</div>
 
 <div id="toast" class="toast"></div>
 
@@ -931,7 +1149,7 @@ footer.controls {
           </div>
         </div>
         <div class="x-card-body">
-          
+          このサイト作りました。よかったらフォロー & リツイートしてね。
         </div>
         <div class="x-card-action">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2184,6 +2402,17 @@ const handleStart = document.getElementById('handleStart');
 const handleEnd = document.getElementById('handleEnd');
 const timeStartEl = document.getElementById('timeStart');
 const timeEndEl = document.getElementById('timeEnd');
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+const recommendBtn = document.getElementById('recommend');
+const recommendOverlay = document.getElementById('recommendOverlay');
+const recommendCloseBtn = document.getElementById('recommendClose');
+const recommendCancelBtn = document.getElementById('recommendCancel');
+const recommendFile = document.getElementById('recommendFile');
+const recommendIntro = document.getElementById('recommendIntro');
+const recommendActionRow = document.getElementById('recommendActionRow');
+const recommendInfo = document.getElementById('recommendInfo');
+const recommendList = document.getElementById('recommendList');
 const toastEl = document.getElementById('toast');
 const guideOverlay = document.getElementById('guideOverlay');
 const guideCloseBtn = document.getElementById('guideClose');
@@ -2208,14 +2437,14 @@ function showToast(text, durationMs = 1400) {
 /* ===== Overlay open/close helpers ===== */
 function openOverlay(el) {
   // close any other open overlay first to avoid stacking
-  [welcomeOverlay, guideOverlay, shareOverlay].forEach(o => {
+  [welcomeOverlay, guideOverlay, shareOverlay, recommendOverlay].forEach(o => {
     if (o !== el) o.classList.remove('shown');
   });
   el.classList.add('shown');
 }
 function closeOverlay(el) { el.classList.remove('shown'); }
 function closeAllOverlays() {
-  [welcomeOverlay, guideOverlay, shareOverlay].forEach(o => o.classList.remove('shown'));
+  [welcomeOverlay, guideOverlay, shareOverlay, recommendOverlay].forEach(o => o.classList.remove('shown'));
 }
 
 /* ===== Guide overlay (分割保存後) ===== */
@@ -2281,8 +2510,58 @@ window.addEventListener('load', () => {
 });
 
 /* ===== Sidebar ===== */
-function renderSidebar() {
-  const root = document.getElementById('categories');
+/* ===== Sidebar (search-aware) ===== */
+/* Kanji → hiragana の最小マップ。データ中の漢字をひらがな入力でも引けるように。 */
+const KANJI_YOMI = {
+  '紙': 'かみ', '写真': 'しゃしん', '黒板': 'こくばん', '学校': 'がっこう',
+  '額入り': 'がくいり', '額': 'がく', '入り': 'いり', '賞状': 'しょうじょう',
+  '雑': 'ざつ', '貼り': 'はり', '掛け軸': 'かけじく', '掛け': 'かけ', '軸': 'じく',
+  '透明': 'とうめい', '立て': 'たて', '横': 'よこ', '縦': 'たて',
+  '色紙': 'しきし', '名刺': 'めいし', '三角': 'さんかく',
+  '上画面': 'じょうがめん', '画面': 'がめん', '上': 'うえ', '下': 'した',
+  '平': 'ひら', '大': 'だい', '小': 'こ', '中': 'なか',
+  '装飾': 'そうしょく', '一体': 'いったい', '型': 'がた',
+  '冷蔵': 'れいぞう', '音楽': 'おんがく', '積み': 'つみ',
+  '判': 'はん', '枠': 'わく', '花': 'はな', 'お花': 'おはな',
+  '本': 'ほん', '雑誌': 'ざっし', '時計': 'とけい', '机': 'つくえ',
+  '壁': 'かべ', '壁掛け': 'かべかけ', '家具': 'かぐ',
+};
+function autoYomi(name) {
+  // 漢字部分を KANJI_YOMI で置換 (最長一致)
+  let result = '';
+  let i = 0;
+  while (i < name.length) {
+    let matched = false;
+    for (let len = 4; len >= 1; len--) {
+      const slice = name.substr(i, len);
+      if (KANJI_YOMI[slice]) { result += KANJI_YOMI[slice]; i += len; matched = true; break; }
+    }
+    if (!matched) { result += name[i]; i++; }
+  }
+  return result;
+}
+function normalizeForSearch(s) {
+  if (!s) return '';
+  // 1) lowercase  2) カタカナ→ひらがな  3) 全角空白除去
+  let out = s.toLowerCase().replace(/\s+/g, '');
+  out = out.replace(/[\u30A1-\u30F6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60));
+  return out;
+}
+// 各アイテムに検索用の正規化テキストを事前計算
+function buildSearchIndex() {
+  for (const cat of CATEGORIES) {
+    for (const it of cat.items) {
+      const baseN = normalizeForSearch(it.name);
+      const yomiN = normalizeForSearch(autoYomi(it.name));
+      it._searchKey = baseN;
+      it._searchYomi = yomiN;
+      it._catName = cat.name;
+    }
+  }
+}
+
+function renderCategories(root) {
+  root.innerHTML = '';
   CATEGORIES.forEach(cat => {
     const w = document.createElement('div');
     w.className = 'category';
@@ -2292,17 +2571,92 @@ function renderSidebar() {
     h.addEventListener('click', () => w.classList.toggle('open'));
     const items = document.createElement('div');
     items.className = 'items';
-    cat.items.forEach(it => {
-      const el = document.createElement('div');
-      el.className = 'item';
-      const ic = it.icon
-        ? `<span class="item-icon-slot"><img class="item-icon" src="${it.icon}" alt=""></span>`
-        : `<span class="item-icon-slot"></span>`;
-      const nt = it.note ? `<span class="item-note">${it.note}</span>` : '';
-      el.innerHTML = `${ic}<span class="item-label">${it.name}</span><span class="item-ratio">${it.w} : ${it.h}</span>${nt}`;
-      el.addEventListener('click', () => selectItem(it, el));
-      items.appendChild(el);
-    });
+    cat.items.forEach(it => items.appendChild(buildItemRow(it)));
+    w.appendChild(h); w.appendChild(items);
+    root.appendChild(w);
+  });
+}
+function buildItemRow(it) {
+  const el = document.createElement('div');
+  el.className = 'item';
+  const ic = it.icon
+    ? `<span class="item-icon-slot"><img class="item-icon" src="${it.icon}" alt=""></span>`
+    : `<span class="item-icon-slot"></span>`;
+  const nt = it.note ? `<span class="item-note">${it.note}</span>` : '';
+  el.innerHTML = `${ic}<span class="item-label">${it.name}</span><span class="item-ratio">${it.w} : ${it.h}</span>${nt}`;
+  el.addEventListener('click', () => selectItem(it, el));
+  return el;
+}
+function searchItems(queryRaw) {
+  const q = normalizeForSearch(queryRaw);
+  if (!q) return null;
+  const results = [];
+  for (const cat of CATEGORIES) {
+    for (const it of cat.items) {
+      let score = -1;
+      const k = it._searchKey, y = it._searchYomi;
+      const pi = k.indexOf(q);
+      const yi = y.indexOf(q);
+      // 漢字混じりのとき yomi 側のマッチも採用 (先頭一致を優先)
+      if (pi === 0 || yi === 0) score = 0;          // 最優先: 先頭一致
+      else if (pi > 0 || yi > 0) score = 1;          // 次: 部分一致
+      if (score >= 0) {
+        const earliest = (pi >= 0 && yi >= 0) ? Math.min(pi, yi) : Math.max(pi, yi);
+        results.push({ item: it, score, pos: earliest });
+      }
+    }
+  }
+  // sort: score → pos
+  results.sort((a, b) => a.score - b.score || a.pos - b.pos);
+  return results.map(r => r.item);
+}
+function renderSidebar() {
+  buildSearchIndex();
+  const root = document.getElementById('categories');
+  const q = searchInput.value.trim();
+  if (!q) {
+    renderCategories(root);
+    return;
+  }
+  root.innerHTML = '';
+  const hits = searchItems(q);
+  if (!hits || hits.length === 0) {
+    const empty = document.createElement('div');
+    empty.className = 'search-empty';
+    empty.textContent = '一致するアイテムがありません';
+    root.appendChild(empty);
+    // 少なめでもカテゴリ一覧を下に
+    const div = document.createElement('div');
+    div.className = 'search-divider';
+    div.textContent = 'カテゴリ一覧';
+    root.appendChild(div);
+    renderCategoriesInto(root);
+    return;
+  }
+  const list = document.createElement('div');
+  list.className = 'items search-list';
+  hits.forEach(it => list.appendChild(buildItemRow(it)));
+  root.appendChild(list);
+  // 一致が少なめ(5件以下)ならカテゴリ一覧も下に追加
+  if (hits.length <= 5) {
+    const div = document.createElement('div');
+    div.className = 'search-divider';
+    div.textContent = 'カテゴリ一覧';
+    root.appendChild(div);
+    renderCategoriesInto(root);
+  }
+}
+function renderCategoriesInto(root) {
+  CATEGORIES.forEach(cat => {
+    const w = document.createElement('div');
+    w.className = 'category';
+    const h = document.createElement('div');
+    h.className = 'category-header';
+    h.innerHTML = `<span>${cat.name}</span><span class="arrow">›</span>`;
+    h.addEventListener('click', () => w.classList.toggle('open'));
+    const items = document.createElement('div');
+    items.className = 'items';
+    cat.items.forEach(it => items.appendChild(buildItemRow(it)));
     w.appendChild(h); w.appendChild(items);
     root.appendChild(w);
   });
@@ -2311,8 +2665,12 @@ function renderSidebar() {
 function selectItem(item, el) {
   state.ratio = item;
   if (state.activeItemEl) state.activeItemEl.classList.remove('active');
-  el.classList.add('active');
-  state.activeItemEl = el;
+  if (el) {
+    el.classList.add('active');
+    state.activeItemEl = el;
+  } else {
+    state.activeItemEl = null;
+  }
   ratioText.innerHTML = `${item.w}<span class="colon">:</span>${item.h}`;
   ratioName.textContent = item.name;
   ratioIconSlot.innerHTML = item.icon ? `<img src="${item.icon}" alt="">` : '';
@@ -2932,6 +3290,132 @@ function onHandleMove(e, isStart) {
 }
 setupHandleDrag(handleStart, true);
 setupHandleDrag(handleEnd, false);
+
+/* ===== Search input ===== */
+let __searchTimer = null;
+searchInput.addEventListener('input', () => {
+  // light debounce so each keystroke is responsive but not thrashing
+  clearTimeout(__searchTimer);
+  __searchTimer = setTimeout(renderSidebar, 60);
+});
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); renderSidebar(); searchInput.blur(); }
+});
+searchBtn.addEventListener('click', () => { renderSidebar(); });
+
+/* ===== おすすめ君 (アスペクト比からアイテム推薦) ===== */
+function openRecommend() {
+  recommendIntro.style.display = '';
+  recommendActionRow.style.display = '';
+  recommendInfo.style.display = 'none';
+  recommendList.style.display = 'none';
+  recommendList.innerHTML = '';
+  openOverlay(recommendOverlay);
+}
+recommendBtn.addEventListener('click', openRecommend);
+recommendCloseBtn.addEventListener('click', () => closeOverlay(recommendOverlay));
+recommendCancelBtn.addEventListener('click', () => closeOverlay(recommendOverlay));
+recommendOverlay.addEventListener('click', e => { if (e.target === recommendOverlay) closeOverlay(recommendOverlay); });
+
+recommendFile.addEventListener('change', async e => {
+  const f = e.target.files[0];
+  if (!f) return;
+  e.target.value = '';
+  // 進捗テキスト
+  recommendInfo.style.display = '';
+  recommendInfo.textContent = '読み込み中…';
+  recommendList.style.display = 'none';
+  try {
+    // ファイル種別に応じて読み込み (画像/GIF/動画 すべて対応)
+    const isVideo = f.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|ogv|avi)$/i.test(f.name);
+    const isGifFile = f.type === 'image/gif' || /\.gif$/i.test(f.name);
+    if (isVideo) {
+      // 動画 → GIF化と同じ流れ。ratio測定のためメタデータだけ取れば十分だが、
+      // 「読み込んだら同じ流れで使える」体験のため main 状態にも反映する
+      await loadVideoAsGif(f);
+    } else if (isGifFile) {
+      await loadFile(f);
+    } else {
+      await loadFile(f);
+    }
+    // メイン状態の natural サイズから推薦
+    const targetRatio = state.naturalW / state.naturalH;
+    showRecommendations(targetRatio);
+  } catch (err) {
+    console.error(err);
+    recommendInfo.textContent = '読み込みに失敗しました: ' + err.message;
+  }
+});
+
+/* video を直接 GIF化して state.frames に流し込む (videoInput.change と同じ処理) */
+async function loadVideoAsGif(f) {
+  state.fileType = 'gif';
+  state.fileSize = f.size;
+  state.loaded = false;
+  state.rotation = 0; state.flipH = false; state.flipV = false;
+  state.brightness = 0; state.quality = 0; state.gifBaseSize = 0;
+  state.currentFrame = 0; state.frames = [];
+  stopAnimation();
+  updateBrightnessGauge();
+  updateQualityGauge();
+  updateQualityInfo();
+  canvas.classList.remove('shown');
+  updateEmpty();
+  updateFileSize();
+  updateFramesInfo();
+  const decoded = await decodeVideoToFrames(f, (cur, total) => {
+    recommendInfo.textContent = `読み込み中… ${cur}/${total}`;
+  });
+  state.naturalW = decoded.width;
+  state.naturalH = decoded.height;
+  state.frames = decoded.frames;
+  state.loaded = true;
+  resetTrim();
+  updateFileSize();
+  updateFramesInfo();
+  updateEmpty();
+  updateToolBtns();
+  recomputeLayout();
+  updateSaveBtn();
+  updateTrimUI();
+  if (state.frames.length > 1) startAnimation();
+  showToast('GIFに変換しました');
+}
+
+function showRecommendations(targetRatio) {
+  // 全アイテムを比率差でソート
+  const all = [];
+  for (const cat of CATEGORIES) {
+    for (const it of cat.items) {
+      const r = it.w / it.h;
+      const diff = Math.abs(r - targetRatio);
+      all.push({ item: it, ratio: r, diff });
+    }
+  }
+  all.sort((a, b) => a.diff - b.diff);
+  const top = all.slice(0, 12);
+  recommendInfo.innerHTML = `読み込んだサイズ比 <b>${state.naturalW} : ${state.naturalH}</b> (≈ <b>${targetRatio.toFixed(3)}</b>)<br>近い順にトップ ${top.length} 件`;
+  recommendList.innerHTML = '';
+  top.forEach((rec, idx) => {
+    const it = rec.item;
+    const row = document.createElement('div');
+    row.className = 'rec-item';
+    const ic = it.icon ? `<img src="${it.icon}" alt="">` : '';
+    row.innerHTML = `
+      <div class="rec-num">${idx + 1}</div>
+      <div class="rec-icon">${ic}</div>
+      <div class="rec-name">${it.name}</div>
+      <div class="rec-ratio">${it.w} : ${it.h}</div>
+      <div class="rec-diff">Δ${rec.diff.toFixed(3)}</div>
+    `;
+    row.addEventListener('click', () => {
+      selectItem(it, null);  // applies ratio, draws frame in preview
+      closeOverlay(recommendOverlay);
+    });
+    recommendList.appendChild(row);
+  });
+  recommendList.style.display = '';
+}
 
 /* ===== Pointer ===== */
 function localPos(e) {

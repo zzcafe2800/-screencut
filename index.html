@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>べんり君ーｇ画像</title>
+<title>aspect</title>
 <style>
 @property --fill { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
 
@@ -122,9 +122,12 @@ header.info {
 
 .item-big {
   font-size: 24px;
-  font-weight: 400;
+  font-weight: 700;
   color: var(--fg);
   line-height: 1.15;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 2px;
+  letter-spacing: 0.02em;
 }
 .ratio-small {
   font-family: var(--serif);
@@ -142,12 +145,43 @@ header.info {
   line-height: 1.5;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   align-items: flex-end;
 }
-.file-info .size { font-size: 14px; color: var(--fg); }
-.file-info .dim { font-size: 12px; color: var(--fg-muted); }
-.file-info .frames { font-size: 10px; color: var(--fg-faint); letter-spacing: 0.04em; }
+/* サイズバッジ: 容量に応じて色が変わるクリック可能ボタン */
+.size-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Hiragino Sans', 'Yu Gothic', system-ui, sans-serif;
+  font-style: normal;
+  color: var(--fg);
+  background: #fff;
+  border: 1.5px solid var(--accent);
+  cursor: pointer;
+  user-select: none;
+  letter-spacing: 0.02em;
+  transition: transform 0.12s, box-shadow 0.15s;
+}
+.size-badge:hover { transform: scale(1.04); box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+.size-badge:active { transform: scale(0.97); }
+.size-badge[data-tier="white"]  { background: #fff;     color: #2c3e50; border-color: var(--accent); }
+.size-badge[data-tier="yellow"] { background: #ffe680; color: #6b5a1a; border-color: #d4b22a; }
+.size-badge[data-tier="orange"] { background: #ffb068; color: #5a3010; border-color: #d97f25; }
+.size-badge[data-tier="red"]    { background: #ff6b6b; color: #5a1a1a; border-color: #d94545; }
+.size-badge[data-tier="purple"] { background: #8d5fc4; color: #fff;    border-color: #6a3fa0; }
+.size-badge[data-tier="black"]  { background: #2c3e50; color: #fff;    border-color: #1a2530; }
+.file-info .dim { font-size: 13px; color: var(--fg-muted); }
+/* 「N frames / 枚」を数字と同じサイズで表示 */
+.file-info .frames {
+  font-size: 13px;
+  color: var(--fg-muted);
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+.file-info .frames .frames-num { font-style: normal; font-weight: 600; }
 
 .canvas-wrap {
   position: relative;
@@ -172,6 +206,65 @@ header.info {
   pointer-events: none;
 }
 .empty-msg.hidden { display: none; }
+
+/* ドラッグ&ドロップ用オーバーレイ */
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(91, 156, 184, 0.18);
+  border: 3px dashed var(--accent);
+  border-radius: 12px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  pointer-events: none;
+  z-index: 10;
+}
+.drop-overlay.shown { display: flex; }
+.drop-overlay-inner {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.drop-overlay-inner svg { display: block; margin: 0 auto 8px; }
+
+/* Simplify (Cutout) slider panel */
+.simplify-panel {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 12px 8px;
+  font-size: 11px;
+  min-width: 160px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  display: none;
+  z-index: 9;
+  backdrop-filter: blur(4px);
+}
+.simplify-panel.shown { display: block; }
+.simplify-panel .sp-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.simplify-panel .sp-row { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; }
+.simplify-panel label {
+  display: flex; justify-content: space-between;
+  color: var(--fg); font-weight: 500;
+}
+.simplify-panel input[type=range] {
+  width: 100%;
+  accent-color: var(--accent);
+  margin: 0;
+}
 
 .image-tools {
   display: flex;
@@ -243,18 +336,54 @@ header.info {
 .q-level.shown { display: flex; }
 .quality-info {
   margin: 0 auto;
-  padding: 6px 12px;
-  font-size: 11.5px;
-  font-family: Georgia, serif;
+  padding: 8px 14px;
+  font-size: 13px;
   color: var(--fg);
-  opacity: 0.65;
   text-align: center;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   display: none;
 }
-.quality-info.shown { display: block; }
+.quality-info.shown { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; }
+.quality-info .q-before {
+  font-family: 'Hiragino Sans', 'Yu Gothic', system-ui, sans-serif;
+  color: var(--fg);
+  opacity: 0.5;
+}
+.quality-info .q-arrow {
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 900;
+}
+.quality-info .q-after {
+  font-family: 'Hiragino Sans', 'Yu Gothic', system-ui, sans-serif;
+  color: var(--accent);
+  font-weight: 700;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 1px;
+}
+.quality-info .q-pct {
+  font-family: 'Hiragino Sans', 'Yu Gothic', system-ui, sans-serif;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 12px;
+  background: rgba(91,156,184,0.12);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* カテゴリが開いてるときの背景強調 */
+.category.open {
+  background: rgba(0, 0, 0, 0.025);
+  border-radius: 6px;
+}
+.rec-category.open {
+  background: rgba(0, 0, 0, 0.025);
+}
+
+.size-tier-list { display: flex; flex-direction: column; gap: 6px; }
+.size-tier-row { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--fg); }
+.size-tier-row .size-badge { flex: 0 0 70px; text-align: center; font-size: 12px; padding: 3px 8px; }
 .quality-info b { color: var(--accent); font-weight: 600; opacity: 1; }
-.quality-info .arrow { margin: 0 6px; opacity: 0.6; }
 
 /* ===== Trim panel ===== */
 .trim-panel {
@@ -444,37 +573,47 @@ header.info {
 .btn-double .sub { font-size: 8.5px; opacity: 0.55; letter-spacing: 0.02em; }
 
 /* ===== Recommendation modal: illustration + accordion ===== */
-.recommend-card { max-width: 480px; padding: 28px 26px 22px; }
+.recommend-card {
+  max-width: 640px;
+  width: 100%;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 28px 22px;
+}
 .recommend-illust {
   width: 100%;
   height: 90px;
   margin: -4px 0 16px;
   color: var(--accent);
+  flex-shrink: 0;
 }
 .recommend-illust svg { width: 100%; height: 100%; display: block; }
 .recommend-intro {
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.6;
   color: var(--fg);
   margin-bottom: 14px;
   opacity: 0.85;
   text-align: center;
+  flex-shrink: 0;
 }
 .recommend-intro b { color: var(--accent); }
 .recommend-row {
   display: flex;
   gap: 8px;
   margin-bottom: 14px;
+  flex-shrink: 0;
 }
 .recommend-row button, .recommend-row label {
   flex: 1;
   text-align: center;
-  padding: 10px 12px;
+  padding: 12px 12px;
   background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 8px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   letter-spacing: 0.06em;
   cursor: pointer;
@@ -491,37 +630,43 @@ header.info {
 .recommend-row button:active, .recommend-row label:active { transform: scale(0.97); }
 
 .recommend-info {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--fg);
-  opacity: 0.7;
+  opacity: 0.75;
   text-align: center;
-  margin: 8px 0 14px;
+  margin: 6px 0 12px;
   font-family: Georgia, serif;
+  flex-shrink: 0;
 }
 .recommend-info b { color: var(--accent); font-weight: 600; opacity: 1; }
 
 .recommend-list {
-  max-height: 380px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
   border-top: 1px solid var(--line);
   margin-top: 4px;
 }
 .rec-category { border-bottom: 1px solid var(--line); }
 .rec-cat-header {
-  padding: 11px 4px;
+  padding: 12px 6px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  font-size: 14.5px;
   font-weight: 600;
   color: var(--fg);
   user-select: none;
   transition: color 0.15s;
 }
+.rec-cat-header.top8 {
+  color: var(--accent);
+  background: linear-gradient(90deg, rgba(91,156,184,0.10), transparent 70%);
+}
 .rec-cat-header:hover { color: var(--accent); }
 .rec-cat-header .arrow {
-  font-size: 16px;
+  font-size: 18px;
   color: var(--accent);
   transition: transform 0.2s;
   line-height: 1;
@@ -532,28 +677,28 @@ header.info {
   overflow: hidden;
   transition: max-height 0.35s ease;
 }
-.rec-category.open .rec-cat-items { max-height: 2000px; }
+.rec-category.open .rec-cat-items { max-height: 4000px; }
 .rec-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 4px 8px 16px;
+  gap: 12px;
+  padding: 11px 6px 11px 18px;
   cursor: pointer;
   transition: background 0.12s;
 }
 .rec-item:hover { background: rgba(91, 156, 184, 0.08); }
 .rec-item .rec-icon {
-  flex: 0 0 24px;
-  width: 24px;
-  height: 14px;
+  flex: 0 0 28px;
+  width: 28px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .rec-item .rec-icon img { max-width: 100%; max-height: 100%; }
-.rec-item .rec-name { flex: 1; font-size: 13px; color: var(--fg); min-width: 0; }
+.rec-item .rec-name { flex: 1; font-size: 14px; color: var(--fg); min-width: 0; }
 .rec-item .rec-ratio {
-  font-size: 11px;
+  font-size: 12.5px;
   font-family: Georgia, serif;
   font-style: italic;
   color: var(--accent);
@@ -561,9 +706,9 @@ header.info {
   flex-shrink: 0;
 }
 .rec-item .rec-match {
-  flex: 0 0 44px;
+  flex: 0 0 56px;
   text-align: right;
-  font-size: 11.5px;
+  font-size: 13.5px;
   font-family: Georgia, serif;
   color: var(--fg);
   opacity: 0.7;
@@ -914,7 +1059,7 @@ footer.controls {
 
 <aside>
   <div class="brand-row">
-    <div class="brand">aspect<span class="dot">.</span></div>
+    <div class="brand">べんり君<span class="dot">-G</span></div>
     <button id="shareBtn" class="icon-btn" aria-label="共有" title="共有">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M17 2l4 4-4 4M21 6H9a4 4 0 00-4 4v2"/>
@@ -947,12 +1092,12 @@ footer.controls {
     <div class="ratio-label">
       <div class="name-row">
         <span class="ratio-icon-slot" id="ratioIconSlot"></span>
-        <span class="item-big" id="ratioName">比率を選択</span>
+        <span class="item-big" id="ratioName">アイテムを選んでね</span>
       </div>
       <span class="ratio-small" id="ratioText">—<span class="colon">:</span>—</span>
     </div>
     <div class="file-info">
-      <span class="size" id="fileSize">—</span>
+      <button class="size-badge" id="fileSize" data-tier="white" title="クリックでサイズと色の関係を表示">—</button>
       <span class="dim" id="dimLine">— × — px</span>
       <span class="frames" id="framesInfo"></span>
     </div>
@@ -960,7 +1105,30 @@ footer.controls {
 
   <div class="canvas-wrap" id="canvasWrap">
     <canvas id="canvas"></canvas>
-    <div class="empty-msg" id="emptyMsg">画像 / GIF を読み込む</div>
+    <div class="empty-msg" id="emptyMsg">ここに画像・GIFをドロップ</div>
+    <div class="drop-overlay" id="dropOverlay">
+      <div class="drop-overlay-inner">
+        <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 16V4M8 8l4-4 4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/>
+        </svg>
+        <div>ここで離す</div>
+      </div>
+    </div>
+    <div class="simplify-panel" id="simplifyPanel">
+      <div class="sp-title">単純化 調整</div>
+      <div class="sp-row">
+        <label>色数 <span id="spLevelsVal">8</span></label>
+        <input type="range" id="spLevels" min="2" max="16" step="1" value="8">
+      </div>
+      <div class="sp-row">
+        <label>滑らかさ <span id="spSmoothVal">2</span></label>
+        <input type="range" id="spSmooth" min="0" max="6" step="1" value="2">
+      </div>
+      <div class="sp-row">
+        <label>輪郭 <span id="spEdgeVal">0.3</span></label>
+        <input type="range" id="spEdge" min="0" max="1" step="0.05" value="0.3">
+      </div>
+    </div>
   </div>
 
   <div class="image-tools">
@@ -1008,6 +1176,15 @@ footer.controls {
       </svg>
       <span class="q-level" id="qLevel"></span>
     </button>
+    <button class="brightness-btn" id="simplify" title="単純化 (色数を減らす)" disabled>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <!-- cutout-like blob icon -->
+        <path d="M5 7c1-3 6-3 8-1s5 0 6 2-1 5-2 7-5 4-8 3-5-3-5-6 0-3 1-5z"/>
+        <circle cx="9" cy="11" r="1.2" fill="currentColor" stroke="none"/>
+        <circle cx="15" cy="13" r="1.2" fill="currentColor" stroke="none"/>
+      </svg>
+      <span class="q-level" id="sLevel"></span>
+    </button>
     <button class="brightness-btn trim-btn" id="trimToggle" title="長さ調節" hidden>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <!-- timeline with two markers icon -->
@@ -1030,7 +1207,7 @@ footer.controls {
   <footer class="controls">
     <input type="file" id="file" accept="image/*,.gif" hidden>
     <label for="file" class="btn btn-accent">画像 / GIF</label>
-    <input type="file" id="videoFile" accept="video/*" hidden>
+    <input type="file" id="videoFile" accept="video/*,.mp4,.mov,.m4v,.webm,.ogv,.avi,.mkv" hidden>
     <label for="videoFile" class="btn btn-accent">GIF変換君</label>
     <button id="recommend" class="btn btn-accent">オススメ君</button>
     <button id="save" class="btn" disabled>保存</button>
@@ -1056,6 +1233,25 @@ footer.controls {
     </div>
   </footer>
 </main>
+
+<div id="sizeInfoOverlay" class="guide-overlay" role="dialog" aria-modal="true">
+  <div class="guide-card" style="max-width: 380px">
+    <button id="sizeInfoClose" class="guide-close" aria-label="閉じる">×</button>
+    <h3>サイズの色について</h3>
+    <p style="font-size:12px; color:var(--fg); opacity:0.75; line-height:1.6; margin:6px 0 14px;">
+      ファイルの容量が大きいほど色が濃くなっていきます。<br>
+      共有・アップロード時の目安にしてください。
+    </p>
+    <div class="size-tier-list">
+      <div class="size-tier-row"><span class="size-badge" data-tier="white">~1 MB</span><span>軽い (アイコン・小さい画像)</span></div>
+      <div class="size-tier-row"><span class="size-badge" data-tier="yellow">~2 MB</span><span>普通の画像 / 短いGIF</span></div>
+      <div class="size-tier-row"><span class="size-badge" data-tier="orange">~5 MB</span><span>大きめの画像 / 中程度GIF</span></div>
+      <div class="size-tier-row"><span class="size-badge" data-tier="red">~10 MB</span><span>重い (SNS投稿の上限近く)</span></div>
+      <div class="size-tier-row"><span class="size-badge" data-tier="purple">~30 MB</span><span>かなり重い (動画変換GIFなど)</span></div>
+      <div class="size-tier-row"><span class="size-badge" data-tier="black">~100 MB</span><span>とても重い (圧縮を検討)</span></div>
+    </div>
+  </div>
+</div>
 
 <div id="recommendOverlay" class="guide-overlay" role="dialog" aria-modal="true">
   <div class="guide-card recommend-card">
@@ -2434,7 +2630,15 @@ const CATEGORIES = [
 ];
 
 const BRIGHTNESS_STEP = 0.08;
-const BRIGHTNESS_MAX = 5;
+const BRIGHTNESS_MAX = 8;       // 0..5: 明るくなる / 6..8: 元より少しずつ暗く / 9で0に戻る
+// 各レベルの明るさ係数(brightness CSS filter の値)
+const BRIGHTNESS_VALUES = [
+  1.00, 1.08, 1.16, 1.24, 1.32, 1.40,  // 0..5
+  0.90, 0.78, 0.66,                     // 6, 7, 8 (元より暗く)
+];
+function getBrightnessFactor(level) {
+  return BRIGHTNESS_VALUES[level] ?? 1.0;
+}
 const QUALITY_FACTOR = 1.5;  // 1段階あたりの劣化倍率
 const QUALITY_MAX = 5;       // 0..5 (cycle: 0→1→2→3→4→5→0)
 
@@ -2450,6 +2654,11 @@ const state = {
   brightness: 0,
   quality: 0,            // 0=元のまま, 1+で 1.5^level 倍画質低下
   gifBaseSize: 0,        // 推定 or 実測の元GIFサイズ(byte)
+  simplify: 0,           // 0=オフ, 1..5プリセット
+  simpLevels: 8,         // 色数 (2..16)
+  simpSmooth: 2,         // 滑らかさブラー (0..6)
+  simpEdge: 0.3,         // 輪郭忠実度 (0..1)
+  _simpCache: null,      // {frameIdx -> canvas} キャッシュ
   trimStart: 0,          // フレーム index 開始 (inclusive)
   trimEnd: 0,            // フレーム index 終了 (inclusive)
   trimOpen: false,       // トリミングパネル開閉
@@ -2490,6 +2699,15 @@ const brightnessBtn = document.getElementById('brightness');
 const qualityBtn = document.getElementById('quality');
 const qLevelEl = document.getElementById('qLevel');
 const qInfoEl = document.getElementById('qInfo');
+const simplifyBtn = document.getElementById('simplify');
+const sLevelEl = document.getElementById('sLevel');
+const simplifyPanel = document.getElementById('simplifyPanel');
+const spLevels = document.getElementById('spLevels');
+const spSmooth = document.getElementById('spSmooth');
+const spEdge = document.getElementById('spEdge');
+const spLevelsVal = document.getElementById('spLevelsVal');
+const spSmoothVal = document.getElementById('spSmoothVal');
+const spEdgeVal = document.getElementById('spEdgeVal');
 const trimToggleBtn = document.getElementById('trimToggle');
 const trimPanel = document.getElementById('trimPanel');
 const trimBar = document.getElementById('trimBar');
@@ -2503,6 +2721,8 @@ const searchBtn = document.getElementById('searchBtn');
 const recommendBtn = document.getElementById('recommend');
 const recommendOverlay = document.getElementById('recommendOverlay');
 const recommendCloseBtn = document.getElementById('recommendClose');
+const sizeInfoOverlay = document.getElementById('sizeInfoOverlay');
+const sizeInfoCloseBtn = document.getElementById('sizeInfoClose');
 const recommendCancelBtn = document.getElementById('recommendCancel');
 const recommendFile = document.getElementById('recommendFile');
 const recommendIntro = document.getElementById('recommendIntro');
@@ -2533,15 +2753,19 @@ function showToast(text, durationMs = 1400) {
 /* ===== Overlay open/close helpers ===== */
 function openOverlay(el) {
   // close any other open overlay first to avoid stacking
-  [welcomeOverlay, guideOverlay, shareOverlay, recommendOverlay].forEach(o => {
+  [welcomeOverlay, guideOverlay, shareOverlay, recommendOverlay, sizeInfoOverlay].forEach(o => {
     if (o !== el) o.classList.remove('shown');
   });
   el.classList.add('shown');
 }
 function closeOverlay(el) { el.classList.remove('shown'); }
 function closeAllOverlays() {
-  [welcomeOverlay, guideOverlay, shareOverlay, recommendOverlay].forEach(o => o.classList.remove('shown'));
+  [welcomeOverlay, guideOverlay, shareOverlay, recommendOverlay, sizeInfoOverlay].forEach(o => o.classList.remove('shown'));
 }
+/* size info modal */
+fileSizeEl.addEventListener('click', () => openOverlay(sizeInfoOverlay));
+sizeInfoCloseBtn.addEventListener('click', () => closeOverlay(sizeInfoOverlay));
+sizeInfoOverlay.addEventListener('click', e => { if (e.target === sizeInfoOverlay) closeOverlay(sizeInfoOverlay); });
 
 /* ===== Guide overlay (分割保存後) ===== */
 function showGuide() { openOverlay(guideOverlay); }
@@ -2830,6 +3054,55 @@ fileInput.addEventListener('change', e => {
   if (f) loadFile(f);
 });
 
+/* Unified loader: 画像 / GIF / 動画 を自動判別 */
+function loadAnyFile(f) {
+  if (!f) return;
+  const isVideo = f.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|ogv|avi|mkv)$/i.test(f.name);
+  if (isVideo) {
+    // 動画 → GIF変換と同じ処理に流す (videoInput change を再現)
+    const dt = new DataTransfer();
+    dt.items.add(f);
+    videoInput.files = dt.files;
+    videoInput.dispatchEvent(new Event('change'));
+  } else {
+    loadFile(f);
+  }
+}
+
+/* Drag & drop on the preview area */
+(function setupDropZone() {
+  const wrapEl = document.getElementById('canvasWrap');
+  const overlay = document.getElementById('dropOverlay');
+  let dragCounter = 0;
+  ['dragenter', 'dragover'].forEach(evt => {
+    wrapEl.addEventListener(evt, e => {
+      if (!e.dataTransfer || !e.dataTransfer.types.includes('Files')) return;
+      e.preventDefault();
+      if (evt === 'dragenter') dragCounter++;
+      overlay.classList.add('shown');
+    });
+  });
+  wrapEl.addEventListener('dragleave', e => {
+    e.preventDefault();
+    dragCounter = Math.max(0, dragCounter - 1);
+    if (dragCounter === 0) overlay.classList.remove('shown');
+  });
+  wrapEl.addEventListener('drop', e => {
+    e.preventDefault();
+    dragCounter = 0;
+    overlay.classList.remove('shown');
+    const file = e.dataTransfer.files[0];
+    if (file) loadAnyFile(file);
+  });
+  // window 全体のデフォルトの drop も止めて、ファイルが新規タブで開かないように
+  ['dragover', 'drop'].forEach(evt => {
+    window.addEventListener(evt, e => {
+      if (e.target.closest && e.target.closest('#canvasWrap')) return;
+      e.preventDefault();
+    });
+  });
+})();
+
 /* ===== Video → GIF ===== */
 const videoInput = document.getElementById('videoFile');
 
@@ -2895,12 +3168,15 @@ videoInput.addEventListener('change', async e => {
   state.brightness = 0;
   state.quality = 0;
   state.gifBaseSize = 0;
+  state.simplify = 0;
+  state._simpCache = null;
   state.currentFrame = 0;
   state.frames = [];
   stopAnimation();
   updateBrightnessGauge();
   updateQualityGauge();
   updateQualityInfo();
+  updateSimplifyGauge();
   canvas.classList.remove('shown');
   updateEmpty();
   updateFileSize();
@@ -2946,12 +3222,15 @@ async function loadFile(file) {
   state.brightness = 0;
   state.quality = 0;
   state.gifBaseSize = 0;
+  state.simplify = 0;
+  state._simpCache = null;
   state.currentFrame = 0;
   state.frames = [];
   stopAnimation();
   updateBrightnessGauge();
   updateQualityGauge();
   updateQualityInfo();
+  updateSimplifyGauge();
   canvas.classList.remove('shown');
   updateEmpty();
   updateFileSize();
@@ -3052,10 +3331,11 @@ function draw() {
   const frame = state.frames[state.currentFrame];
   if (!frame) return;
 
-  // Draw current source frame with rotation/flip/brightness/quality applied
+  // Draw current source frame with rotation/flip/brightness/quality/simplify applied
+  const sourceCanvas = state.simplify > 0 ? getSimplifiedFrame(state.currentFrame) : frame.canvas;
   ctx.save();
   if (state.brightness > 0) {
-    ctx.filter = `brightness(${1 + state.brightness * BRIGHTNESS_STEP})`;
+    ctx.filter = `brightness(${getBrightnessFactor(state.brightness)})`;
   }
   ctx.translate(state.canvasW / 2, state.canvasH / 2);
   ctx.rotate(state.rotation * Math.PI / 180);
@@ -3066,20 +3346,20 @@ function draw() {
   // 画質低下: 縮小→拡大で擬似的にピクセル化 (実保存もこの解像度で出力)
   if (state.quality > 0) {
     const sc = getQualityScale();
-    const sw = Math.max(1, Math.round(frame.canvas.width * sc));
-    const sh = Math.max(1, Math.round(frame.canvas.height * sc));
+    const sw = Math.max(1, Math.round(sourceCanvas.width * sc));
+    const sh = Math.max(1, Math.round(sourceCanvas.height * sc));
     let tmp = state._qPreviewCanvas;
     if (!tmp) { tmp = state._qPreviewCanvas = document.createElement('canvas'); }
     tmp.width = sw; tmp.height = sh;
     const tctx = tmp.getContext('2d');
     tctx.imageSmoothingEnabled = true;
     tctx.clearRect(0, 0, sw, sh);
-    tctx.drawImage(frame.canvas, 0, 0, sw, sh);
+    tctx.drawImage(sourceCanvas, 0, 0, sw, sh);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(tmp, -drawW / 2, -drawH / 2, drawW, drawH);
     ctx.imageSmoothingEnabled = true;
   } else {
-    ctx.drawImage(frame.canvas, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.drawImage(sourceCanvas, -drawW / 2, -drawH / 2, drawW, drawH);
   }
   ctx.restore();
 
@@ -3161,12 +3441,23 @@ function formatBytes(b) {
   if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
   return (b / 1024 / 1024).toFixed(2) + ' MB';
 }
+function sizeTier(bytes) {
+  if (bytes == null) return 'white';
+  const mb = bytes / (1024 * 1024);
+  if (mb <= 1)  return 'white';
+  if (mb <= 2)  return 'yellow';
+  if (mb <= 5)  return 'orange';
+  if (mb <= 10) return 'red';
+  if (mb <= 30) return 'purple';
+  return 'black';
+}
 function updateFileSize() {
   fileSizeEl.textContent = state.loaded ? formatBytes(state.fileSize) : '—';
+  fileSizeEl.dataset.tier = state.loaded ? sizeTier(state.fileSize) : 'white';
 }
 function updateFramesInfo() {
-  if (!state.loaded) { framesInfo.textContent = ''; return; }
-  framesInfo.textContent = state.frames.length > 1 ? `${state.frames.length} frames` : '';
+  if (!state.loaded || state.frames.length <= 1) { framesInfo.textContent = ''; return; }
+  framesInfo.innerHTML = `<span class="frames-num">${state.frames.length}</span> 枚`;
 }
 function updateDimLine() {
   if (!state.ratio || !state.loaded) {
@@ -3194,8 +3485,10 @@ function updateSaveBtn() {
 function updateToolBtns() {
   const en = state.loaded;
   [flipHBtn, flipVBtn, rotateBtn, brightnessBtn].forEach(b => b.disabled = !en);
-  // 画質低下: 画像でもGIFでも有効 (どちらも縮小→拡大でファイルサイズ削減)
+  // 画質低下: 画像でもGIFでも有効
   qualityBtn.disabled = !en;
+  // 単純化: 画像でもGIFでも有効
+  simplifyBtn.disabled = !en;
   // 長さ調節ボタンは複数フレームのGIFのときだけ表示
   const showTrim = en && state.frames.length > 1;
   trimToggleBtn.hidden = !showTrim;
@@ -3239,7 +3532,8 @@ function updateQualityInfo() {
     return;
   }
   const reduced = base / Math.pow(QUALITY_FACTOR, state.quality);
-  qInfoEl.innerHTML = `<b>${formatBytes(base)}</b><span class="arrow">→</span><b>${formatBytes(reduced)}</b>`;
+  const pct = Math.round((1 - reduced / base) * 100);
+  qInfoEl.innerHTML = `<span class="q-before">${formatBytes(base)}</span><span class="q-arrow">➜</span><span class="q-after">${formatBytes(reduced)}</span><span class="q-pct">(−${pct}%)</span>`;
   qInfoEl.classList.add('shown');
 }
 /* 元のGIFサイズを推定: 代表フレームを1枚エンコードして全フレーム分に外挿 */
@@ -3270,6 +3564,116 @@ qualityBtn.addEventListener('click', () => {
   updateQualityInfo();
   // プレビューを次フレーム描画で反映 (アニメーションループが拾う)
 });
+
+/* ===== Simplify (Cutout風) ===== */
+const SIMPLIFY_MAX = 5;
+const SIMPLIFY_PRESETS = [
+  // [levels, smooth, edge]
+  null,                  // 0 = オフ
+  [12, 1, 0.4],          // 1 = 弱い
+  [8,  2, 0.35],         // 2
+  [6,  3, 0.3],          // 3
+  [4,  4, 0.25],         // 4
+  [3,  5, 0.2],          // 5 = 強い
+];
+function updateSimplifyGauge() {
+  const fill = (state.simplify / SIMPLIFY_MAX) * 360;
+  simplifyBtn.style.setProperty('--fill', fill + 'deg');
+  if (state.simplify > 0) {
+    sLevelEl.textContent = state.simplify;
+    sLevelEl.classList.add('shown');
+    simplifyPanel.classList.add('shown');
+    spLevels.value = state.simpLevels;
+    spSmooth.value = state.simpSmooth;
+    spEdge.value = state.simpEdge;
+    spLevelsVal.textContent = state.simpLevels;
+    spSmoothVal.textContent = state.simpSmooth;
+    spEdgeVal.textContent = state.simpEdge;
+  } else {
+    sLevelEl.classList.remove('shown');
+    simplifyPanel.classList.remove('shown');
+  }
+}
+function invalidateSimplifyCache() { state._simpCache = null; }
+simplifyBtn.addEventListener('click', () => {
+  if (simplifyBtn.disabled) return;
+  state.simplify = (state.simplify + 1) % (SIMPLIFY_MAX + 1);
+  if (state.simplify > 0) {
+    const preset = SIMPLIFY_PRESETS[state.simplify];
+    state.simpLevels = preset[0];
+    state.simpSmooth = preset[1];
+    state.simpEdge = preset[2];
+  }
+  invalidateSimplifyCache();
+  updateSimplifyGauge();
+  draw();
+});
+[spLevels, spSmooth, spEdge].forEach(el => {
+  el.addEventListener('input', () => {
+    state.simpLevels = parseInt(spLevels.value);
+    state.simpSmooth = parseInt(spSmooth.value);
+    state.simpEdge = parseFloat(spEdge.value);
+    spLevelsVal.textContent = state.simpLevels;
+    spSmoothVal.textContent = state.simpSmooth;
+    spEdgeVal.textContent = state.simpEdge;
+    invalidateSimplifyCache();
+    draw();
+  });
+});
+
+/* Posterize + smoothing で Cutout 風処理 */
+function applySimplifyToCanvas(srcCanvas) {
+  const W = srcCanvas.width, H = srcCanvas.height;
+  // Step1: ぼかし (smooth)
+  const blurred = document.createElement('canvas');
+  blurred.width = W; blurred.height = H;
+  const bctx = blurred.getContext('2d');
+  if (state.simpSmooth > 0) bctx.filter = `blur(${state.simpSmooth}px)`;
+  bctx.drawImage(srcCanvas, 0, 0);
+  bctx.filter = 'none';
+  // Step2: 色数を減らす(posterize) + 輪郭の忠実度(エッジ強調)
+  const out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  const octx = out.getContext('2d');
+  octx.drawImage(blurred, 0, 0);
+  const imgData = octx.getImageData(0, 0, W, H);
+  const data = imgData.data;
+  const levels = Math.max(2, state.simpLevels);
+  const step = 255 / (levels - 1);
+  // 輪郭忠実度: 元画像と少しブレンド
+  let srcData = null;
+  if (state.simpEdge > 0) {
+    const tmp = document.createElement('canvas');
+    tmp.width = W; tmp.height = H;
+    tmp.getContext('2d').drawImage(srcCanvas, 0, 0);
+    srcData = tmp.getContext('2d').getImageData(0, 0, W, H).data;
+  }
+  for (let i = 0; i < data.length; i += 4) {
+    let r = data[i], g = data[i+1], b = data[i+2];
+    r = Math.round(r / step) * step;
+    g = Math.round(g / step) * step;
+    b = Math.round(b / step) * step;
+    if (srcData) {
+      const m = state.simpEdge;
+      r = r * (1 - m) + srcData[i]   * m;
+      g = g * (1 - m) + srcData[i+1] * m;
+      b = b * (1 - m) + srcData[i+2] * m;
+    }
+    data[i]   = r;
+    data[i+1] = g;
+    data[i+2] = b;
+  }
+  octx.putImageData(imgData, 0, 0);
+  return out;
+}
+function getSimplifiedFrame(idx) {
+  if (state.simplify === 0) return state.frames[idx].canvas;
+  if (!state._simpCache) state._simpCache = new Map();
+  if (state._simpCache.has(idx)) return state._simpCache.get(idx);
+  const result = applySimplifyToCanvas(state.frames[idx].canvas);
+  state._simpCache.set(idx, result);
+  return result;
+}
 
 /* ===== Trim (再生 / 保存範囲の調節) ===== */
 function getTotalDuration() {
@@ -3447,11 +3851,13 @@ async function loadVideoAsGif(f) {
   state.loaded = false;
   state.rotation = 0; state.flipH = false; state.flipV = false;
   state.brightness = 0; state.quality = 0; state.gifBaseSize = 0;
+  state.simplify = 0; state._simpCache = null;
   state.currentFrame = 0; state.frames = [];
   stopAnimation();
   updateBrightnessGauge();
   updateQualityGauge();
   updateQualityInfo();
+  updateSimplifyGauge();
   canvas.classList.remove('shown');
   updateEmpty();
   updateFileSize();
@@ -3476,33 +3882,40 @@ async function loadVideoAsGif(f) {
 }
 
 function showRecommendations(targetRatio) {
-  // 各カテゴリーごとにアイテムを一致%でソートして表示。
-  // 一致% は |target - itemRatio| / max(target, itemRatio) で正規化、(1 - x) * 100。
   recommendList.innerHTML = '';
   function matchPct(itemRatio) {
     const diff = Math.abs(targetRatio - itemRatio);
     const norm = diff / Math.max(targetRatio, itemRatio);
     return Math.max(0, (1 - norm)) * 100;
   }
-  CATEGORIES.forEach(cat => {
+  // 全アイテムを集めてトップ8を抽出
+  const all = [];
+  for (const cat of CATEGORIES) {
+    for (const it of cat.items) {
+      const r = it.w / it.h;
+      all.push({ item: it, ratio: r, match: matchPct(r), cat: cat.name });
+    }
+  }
+  all.sort((a, b) => b.match - a.match);
+  const top8 = all.slice(0, 8);
+
+  function buildCatBlock(catName, items, headerExtraClass) {
     const block = document.createElement('div');
     block.className = 'rec-category';
     const header = document.createElement('div');
-    header.className = 'rec-cat-header';
-    header.innerHTML = `<span>${cat.name}</span><span class="arrow">›</span>`;
+    header.className = 'rec-cat-header' + (headerExtraClass ? ' ' + headerExtraClass : '');
+    const star = headerExtraClass === 'top8' ? '★ ' : '';
+    header.innerHTML = `<span>${star}${catName}</span><span class="arrow">›</span>`;
     const itemsWrap = document.createElement('div');
     itemsWrap.className = 'rec-cat-items';
-    // ソート: 一致%降順
-    const sorted = cat.items
-      .map(it => ({ item: it, ratio: it.w / it.h, match: matchPct(it.w / it.h) }))
-      .sort((a, b) => b.match - a.match);
-    sorted.forEach(rec => {
+    items.forEach(rec => {
       const row = document.createElement('div');
       row.className = 'rec-item';
       const ic = rec.item.icon ? `<img src="${rec.item.icon}" alt="">` : '';
+      const fromCat = headerExtraClass === 'top8' ? ` <span style="font-size:10.5px;opacity:0.5;font-family:Georgia,serif">[${rec.cat}]</span>` : '';
       row.innerHTML = `
         <div class="rec-icon">${ic}</div>
-        <div class="rec-name">${rec.item.name}</div>
+        <div class="rec-name">${rec.item.name}${fromCat}</div>
         <div class="rec-ratio">${rec.item.w} : ${rec.item.h}</div>
         <div class="rec-match"><b>${rec.match.toFixed(0)}</b>%</div>
       `;
@@ -3512,7 +3925,6 @@ function showRecommendations(targetRatio) {
       });
       itemsWrap.appendChild(row);
     });
-    // アコーディオン: 開いたら他を閉じる
     header.addEventListener('click', () => {
       const wasOpen = block.classList.contains('open');
       recommendList.querySelectorAll('.rec-category.open').forEach(c => c.classList.remove('open'));
@@ -3520,8 +3932,19 @@ function showRecommendations(targetRatio) {
     });
     block.appendChild(header);
     block.appendChild(itemsWrap);
-    recommendList.appendChild(block);
+    return block;
+  }
+
+  // 先頭: 全アイテムからのトップ8
+  recommendList.appendChild(buildCatBlock('トップ8', top8, 'top8'));
+  // 通常カテゴリー (それぞれの中で一致順)
+  CATEGORIES.forEach(cat => {
+    const sorted = cat.items
+      .map(it => ({ item: it, ratio: it.w / it.h, match: matchPct(it.w / it.h) }))
+      .sort((a, b) => b.match - a.match);
+    recommendList.appendChild(buildCatBlock(cat.name, sorted));
   });
+
   recommendInfo.innerHTML = `読み込んだサイズ比 <b>${state.naturalW} : ${state.naturalH}</b> (≈ <b>${targetRatio.toFixed(3)}</b>)<br>カテゴリーをタップしてアイテム一覧を開いてください`;
   recommendInfo.style.display = '';
   recommendList.style.display = '';
@@ -3699,7 +4122,7 @@ async function processCell(cell, transformedFrames, brightness, qualityLevel, on
   const w = Math.max(1, Math.round(cell.w));
   const h = Math.max(1, Math.round(cell.h));
   const brightnessFilter = brightness > 0
-    ? `brightness(${1 + brightness * BRIGHTNESS_STEP})`
+    ? `brightness(${getBrightnessFactor(brightness)})`
     : null;
 
   // 各フレームを切り出して RGBA 化
@@ -3756,6 +4179,13 @@ async function processCell(cell, transformedFrames, brightness, qualityLevel, on
 function sanitize(name) {
   return name.replace(/[\/\\?%*:|"<>]/g, '_').trim() || 'aspect';
 }
+function todayMMDD() {
+  const d = new Date();
+  return String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+}
+function buildBaseName() {
+  return sanitize(state.ratio.name) + todayMMDD();
+}
 function download(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -3767,7 +4197,7 @@ function download(blob, filename) {
 async function save() {
   if (!state.loaded || !state.ratio) return;
   const total = state.splitW * state.splitH;
-  const baseName = sanitize(state.ratio.name);
+  const baseName = buildBaseName();
   saveBtn.disabled = true;
   const orig = saveBtn.innerHTML;
 
@@ -3778,7 +4208,12 @@ async function save() {
     // トリミング適用: 範囲内のフレームのみ取り出す
     const lo = Math.max(0, Math.min(state.trimStart, state.frames.length - 1));
     const hi = Math.max(lo, Math.min(state.trimEnd, state.frames.length - 1));
-    const sourceFrames = state.frames.slice(lo, hi + 1);
+    const sourceFrames = [];
+    for (let i = lo; i <= hi; i++) {
+      // 単純化が有効ならそのフレームの単純化済みキャンバスを使う
+      const c = state.simplify > 0 ? getSimplifiedFrame(i) : state.frames[i].canvas;
+      sourceFrames.push({ canvas: c, delay: state.frames[i].delay });
+    }
     // トリミング後のフレーム数で出力フォーマットを判定
     const isGif = sourceFrames.length > 1;
     const ext = isGif ? '.gif' : '.png';
@@ -3865,6 +4300,7 @@ updateEmpty();
 updateSaveBtn();
 updateToolBtns();
 updateBrightnessGauge();
+updateSimplifyGauge();
 
 </script>
 </body>

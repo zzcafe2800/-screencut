@@ -221,6 +221,41 @@ header.info {
 .brightness-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .brightness-btn svg { position: relative; z-index: 1; }
 
+/* Quality button: same gauge + small level badge */
+.q-level {
+  position: absolute;
+  top: -2px; right: -2px;
+  min-width: 16px; height: 16px;
+  padding: 0 4px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: Georgia, serif;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  line-height: 1;
+  border: 1.5px solid var(--bg);
+}
+.q-level.shown { display: flex; }
+.quality-info {
+  margin: 0 auto;
+  padding: 6px 12px;
+  font-size: 11.5px;
+  font-family: Georgia, serif;
+  color: var(--fg);
+  opacity: 0.65;
+  text-align: center;
+  letter-spacing: 0.04em;
+  display: none;
+}
+.quality-info.shown { display: block; }
+.quality-info b { color: var(--accent); font-weight: 600; opacity: 1; }
+.quality-info .arrow { margin: 0 6px; opacity: 0.6; }
+
 footer.controls {
   padding: 14px 40px 26px;
   display: flex;
@@ -639,7 +674,18 @@ footer.controls {
         <line x1="17.2" y1="6.8" x2="19" y2="5"/>
       </svg>
     </button>
+    <button class="brightness-btn" id="quality" title="画質低下 (1.5倍ずつ)" disabled>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <!-- pixel grid icon -->
+        <rect x="3.5" y="3.5" width="6" height="6"/>
+        <rect x="14.5" y="3.5" width="6" height="6"/>
+        <rect x="3.5" y="14.5" width="6" height="6"/>
+        <rect x="14.5" y="14.5" width="6" height="6"/>
+      </svg>
+      <span class="q-level" id="qLevel"></span>
+    </button>
   </div>
+  <div class="quality-info" id="qInfo"></div>
 
   <footer class="controls">
     <input type="file" id="file" accept="image/*,.gif" hidden>
@@ -2001,6 +2047,8 @@ const CATEGORIES = [
 
 const BRIGHTNESS_STEP = 0.08;
 const BRIGHTNESS_MAX = 5;
+const QUALITY_FACTOR = 1.5;  // 1段階あたりの劣化倍率
+const QUALITY_MAX = 5;       // 0..5 (cycle: 0→1→2→3→4→5→0)
 
 /* ===== State ===== */
 const state = {
@@ -2012,6 +2060,8 @@ const state = {
   currentFrame: 0,
   rotation: 0, flipH: false, flipV: false,
   brightness: 0,
+  quality: 0,            // 0=元のまま, 1+で 1.5^level 倍画質低下
+  gifBaseSize: 0,        // 推定 or 実測の元GIFサイズ(byte)
   splitW: 1, splitH: 1,
   canvasW: 0, canvasH: 0,
   frameX: 0, frameY: 0, frameW: 0, frameH: 0,
@@ -2045,6 +2095,9 @@ const flipHBtn = document.getElementById('flipH');
 const flipVBtn = document.getElementById('flipV');
 const rotateBtn = document.getElementById('rotate');
 const brightnessBtn = document.getElementById('brightness');
+const qualityBtn = document.getElementById('quality');
+const qLevelEl = document.getElementById('qLevel');
+const qInfoEl = document.getElementById('qInfo');
 const toastEl = document.getElementById('toast');
 const guideOverlay = document.getElementById('guideOverlay');
 const guideCloseBtn = document.getElementById('guideClose');
@@ -2303,10 +2356,14 @@ videoInput.addEventListener('change', async e => {
   state.flipH = false;
   state.flipV = false;
   state.brightness = 0;
+  state.quality = 0;
+  state.gifBaseSize = 0;
   state.currentFrame = 0;
   state.frames = [];
   stopAnimation();
   updateBrightnessGauge();
+  updateQualityGauge();
+  updateQualityInfo();
   canvas.classList.remove('shown');
   updateEmpty();
   updateFileSize();
@@ -2327,6 +2384,11 @@ videoInput.addEventListener('change', async e => {
     updateSaveBtn();
     if (state.frames.length > 1) startAnimation();
     showToast('GIFに変換しました');
+    // 元のGIFサイズを推定(バックグラウンドで)
+    saveBtn.innerHTML = 'サイズ計測中…';
+    await estimateGifBaseSize();
+    updateSaveBtn();
+    updateQualityInfo();
   } catch (err) {
     console.error(err);
     alert('動画を読み込めませんでした: ' + err.message);
@@ -2343,10 +2405,14 @@ async function loadFile(file) {
   state.flipH = false;
   state.flipV = false;
   state.brightness = 0;
+  state.quality = 0;
+  state.gifBaseSize = 0;
   state.currentFrame = 0;
   state.frames = [];
   stopAnimation();
   updateBrightnessGauge();
+  updateQualityGauge();
+  updateQualityInfo();
   canvas.classList.remove('shown');
   updateEmpty();
   updateFileSize();
@@ -2359,6 +2425,8 @@ async function loadFile(file) {
       state.naturalW = decoded.width;
       state.naturalH = decoded.height;
       state.frames = decoded.frames;
+      // 動くGIFファイル直接読み込み時は実ファイルサイズが base
+      if (decoded.frames.length > 1) state.gifBaseSize = file.size;
     } else {
       const url = URL.createObjectURL(file);
       const img = await new Promise((res, rej) => {
@@ -2384,6 +2452,7 @@ async function loadFile(file) {
     recomputeLayout();
     updateSaveBtn();
     if (state.frames.length > 1) startAnimation();
+    updateQualityInfo();
   } catch (err) {
     console.error(err);
     alert('ファイルを読み込めませんでした: ' + err.message);
@@ -2442,7 +2511,7 @@ function draw() {
   const frame = state.frames[state.currentFrame];
   if (!frame) return;
 
-  // Draw current source frame with rotation/flip/brightness applied
+  // Draw current source frame with rotation/flip/brightness/quality applied
   ctx.save();
   if (state.brightness > 0) {
     ctx.filter = `brightness(${1 + state.brightness * BRIGHTNESS_STEP})`;
@@ -2453,7 +2522,24 @@ function draw() {
   const isRot90 = state.rotation === 90 || state.rotation === 270;
   const drawW = isRot90 ? state.canvasH : state.canvasW;
   const drawH = isRot90 ? state.canvasW : state.canvasH;
-  ctx.drawImage(frame.canvas, -drawW / 2, -drawH / 2, drawW, drawH);
+  // 画質低下: 縮小→拡大で擬似的にピクセル化 (実保存もこの解像度で出力)
+  if (state.quality > 0) {
+    const sc = getQualityScale();
+    const sw = Math.max(1, Math.round(frame.canvas.width * sc));
+    const sh = Math.max(1, Math.round(frame.canvas.height * sc));
+    let tmp = state._qPreviewCanvas;
+    if (!tmp) { tmp = state._qPreviewCanvas = document.createElement('canvas'); }
+    tmp.width = sw; tmp.height = sh;
+    const tctx = tmp.getContext('2d');
+    tctx.imageSmoothingEnabled = true;
+    tctx.clearRect(0, 0, sw, sh);
+    tctx.drawImage(frame.canvas, 0, 0, sw, sh);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(tmp, -drawW / 2, -drawH / 2, drawW, drawH);
+    ctx.imageSmoothingEnabled = true;
+  } else {
+    ctx.drawImage(frame.canvas, -drawW / 2, -drawH / 2, drawW, drawH);
+  }
   ctx.restore();
 
   if (!state.ratio) return;
@@ -2561,11 +2647,76 @@ function updateSaveBtn() {
 function updateToolBtns() {
   const en = state.loaded;
   [flipHBtn, flipVBtn, rotateBtn, brightnessBtn].forEach(b => b.disabled = !en);
+  // 画質低下ボタンは複数フレーム(動くGIF)のときだけ有効
+  qualityBtn.disabled = !(en && state.frames.length > 1);
 }
 function updateBrightnessGauge() {
   const fill = (state.brightness / BRIGHTNESS_MAX) * 360;
   brightnessBtn.style.setProperty('--fill', fill + 'deg');
 }
+
+/* ===== Quality reduction =====
+   level 0 = 元のまま、各段階で画質1.5倍悪化 (= ピクセル数 1/1.5)
+   横/縦の寸法を 1/sqrt(1.5)^level に縮小 → 容量も約 1/1.5^level に */
+function getQualityScale(level = state.quality) {
+  if (level <= 0) return 1;
+  return 1 / Math.sqrt(Math.pow(QUALITY_FACTOR, level));
+}
+function formatBytes(n) {
+  if (n >= 1024 * 1024) return (n / 1024 / 1024).toFixed(2) + ' MB';
+  return (n / 1024).toFixed(1) + ' KB';
+}
+function updateQualityGauge() {
+  const fill = (state.quality / QUALITY_MAX) * 360;
+  qualityBtn.style.setProperty('--fill', fill + 'deg');
+  if (state.quality > 0) {
+    qLevelEl.textContent = state.quality;
+    qLevelEl.classList.add('shown');
+  } else {
+    qLevelEl.classList.remove('shown');
+  }
+}
+function updateQualityInfo() {
+  if (!state.gifBaseSize || state.frames.length <= 1) {
+    qInfoEl.classList.remove('shown');
+    return;
+  }
+  if (state.quality === 0) {
+    qInfoEl.classList.remove('shown');
+    return;
+  }
+  const reduced = state.gifBaseSize / Math.pow(QUALITY_FACTOR, state.quality);
+  qInfoEl.innerHTML = `<b>${formatBytes(state.gifBaseSize)}</b><span class="arrow">→</span><b>${formatBytes(reduced)}</b>`;
+  qInfoEl.classList.add('shown');
+}
+/* 元のGIFサイズを推定: 代表フレームを1枚エンコードして全フレーム分に外挿 */
+async function estimateGifBaseSize() {
+  if (state.frames.length <= 1) { state.gifBaseSize = 0; return; }
+  try {
+    // 中央あたりのフレームを代表として使う
+    const idx = Math.floor(state.frames.length / 2);
+    const fr = state.frames[idx];
+    const W = fr.canvas.width, H = fr.canvas.height;
+    const ctxF = fr.canvas.getContext('2d');
+    const imgData = ctxF.getImageData(0, 0, W, H);
+    const bytes = await encodeAnimatedGIF(W, H, [{ rgba: imgData.data, delay: fr.delay }]);
+    // 各フレームには独自のパレット等が必要なので 1フレーム ≒ 全体/フレーム数 と仮定して外挿
+    // ただし最初のフレーム以外はヘッダなしで小さくなる傾向 → 0.85倍補正
+    const perFrame = bytes.length;
+    const est = perFrame + perFrame * 0.85 * (state.frames.length - 1);
+    state.gifBaseSize = Math.round(est);
+  } catch (err) {
+    console.warn('GIFサイズ推定失敗:', err);
+    state.gifBaseSize = 0;
+  }
+}
+qualityBtn.addEventListener('click', () => {
+  if (qualityBtn.disabled) return;
+  state.quality = (state.quality + 1) % (QUALITY_MAX + 1);
+  updateQualityGauge();
+  updateQualityInfo();
+  // プレビューを次フレーム描画で反映 (アニメーションループが拾う)
+});
 
 /* ===== Pointer ===== */
 function localPos(e) {
@@ -2732,8 +2883,8 @@ async function buildSyncGifBlob(framesData) {
 /* ===== 統一処理: 1セル分の切り出し → PNG or GIF =====
    この関数ひとつで、画像なら PNG・GIFなら全フレーム再エンコードを行う。
    - transformedFrames が1枚なら PNG 出力
-   - 2枚以上なら全フレームを切り出して GIF 再構築 */
-async function processCell(cell, transformedFrames, brightness, onProgress) {
+   - 2枚以上なら全フレームを切り出して GIF 再構築 (画質低下も適用) */
+async function processCell(cell, transformedFrames, brightness, qualityLevel, onProgress) {
   const w = Math.max(1, Math.round(cell.w));
   const h = Math.max(1, Math.round(cell.h));
   const brightnessFilter = brightness > 0
@@ -2753,16 +2904,31 @@ async function processCell(cell, transformedFrames, brightness, onProgress) {
   }
 
   if (cellFrames.length === 1) {
-    // 静止画 → PNG
+    // 静止画 → PNG (画質低下は静止画には未適用)
     return await new Promise(res => cellFrames[0].canvas.toBlob(res, 'image/png'));
   }
 
+  // 画質低下が指定されていれば動くGIFはこの解像度で出力
+  let outW = w, outH = h;
+  if (qualityLevel > 0) {
+    const sc = 1 / Math.sqrt(Math.pow(QUALITY_FACTOR, qualityLevel));
+    outW = Math.max(1, Math.round(w * sc));
+    outH = Math.max(1, Math.round(h * sc));
+  }
+
   // 動くGIF → main thread で再エンコード
-  const framesData = cellFrames.map(fr => ({
-    rgba: fr.canvas.getContext('2d').getImageData(0, 0, w, h).data,
-    delay: fr.delay,
-  }));
-  const bytes = await encodeAnimatedGIF(w, h, framesData, onProgress);
+  const framesData = cellFrames.map(fr => {
+    if (qualityLevel === 0) {
+      return { rgba: fr.canvas.getContext('2d').getImageData(0, 0, w, h).data, delay: fr.delay };
+    }
+    // 縮小キャンバスに描き直してから RGBA 取得
+    const small = document.createElement('canvas');
+    small.width = outW; small.height = outH;
+    const sctx = small.getContext('2d');
+    sctx.drawImage(fr.canvas, 0, 0, outW, outH);
+    return { rgba: sctx.getImageData(0, 0, outW, outH).data, delay: fr.delay };
+  });
+  const bytes = await encodeAnimatedGIF(outW, outH, framesData, onProgress);
   return new Blob([bytes], { type: 'image/gif' });
 }
 
@@ -2820,7 +2986,7 @@ async function save() {
     const blobs = [];
     for (let k = 0; k < cells.length; k++) {
       const c = cells[k];
-      blobs.push(await processCell(c, transformed, state.brightness, (fIdx, fTotal) => {
+      blobs.push(await processCell(c, transformed, state.brightness, state.quality, (fIdx, fTotal) => {
         saveBtn.innerHTML = `${k + 1}/${cells.length} (${fIdx + 1}/${fTotal})`;
       }));
       saveBtn.innerHTML = `書き出し ${k + 1}/${cells.length}`;

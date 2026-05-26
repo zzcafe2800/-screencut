@@ -256,6 +256,64 @@ header.info {
 .quality-info b { color: var(--accent); font-weight: 600; opacity: 1; }
 .quality-info .arrow { margin: 0 6px; opacity: 0.6; }
 
+/* ===== Trim panel ===== */
+.trim-panel {
+  display: none;
+  padding: 32px 40px 18px;
+  position: relative;
+}
+.trim-panel.shown { display: block; }
+.trim-bar {
+  position: relative;
+  height: 28px;
+  touch-action: none;
+}
+.trim-track,
+.trim-track-active {
+  position: absolute;
+  top: 50%;
+  height: 4px;
+  border-radius: 2px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+.trim-track {
+  left: 0; right: 0;
+  background: var(--line);
+}
+.trim-track-active {
+  background: var(--accent);
+}
+.trim-handle {
+  position: absolute;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  border: 2px solid #fff;
+  touch-action: none;
+  z-index: 2;
+}
+.trim-handle:active { cursor: grabbing; transform: translate(-50%, -50%) scale(1.1); }
+.handle-start { background: #e74c3c; }
+.handle-end { background: var(--accent); }
+.handle-time {
+  position: absolute;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--fg);
+  white-space: nowrap;
+  font-family: Georgia, serif;
+  font-style: italic;
+  pointer-events: none;
+}
+.trim-btn[hidden] { display: none !important; }
+
 footer.controls {
   padding: 14px 40px 26px;
   display: flex;
@@ -684,8 +742,24 @@ footer.controls {
       </svg>
       <span class="q-level" id="qLevel"></span>
     </button>
+    <button class="brightness-btn trim-btn" id="trimToggle" title="長さ調節" hidden>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <!-- timeline with two markers icon -->
+        <line x1="3" y1="12" x2="21" y2="12"/>
+        <circle cx="8" cy="12" r="2.5" fill="#e74c3c" stroke="none"/>
+        <circle cx="16" cy="12" r="2.5" fill="#5b9cb8" stroke="none"/>
+      </svg>
+    </button>
   </div>
   <div class="quality-info" id="qInfo"></div>
+  <div class="trim-panel" id="trimPanel">
+    <div class="trim-bar" id="trimBar">
+      <div class="trim-track"></div>
+      <div class="trim-track-active" id="trimActive"></div>
+      <div class="trim-handle handle-start" id="handleStart"><span class="handle-time" id="timeStart">0.00s</span></div>
+      <div class="trim-handle handle-end" id="handleEnd"><span class="handle-time" id="timeEnd">0.00s</span></div>
+    </div>
+  </div>
 
   <footer class="controls">
     <input type="file" id="file" accept="image/*,.gif" hidden>
@@ -2062,6 +2136,10 @@ const state = {
   brightness: 0,
   quality: 0,            // 0=元のまま, 1+で 1.5^level 倍画質低下
   gifBaseSize: 0,        // 推定 or 実測の元GIFサイズ(byte)
+  trimStart: 0,          // フレーム index 開始 (inclusive)
+  trimEnd: 0,            // フレーム index 終了 (inclusive)
+  trimOpen: false,       // トリミングパネル開閉
+  scrubbing: false,      // ハンドルをドラッグ中か
   splitW: 1, splitH: 1,
   canvasW: 0, canvasH: 0,
   frameX: 0, frameY: 0, frameW: 0, frameH: 0,
@@ -2098,6 +2176,14 @@ const brightnessBtn = document.getElementById('brightness');
 const qualityBtn = document.getElementById('quality');
 const qLevelEl = document.getElementById('qLevel');
 const qInfoEl = document.getElementById('qInfo');
+const trimToggleBtn = document.getElementById('trimToggle');
+const trimPanel = document.getElementById('trimPanel');
+const trimBar = document.getElementById('trimBar');
+const trimActiveEl = document.getElementById('trimActive');
+const handleStart = document.getElementById('handleStart');
+const handleEnd = document.getElementById('handleEnd');
+const timeStartEl = document.getElementById('timeStart');
+const timeEndEl = document.getElementById('timeEnd');
 const toastEl = document.getElementById('toast');
 const guideOverlay = document.getElementById('guideOverlay');
 const guideCloseBtn = document.getElementById('guideClose');
@@ -2376,12 +2462,14 @@ videoInput.addEventListener('change', async e => {
     state.naturalH = decoded.height;
     state.frames = decoded.frames;
     state.loaded = true;
+    resetTrim();
     updateFileSize();
     updateFramesInfo();
     updateEmpty();
     updateToolBtns();
     recomputeLayout();
     updateSaveBtn();
+    updateTrimUI();
     if (state.frames.length > 1) startAnimation();
     showToast('GIFに変換しました');
     // 元のGIFサイズを推定(バックグラウンドで)
@@ -2445,12 +2533,14 @@ async function loadFile(file) {
       state.frames = [{ canvas: c, delay: 0 }];
     }
     state.loaded = true;
+    resetTrim();
     updateFileSize();
     updateFramesInfo();
     updateEmpty();
     updateToolBtns();
     recomputeLayout();
     updateSaveBtn();
+    updateTrimUI();
     if (state.frames.length > 1) startAnimation();
     updateQualityInfo();
   } catch (err) {
@@ -2590,9 +2680,15 @@ function draw() {
 /* ===== Animation loop for multi-frame ===== */
 function animationLoop(now) {
   if (!state.loaded || state.frames.length <= 1) { state._rafId = null; return; }
+  if (state.scrubbing) { state._rafId = requestAnimationFrame(animationLoop); return; }
   const delay = state.frames[state.currentFrame].delay;
   if (now - state._lastTick >= delay) {
-    state.currentFrame = (state.currentFrame + 1) % state.frames.length;
+    // トリム範囲でループ
+    const lo = Math.max(0, Math.min(state.trimStart, state.frames.length - 1));
+    const hi = Math.max(lo, Math.min(state.trimEnd, state.frames.length - 1));
+    let next = state.currentFrame + 1;
+    if (next > hi || next < lo) next = lo;
+    state.currentFrame = next;
     state._lastTick = now;
     draw();
   }
@@ -2647,8 +2743,12 @@ function updateSaveBtn() {
 function updateToolBtns() {
   const en = state.loaded;
   [flipHBtn, flipVBtn, rotateBtn, brightnessBtn].forEach(b => b.disabled = !en);
-  // 画質低下ボタンは複数フレーム(動くGIF)のときだけ有効
-  qualityBtn.disabled = !(en && state.frames.length > 1);
+  // 画質低下: 画像でもGIFでも有効 (どちらも縮小→拡大でファイルサイズ削減)
+  qualityBtn.disabled = !en;
+  // 長さ調節ボタンは複数フレームのGIFのときだけ表示
+  const showTrim = en && state.frames.length > 1;
+  trimToggleBtn.hidden = !showTrim;
+  if (!showTrim) closeTrimPanel();
 }
 function updateBrightnessGauge() {
   const fill = (state.brightness / BRIGHTNESS_MAX) * 360;
@@ -2677,16 +2777,18 @@ function updateQualityGauge() {
   }
 }
 function updateQualityInfo() {
-  if (!state.gifBaseSize || state.frames.length <= 1) {
+  if (!state.loaded || state.quality === 0) {
     qInfoEl.classList.remove('shown');
     return;
   }
-  if (state.quality === 0) {
+  // GIFはgifBaseSize、静止画はfileSizeを基準にする
+  const base = state.frames.length > 1 ? state.gifBaseSize : state.fileSize;
+  if (!base) {
     qInfoEl.classList.remove('shown');
     return;
   }
-  const reduced = state.gifBaseSize / Math.pow(QUALITY_FACTOR, state.quality);
-  qInfoEl.innerHTML = `<b>${formatBytes(state.gifBaseSize)}</b><span class="arrow">→</span><b>${formatBytes(reduced)}</b>`;
+  const reduced = base / Math.pow(QUALITY_FACTOR, state.quality);
+  qInfoEl.innerHTML = `<b>${formatBytes(base)}</b><span class="arrow">→</span><b>${formatBytes(reduced)}</b>`;
   qInfoEl.classList.add('shown');
 }
 /* 元のGIFサイズを推定: 代表フレームを1枚エンコードして全フレーム分に外挿 */
@@ -2717,6 +2819,119 @@ qualityBtn.addEventListener('click', () => {
   updateQualityInfo();
   // プレビューを次フレーム描画で反映 (アニメーションループが拾う)
 });
+
+/* ===== Trim (再生 / 保存範囲の調節) ===== */
+function getTotalDuration() {
+  let t = 0;
+  for (const fr of state.frames) t += fr.delay;
+  return t;
+}
+function getFrameTimeMs(idx) {
+  let t = 0;
+  for (let i = 0; i < idx; i++) t += state.frames[i].delay;
+  return t;
+}
+function getFrameByStartTime(ms) {
+  // Frame whose [start, end) interval contains ms
+  let acc = 0;
+  for (let i = 0; i < state.frames.length; i++) {
+    const next = acc + state.frames[i].delay;
+    if (ms < next) return i;
+    acc = next;
+  }
+  return state.frames.length - 1;
+}
+function getFrameByEndTime(ms) {
+  // First frame whose end >= ms
+  let acc = 0;
+  for (let i = 0; i < state.frames.length; i++) {
+    acc += state.frames[i].delay;
+    if (acc >= ms) return i;
+  }
+  return state.frames.length - 1;
+}
+function resetTrim() {
+  state.trimStart = 0;
+  state.trimEnd = Math.max(0, state.frames.length - 1);
+}
+function fmtSec(ms) {
+  return (ms / 1000).toFixed(2) + 's';
+}
+function openTrimPanel() {
+  if (state.frames.length <= 1) return;
+  trimPanel.classList.add('shown');
+  state.trimOpen = true;
+  updateTrimUI();
+}
+function closeTrimPanel() {
+  trimPanel.classList.remove('shown');
+  state.trimOpen = false;
+  state.scrubbing = false;
+}
+function updateTrimUI() {
+  if (state.frames.length <= 1) return;
+  const total = getTotalDuration();
+  if (total <= 0) return;
+  const startMs = getFrameTimeMs(state.trimStart);
+  const endMs = getFrameTimeMs(state.trimEnd + 1);  // 終了フレームの「終わり」時刻
+  const startPct = (startMs / total) * 100;
+  const endPct = (endMs / total) * 100;
+  handleStart.style.left = startPct + '%';
+  handleEnd.style.left = endPct + '%';
+  trimActiveEl.style.left = startPct + '%';
+  trimActiveEl.style.width = Math.max(0, endPct - startPct) + '%';
+  timeStartEl.textContent = fmtSec(startMs);
+  timeEndEl.textContent = fmtSec(endMs);
+}
+trimToggleBtn.addEventListener('click', () => {
+  if (state.trimOpen) closeTrimPanel(); else openTrimPanel();
+});
+/* Pointer drag for handles */
+function setupHandleDrag(handle, isStart) {
+  handle.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    handle.setPointerCapture(e.pointerId);
+    state.scrubbing = true;
+    stopAnimation();  // ドラッグ中はアニメ停止
+    onHandleMove(e, isStart);
+  });
+  handle.addEventListener('pointermove', e => {
+    if (!state.scrubbing) return;
+    onHandleMove(e, isStart);
+  });
+  const endDrag = (e) => {
+    if (!state.scrubbing) return;
+    try { handle.releasePointerCapture(e.pointerId); } catch {}
+    state.scrubbing = false;
+    // ドラッグ終了後、トリム範囲でループ再生再開
+    if (state.frames.length > 1 && state.trimEnd > state.trimStart) {
+      state.currentFrame = state.trimStart;
+      startAnimation();
+    }
+  };
+  handle.addEventListener('pointerup', endDrag);
+  handle.addEventListener('pointercancel', endDrag);
+}
+function onHandleMove(e, isStart) {
+  const rect = trimBar.getBoundingClientRect();
+  const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+  const pct = rect.width > 0 ? x / rect.width : 0;
+  const total = getTotalDuration();
+  const ms = pct * total;
+  if (isStart) {
+    const idx = getFrameByStartTime(ms);
+    state.trimStart = Math.min(idx, state.trimEnd);
+  } else {
+    const idx = getFrameByEndTime(ms);
+    state.trimEnd = Math.max(idx, state.trimStart);
+  }
+  // スライド中はそのフレームをプレビュー
+  state.currentFrame = isStart ? state.trimStart : state.trimEnd;
+  draw();
+  updateTrimUI();
+}
+setupHandleDrag(handleStart, true);
+setupHandleDrag(handleEnd, false);
 
 /* ===== Pointer ===== */
 function localPos(e) {
@@ -2904,7 +3119,16 @@ async function processCell(cell, transformedFrames, brightness, qualityLevel, on
   }
 
   if (cellFrames.length === 1) {
-    // 静止画 → PNG (画質低下は静止画には未適用)
+    // 静止画 → PNG (画質低下も適用)
+    if (qualityLevel > 0) {
+      const sc = 1 / Math.sqrt(Math.pow(QUALITY_FACTOR, qualityLevel));
+      const outW = Math.max(1, Math.round(w * sc));
+      const outH = Math.max(1, Math.round(h * sc));
+      const small = document.createElement('canvas');
+      small.width = outW; small.height = outH;
+      small.getContext('2d').drawImage(cellFrames[0].canvas, 0, 0, outW, outH);
+      return await new Promise(res => small.toBlob(res, 'image/png'));
+    }
     return await new Promise(res => cellFrames[0].canvas.toBlob(res, 'image/png'));
   }
 
@@ -2947,9 +3171,7 @@ function download(blob, filename) {
 async function save() {
   if (!state.loaded || !state.ratio) return;
   const total = state.splitW * state.splitH;
-  const isGif = state.frames.length > 1;
   const baseName = sanitize(state.ratio.name);
-  const ext = isGif ? '.gif' : '.png';
   saveBtn.disabled = true;
   const orig = saveBtn.innerHTML;
 
@@ -2957,7 +3179,14 @@ async function save() {
     // 全フレームに 回転/反転 を適用(画像レベル統合)
     saveBtn.innerHTML = '変換中…';
     await new Promise(r => setTimeout(r, 0));
-    const transformed = state.frames.map(fr => ({
+    // トリミング適用: 範囲内のフレームのみ取り出す
+    const lo = Math.max(0, Math.min(state.trimStart, state.frames.length - 1));
+    const hi = Math.max(lo, Math.min(state.trimEnd, state.frames.length - 1));
+    const sourceFrames = state.frames.slice(lo, hi + 1);
+    // トリミング後のフレーム数で出力フォーマットを判定
+    const isGif = sourceFrames.length > 1;
+    const ext = isGif ? '.gif' : '.png';
+    const transformed = sourceFrames.map(fr => ({
       canvas: transformFrameToCanvas(fr.canvas),
       delay: fr.delay,
     }));
@@ -3007,7 +3236,7 @@ async function save() {
       if (isGif) {
         saveBtn.innerHTML = '目安君 生成…';
         await new Promise(r => setTimeout(r, 0));
-        const syncFrames = state.frames.map(fr => ({ delay: fr.delay }));
+        const syncFrames = sourceFrames.map(fr => ({ delay: fr.delay }));
         const syncBlob = await buildSyncGifBlob(syncFrames);
         const syncBuf = await syncBlob.arrayBuffer();
         files.push({ name: '目安君.gif', data: new Uint8Array(syncBuf) });

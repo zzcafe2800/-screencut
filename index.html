@@ -765,74 +765,92 @@ canvas.eyedropper-active { cursor: crosshair !important; }
 .btn-double .top { font-size: 12.5px; font-weight: 600; }
 .btn-double .sub { font-size: 8.5px; opacity: 0.55; letter-spacing: 0.02em; }
 
-/* ===== Recommendation modal: illustration + accordion ===== */
-.recommend-card {
-  max-width: 920px;
+/* ===== Recommendation modal: intro card + 結果スタック(2枚カード) ===== */
+.rec-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 560px;
   width: 100%;
-  max-height: 90vh;
+  max-height: 92vh;
+  overflow-y: auto;
+  padding: 4px;
+}
+.recommend-card.rec-intro {
+  max-width: none;
+  width: 100%;
+  padding: 28px 26px 22px;
+}
+.recommend-card.rec-intro h3 { margin: 0 0 14px; font-size: 16px; font-weight: 600; letter-spacing: 0.08em; color: var(--fg); }
+.rec-result {
   display: flex;
   flex-direction: column;
-  padding: 24px 24px 20px;
+  gap: 14px;
+  width: 100%;
 }
-.rec-cols {
+.rec-info-card {
+  position: relative;
+  padding: 14px 48px 14px 18px;
   display: flex;
-  gap: 22px;
-  flex: 1 1 auto;
-  min-height: 0;
+  align-items: center;
+  gap: 14px;
 }
-.rec-left {
-  flex: 1.5 1 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
+.rec-info-card .rec-info-inline {
+  flex: 1;
+  font-size: 13px;
+  color: var(--fg);
+  line-height: 1.5;
+  font-family: Georgia, serif;
 }
-.rec-right {
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
+.rec-info-card .rec-info-inline b { color: var(--accent); font-weight: 700; font-family: 'Hiragino Sans', sans-serif; }
+.rec-reload {
+  flex-shrink: 0;
+  background: rgba(91,156,184,0.12);
+  color: var(--accent);
+  border: 1px solid rgba(91,156,184,0.4);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
 }
-.rec-right h3 { margin: 0 0 14px; font-size: 16px; font-weight: 600; letter-spacing: 0.08em; color: var(--fg); }
-@media (max-width: 720px) {
-  /* スマホ縦並び (情報が上、リスト下) */
-  .rec-cols { flex-direction: column; gap: 14px; }
-  .rec-left { flex: 1 1 auto; }
-  .rec-right { flex: 0 0 auto; }
-  .recommend-list-empty { padding: 18px 12px; }
+.rec-reload:hover { background: rgba(91,156,184,0.22); }
+.rec-list-card {
+  padding: 6px 0;
+  max-height: 60vh;
+  overflow-y: auto;
 }
+
 .recommend-illust {
   width: 100%;
   height: 80px;
-  margin: -2px 0 12px;
+  margin: -4px 0 14px;
   color: var(--accent);
-  flex-shrink: 0;
 }
 .recommend-illust svg { width: 100%; height: 100%; display: block; }
 .recommend-intro {
   font-size: 13px;
   line-height: 1.6;
   color: var(--fg);
-  margin-bottom: 12px;
-  opacity: 0.85;
-  flex-shrink: 0;
+  margin-bottom: 14px;
+  opacity: 0.88;
+  text-align: center;
 }
 .recommend-intro b { color: var(--accent); }
 .recommend-row {
   display: flex;
   gap: 8px;
-  margin-top: auto;
-  margin-bottom: 0;
-  flex-shrink: 0;
 }
 .recommend-row button, .recommend-row label {
   flex: 1;
   text-align: center;
-  padding: 12px 12px;
+  padding: 11px 12px;
   background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 8px;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.06em;
   cursor: pointer;
@@ -848,51 +866,24 @@ canvas.eyedropper-active { cursor: crosshair !important; }
 .recommend-row button.cancel:hover { border-color: var(--accent); color: var(--accent); }
 .recommend-row button:active, .recommend-row label:active { transform: scale(0.97); }
 
-.recommend-info {
-  font-size: 13px;
-  color: var(--fg);
-  opacity: 0.85;
-  margin: 0 0 12px;
-  font-family: Georgia, serif;
-  flex-shrink: 0;
-  padding: 10px 12px;
-  background: rgba(91,156,184,0.08);
-  border-radius: 8px;
-  line-height: 1.6;
-}
-.recommend-info b { color: var(--accent); font-weight: 600; opacity: 1; }
+.recommend-list { width: 100%; }
 
-.recommend-list {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-}
-.recommend-list-empty {
-  padding: 36px 18px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--fg);
-  opacity: 0.55;
-  line-height: 1.7;
-  font-style: italic;
-  font-family: Georgia, serif;
-}
-.recommend-list-empty b { color: var(--accent); font-weight: 600; opacity: 1; font-style: normal; font-family: 'Hiragino Sans', sans-serif; }
+/* カテゴリーアコーディオン (固定高さで安定) */
 .rec-category { border-bottom: 1px solid var(--line); }
 .rec-category:last-child { border-bottom: none; }
 .rec-cat-header {
-  padding: 12px 14px;
+  height: 44px;
+  padding: 0 16px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 14.5px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--fg);
   user-select: none;
   transition: color 0.15s;
+  white-space: nowrap;
 }
 .rec-cat-header.top8 {
   color: var(--accent);
@@ -904,50 +895,85 @@ canvas.eyedropper-active { cursor: crosshair !important; }
   color: var(--accent);
   transition: transform 0.2s;
   line-height: 1;
+  flex-shrink: 0;
 }
 .rec-category.open .rec-cat-header .arrow { transform: rotate(90deg); }
+.rec-category.open { background: rgba(0, 0, 0, 0.025); }
 .rec-cat-items {
   max-height: 0;
   overflow: hidden;
   transition: max-height 0.35s ease;
 }
 .rec-category.open .rec-cat-items { max-height: 4000px; }
+
 .rec-item {
-  display: flex;
+  display: flex !important;
+  flex-direction: row !important;
   align-items: center;
-  gap: 12px;
-  padding: 11px 14px 11px 26px;
+  gap: 10px;
+  height: 34px;
+  padding: 0 14px 0 28px;
   cursor: pointer;
   transition: background 0.12s;
+  white-space: nowrap;
+  overflow: hidden;
 }
-.rec-item:hover { background: rgba(91, 156, 184, 0.08); }
+.rec-item:hover { background: rgba(91, 156, 184, 0.10); }
 .rec-item .rec-icon {
-  flex: 0 0 28px;
-  width: 28px;
-  height: 18px;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .rec-item .rec-icon img { max-width: 100%; max-height: 100%; }
-.rec-item .rec-name { flex: 1; font-size: 14px; color: var(--fg); min-width: 0; }
+.rec-item .rec-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1;
+}
+.rec-item .rec-name .rec-from {
+  font-size: 10px;
+  opacity: 0.5;
+  font-family: Georgia, serif;
+  font-style: italic;
+  margin-left: 4px;
+}
 .rec-item .rec-ratio {
-  font-size: 12.5px;
+  font-size: 11.5px;
   font-family: Georgia, serif;
   font-style: italic;
   color: var(--accent);
   opacity: 0.85;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 .rec-item .rec-match {
-  flex: 0 0 56px;
+  flex: 0 0 50px;
   text-align: right;
-  font-size: 13.5px;
+  font-size: 13px;
   font-family: Georgia, serif;
   color: var(--fg);
   opacity: 0.7;
+  white-space: nowrap;
 }
 .rec-item .rec-match b { color: var(--accent); font-weight: 700; opacity: 1; }
+
+@media (max-width: 540px) {
+  .rec-stack { max-width: 100%; }
+  .rec-info-card { flex-direction: column; align-items: stretch; padding: 14px 16px; }
+  .rec-info-card .guide-close { top: 8px; right: 8px; }
+  .rec-info-card .rec-info-inline { text-align: center; }
+  .rec-reload { width: 100%; }
+  .rec-item .rec-name { font-size: 12.5px; }
+  .rec-item { height: 38px; padding-left: 22px; padding-right: 12px; }
+}
 
 footer.controls {
   padding: 14px 40px 26px;
@@ -1574,56 +1600,53 @@ footer.controls {
 </div>
 
 <div id="recommendOverlay" class="guide-overlay" role="dialog" aria-modal="true">
-  <div class="guide-card recommend-card">
-    <button id="recommendClose" class="guide-close" aria-label="閉じる">×</button>
-    <div class="rec-cols">
-      <div class="rec-left">
-        <div class="recommend-list" id="recommendList">
-          <div class="recommend-list-empty" id="recommendListEmpty">
-            まだ何も読み込まれていません。<br>右側の <b>「読み込む」</b> から画像 / 動画 / GIF を選んでください。
-          </div>
-        </div>
+  <div class="rec-stack">
+    <!-- 初期モード: 1枚カード -->
+    <div class="guide-card recommend-card rec-intro" id="recIntroCard">
+      <button id="recommendClose" class="guide-close" aria-label="閉じる">×</button>
+      <h3>オススメ君</h3>
+      <div class="recommend-illust">
+        <svg viewBox="0 0 220 80" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="16" y="14" width="48" height="36" rx="2"/>
+          <path d="M12 14L12 50" opacity="0.5"/>
+          <path d="M10 16l2 -3 2 3" opacity="0.7"/>
+          <path d="M10 48l2 3 2 -3" opacity="0.7"/>
+          <path d="M16 56L64 56" opacity="0.5"/>
+          <path d="M18 54l-2 2 2 2" opacity="0.7"/>
+          <path d="M62 54l2 2 -2 2" opacity="0.7"/>
+          <text x="40" y="32" font-size="6" stroke="none" fill="currentColor" text-anchor="middle" font-family="Georgia,serif" font-style="italic">W : H</text>
+          <path d="M76 32h18M89 28l5 4-5 4"/>
+          <rect x="104" y="14" width="100" height="7" rx="1.5" opacity="0.18" fill="currentColor" stroke="none"/>
+          <rect x="104" y="14" width="92" height="7" rx="1.5" fill="currentColor" stroke="none" opacity="0.85"/>
+          <text x="207" y="20" font-size="5.5" stroke="none" fill="currentColor" text-anchor="end" font-family="Georgia,serif">92%</text>
+          <rect x="104" y="25" width="100" height="7" rx="1.5" opacity="0.18" fill="currentColor" stroke="none"/>
+          <rect x="104" y="25" width="78" height="7" rx="1.5" fill="currentColor" stroke="none" opacity="0.65"/>
+          <text x="207" y="31" font-size="5.5" stroke="none" fill="currentColor" text-anchor="end" font-family="Georgia,serif">78%</text>
+          <rect x="104" y="36" width="100" height="7" rx="1.5" opacity="0.18" fill="currentColor" stroke="none"/>
+          <rect x="104" y="36" width="60" height="7" rx="1.5" fill="currentColor" stroke="none" opacity="0.5"/>
+          <text x="207" y="42" font-size="5.5" stroke="none" fill="currentColor" text-anchor="end" font-family="Georgia,serif">60%</text>
+        </svg>
       </div>
-      <div class="rec-right">
-        <h3>オススメ君</h3>
-        <div class="recommend-illust">
-          <svg viewBox="0 0 220 80" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-            <!-- Source image with W:H labels -->
-            <rect x="16" y="14" width="48" height="36" rx="2"/>
-            <path d="M12 14L12 50" opacity="0.5"/>
-            <path d="M10 16l2 -3 2 3" opacity="0.7"/>
-            <path d="M10 48l2 3 2 -3" opacity="0.7"/>
-            <path d="M16 56L64 56" opacity="0.5"/>
-            <path d="M18 54l-2 2 2 2" opacity="0.7"/>
-            <path d="M62 54l2 2 -2 2" opacity="0.7"/>
-            <text x="40" y="32" font-size="6" stroke="none" fill="currentColor" text-anchor="middle" font-family="Georgia,serif" font-style="italic">W : H</text>
-            <!-- Arrow -->
-            <path d="M76 32h18M89 28l5 4-5 4"/>
-            <!-- Ranked list (bars colored by match%) -->
-            <rect x="104" y="14" width="100" height="7" rx="1.5" opacity="0.18" fill="currentColor" stroke="none"/>
-            <rect x="104" y="14" width="92" height="7" rx="1.5" fill="currentColor" stroke="none" opacity="0.85"/>
-            <text x="207" y="20" font-size="5.5" stroke="none" fill="currentColor" text-anchor="end" font-family="Georgia,serif">92%</text>
-            <rect x="104" y="25" width="100" height="7" rx="1.5" opacity="0.18" fill="currentColor" stroke="none"/>
-            <rect x="104" y="25" width="78" height="7" rx="1.5" fill="currentColor" stroke="none" opacity="0.65"/>
-            <text x="207" y="31" font-size="5.5" stroke="none" fill="currentColor" text-anchor="end" font-family="Georgia,serif">78%</text>
-            <rect x="104" y="36" width="100" height="7" rx="1.5" opacity="0.18" fill="currentColor" stroke="none"/>
-            <rect x="104" y="36" width="60" height="7" rx="1.5" fill="currentColor" stroke="none" opacity="0.5"/>
-            <text x="207" y="42" font-size="5.5" stroke="none" fill="currentColor" text-anchor="end" font-family="Georgia,serif">60%</text>
-            <rect x="104" y="47" width="100" height="7" rx="1.5" opacity="0.18" fill="currentColor" stroke="none"/>
-            <rect x="104" y="47" width="42" height="7" rx="1.5" fill="currentColor" stroke="none" opacity="0.35"/>
-            <text x="207" y="53" font-size="5.5" stroke="none" fill="currentColor" text-anchor="end" font-family="Georgia,serif">42%</text>
-          </svg>
-        </div>
-        <div class="recommend-intro" id="recommendIntro">
-          画像 / 動画 / GIF を読み込むと、その<b>縦横比</b>に近いアイテムを<br>
-          <b>一致%順</b>で見られます。選ぶとそのまま編集・保存できます。
-        </div>
-        <div class="recommend-info" id="recommendInfo" style="display:none"></div>
-        <div class="recommend-row" id="recommendActionRow">
-          <input type="file" id="recommendFile" accept="image/*,video/*,.gif" hidden>
-          <label for="recommendFile">読み込む</label>
-          <button class="cancel" id="recommendCancel">やめる</button>
-        </div>
+      <div class="recommend-intro">
+        画像 / 動画 / GIF を読み込むと <b>縦横比</b> に近いアイテムを<br>
+        <b>一致%順</b> で並べます。選ぶとそのまま編集できます。
+      </div>
+      <div class="recommend-row">
+        <input type="file" id="recommendFile" accept="image/*,video/*,.gif" hidden>
+        <label for="recommendFile">読み込む</label>
+        <button class="cancel" id="recommendCancel">やめる</button>
+      </div>
+    </div>
+
+    <!-- 結果モード: 2枚の別カード(スタック) -->
+    <div class="rec-result" id="recResultCards" style="display:none">
+      <div class="guide-card rec-info-card" id="recInfoCard">
+        <button id="recommendClose2" class="guide-close" aria-label="閉じる">×</button>
+        <div class="rec-info-inline" id="recommendInfo"></div>
+        <button class="rec-reload" id="recommendReload">別の画像を読み込む</button>
+      </div>
+      <div class="guide-card rec-list-card">
+        <div class="recommend-list" id="recommendList"></div>
       </div>
     </div>
   </div>
@@ -4245,31 +4268,38 @@ searchInput.addEventListener('keydown', e => {
 });
 searchBtn.addEventListener('click', () => { renderSidebar(); });
 
-/* ===== おすすめ君 (アスペクト比からアイテム推薦) ===== */
+/* ===== オススメ君 (アスペクト比からアイテム推薦) ===== */
+const recIntroCard = document.getElementById('recIntroCard');
+const recResultCards = document.getElementById('recResultCards');
+const recommendClose2 = document.getElementById('recommendClose2');
+const recommendReload = document.getElementById('recommendReload');
+
 function openRecommend() {
-  recommendIntro.style.display = '';
-  recommendActionRow.style.display = '';
-  recommendInfo.style.display = 'none';
-  // 左カラム: 空のプレースホルダーに戻す
-  recommendList.innerHTML = `
-    <div class="recommend-list-empty" id="recommendListEmpty">
-      まだ何も読み込まれていません。<br>右側の <b>「読み込む」</b> から画像 / 動画 / GIF を選んでください。
-    </div>`;
+  // 初期モード: 1枚カード
+  recIntroCard.style.display = '';
+  recResultCards.style.display = 'none';
+  recommendList.innerHTML = '';
   openOverlay(recommendOverlay);
 }
 recommendBtn.addEventListener('click', openRecommend);
 recommendCloseBtn.addEventListener('click', () => closeOverlay(recommendOverlay));
+recommendClose2.addEventListener('click', () => closeOverlay(recommendOverlay));
 recommendCancelBtn.addEventListener('click', () => closeOverlay(recommendOverlay));
 recommendOverlay.addEventListener('click', e => { if (e.target === recommendOverlay) closeOverlay(recommendOverlay); });
+recommendReload.addEventListener('click', () => {
+  // 別画像を読み込む: イントロモードに戻して再度ファイル選択を起動
+  recIntroCard.style.display = '';
+  recResultCards.style.display = 'none';
+});
 
 recommendFile.addEventListener('change', async e => {
   const f = e.target.files[0];
   if (!f) return;
   e.target.value = '';
-  // 進捗テキスト
-  recommendInfo.style.display = '';
-  recommendInfo.textContent = '読み込み中…';
-  recommendList.style.display = 'none';
+  // 進捗テキスト: イントロカードの説明文を一時的に書き換え
+  const introTextEl = recIntroCard.querySelector('.recommend-intro');
+  const introOrig = introTextEl ? introTextEl.innerHTML : '';
+  if (introTextEl) introTextEl.innerHTML = '<b>読み込み中…</b>';
   try {
     // ファイル種別に応じて読み込み (画像/GIF/動画 すべて対応)
     const isVideo = f.type.startsWith('video/') || /\.(mp4|webm|mov|m4v|ogv|avi)$/i.test(f.name);
@@ -4288,7 +4318,8 @@ recommendFile.addEventListener('change', async e => {
     showRecommendations(targetRatio);
   } catch (err) {
     console.error(err);
-    recommendInfo.textContent = '読み込みに失敗しました: ' + err.message;
+    if (introTextEl) introTextEl.innerHTML = '読み込みに失敗しました: ' + err.message;
+    setTimeout(() => { if (introTextEl) introTextEl.innerHTML = introOrig; }, 2500);
   }
 });
 
@@ -4313,7 +4344,8 @@ async function loadVideoAsGif(f) {
   updateFileSize();
   updateFramesInfo();
   const decoded = await decodeVideoToFrames(f, (cur, total) => {
-    recommendInfo.textContent = `読み込み中… ${cur}/${total}`;
+    const introTextEl = recIntroCard.querySelector('.recommend-intro');
+    if (introTextEl) introTextEl.innerHTML = `<b>読み込み中…</b> ${cur}/${total}`;
   });
   state.naturalW = decoded.width;
   state.naturalH = decoded.height;
@@ -4395,11 +4427,10 @@ function showRecommendations(targetRatio) {
     recommendList.appendChild(buildCatBlock(cat.name, sorted));
   });
 
-  recommendInfo.innerHTML = `読み込んだサイズ比 <b>${state.naturalW} : ${state.naturalH}</b> (≈ <b>${targetRatio.toFixed(3)}</b>)<br>カテゴリーをタップしてアイテム一覧を開いてください`;
-  recommendInfo.style.display = '';
-  recommendList.style.display = '';
-  recommendIntro.style.display = 'none';
-  recommendActionRow.style.display = 'none';
+  recommendInfo.innerHTML = `読み込んだサイズ比 <b>${state.naturalW} : ${state.naturalH}</b> &nbsp;(≈ <b>${targetRatio.toFixed(3)}</b>)`;
+  // 結果モードへ切替: イントロカードを隠して結果スタック(2枚)を表示
+  recIntroCard.style.display = 'none';
+  recResultCards.style.display = '';
 }
 
 /* ===== 部屋にマッチ君 ===== */

@@ -103,15 +103,15 @@ aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
   padding: 2px;
   cursor: pointer;
   color: var(--fg-faint);
-  opacity: 0;
+  opacity: 0.35;
   transition: opacity 0.15s, color 0.15s, transform 0.12s;
   display: flex; align-items: center; justify-content: center;
   width: 22px; height: 22px;
   border-radius: 4px;
   flex-shrink: 0;
 }
-.item:hover .pin-btn { opacity: 0.65; }
 .pin-btn:hover { opacity: 1 !important; transform: scale(1.15); color: #c95a8a; }
+.item:hover .pin-btn { opacity: 0.7; }
 .pin-btn.pinned { opacity: 1; color: #d669a0; }
 .pin-btn.pinned:hover { color: #b94e85; }
 
@@ -1920,7 +1920,7 @@ canvas.rm-active { cursor: crosshair; }
     </div>
 
     <!-- 部屋マッチ プレビュー直接モード -->
-    <div class="save-preview-pane rm-save-pane" id="rmSavePane" style="display:none">
+    <div class="save-preview-pane rm-save-pane" id="rmSavePane">
       <button class="spp-toggle" id="rmSaveToggle" type="button" title="非表示/表示">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polyline class="ic-collapse" points="15 18 9 12 15 6"/>
@@ -4514,14 +4514,14 @@ function draw() {
     ctx.shadowBlur = 4;
     ctx.strokeRect(dr.x, dr.y, dr.w, dr.h);
     ctx.shadowBlur = 0;
-    // 左上の■ハンドル
+    // 左上の■ハンドル (灰色: 白枠より目立つように)
     const hr = DEFORM_HANDLE_R;
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
     ctx.fillRect(dr.x - hr - 1, dr.y - hr - 1, hr * 2 + 2, hr * 2 + 2);
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = '#888';
     ctx.fillRect(dr.x - hr, dr.y - hr, hr * 2, hr * 2);
-    ctx.strokeStyle = 'rgba(0,0,0,0.45)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1.5;
     ctx.strokeRect(dr.x - hr, dr.y - hr, hr * 2, hr * 2);
     ctx.restore();
   }
@@ -4874,14 +4874,12 @@ function applyDeformToCanvas(srcCanvas) {
   const out = document.createElement('canvas');
   out.width = W; out.height = H;
   const octx = out.getContext('2d');
-  // 元のソースのアスペクトを伸縮 + オフセットして描画
-  // 画像変形時に背景は透明 (frame外に出た部分は保存時にクリップ)
-  const sw = W * state.deformScaleX;
-  const sh = H * state.deformScaleY;
-  octx.drawImage(srcCanvas,
-    (W - sw) / 2 + state.deformOffsetX,
-    (H - sh) / 2 + state.deformOffsetY,
-    sw, sh);
+  // ディスプレイ矩形(canvas座標) → ソース座標へ正確に変換して描画
+  // これでプレビューと保存結果が一致する
+  const dr = deformDisplayRect();
+  const rx = W / state.canvasW;
+  const ry = H / state.canvasH;
+  octx.drawImage(srcCanvas, dr.x * rx, dr.y * ry, dr.w * rx, dr.h * ry);
   return out;
 }
 function getEffectFrame(idx) {
@@ -5010,29 +5008,12 @@ shrinkModeDeformBtn.addEventListener('click', () => {
 /* 自動: 表示画像のアスペクト比をフレームの比に合わせる(短辺フィット) */
 function deformAutoFit() {
   if (!state.frames.length || !state.frameW || !state.frameH) return;
-  const srcW = state.naturalW;
-  const srcH = state.naturalH;
-  // フレームのアスペクト比に合わせて画像をスケール
-  // ベースは canvasW/H が natural と等しい状態。
-  // 表示倍率(scaleX/Y)とオフセットでフレームちょうどに収める。
-  const frameAR = state.frameW / state.frameH;
-  const srcAR = srcW / srcH;
-  if (Math.abs(frameAR - srcAR) < 0.001) {
-    // ほぼ同じならリセット
-    state.deformScaleX = 1;
-    state.deformScaleY = 1;
-  } else if (srcAR > frameAR) {
-    // 元が横長 → 縦伸ばし
-    state.deformScaleX = 1;
-    state.deformScaleY = srcAR / frameAR;
-  } else {
-    // 元が縦長 → 横伸ばし
-    state.deformScaleX = frameAR / srcAR;
-    state.deformScaleY = 1;
-  }
-  // 中央合わせ
-  state.deformOffsetX = 0;
-  state.deformOffsetY = 0;
+  // 画像表示矩形を フレーム矩形と完全一致 (左右上下すべての縁が枠ぴったり)
+  state.deformScaleX = state.frameW / state.canvasW;
+  state.deformScaleY = state.frameH / state.canvasH;
+  // displayRect.x = (canvasW - w)/2 + offsetX = frameX → offsetX = frameX - (canvasW - frameW)/2
+  state.deformOffsetX = state.frameX - (state.canvasW - state.frameW) / 2;
+  state.deformOffsetY = state.frameY - (state.canvasH - state.frameH) / 2;
   draw();
 }
 deformAutoBtn.addEventListener('click', deformAutoFit);

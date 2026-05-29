@@ -275,6 +275,14 @@ header.info {
 }
 .drop-overlay-inner svg { display: block; margin: 0 auto 8px; }
 
+/* 汎用 droppable: ラベル/ボタンにドラッグオーバー時のヒント */
+.droppable { transition: background 0.15s, box-shadow 0.15s, transform 0.1s; }
+.droppable.drag-over {
+  background: rgba(91,156,184,0.22) !important;
+  box-shadow: 0 0 0 2px var(--accent), 0 4px 14px rgba(91,156,184,0.3);
+  transform: translateY(-1px);
+}
+
 /* Simplify (Cutout) slider panel */
 .simplify-panel {
   position: absolute;
@@ -689,6 +697,79 @@ canvas.eyedropper-active { cursor: crosshair !important; }
 }
 .search-results.shown { display: block; }
 #categories.hidden { display: none; }
+
+/* Sidebar TOP3 (オススメ) */
+.sidebar-top3 {
+  margin-bottom: 12px;
+  padding: 10px 10px 6px;
+  background: rgba(91,156,184,0.06);
+  border: 1px solid rgba(91,156,184,0.25);
+  border-radius: 10px;
+}
+.sidebar-top3[hidden] { display: none; }
+.st3-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.st3-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+.st3-more {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.12s;
+}
+.st3-more:hover { background: rgba(91,156,184,0.15); text-decoration: underline; }
+.st3-list { display: flex; flex-direction: column; gap: 4px; }
+.st3-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 8px;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.st3-item:hover { background: rgba(91,156,184,0.12); }
+.st3-item .st3-icon {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.st3-item .st3-icon img { max-width: 100%; max-height: 100%; }
+.st3-item .st3-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.st3-item .st3-match {
+  flex: 0 0 auto;
+  font-family: Georgia, serif;
+  font-size: 11.5px;
+  color: var(--accent);
+  font-weight: 700;
+}
 .sr-card {
   display: flex;
   align-items: center;
@@ -1020,6 +1101,24 @@ footer.controls {
   user-select: none;
 }
 .split-field .unit { font-size: 11px; color: var(--fg-faint); }
+.split-lock {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--fg-faint);
+  padding: 0;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.split-lock:hover { color: var(--accent); border-color: var(--accent); }
+.split-lock[aria-pressed="true"] {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
 .arrows { display: flex; flex-direction: column; margin-left: 2px; }
 .arr {
   width: 16px; height: 12px;
@@ -1344,6 +1443,13 @@ footer.controls {
     </button>
   </div>
   <div id="searchResults" class="search-results"></div>
+  <div id="sidebarTop3" class="sidebar-top3" hidden>
+    <div class="st3-head">
+      <span class="st3-title">オススメ TOP 3</span>
+      <button class="st3-more" id="sidebarTop3More">もっと見る</button>
+    </div>
+    <div class="st3-list" id="sidebarTop3List"></div>
+  </div>
   <nav id="categories"></nav>
 </aside>
 
@@ -1433,6 +1539,7 @@ footer.controls {
         <line x1="5" y1="19" x2="6.8" y2="17.2"/>
         <line x1="17.2" y1="6.8" x2="19" y2="5"/>
       </svg>
+      <span class="q-level" id="bLevel"></span>
     </button>
     <button class="brightness-btn" id="quality" title="画質低下 (1.5倍ずつ)" disabled>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
@@ -1483,11 +1590,9 @@ footer.controls {
   </div>
 
   <footer class="controls">
-    <input type="file" id="file" accept="image/*,.gif" hidden>
-    <label for="file" class="btn btn-accent">画像 / GIF</label>
-    <input type="file" id="videoFile" accept="video/*,.mp4,.mov,.m4v,.webm,.ogv,.avi,.mkv" hidden>
-    <label for="videoFile" class="btn btn-accent">GIF変換君</label>
-    <button id="recommend" class="btn btn-accent">オススメ君</button>
+    <input type="file" id="file" accept="image/*,video/*,.gif,.mp4,.mov,.m4v,.webm,.ogv,.avi,.mkv" hidden>
+    <label for="file" class="btn btn-accent" id="loadKun">読み込み君</label>
+    <input type="file" id="videoFile" accept="video/*" hidden aria-hidden="true">
     <button id="roomMatch" class="btn btn-accent">部屋にマッチ君</button>
     <button id="save" class="btn" disabled>保存</button>
     <div class="splits">
@@ -1500,6 +1605,12 @@ footer.controls {
           <button class="arr" data-target="W" data-delta="-1">▼</button>
         </div>
       </div>
+      <button class="split-lock" id="splitLock" type="button" title="縦横同期" aria-pressed="false">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2"/>
+          <path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+      </button>
       <div class="split-field">
         <span class="lbl">縦</span>
         <span class="num" id="splitHNum">1</span>
@@ -2992,7 +3103,7 @@ function getBrightnessFactor(level) {
   return BRIGHTNESS_VALUES[level] ?? 1.0;
 }
 const QUALITY_FACTOR = 1.5;  // 1段階あたりの劣化倍率
-const QUALITY_MAX = 5;       // 0..5 (cycle: 0→1→2→3→4→5→0)
+const QUALITY_MAX = 7;       // 0..7 (cycle: 0→1..7→0)  Level7で約94%削減
 
 /* ===== State ===== */
 const state = {
@@ -3051,6 +3162,7 @@ const flipHBtn = document.getElementById('flipH');
 const flipVBtn = document.getElementById('flipV');
 const rotateBtn = document.getElementById('rotate');
 const brightnessBtn = document.getElementById('brightness');
+const bLevelEl = document.getElementById('bLevel');
 const qualityBtn = document.getElementById('quality');
 const qLevelEl = document.getElementById('qLevel');
 const qInfoEl = document.getElementById('qInfo');
@@ -3078,7 +3190,7 @@ const timeStartEl = document.getElementById('timeStart');
 const timeEndEl = document.getElementById('timeEnd');
 const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
-const recommendBtn = document.getElementById('recommend');
+const recommendBtn = document.getElementById('recommend');  // null after removal — safe optional usage
 const recommendOverlay = document.getElementById('recommendOverlay');
 const recommendCloseBtn = document.getElementById('recommendClose');
 const sizeInfoOverlay = document.getElementById('sizeInfoOverlay');
@@ -3103,11 +3215,31 @@ const shareUrlInput = document.getElementById('shareUrl');
 
 /* ===== Toast (一瞬出る通知) ===== */
 let __toastTimer = null;
+let __toastQueue = [];
 function showToast(text, durationMs = 1400) {
   toastEl.textContent = text;
   toastEl.classList.add('shown');
   clearTimeout(__toastTimer);
-  __toastTimer = setTimeout(() => toastEl.classList.remove('shown'), durationMs);
+  __toastTimer = setTimeout(() => {
+    toastEl.classList.remove('shown');
+    // キューに次があれば一拍置いて表示
+    if (__toastQueue.length > 0) {
+      const next = __toastQueue.shift();
+      setTimeout(() => showToast(next.text, next.duration), 250);
+    }
+  }, durationMs);
+}
+function queueToast(text, durationMs) {
+  __toastQueue.push({ text, duration: durationMs });
+}
+/* 読み込んだ画像が重い場合は警告を続けて表示 */
+function maybeWarnHeavy() {
+  if (!state.loaded) return;
+  const sz = state.fileSize;
+  const mb = sz / (1024 * 1024);
+  if (mb >= 2) {  // 2MB 以上で警告
+    queueToast('画像が重いので画質低下をお勧めします', 10000);
+  }
 }
 
 /* ===== Overlay open/close helpers ===== */
@@ -3412,7 +3544,8 @@ function decodeGifToFrames(arrayBuffer) {
 /* ===== Load file ===== */
 fileInput.addEventListener('change', e => {
   const f = e.target.files[0];
-  if (f) loadFile(f);
+  e.target.value = '';  // allow re-selection
+  if (f) loadAnyFile(f);
 });
 
 /* Unified loader: 画像 / GIF / 動画 を自動判別 */
@@ -3459,10 +3592,47 @@ function loadAnyFile(f) {
   ['dragover', 'drop'].forEach(evt => {
     window.addEventListener(evt, e => {
       if (e.target.closest && e.target.closest('#canvasWrap')) return;
+      if (e.target.closest && e.target.closest('.droppable')) return;
       e.preventDefault();
     });
   });
 })();
+
+/* 汎用 D&D ヘルパー: ラベル/ボタン要素にドロップでファイルを渡す */
+function makeDroppable(el, onFile) {
+  if (!el) return;
+  el.classList.add('droppable');
+  let dragging = false;
+  ['dragenter', 'dragover'].forEach(evt => {
+    el.addEventListener(evt, e => {
+      if (!e.dataTransfer || !e.dataTransfer.types.includes('Files')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (!dragging) {
+        dragging = true;
+        el.classList.add('drag-over');
+      }
+    });
+  });
+  el.addEventListener('dragleave', e => {
+    e.preventDefault();
+    // 要素外に出たら解除
+    const rect = el.getBoundingClientRect();
+    if (e.clientX < rect.left || e.clientX > rect.right
+        || e.clientY < rect.top || e.clientY > rect.bottom) {
+      dragging = false;
+      el.classList.remove('drag-over');
+    }
+  });
+  el.addEventListener('drop', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragging = false;
+    el.classList.remove('drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) onFile(f);
+  });
+}
 
 /* ===== Video → GIF ===== */
 const videoInput = document.getElementById('videoFile');
@@ -3563,11 +3733,18 @@ videoInput.addEventListener('change', async e => {
     updateTrimUI();
     if (state.frames.length > 1) startAnimation();
     showToast('GIFに変換しました');
+    updateSidebarTop3();
     // 元のGIFサイズを推定(バックグラウンドで)
     saveBtn.innerHTML = 'サイズ計測中…';
     await estimateGifBaseSize();
     updateSaveBtn();
     updateQualityInfo();
+    updateFileSize();
+    // 重い警告 (gifBaseSize 確定後)
+    {
+      const mb = (state.gifBaseSize || state.fileSize) / (1024 * 1024);
+      if (mb >= 2) queueToast('GIFが重いので画質低下をお勧めします', 10000);
+    }
   } catch (err) {
     console.error(err);
     alert('動画を読み込めませんでした: ' + err.message);
@@ -3640,6 +3817,11 @@ async function loadFile(file) {
     updateTrimUI();
     if (state.frames.length > 1) startAnimation();
     updateQualityInfo();
+    updateSidebarTop3();
+    // 読み込み完了通知
+    const isGif = state.frames.length > 1;
+    showToast(isGif ? 'GIFを読み込みました' : '画像を読み込みました');
+    maybeWarnHeavy();
   } catch (err) {
     console.error(err);
     alert('ファイルを読み込めませんでした: ' + err.message);
@@ -3818,9 +4000,22 @@ function sizeTier(bytes) {
   if (mb <= 30) return 'purple';
   return 'black';
 }
+function getEstimatedSize() {
+  if (!state.loaded) return null;
+  const base = state.frames.length > 1 ? (state.gifBaseSize || state.fileSize) : state.fileSize;
+  if (!base) return null;
+  if (state.quality === 0) return base;
+  return base / Math.pow(QUALITY_FACTOR, state.quality);
+}
 function updateFileSize() {
-  fileSizeEl.textContent = state.loaded ? formatBytes(state.fileSize) : '—';
-  fileSizeEl.dataset.tier = state.loaded ? sizeTier(state.fileSize) : 'white';
+  if (!state.loaded) {
+    fileSizeEl.textContent = '—';
+    fileSizeEl.dataset.tier = 'white';
+    return;
+  }
+  const est = getEstimatedSize();
+  fileSizeEl.textContent = formatBytes(est);
+  fileSizeEl.dataset.tier = sizeTier(est);
 }
 function updateFramesInfo() {
   if (!state.loaded || state.frames.length <= 1) { framesInfo.textContent = ''; return; }
@@ -3866,6 +4061,12 @@ function updateToolBtns() {
 function updateBrightnessGauge() {
   const fill = (state.brightness / BRIGHTNESS_MAX) * 360;
   brightnessBtn.style.setProperty('--fill', fill + 'deg');
+  if (state.brightness > 0) {
+    bLevelEl.textContent = state.brightness;
+    bLevelEl.classList.add('shown');
+  } else {
+    bLevelEl.classList.remove('shown');
+  }
 }
 
 /* ===== Quality reduction =====
@@ -3931,7 +4132,7 @@ qualityBtn.addEventListener('click', () => {
   state.quality = (state.quality + 1) % (QUALITY_MAX + 1);
   updateQualityGauge();
   updateQualityInfo();
-  // プレビューを次フレーム描画で反映 (アニメーションループが拾う)
+  updateFileSize();  // バッジもリアルタイム更新
 });
 
 /* ===== Simplify (Cutout風) ===== */
@@ -4281,7 +4482,7 @@ function openRecommend() {
   recommendList.innerHTML = '';
   openOverlay(recommendOverlay);
 }
-recommendBtn.addEventListener('click', openRecommend);
+if (recommendBtn) recommendBtn.addEventListener('click', openRecommend);
 recommendCloseBtn.addEventListener('click', () => closeOverlay(recommendOverlay));
 recommendClose2.addEventListener('click', () => closeOverlay(recommendOverlay));
 recommendCancelBtn.addEventListener('click', () => closeOverlay(recommendOverlay));
@@ -4362,6 +4563,56 @@ async function loadVideoAsGif(f) {
   if (state.frames.length > 1) startAnimation();
   showToast('GIFに変換しました');
 }
+
+/* ===== Sidebar Top3 (常時表示のオススメ) ===== */
+const sidebarTop3 = document.getElementById('sidebarTop3');
+const sidebarTop3List = document.getElementById('sidebarTop3List');
+const sidebarTop3More = document.getElementById('sidebarTop3More');
+
+function computeTop3FromState() {
+  if (!state.loaded || !state.naturalW || !state.naturalH) return [];
+  const target = state.naturalW / state.naturalH;
+  const all = [];
+  for (const cat of CATEGORIES) {
+    for (const it of cat.items) {
+      const r = it.w / it.h;
+      const diff = Math.abs(target - r);
+      const norm = diff / Math.max(target, r);
+      const match = Math.max(0, (1 - norm)) * 100;
+      all.push({ item: it, match });
+    }
+  }
+  all.sort((a, b) => b.match - a.match);
+  return all.slice(0, 3);
+}
+function updateSidebarTop3() {
+  const top3 = computeTop3FromState();
+  if (top3.length === 0) {
+    sidebarTop3.hidden = true;
+    return;
+  }
+  sidebarTop3.hidden = false;
+  sidebarTop3List.innerHTML = '';
+  top3.forEach(rec => {
+    const row = document.createElement('div');
+    row.className = 'st3-item';
+    const ic = rec.item.icon ? `<img src="${rec.item.icon}" alt="">` : '';
+    row.innerHTML = `
+      <div class="st3-icon">${ic}</div>
+      <div class="st3-name">${rec.item.name}</div>
+      <div class="st3-match">${rec.match.toFixed(0)}%</div>`;
+    row.addEventListener('click', () => selectItem(rec.item, null));
+    sidebarTop3List.appendChild(row);
+  });
+}
+sidebarTop3More.addEventListener('click', () => {
+  // 既存モーダルを開いて結果モードへ
+  openRecommend();
+  if (state.loaded && state.naturalW) {
+    const target = state.naturalW / state.naturalH;
+    showRecommendations(target);
+  }
+});
 
 function showRecommendations(targetRatio) {
   recommendList.innerHTML = '';
@@ -4485,7 +4736,15 @@ function openRoomMatch() {
   roomNameObj.textContent = '未選択';
   roomSlotRoom.classList.remove('filled');
   roomSlotObj.classList.remove('filled');
-  roomStartBtn.disabled = true;
+  // 現在プレビューに画像があれば「飾る画像」として自動取得
+  if (state.loaded && state.frames.length > 0) {
+    roomState.objFrames = state.frames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+    roomState.objW = state.naturalW;
+    roomState.objH = state.naturalH;
+    roomNameObj.innerHTML = '<b style="color:var(--accent)">現在の画像</b>を使用中';
+    roomSlotObj.classList.add('filled');
+  }
+  roomStartBtn.disabled = !(roomState.roomImg && roomState.objFrames);
   roomIntroEl.style.display = '';
   roomWorkspaceEl.style.display = 'none';
   openOverlay(roomMatchOverlay);
@@ -4842,6 +5101,7 @@ roomConfirmBtn.addEventListener('click', () => {
   updateSaveBtn();
   updateTrimUI();
   if (state.frames.length > 1) startAnimation();
+  updateSidebarTop3();
   showToast('部屋に合わせて調整しました');
   closeRoomMatch();
 });
@@ -4922,11 +5182,36 @@ canvas.addEventListener('pointerup', endInteraction);
 canvas.addEventListener('pointercancel', endInteraction);
 
 /* ===== Split ▲▼ ===== */
+const splitLockBtn = document.getElementById('splitLock');
+state.splitLock = false;
+splitLockBtn.addEventListener('click', () => {
+  state.splitLock = !state.splitLock;
+  splitLockBtn.setAttribute('aria-pressed', state.splitLock ? 'true' : 'false');
+  if (state.splitLock) {
+    // 同期: 大きい方に合わせる
+    const v = Math.max(state.splitW, state.splitH);
+    state.splitW = v;
+    state.splitH = v;
+    splitWNum.textContent = v;
+    splitHNum.textContent = v;
+    recalculateFrame();
+    draw();
+    updateDimLine();
+    updateSaveBtn();
+  }
+});
 document.querySelectorAll('.arr').forEach(btn => {
   btn.addEventListener('click', () => {
     const t = btn.dataset.target;
     const d = parseInt(btn.dataset.delta, 10);
-    if (t === 'W') {
+    if (state.splitLock) {
+      // 固定モード: 両方同時更新
+      const cur = Math.max(state.splitW, state.splitH);
+      const v = Math.max(1, Math.min(50, cur + d));
+      state.splitW = v; state.splitH = v;
+      splitWNum.textContent = v;
+      splitHNum.textContent = v;
+    } else if (t === 'W') {
       state.splitW = Math.max(1, Math.min(50, state.splitW + d));
       splitWNum.textContent = state.splitW;
     } else {
@@ -5196,6 +5481,32 @@ updateToolBtns();
 updateBrightnessGauge();
 updateSimplifyGauge();
 updateShrinkGauge();
+updateSidebarTop3();
+
+/* ===== ファイル入力ラベルへの D&D 適用 ===== */
+// 読み込み君 (footer)
+makeDroppable(document.getElementById('loadKun'), f => loadAnyFile(f));
+// オススメ君 の "読み込む" ラベル
+const recommendFileLabel = document.querySelector('label[for="recommendFile"]');
+makeDroppable(recommendFileLabel, f => {
+  const dt = new DataTransfer();
+  dt.items.add(f);
+  recommendFile.files = dt.files;
+  recommendFile.dispatchEvent(new Event('change'));
+});
+// 部屋にマッチ君 の 2 つのスロット
+makeDroppable(roomSlotRoom, f => {
+  const dt = new DataTransfer();
+  dt.items.add(f);
+  roomFileRoom.files = dt.files;
+  roomFileRoom.dispatchEvent(new Event('change'));
+});
+makeDroppable(roomSlotObj, f => {
+  const dt = new DataTransfer();
+  dt.items.add(f);
+  roomFileObj.files = dt.files;
+  roomFileObj.dispatchEvent(new Event('change'));
+});
 
 </script>
 </body>

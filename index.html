@@ -1828,7 +1828,7 @@ canvas.rm-active { cursor: crosshair; }
 }
 .lp-row {
   display: grid;
-  grid-template-columns: 30px 1fr 18px auto auto;
+  grid-template-columns: 30px 1fr auto auto 16px;
   gap: 4px 6px;
   align-items: center;
   background: #f7fafb;
@@ -1874,27 +1874,25 @@ canvas.rm-active { cursor: crosshair; }
 }
 .lp-row .lp-vis:hover { color: var(--accent); }
 .lp-row .lp-vis.hidden-ic { color: rgba(0,0,0,0.25); }
-.lp-move {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  align-items: center;
-}
-.lp-move-btn {
+.lp-grip {
   background: transparent;
   border: none;
-  padding: 0;
-  cursor: pointer;
+  padding: 2px;
+  cursor: grab;
   color: var(--fg-faint);
-  width: 14px;
-  height: 12px;
+  width: 16px;
+  height: 22px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 2px;
+  border-radius: 3px;
+  touch-action: none;
 }
-.lp-move-btn:hover:not(:disabled) { color: var(--accent); background: rgba(91,156,184,0.12); }
-.lp-move-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+.lp-grip:hover { color: var(--accent); background: rgba(91,156,184,0.12); }
+.lp-grip:active { cursor: grabbing; color: var(--accent); }
+.lp-grip svg { display: block; opacity: 0.7; }
+.lp-grip:hover svg { opacity: 1; }
+.lp-del-ph { width: 18px; height: 1px; }
 .lp-del {
   background: transparent;
   border: none;
@@ -5222,6 +5220,63 @@ function updateLayerPanelVisibility() {
   }
 }
 
+/* グリップのポインタドラッグで並べ替え (モバイル/デスクトップ両対応) */
+function setupGripDrag(gripEl, rowEl, fromIdx) {
+  let st = null;
+  gripEl.addEventListener('pointerdown', ev => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    gripEl.setPointerCapture(ev.pointerId);
+    st = { pointerId: ev.pointerId, startY: ev.clientY, moved: false };
+    rowEl.classList.add('lp-row-dragging');
+  });
+  gripEl.addEventListener('pointermove', ev => {
+    if (!st || ev.pointerId !== st.pointerId) return;
+    ev.preventDefault();
+    if (Math.abs(ev.clientY - st.startY) > 4) st.moved = true;
+    // y 位置から対象 DOM 行を特定
+    const rows = layerList.children;
+    let targetDom = -1;
+    for (let k = 0; k < rows.length; k++) {
+      const rk = rows[k].getBoundingClientRect();
+      if (ev.clientY >= rk.top && ev.clientY <= rk.bottom) { targetDom = k; break; }
+    }
+    // ドロップインジケーター更新
+    document.querySelectorAll('.lp-row-dropping').forEach(el => el.classList.remove('lp-row-dropping'));
+    if (targetDom !== -1 && rows[targetDom] !== rowEl) {
+      rows[targetDom].classList.add('lp-row-dropping');
+    }
+  });
+  const finish = ev => {
+    if (!st) return;
+    if (ev && ev.pointerId !== st.pointerId) return;
+    rowEl.classList.remove('lp-row-dragging');
+    // 対象 DOM 行から layer index を逆算
+    let targetDom = -1;
+    if (ev) {
+      const rows = layerList.children;
+      for (let k = 0; k < rows.length; k++) {
+        const rk = rows[k].getBoundingClientRect();
+        if (ev.clientY >= rk.top && ev.clientY <= rk.bottom) { targetDom = k; break; }
+      }
+    }
+    document.querySelectorAll('.lp-row-dropping').forEach(el => el.classList.remove('lp-row-dropping'));
+    if (targetDom !== -1 && st.moved) {
+      const toIdx = state.layers.length - 1 - targetDom;
+      if (toIdx !== fromIdx && toIdx >= 0 && toIdx < state.layers.length) {
+        moveLayerTo(fromIdx, toIdx);
+      }
+    }
+    st = null;
+  };
+  gripEl.addEventListener('pointerup', finish);
+  gripEl.addEventListener('pointercancel', () => {
+    rowEl.classList.remove('lp-row-dragging');
+    document.querySelectorAll('.lp-row-dropping').forEach(el => el.classList.remove('lp-row-dropping'));
+    st = null;
+  });
+}
+
 /* レイヤーパネルの行を再構築 */
 function renderLayerPanel() {
   layerList.innerHTML = '';
@@ -5260,30 +5315,6 @@ function renderLayerPanel() {
       }
     });
     row.appendChild(nm);
-    // 並べ替え ↑ / ↓
-    const moveBox = document.createElement('div');
-    moveBox.className = 'lp-move';
-    const upBtn = document.createElement('button');
-    upBtn.className = 'lp-move-btn';
-    upBtn.title = '上へ';
-    upBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`;
-    upBtn.disabled = i === state.layers.length - 1;
-    upBtn.addEventListener('click', ev => {
-      ev.stopPropagation();
-      moveLayer(i, +1);
-    });
-    const dnBtn = document.createElement('button');
-    dnBtn.className = 'lp-move-btn';
-    dnBtn.title = '下へ';
-    dnBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
-    dnBtn.disabled = i === 0;
-    dnBtn.addEventListener('click', ev => {
-      ev.stopPropagation();
-      moveLayer(i, -1);
-    });
-    moveBox.appendChild(upBtn);
-    moveBox.appendChild(dnBtn);
-    row.appendChild(moveBox);
     // 表示/非表示
     const vis = document.createElement('button');
     vis.className = 'lp-vis' + (L.visible ? '' : ' hidden-ic');
@@ -5309,7 +5340,25 @@ function renderLayerPanel() {
         deleteLayer(i);
       });
       row.appendChild(del);
+    } else {
+      // レイヤー0には placeholder (グリッド列確保)
+      const ph = document.createElement('span');
+      ph.className = 'lp-del-ph';
+      row.appendChild(ph);
     }
+    // グリップ (右端: 6点アイコン、ここを掴むと並べ替え可能)
+    const grip = document.createElement('button');
+    grip.className = 'lp-grip';
+    grip.title = '掴んで並べ替え';
+    grip.innerHTML = `<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
+      <circle cx="2" cy="2" r="1.4"/><circle cx="8" cy="2" r="1.4"/>
+      <circle cx="2" cy="7" r="1.4"/><circle cx="8" cy="7" r="1.4"/>
+      <circle cx="2" cy="12" r="1.4"/><circle cx="8" cy="12" r="1.4"/>
+    </svg>`;
+    grip.dataset.layerIdx = String(i);
+    grip.addEventListener('click', ev => ev.stopPropagation());
+    setupGripDrag(grip, row, i);
+    row.appendChild(grip);
     // クリックで選択トグル
     row.addEventListener('click', () => {
       if (state.selectedLayers.has(i)) {
@@ -5321,33 +5370,6 @@ function renderLayerPanel() {
       renderLayerPanel();
       updateBrightnessGauge();
       draw();
-    });
-
-    // ドラッグで並べ替え (HTML5 D&D, デスクトップ向け、モバイルは↑↓ボタン)
-    row.draggable = true;
-    row.dataset.layerIdx = String(i);
-    row.addEventListener('dragstart', ev => {
-      ev.dataTransfer.setData('text/plain', String(i));
-      ev.dataTransfer.effectAllowed = 'move';
-      row.classList.add('lp-row-dragging');
-    });
-    row.addEventListener('dragend', () => {
-      row.classList.remove('lp-row-dragging');
-      document.querySelectorAll('.lp-row-dropping').forEach(el => el.classList.remove('lp-row-dropping'));
-    });
-    row.addEventListener('dragover', ev => {
-      ev.preventDefault();
-      ev.dataTransfer.dropEffect = 'move';
-      row.classList.add('lp-row-dropping');
-    });
-    row.addEventListener('dragleave', () => row.classList.remove('lp-row-dropping'));
-    row.addEventListener('drop', ev => {
-      ev.preventDefault();
-      row.classList.remove('lp-row-dropping');
-      const fromIdx = parseInt(ev.dataTransfer.getData('text/plain'), 10);
-      if (!isNaN(fromIdx) && fromIdx !== i) {
-        moveLayerTo(fromIdx, i);
-      }
     });
     layerList.appendChild(row);
   }

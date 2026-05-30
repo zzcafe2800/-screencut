@@ -5281,6 +5281,31 @@ function layerHitTest(x, y) {
   return null;
 }
 
+/* 複数選択時の統合バウンディングボックス (layer 0 は除外) */
+function getMultiSelectBBox() {
+  const selectedNonBase = [];
+  for (const idx of state.selectedLayers) {
+    if (idx > 0 && state.layers[idx] && state.layers[idx].visible) {
+      selectedNonBase.push(idx);
+    }
+  }
+  if (selectedNonBase.length < 2) return null;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  const baseScale = state.canvasW / state.naturalW;
+  for (const idx of selectedNonBase) {
+    const L = state.layers[idx];
+    const drawW = L.naturalW * L.scaleX * baseScale;
+    const drawH = L.naturalH * L.scaleY * baseScale;
+    const cx = state.canvasW / 2 + L.offsetX;
+    const cy = state.canvasH / 2 + L.offsetY;
+    minX = Math.min(minX, cx - drawW / 2);
+    minY = Math.min(minY, cy - drawH / 2);
+    maxX = Math.max(maxX, cx + drawW / 2);
+    maxY = Math.max(maxY, cy + drawH / 2);
+  }
+  return { left: minX, top: minY, right: maxX, bottom: maxY, indices: selectedNonBase };
+}
+
 canvas.addEventListener('pointerdown', e => {
   if (state.layers.length < 2) return;
   if (state.deformActive || state.eyedropperActive) return;
@@ -5289,6 +5314,55 @@ canvas.addEventListener('pointerdown', e => {
   const r = canvas.getBoundingClientRect();
   const x = ((e.clientX - r.left) / r.width) * state.canvasW;
   const y = ((e.clientY - r.top) / r.height) * state.canvasH;
+
+  // 複数選択時は統合バウンディングボックスを優先チェック
+  const mbb = getMultiSelectBBox();
+  if (mbb) {
+    // 左上ハンドル
+    if (Math.hypot(x - mbb.left, y - mbb.top) <= 14) {
+      e.preventDefault();
+      e.stopPropagation();
+      canvas.setPointerCapture(e.pointerId);
+      // 各レイヤーの基準値を保存
+      const baseOffsets = new Map();
+      const baseScales = new Map();
+      for (const idx of mbb.indices) {
+        const L = state.layers[idx];
+        baseOffsets.set(idx, { x: L.offsetX, y: L.offsetY });
+        baseScales.set(idx, { x: L.scaleX, y: L.scaleY });
+      }
+      state._layerDrag = {
+        multi: true,
+        kind: 'resize',
+        indices: mbb.indices,
+        startX: x, startY: y,
+        bbox: { left: mbb.left, top: mbb.top, right: mbb.right, bottom: mbb.bottom },
+        baseOffsets, baseScales,
+        anchorX: mbb.right, anchorY: mbb.bottom,
+      };
+      return;
+    }
+    // 本体 (bbox内のどこか)
+    if (x >= mbb.left && x <= mbb.right && y >= mbb.top && y <= mbb.bottom) {
+      e.preventDefault();
+      e.stopPropagation();
+      canvas.setPointerCapture(e.pointerId);
+      const baseOffsets = new Map();
+      for (const idx of mbb.indices) {
+        const L = state.layers[idx];
+        baseOffsets.set(idx, { x: L.offsetX, y: L.offsetY });
+      }
+      state._layerDrag = {
+        multi: true,
+        kind: 'move',
+        indices: mbb.indices,
+        startX: x, startY: y,
+        baseOffsets,
+      };
+      return;
+    }
+  }
+
   const hit = layerHitTest(x, y);
   if (!hit) return;
   e.preventDefault();
@@ -5298,6 +5372,7 @@ canvas.addEventListener('pointerdown', e => {
   if (!state.selectedLayers.has(hit.idx)) {
     state.selectedLayers = new Set([hit.idx]);
     renderLayerPanel();
+    updateBrightnessGauge();
   }
   state._layerDrag = {
     idx: hit.idx,
@@ -5320,8 +5395,50 @@ canvas.addEventListener('pointermove', e => {
   const x = ((e.clientX - r.left) / r.width) * state.canvasW;
   const y = ((e.clientY - r.top) / r.height) * state.canvasH;
   const d = state._layerDrag;
-  const L = state.layers[d.idx];
   const baseScale = state.canvasW / state.naturalW;
+
+  // 複数選択ドラッグ
+  if (d.multi) {
+    if (d.kind === 'move') {
+      const dx = x - d.startX;
+      const dy = y - d.startY;
+      for (const idx of d.indices) {
+        const L = state.layers[idx];
+        const base = d.baseOffsets.get(idx);
+        L.offsetX = base.x + dx;
+        L.offsetY = base.y + dy;
+      }
+    } else if (d.kind === 'resize') {
+      // bbox 全体を anchor(右下) 固定で 左上ハンドルがポインタ追従
+      const oldW = d.bbox.right - d.bbox.left;
+      const oldH = d.bbox.bottom - d.bbox.top;
+      const newW = Math.max(20, d.anchorX - x);
+      const newH = Math.max(20, d.anchorY - y);
+      const fx = newW / oldW;
+      const fy = newH / oldH;
+      for (const idx of d.indices) {
+        const L = state.layers[idx];
+        const bScale = d.baseScales.get(idx);
+        const bOff = d.baseOffsets.get(idx);
+        L.scaleX = Math.max(0.05, Math.min(5, bScale.x * fx));
+        L.scaleY = Math.max(0.05, Math.min(5, bScale.y * fy));
+        // 中心位置: anchor からの距離が比例的に縮む/伸びる
+        const oldCx = state.canvasW / 2 + bOff.x;
+        const oldCy = state.canvasH / 2 + bOff.y;
+        const distX = oldCx - d.anchorX;
+        const distY = oldCy - d.anchorY;
+        const newCx = d.anchorX + distX * fx;
+        const newCy = d.anchorY + distY * fy;
+        L.offsetX = newCx - state.canvasW / 2;
+        L.offsetY = newCy - state.canvasH / 2;
+      }
+    }
+    draw();
+    return;
+  }
+
+  // 単一レイヤードラッグ
+  const L = state.layers[d.idx];
   if (d.kind === 'move') {
     L.offsetX = d.baseOffsetX + (x - d.startX);
     L.offsetY = d.baseOffsetY + (y - d.startY);
@@ -5714,8 +5831,10 @@ function draw() {
       const dh = isLR90 ? drawW : drawH;
       ctx.drawImage(fr.canvas, -dw / 2, -dh / 2, dw, dh);
       ctx.restore();
-      // 選択中のレイヤーは枠を表示
-      if (state.selectedLayers.has(i)) {
+      // 選択中のレイヤーは枠を表示 (複数選択時は統合バウンディングボックスを使うので個別枠は描画しない)
+      const multiActive = state.selectedLayers.size >= 2 &&
+        [...state.selectedLayers].filter(idx => idx > 0 && state.layers[idx] && state.layers[idx].visible).length >= 2;
+      if (state.selectedLayers.has(i) && !multiActive) {
         const sw = isLR90 ? drawH : drawW;
         const sh = isLR90 ? drawW : drawH;
         ctx.save();
@@ -5734,6 +5853,37 @@ function draw() {
         ctx.stroke();
         ctx.restore();
       }
+    }
+    // 複数選択時の統合バウンディングボックス
+    const mbb = getMultiSelectBBox();
+    if (mbb) {
+      ctx.save();
+      ctx.strokeStyle = '#5b9cb8';
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([8, 5]);
+      ctx.strokeRect(mbb.left, mbb.top, mbb.right - mbb.left, mbb.bottom - mbb.top);
+      ctx.setLineDash([]);
+      // 左上に丸ハンドル(統合)
+      ctx.fillStyle = '#5b9cb8';
+      ctx.beginPath();
+      ctx.arc(mbb.left, mbb.top, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      // 選択枚数バッジ
+      const label = `${mbb.indices.length}枚`;
+      ctx.font = 'bold 11px system-ui, sans-serif';
+      const tw = ctx.measureText(label).width;
+      ctx.fillStyle = 'rgba(91,156,184,0.92)';
+      ctx.beginPath();
+      const bx = mbb.right - tw - 14, by = mbb.top + 2;
+      ctx.roundRect ? ctx.roundRect(bx, by, tw + 12, 18, 9) : ctx.rect(bx, by, tw + 12, 18);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, bx + 6, by + 9);
+      ctx.restore();
     }
   }
 

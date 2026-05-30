@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>便利君-G</title>
+<title>便利くんG</title>
 <style>
 @property --fill { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
 
@@ -603,15 +603,15 @@ canvas.deform-active:active { cursor: grabbing; }
 }
 .q-level.shown { display: flex; }
 .quality-info {
-  margin: 0 auto;
-  padding: 8px 14px;
-  font-size: 13px;
+  margin: 4px auto 2px;
+  padding: 4px 14px;
+  font-size: 12px;
   color: var(--fg);
   text-align: center;
   letter-spacing: 0.02em;
   display: none;
 }
-.quality-info.shown { display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; }
+.quality-info.shown { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
 .quality-info .q-before {
   font-family: 'Hiragino Sans', 'Yu Gothic', system-ui, sans-serif;
   color: var(--fg);
@@ -962,6 +962,15 @@ canvas.deform-active:active { cursor: grabbing; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.st3-item .st3-ratio {
+  flex: 0 0 auto;
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 11.5px;
+  color: var(--fg-faint);
+  white-space: nowrap;
+}
+.st3-item .st3-ratio .colon { margin: 0 1px; }
 .st3-item .st3-match {
   flex: 0 0 auto;
   font-family: Georgia, serif;
@@ -1352,6 +1361,20 @@ footer.controls {
 .pattern-toggle .pt-label::before { font-size: 11px; line-height: 1; }
 
 /* 手動範囲トグル (パターンモード時のみ、下中央) */
+.splits {
+  position: relative;
+  transition: padding-bottom 0.2s;
+}
+.splits.pattern-on { padding-bottom: 6px; }
+.splits.pattern-on::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 2px;
+  background: linear-gradient(to right, transparent, #e47f39, transparent);
+  border-radius: 1px;
+  opacity: 0.7;
+}
 .manual-range-toggle {
   position: absolute;
   bottom: 14px;
@@ -2114,7 +2137,6 @@ canvas.rm-active { cursor: crosshair; }
       <span class="ratio-small" id="ratioText">—<span class="colon">:</span>—</span>
     </div>
     <div class="file-info">
-      <div class="quality-info" id="qInfo"></div>
       <button class="size-badge" id="fileSize" data-tier="white" title="クリックでサイズと色の関係を表示">—</button>
       <span class="dim" id="dimLine">— × — px</span>
       <span class="frames" id="framesInfo"></span>
@@ -2137,7 +2159,7 @@ canvas.rm-active { cursor: crosshair; }
         <rect x="4" y="4" width="16" height="16" rx="1" stroke-dasharray="3 3"/>
         <circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/>
       </svg>
-      <span id="manualRangeLabel">比の固定</span>
+      <span id="manualRangeLabel">解除</span>
     </button>
 
     <!-- パターン保存プレビュー (パターンモード時のみ表示、< で開閉) -->
@@ -2263,6 +2285,8 @@ canvas.rm-active { cursor: crosshair; }
       </div>
     </div>
   </div>
+
+  <div class="quality-info" id="qInfo"></div>
 
   <div class="image-tools">
     <button class="tool-btn" id="flipH" title="左右反転" disabled>
@@ -4733,8 +4757,8 @@ function draw() {
     ctx.restore();
   }
 
-  // Split lines
-  if (state.splitW > 1 || state.splitH > 1) {
+  // Split lines (パターンモード時は描画しない)
+  if (!state.pattern && (state.splitW > 1 || state.splitH > 1)) {
     ctx.save();
     ctx.setLineDash([4, 4]);
     ctx.strokeStyle = 'rgba(255,255,255,0.85)';
@@ -4878,7 +4902,7 @@ function updateSaveBtn() {
     fmt = state.fileType === 'gif' ? 'gif' : 'png';
     saveBtn.innerHTML = `パターン保存<span class="fmt">${fmt}</span>`;
   } else {
-    fmt = total === 1 ? (state.fileType === 'gif' ? 'gif' : 'png') : 'zip';
+    fmt = total === 1 ? (state.fileType === 'gif' ? 'gif' : 'png') : `${state.fileType === 'gif' ? 'gif' : 'png'} × ${total}`;
     saveBtn.innerHTML = `保存<span class="fmt">${fmt}</span>`;
   }
 }
@@ -5789,6 +5813,7 @@ function updateSidebarTop3() {
     row.innerHTML = `
       <div class="st3-icon">${ic}</div>
       <div class="st3-name">${rec.item.name}</div>
+      <div class="st3-ratio">${rec.item.w}<span class="colon">:</span>${rec.item.h}</div>
       <div class="st3-match">${rec.match.toFixed(0)}%</div>`;
     row.addEventListener('click', () => selectItem(rec.item, null));
     sidebarTop3List.appendChild(row);
@@ -6042,7 +6067,11 @@ function startRoomMatchPreviewMode(manualMode) {
     rmComputeCanvasSize();
   }
   // UI overlay 表示
-  rmSavePane.classList.add('shown');
+  if (!rmState.manualMode) {
+    rmSavePane.classList.add('shown');
+  } else {
+    rmSavePane.classList.remove('shown');
+  }
   rmBarsPane.style.display = 'flex';
   rmControls.style.display = '';
   canvas.classList.add(rmState.manualMode ? 'shown' : 'rm-active', 'shown');
@@ -6085,6 +6114,7 @@ function rmComputeCanvasSize() {
 
 /* 保存プレビュー: 補正後 (= 保存される時の状態) を表示 */
 function renderRmSavePreview() {
+  if (rmState.manualMode) return;  // 手動モードはプレビュー非表示
   const frames = rmState.adjustedFrames || rmState.objFrames;
   if (!frames || !frames.length) return;
   const src = frames[rmState._objCurFrame].canvas;
@@ -6112,7 +6142,8 @@ function rmStartObjAnim() {
     if (now - rmState._objLastTick >= delay) {
       rmState._objCurFrame = (rmState._objCurFrame + 1) % rmState.objFrames.length;
       rmState._objLastTick = now;
-      renderRmSavePreview();
+      if (rmState.manualMode) rmDrawMain();
+      else renderRmSavePreview();
     }
     rmState._objAnimId = requestAnimationFrame(tick);
   };
@@ -6346,18 +6377,35 @@ function exitRoomMatchPreview() {
 }
 
 rmCancelBtn.addEventListener('click', () => {
-  exitRoomMatchPreview();
-  // フルリセット
-  state.loaded = false;
-  state.frames = [];
-  state.naturalW = 0;
-  state.naturalH = 0;
-  canvas.classList.remove('shown');
-  updateEmpty();
-  updateFileSize();
-  updateFramesInfo();
-  updateToolBtns();
-  updateSaveBtn();
+  // 元の画像を復元 (rmState.objFrames は元の画像のリファレンス)
+  if (rmState.objFrames && rmState.objFrames.length) {
+    state.fileType = rmState.objFrames.length > 1 ? 'gif' : 'image';
+    state.naturalW = rmState.objW;
+    state.naturalH = rmState.objH;
+    state.frames = rmState.objFrames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+    state.loaded = true;
+    state.currentFrame = 0;
+    exitRoomMatchPreview();
+    recomputeLayout();
+    updateEmpty();
+    updateFileSize();
+    updateFramesInfo();
+    updateToolBtns();
+    updateSaveBtn();
+    if (state.frames.length > 1) startAnimation();
+  } else {
+    exitRoomMatchPreview();
+    state.loaded = false;
+    state.frames = [];
+    state.naturalW = 0;
+    state.naturalH = 0;
+    canvas.classList.remove('shown');
+    updateEmpty();
+    updateFileSize();
+    updateFramesInfo();
+    updateToolBtns();
+    updateSaveBtn();
+  }
 });
 
 rmConfirmBtn.addEventListener('click', () => {
@@ -6788,13 +6836,16 @@ function renderPatternSavePreview() {
 }
 
 function updatePatternInfo() {
+  const splitsEl = document.getElementById('splitsContainer');
   if (state.pattern && state.loaded) {
     patternPreviewPane.classList.add('shown');
     renderPatternSavePreview();
     manualRangeToggleBtn.classList.add('shown');
+    if (splitsEl) splitsEl.classList.add('pattern-on');
   } else {
     patternPreviewPane.classList.remove('shown');
     manualRangeToggleBtn.classList.remove('shown');
+    if (splitsEl) splitsEl.classList.remove('pattern-on');
   }
 }
 patternPreviewToggle.addEventListener('click', () => {
@@ -6851,7 +6902,8 @@ manualRangeToggleBtn.addEventListener('click', () => {
 function updateManualRangeLabel() {
   manualRangeToggleBtn.setAttribute('aria-pressed', state.manualRange ? 'true' : 'false');
   const label = document.getElementById('manualRangeLabel');
-  if (label) label.textContent = state.manualRange ? '比の固定解除' : '比の固定';
+  // 今の状態を表示: OFF (固定状態) → 「解除」ボタン(押すと解除へ) / ON (解除状態) → 「固定」ボタン(押すと固定へ)
+  if (label) label.textContent = state.manualRange ? '固定' : '解除';
 }
 document.querySelectorAll('.arr').forEach(btn => {
   btn.addEventListener('click', () => {
@@ -7161,32 +7213,28 @@ async function save() {
       saveBtn.innerHTML = `書き出し ${k + 1}/${cells.length}`;
     }
 
-    // 1セル → そのまま保存 / 2セル以上 → フォルダ保存またはzip
+    // 1セル → そのまま保存 / 2セル以上 → 各セルを個別ファイルとしてダウンロード(ZIPなし)
     if (total === 1) {
       download(blobs[0], baseName + ext);
     } else {
       const pad = Math.max(2, String(total).length);
-      const files = [];
-      // 通常のセルファイルを先に
+      saveBtn.innerHTML = '各セル保存中…';
+      // セル毎に個別ダウンロード (ブラウザ間隔を空けるため小さい delay)
       for (let i = 0; i < blobs.length; i++) {
-        const buf = await blobs[i].arrayBuffer();
-        files.push({ name: String(i + 1).padStart(pad, '0') + ext, data: new Uint8Array(buf) });
+        const name = baseName + `_${String(i + 1).padStart(pad, '0')}` + ext;
+        download(blobs[i], name);
+        // ブラウザの連続DLブロックを避けるため軽く待つ
+        await new Promise(r => setTimeout(r, 120));
+        saveBtn.innerHTML = `保存 ${i + 1}/${blobs.length}`;
       }
-      // 動くGIFなら同期用GIF (目安君) を最後に同封
+      // 動くGIFなら同期用GIF (目安君) も最後に追加ダウンロード
       if (isGif) {
         saveBtn.innerHTML = '目安君 生成…';
         await new Promise(r => setTimeout(r, 0));
         const syncFrames = sourceFrames.map(fr => ({ delay: fr.delay }));
         const syncBlob = await buildSyncGifBlob(syncFrames);
-        const syncBuf = await syncBlob.arrayBuffer();
-        files.push({ name: '目安君.gif', data: new Uint8Array(syncBuf) });
+        download(syncBlob, baseName + '_目安君.gif');
       }
-      const folderName = baseName + `_${state.splitW}x${state.splitH}`;
-      // 常にzipで保存 (フォルダ構造を中に含めて解凍時にフォルダになる)
-      saveBtn.innerHTML = 'zip 生成中…';
-      const wrapped = files.map(f => ({ name: folderName + '/' + f.name, data: f.data }));
-      const zipBlob = makeZip(wrapped);
-      download(zipBlob, folderName + '.zip');
       // 動くGIF分割の場合は使い方カードを出す
       if (isGif) showGuide();
     }

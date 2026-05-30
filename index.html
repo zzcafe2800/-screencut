@@ -1760,6 +1760,7 @@ canvas.rm-active { cursor: crosshair; }
   max-width: 200px;
   transition: max-width 0.25s ease;
 }
+.layer-panel[hidden] { display: none !important; }
 .layer-panel.collapsed { max-width: 30px; }
 .layer-panel.collapsed .lp-body { display: none; }
 .layer-panel.collapsed .lp-toggle .ic-collapse { display: none; }
@@ -1804,7 +1805,7 @@ canvas.rm-active { cursor: crosshair; }
 }
 .lp-row {
   display: grid;
-  grid-template-columns: 30px 1fr 18px auto;
+  grid-template-columns: 30px 1fr 18px auto auto;
   gap: 4px 6px;
   align-items: center;
   background: #f7fafb;
@@ -1866,6 +1867,22 @@ canvas.rm-active { cursor: crosshair; }
 }
 .lp-move-btn:hover:not(:disabled) { color: var(--accent); background: rgba(91,156,184,0.12); }
 .lp-move-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+.lp-del {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--fg-faint);
+  width: 18px;
+  height: 18px;
+  font-size: 16px;
+  line-height: 1;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lp-del:hover { color: #d24a4a; background: rgba(210,74,74,0.12); }
 .lp-bg-row {
   display: flex;
   gap: 4px;
@@ -5073,6 +5090,23 @@ async function loadAsNewLayer(file) {
   showToast(`レイヤー${state.layers.length}を追加しました`);
 }
 
+/* レイヤー削除 (i: index, base[0]は不可) */
+function deleteLayer(i) {
+  if (i <= 0 || i >= state.layers.length) return;
+  state.layers.splice(i, 1);
+  const newSel = new Set();
+  for (const idx of state.selectedLayers) {
+    if (idx === i) continue;
+    else if (idx > i) newSel.add(idx - 1);
+    else newSel.add(idx);
+  }
+  state.selectedLayers = newSel;
+  renderLayerPanel();
+  updateLayerPanelVisibility();
+  draw();
+  showToast('レイヤーを削除しました');
+}
+
 /* レイヤー並べ替え (i: 現在の index, dir: +1=上へ / -1=下へ) */
 function moveLayer(i, dir) {
   const j = i + dir;
@@ -5177,6 +5211,18 @@ function renderLayerPanel() {
       draw();
     });
     row.appendChild(vis);
+    // 削除 (×) ボタン - ベース以外
+    if (i > 0) {
+      const del = document.createElement('button');
+      del.className = 'lp-del';
+      del.title = '削除';
+      del.innerHTML = '×';
+      del.addEventListener('click', ev => {
+        ev.stopPropagation();
+        deleteLayer(i);
+      });
+      row.appendChild(del);
+    }
     // クリックで選択トグル
     row.addEventListener('click', () => {
       if (state.selectedLayers.has(i)) {
@@ -6925,8 +6971,19 @@ function openRoomMatch() {
   roomState.objFrames = null;
   roomState.adjustedFrames = null;
   roomState.showOriginal = false;
-  // 現在プレビューに画像があれば自動取得
-  if (state.loaded && state.frames.length > 0) {
+  roomState.targetLayerIdx = null;  // 対象レイヤー(null=単一画像モード)
+  // 対象を決定: 2レイヤー以上ある場合は選択中の最初のレイヤー、なければ state.frames
+  if (state.layers.length >= 2) {
+    let targetIdx = 0;
+    if (state.selectedLayers.size > 0) {
+      targetIdx = state.selectedLayers.values().next().value;
+    }
+    const L = state.layers[targetIdx];
+    roomState.objFrames = L.frames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+    roomState.objW = L.naturalW;
+    roomState.objH = L.naturalH;
+    roomState.targetLayerIdx = targetIdx;
+  } else if (state.loaded && state.frames.length > 0) {
     roomState.objFrames = state.frames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
     roomState.objW = state.naturalW;
     roomState.objH = state.naturalH;
@@ -7399,12 +7456,39 @@ rmCancelBtn.addEventListener('click', () => {
 
 rmConfirmBtn.addEventListener('click', () => {
   if (!rmState.adjustedFrames) return;
-  // 調整済みフレームをメインのステートに移植
+  const adjusted = rmState.adjustedFrames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+  // 対象レイヤーがある場合 → そのレイヤーのフレームを更新
+  if (roomState.targetLayerIdx !== null && state.layers[roomState.targetLayerIdx]) {
+    const L = state.layers[roomState.targetLayerIdx];
+    L.frames = adjusted;
+    // ベースレイヤー(0)の場合は state.frames も同期
+    if (roomState.targetLayerIdx === 0) {
+      state.frames = adjusted.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+      state.fileType = adjusted.length > 1 ? 'gif' : 'image';
+      stopAnimation();
+      resetTrim();
+      if (state.frames.length > 1) startAnimation();
+    }
+    exitRoomMatchPreview();
+    renderLayerPanel();
+    updateLayerPanelVisibility();
+    updateFileSize();
+    updateFramesInfo();
+    updateEmpty();
+    updateToolBtns();
+    recomputeLayout();
+    updateSaveBtn();
+    updateTrimUI();
+    draw();
+    showToast(`レイヤー${roomState.targetLayerIdx + 1}を調整しました`);
+    return;
+  }
+  // 単一画像モード: 既存の処理
   state.fileType = rmState.objFrames.length > 1 ? 'gif' : 'image';
   state.fileSize = 0;
   state.naturalW = rmState.objW;
   state.naturalH = rmState.objH;
-  state.frames = rmState.adjustedFrames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+  state.frames = adjusted;
   state.loaded = true;
   state.rotation = 0; state.flipH = false; state.flipV = false;
   state.brightness = 0; state.quality = 0; state.gifBaseSize = 0;
@@ -7416,7 +7500,6 @@ rmConfirmBtn.addEventListener('click', () => {
   state.currentFrame = 0;
   stopAnimation();
   resetTrim();
-  // overlay UI を閉じる
   exitRoomMatchPreview();
   updateBrightnessGauge();
   updateQualityGauge();

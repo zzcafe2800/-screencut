@@ -2223,6 +2223,7 @@ canvas.rm-active { cursor: crosshair; }
   grid-template-columns: repeat(2, 1fr);
   gap: 10px 12px;
 }
+.welcome-more[hidden] { display: none !important; }
 .welcome-more .guide-step {
   margin: 0;
   padding: 10px 8px 8px;
@@ -2273,9 +2274,6 @@ canvas.rm-active { cursor: crosshair; }
   color: var(--accent);
   margin-bottom: 1px;
   font-weight: 700;
-}
-@media (max-width: 480px) {
-  .welcome-more { grid-template-columns: 1fr; }
 }
 
 /* ===== Brand row: share + help icons next to logo ===== */
@@ -5128,6 +5126,100 @@ lpBgWhite.addEventListener('click', () => {
   draw();
 });
 
+/* レイヤー ドラッグ移動 / リサイズ */
+function layerHitTest(x, y) {
+  // 上から下へ
+  for (let i = state.layers.length - 1; i >= 1; i--) {
+    const L = state.layers[i];
+    if (!L.visible) continue;
+    const baseScale = state.canvasW / state.naturalW;
+    const drawW = L.naturalW * L.scaleX * baseScale;
+    const drawH = L.naturalH * L.scaleY * baseScale;
+    const cx = state.canvasW / 2 + L.offsetX;
+    const cy = state.canvasH / 2 + L.offsetY;
+    const left = cx - drawW / 2, top = cy - drawH / 2;
+    const right = cx + drawW / 2, bottom = cy + drawH / 2;
+    // 選択中レイヤーは左上ハンドルチェック
+    if (state.selectedLayers.has(i) && Math.hypot(x - left, y - top) <= 14) {
+      return { idx: i, kind: 'resize', left, top, right, bottom };
+    }
+    // 本体
+    if (x >= left && x <= right && y >= top && y <= bottom) {
+      return { idx: i, kind: 'move', left, top, right, bottom };
+    }
+  }
+  return null;
+}
+
+canvas.addEventListener('pointerdown', e => {
+  if (state.layers.length < 2) return;
+  if (state.deformActive || state.eyedropperActive) return;
+  if (typeof rmState !== 'undefined' && rmState && rmState.active) return;
+  if (state.pattern && state.manualRange) return;  // 手動範囲モードが優先
+  const r = canvas.getBoundingClientRect();
+  const x = ((e.clientX - r.left) / r.width) * state.canvasW;
+  const y = ((e.clientY - r.top) / r.height) * state.canvasH;
+  const hit = layerHitTest(x, y);
+  if (!hit) return;
+  e.preventDefault();
+  e.stopPropagation();
+  canvas.setPointerCapture(e.pointerId);
+  // 未選択ならクリック時に選択
+  if (!state.selectedLayers.has(hit.idx)) {
+    state.selectedLayers = new Set([hit.idx]);
+    renderLayerPanel();
+  }
+  state._layerDrag = {
+    idx: hit.idx,
+    kind: hit.kind,
+    startX: x, startY: y,
+    baseOffsetX: state.layers[hit.idx].offsetX,
+    baseOffsetY: state.layers[hit.idx].offsetY,
+    baseScaleX: state.layers[hit.idx].scaleX,
+    baseScaleY: state.layers[hit.idx].scaleY,
+    anchorX: hit.right,
+    anchorY: hit.bottom,
+  };
+}, true);
+
+canvas.addEventListener('pointermove', e => {
+  if (!state._layerDrag) return;
+  e.preventDefault();
+  e.stopPropagation();
+  const r = canvas.getBoundingClientRect();
+  const x = ((e.clientX - r.left) / r.width) * state.canvasW;
+  const y = ((e.clientY - r.top) / r.height) * state.canvasH;
+  const d = state._layerDrag;
+  const L = state.layers[d.idx];
+  const baseScale = state.canvasW / state.naturalW;
+  if (d.kind === 'move') {
+    L.offsetX = d.baseOffsetX + (x - d.startX);
+    L.offsetY = d.baseOffsetY + (y - d.startY);
+  } else if (d.kind === 'resize') {
+    // 右下を anchor 固定で 左上ハンドルがポインタに追従
+    const nw = Math.max(20, d.anchorX - x);
+    const nh = Math.max(20, d.anchorY - y);
+    L.scaleX = Math.max(0.05, Math.min(5, nw / (L.naturalW * baseScale)));
+    L.scaleY = Math.max(0.05, Math.min(5, nh / (L.naturalH * baseScale)));
+    // offset を逆算 (anchor を固定するため)
+    const newDrawW = L.naturalW * L.scaleX * baseScale;
+    const newDrawH = L.naturalH * L.scaleY * baseScale;
+    const newCenterX = d.anchorX - newDrawW / 2;
+    const newCenterY = d.anchorY - newDrawH / 2;
+    L.offsetX = newCenterX - state.canvasW / 2;
+    L.offsetY = newCenterY - state.canvasH / 2;
+  }
+  draw();
+}, true);
+
+canvas.addEventListener('pointerup', e => {
+  if (state._layerDrag) {
+    state._layerDrag = null;
+    e.stopPropagation();
+  }
+}, true);
+canvas.addEventListener('pointercancel', () => { state._layerDrag = null; }, true);
+
 /* Drag & drop on the preview area */
 (function setupDropZone() {
   const wrapEl = document.getElementById('canvasWrap');
@@ -7887,6 +7979,14 @@ async function save() {
   const baseName = buildBaseName();
   saveBtn.disabled = true;
   const orig = saveBtn.innerHTML;
+  // レイヤー合成 (2層以上)
+  let savedFrames = null;
+  if (state.layers.length >= 2) {
+    saveBtn.innerHTML = 'レイヤー合成中…';
+    await new Promise(r => setTimeout(r, 0));
+    savedFrames = state.frames;
+    state.frames = compositeAllLayers();
+  }
 
   try {
     // 全フレームに 回転/反転 を適用(画像レベル統合)
@@ -8037,11 +8137,52 @@ async function save() {
     console.error(err);
     alert('保存に失敗しました: ' + err.message);
   } finally {
+    if (savedFrames) state.frames = savedFrames;
     saveBtn.innerHTML = orig;
     updateSaveBtn();
   }
 }
 saveBtn.addEventListener('click', save);
+
+/* レイヤーをすべて合成して 1枚の連続フレームを作る (natural 解像度) */
+function compositeAllLayers() {
+  if (state.layers.length === 0) return state.frames;
+  if (state.layers.length === 1) return state.layers[0].frames;
+  const base = state.layers[0];
+  const baseFrames = base.frames;
+  const W = state.naturalW;
+  const H = state.naturalH;
+  const ratio = W / state.canvasW;  // canvas px → natural px
+  const out = [];
+  for (let fi = 0; fi < baseFrames.length; fi++) {
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const cctx = c.getContext('2d');
+    if (state.bgMode === 'white') {
+      cctx.fillStyle = '#ffffff';
+      cctx.fillRect(0, 0, W, H);
+    }
+    // 全レイヤーを下から上へ描画
+    for (let li = 0; li < state.layers.length; li++) {
+      const L = state.layers[li];
+      if (!L.visible) continue;
+      const lfi = li === 0 ? fi : (L.frames.length > 1 ? (fi % L.frames.length) : 0);
+      const fr = L.frames[lfi];
+      if (!fr) continue;
+      if (li === 0) {
+        cctx.drawImage(fr.canvas, 0, 0, W, H);
+      } else {
+        const drawW = L.naturalW * L.scaleX * (state.canvasW / state.naturalW) * ratio;
+        const drawH = L.naturalH * L.scaleY * (state.canvasH / state.naturalH) * ratio;
+        const cx = W / 2 + L.offsetX * ratio;
+        const cy = H / 2 + L.offsetY * ratio;
+        cctx.drawImage(fr.canvas, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
+      }
+    }
+    out.push({ canvas: c, delay: baseFrames[fi].delay });
+  }
+  return out;
+}
 
 /* ===== Init ===== */
 renderSidebar();

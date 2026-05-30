@@ -102,8 +102,8 @@ aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
   border: none;
   padding: 2px;
   cursor: pointer;
-  color: var(--fg-faint);
-  opacity: 0.35;
+  color: #c95a8a;
+  opacity: 0.55;
   transition: opacity 0.15s, color 0.15s, transform 0.12s;
   display: flex; align-items: center; justify-content: center;
   width: 22px; height: 22px;
@@ -111,7 +111,7 @@ aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
   flex-shrink: 0;
 }
 .pin-btn:hover { opacity: 1 !important; transform: scale(1.15); color: #c95a8a; }
-.item:hover .pin-btn { opacity: 0.7; }
+.item:hover .pin-btn { opacity: 0.85; }
 .pin-btn.pinned { opacity: 1; color: #d669a0; }
 .pin-btn.pinned:hover { color: #b94e85; }
 
@@ -392,6 +392,26 @@ header.info {
   color: var(--accent);
   margin-bottom: 6px;
 }
+.sp-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.sp-title-row .sp-title { margin-bottom: 0; flex: 1; }
+.sp-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg-faint);
+  font-size: 20px;
+  line-height: 1;
+  width: 24px; height: 24px;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0;
+  flex-shrink: 0;
+}
+.sp-close-btn:hover { color: var(--fg); background: rgba(0,0,0,0.04); }
 .shrink-bg-row { display: flex; align-items: center; gap: 8px; }
 .shrink-swatch {
   width: 22px; height: 22px;
@@ -649,6 +669,39 @@ canvas.deform-active:active { cursor: grabbing; }
   color: var(--accent);
 }
 .room-illust svg { width: 100%; height: 100%; display: block; }
+
+/* お部屋マッチ 3ボタン: 読み込み / 手動 / やめる */
+.room-3btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.room-3btn {
+  flex: 1;
+  padding: 10px 8px;
+  text-align: center;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.15s;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+.room-3btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.room-3btn-primary:hover { background: #4a8aa3; border-color: #4a8aa3; }
+.room-3btn-cancel {
+  background: #fff;
+  color: var(--fg);
+  border-color: var(--line);
+}
+.room-3btn-cancel:hover { color: var(--accent); border-color: var(--accent); }
+
 .room-files {
   display: flex;
   flex-direction: column;
@@ -1543,6 +1596,108 @@ footer.controls {
 .rm-btn-confirm:hover { background: #4a8aa3; }
 
 canvas.rm-active { cursor: crosshair; }
+
+/* 6バー色調整パネル (左サイド) */
+.rm-bars {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(255,255,255,0.97);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  z-index: 12;
+  display: flex;
+  align-items: stretch;
+  max-width: 240px;
+  transition: max-width 0.25s ease;
+}
+.rm-bars.collapsed { max-width: 30px; }
+.rm-bars.collapsed .rm-bars-body { display: none; }
+.rm-bars.collapsed .rm-bars-toggle .ic-collapse { display: none; }
+.rm-bars:not(.collapsed) .rm-bars-toggle .ic-expand { display: none; }
+.rm-bars-toggle {
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--line);
+  color: var(--accent);
+  cursor: pointer;
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+}
+.rm-bars.collapsed .rm-bars-toggle { border-right: none; }
+.rm-bars-toggle:hover { background: rgba(91,156,184,0.08); }
+.rm-bars-body {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  width: 210px;
+}
+.rm-bars-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  text-transform: uppercase;
+  text-align: center;
+  margin-bottom: 2px;
+}
+.rm-bar-row { display: grid; grid-template-columns: 56px 1fr 28px; gap: 6px; align-items: center; }
+.rm-bar-label { font-size: 10.5px; color: var(--fg); font-weight: 500; }
+.rm-bar {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(to right, #c8d4dc, #c8d4dc);
+  border-radius: 2px;
+  outline: none;
+  accent-color: var(--accent);
+}
+.rm-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px; height: 13px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.rm-bar::-moz-range-thumb {
+  width: 13px; height: 13px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+}
+.rm-bar.bar-temp { background: linear-gradient(to right, #4a90c5, #e0e7ed 50%, #e8a356); }
+.rm-bar.bar-tint { background: linear-gradient(to right, #6ec275, #e0e7ed 50%, #e07d9f); }
+.rm-bar-val {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 10.5px;
+  color: var(--fg-muted);
+  text-align: right;
+}
+.rm-bars-reset {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--fg);
+  cursor: pointer;
+  margin-top: 4px;
+}
+.rm-bars-reset:hover { color: var(--accent); border-color: var(--accent); }
 .arrows { display: flex; flex-direction: column; margin-left: 2px; position: relative; }
 .arr {
   width: 16px; height: 12px;
@@ -1982,7 +2137,7 @@ canvas.rm-active { cursor: crosshair; }
         <rect x="4" y="4" width="16" height="16" rx="1" stroke-dasharray="3 3"/>
         <circle cx="12" cy="12" r="2.5" fill="currentColor" stroke="none"/>
       </svg>
-      <span>手動範囲</span>
+      <span id="manualRangeLabel">比の固定</span>
     </button>
 
     <!-- パターン保存プレビュー (パターンモード時のみ表示、< で開閉) -->
@@ -2014,6 +2169,27 @@ canvas.rm-active { cursor: crosshair; }
         <div class="spp-dim" id="rmSavePreviewDim"></div>
       </div>
     </div>
+
+    <!-- 6バー調整パネル(左サイド) -->
+    <div class="rm-bars" id="rmBars" style="display:none">
+      <button class="rm-bars-toggle" id="rmBarsToggle" type="button" title="折りたたみ">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline class="ic-collapse" points="15 18 9 12 15 6"/>
+          <polyline class="ic-expand" points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+      <div class="rm-bars-body">
+        <div class="rm-bars-title">色調整</div>
+        <div class="rm-bar-row"><span class="rm-bar-label">明るさ</span><input type="range" class="rm-bar" data-k="brightness" min="-100" max="100" value="0"><span class="rm-bar-val" id="bar-v-brightness">0</span></div>
+        <div class="rm-bar-row"><span class="rm-bar-label">コントラスト</span><input type="range" class="rm-bar" data-k="contrast" min="-100" max="100" value="0"><span class="rm-bar-val" id="bar-v-contrast">0</span></div>
+        <div class="rm-bar-row"><span class="rm-bar-label">色相</span><input type="range" class="rm-bar" data-k="hue" min="-180" max="180" value="0"><span class="rm-bar-val" id="bar-v-hue">0</span></div>
+        <div class="rm-bar-row"><span class="rm-bar-label">彩度</span><input type="range" class="rm-bar" data-k="sat" min="-100" max="100" value="0"><span class="rm-bar-val" id="bar-v-sat">0</span></div>
+        <div class="rm-bar-row"><span class="rm-bar-label">色温度</span><input type="range" class="rm-bar bar-temp" data-k="temp" min="-100" max="100" value="0"><span class="rm-bar-val" id="bar-v-temp">0</span></div>
+        <div class="rm-bar-row"><span class="rm-bar-label">色合い</span><input type="range" class="rm-bar bar-tint" data-k="tint" min="-100" max="100" value="0"><span class="rm-bar-val" id="bar-v-tint">0</span></div>
+        <button type="button" class="rm-bars-reset" id="rmBarsReset">リセット</button>
+      </div>
+    </div>
+
     <div class="rm-intensity" id="rmIntensity" style="display:none">
       <div class="rm-int-label">調整<br>強度</div>
       <input type="range" id="rmIntensitySlider" min="0" max="1" step="0.05" value="0.7" orient="vertical">
@@ -2044,7 +2220,10 @@ canvas.rm-active { cursor: crosshair; }
     <div class="shrink-panel" id="shrinkPanel">
       <!-- モードチューザー (起動時に表示) -->
       <div class="sp-mode-chooser" id="shrinkChooser">
-        <div class="sp-title">どう変える?</div>
+        <div class="sp-title-row">
+          <div class="sp-title">どう変える?</div>
+          <button type="button" class="sp-close-btn" id="shrinkChooserClose" aria-label="閉じる">×</button>
+        </div>
         <div class="sp-mode-row">
           <button type="button" class="sp-mode-btn" id="shrinkModeBg">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
@@ -2079,7 +2258,7 @@ canvas.rm-active { cursor: crosshair; }
         <div class="sp-deform-hint">枠の左上■を掴んで伸縮、本体ドラッグで移動</div>
         <div class="sp-deform-row">
           <button type="button" class="sp-auto-btn" id="deformAutoBtn">自動</button>
-          <button type="button" class="sp-edit-btn" id="deformEditBtn">編集</button>
+          <button type="button" class="sp-edit-btn" id="deformEditBtn">戻る</button>
         </div>
       </div>
     </div>
@@ -2172,7 +2351,6 @@ canvas.rm-active { cursor: crosshair; }
     <input type="file" id="file" accept="image/*,video/*,.gif,.mp4,.mov,.m4v,.webm,.ogv,.avi,.mkv" hidden>
     <label for="file" class="btn btn-accent btn-loadkun" id="loadKun">
       <span class="lk-main">読み込み君</span>
-      <span class="lk-sub">画像 · GIF · 動画</span>
     </label>
     <button id="roomMatch" class="btn btn-accent" hidden>部屋にマッチ君</button>
     <button id="save" class="btn" disabled>保存</button>
@@ -2226,35 +2404,26 @@ canvas.rm-active { cursor: crosshair; }
     <div id="roomIntro">
       <div class="room-illust">
         <svg viewBox="0 0 220 90" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <!-- Room -->
           <rect x="6" y="14" width="80" height="62" rx="2"/>
           <path d="M6 50h80" opacity="0.4"/>
           <text x="46" y="44" font-size="6" stroke="none" fill="currentColor" text-anchor="middle" font-family="Georgia,serif" font-style="italic">お部屋</text>
-          <!-- Inserted picture in room (with marquee) -->
           <rect x="28" y="22" width="22" height="16" rx="1" stroke-dasharray="2 2" stroke-width="1.2"/>
           <circle cx="50" cy="22" r="1.8" fill="currentColor" stroke="none"/>
-          <!-- Arrow -->
           <path d="M96 45h22M112 41l4 4-4 4"/>
-          <!-- Adjusted output -->
           <rect x="128" y="14" width="80" height="62" rx="2"/>
           <text x="168" y="46" font-size="7" stroke="none" fill="currentColor" text-anchor="middle" font-family="Georgia,serif" font-style="italic">色を寄せた画像</text>
           <text x="168" y="56" font-size="5" stroke="none" fill="currentColor" text-anchor="middle" opacity="0.6">明度/暖かさ/色合いを部屋に</text>
         </svg>
       </div>
       <div class="recommend-intro">
-        現在の画像を、選んだお部屋の<br>
-        <b>色合い・明るさ・色温度</b>に自動で寄せて、なじむように調整します。
+        お部屋の画像を入れると、その雰囲気に色合いを自動で合わせます。<br>
+        <b>手動</b>では6つのスライダーで自由に色を調整できます。
       </div>
-      <div class="room-files">
-        <div class="room-file-slot" id="roomSlotRoom">
-          <span class="room-file-label">お部屋画像</span>
-          <input type="file" id="roomFileRoom" accept="image/*" hidden>
-          <label for="roomFileRoom" class="room-file-btn">選択</label>
-          <span class="room-file-name" id="roomNameRoom">未選択</span>
-        </div>
-      </div>
-      <div class="recommend-row">
-        <button class="cancel" id="roomCancel">やめる</button>
+      <input type="file" id="roomFileRoom" accept="image/*" hidden>
+      <div class="room-3btns">
+        <label for="roomFileRoom" class="room-3btn room-3btn-primary">読み込み</label>
+        <button type="button" id="roomManualBtn" class="room-3btn room-3btn-primary">手動</button>
+        <button type="button" id="roomCancel" class="room-3btn room-3btn-cancel">やめる</button>
       </div>
     </div>
 
@@ -5094,6 +5263,40 @@ shrinkModeDeformBtn.addEventListener('click', () => {
   draw();
 });
 
+/* 縮小パネル: 閉じる関数 (×ボタン or 外側タップ) */
+function closeShrinkPanel() {
+  // 全リセット
+  state.shrink = 0;
+  state.shrinkSubMode = null;
+  state.deformActive = false;
+  state.deformOffsetX = 0; state.deformOffsetY = 0;
+  state.deformScaleX = 1; state.deformScaleY = 1;
+  state.eyedropperActive = false;
+  canvas.classList.remove('deform-active', 'eyedropper-active');
+  shrinkPickBtn.classList.remove('active');
+  updateShrinkGauge();
+  updateShrinkPanelView();
+  draw();
+}
+const shrinkChooserCloseBtn = document.getElementById('shrinkChooserClose');
+if (shrinkChooserCloseBtn) {
+  shrinkChooserCloseBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    closeShrinkPanel();
+  });
+}
+/* 外側タップでも閉じる: パネル外のクリックを監視 */
+document.addEventListener('pointerdown', e => {
+  if (state.shrink === 0 && !state.deformActive) return;  // パネルが開いていないなら無視
+  // パネル内 or 縮小ボタン自体なら閉じない
+  if (shrinkPanel.contains(e.target) || shrinkBtn.contains(e.target)) return;
+  // 変形モードでキャンバスを操作中なら閉じない
+  if (state.deformActive && canvas.contains(e.target)) return;
+  // スポイトモード中にキャンバスをクリックしてる場合は閉じない
+  if (state.eyedropperActive && canvas.contains(e.target)) return;
+  closeShrinkPanel();
+}, true);
+
 /* 自動: 表示画像のアスペクト比をフレームの比に合わせる(短辺フィット) */
 function deformAutoFit() {
   if (!state.frames.length || !state.frameW || !state.frameH) return;
@@ -5676,8 +5879,6 @@ const roomMatchOverlay = document.getElementById('roomMatchOverlay');
 const roomMatchCloseBtn = document.getElementById('roomMatchClose');
 const roomCancelBtn = document.getElementById('roomCancel');
 const roomFileRoom = document.getElementById('roomFileRoom');
-const roomNameRoom = document.getElementById('roomNameRoom');
-const roomSlotRoom = document.getElementById('roomSlotRoom');
 const roomIntroEl = document.getElementById('roomIntro');
 const roomWorkspaceEl = document.getElementById('roomWorkspace');
 const roomCanvas = document.getElementById('roomCanvas');
@@ -5710,9 +5911,7 @@ function openRoomMatch() {
   roomState.objFrames = null;
   roomState.adjustedFrames = null;
   roomState.showOriginal = false;
-  roomNameRoom.textContent = '未選択';
-  roomSlotRoom.classList.remove('filled');
-  // 現在プレビューに画像があれば「飾る画像」として自動取得
+  // 現在プレビューに画像があれば自動取得
   if (state.loaded && state.frames.length > 0) {
     roomState.objFrames = state.frames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
     roomState.objW = state.naturalW;
@@ -5753,8 +5952,6 @@ roomFileRoom.addEventListener('change', async e => {
       i.src = url;
     });
     roomState.roomImg = img;
-    roomNameRoom.textContent = f.name;
-    roomSlotRoom.classList.add('filled');
   } catch (err) {
     alert('お部屋画像の読み込みに失敗しました');
   } finally {
@@ -5762,6 +5959,19 @@ roomFileRoom.addEventListener('change', async e => {
   }
   checkRoomReady();
 });
+
+/* 手動ボタン: 部屋画像なしモードで開始 */
+const roomManualBtn = document.getElementById('roomManualBtn');
+if (roomManualBtn) {
+  roomManualBtn.addEventListener('click', () => {
+    if (!roomState.objFrames) {
+      showToast('先に画像を読み込んでね');
+      return;
+    }
+    closeOverlay(roomMatchOverlay);
+    startRoomMatchPreviewMode(true);  // manualMode = true
+  });
+}
 
 function startRoomWorkspace() {
   // モーダルを閉じてメインプレビュー上で操作する直接フローに切替える
@@ -5781,22 +5991,29 @@ const rmIntensityVal = document.getElementById('rmIntensityVal');
 const rmConfirmBtn = document.getElementById('rmConfirm');
 const rmCancelBtn = document.getElementById('rmCancel');
 
+const rmBarsPane = document.getElementById('rmBars');
+const rmBarsToggle = document.getElementById('rmBarsToggle');
+const rmBarsReset = document.getElementById('rmBarsReset');
+
 const rmState = {
   active: false,
+  manualMode: false,             // true: 部屋画像なし、バーのみ
   roomImg: null,
   objFrames: null,
   objW: 0, objH: 0,
   adjustedFrames: null,
-  sampleX: null, sampleY: null,  // in roomImg natural coords (center of sample)
-  sampleR: 80,                    // sample radius in natural px
+  sampleX: null, sampleY: null,
+  sampleR: 80,
   intensity: 0.7,
+  bars: { brightness: 0, contrast: 0, hue: 0, sat: 0, temp: 0, tint: 0 },
   _objAnimId: null,
   _objLastTick: 0,
   _objCurFrame: 0,
 };
 
-function startRoomMatchPreviewMode() {
+function startRoomMatchPreviewMode(manualMode) {
   rmState.active = true;
+  rmState.manualMode = !!manualMode;
   rmState.roomImg = roomState.roomImg;
   rmState.objFrames = roomState.objFrames;
   rmState.objW = roomState.objW;
@@ -5804,28 +6021,40 @@ function startRoomMatchPreviewMode() {
   rmState.adjustedFrames = null;
   rmState.sampleX = null;
   rmState.sampleY = null;
-  rmState.intensity = parseFloat(rmIntensitySlider.value);
   rmState._objCurFrame = 0;
-  // メインキャンバスのレイアウトを部屋画像で再計算
-  state.naturalW = rmState.roomImg.naturalWidth;
-  state.naturalH = rmState.roomImg.naturalHeight;
-  state.loaded = true;
-  state.frames = [];  // 一時的にクリア(後で adjusted で置換)
-  // canvas を再計算
-  rmComputeCanvasSize();
+  // バー値リセット
+  rmState.bars = { brightness: 0, contrast: 0, hue: 0, sat: 0, temp: 0, tint: 0 };
+  syncBarsUI();
+  // メインキャンバスのレイアウトを準備
+  if (rmState.manualMode) {
+    // 手動モード: 元の画像のサイズで描画(部屋画像なし)
+    state.naturalW = rmState.objW;
+    state.naturalH = rmState.objH;
+    state.loaded = true;
+    state.frames = [];
+    rmComputeCanvasSize();
+  } else {
+    // 部屋画像モード
+    state.naturalW = rmState.roomImg.naturalWidth;
+    state.naturalH = rmState.roomImg.naturalHeight;
+    state.loaded = true;
+    state.frames = [];
+    rmComputeCanvasSize();
+  }
   // UI overlay 表示
   rmSavePane.classList.add('shown');
-  rmIntensity.style.display = '';
+  rmBarsPane.style.display = 'flex';
   rmControls.style.display = '';
-  canvas.classList.add('rm-active', 'shown');
+  canvas.classList.add(rmState.manualMode ? 'shown' : 'rm-active', 'shown');
   updateEmpty();
-  // 中央のサンプル点で初期マッチ
-  rmState.sampleX = rmState.roomImg.naturalWidth / 2;
-  rmState.sampleY = rmState.roomImg.naturalHeight / 2;
-  rmRecompute();
-  // 保存プレビュー描画
-  renderRmSavePreview();
-  // オブジェクトGIFアニメ再生
+  if (!rmState.manualMode) {
+    // 中央のサンプル点で初期マッチ
+    rmState.sampleX = rmState.roomImg.naturalWidth / 2;
+    rmState.sampleY = rmState.roomImg.naturalHeight / 2;
+    rmAutoAdjustFromSample();
+  } else {
+    rmAdjustWithBars();
+  }
   if (rmState.objFrames.length > 1) rmStartObjAnim();
 }
 
@@ -5834,7 +6063,15 @@ function rmComputeCanvasSize() {
   const rect = wrapEl.getBoundingClientRect();
   const maxW = rect.width - 16;
   const maxH = rect.height - 16;
-  const imgAR = rmState.roomImg.naturalWidth / rmState.roomImg.naturalHeight;
+  let baseW, baseH;
+  if (rmState.manualMode) {
+    baseW = rmState.objW;
+    baseH = rmState.objH;
+  } else {
+    baseW = rmState.roomImg.naturalWidth;
+    baseH = rmState.roomImg.naturalHeight;
+  }
+  const imgAR = baseW / baseH;
   let cw, ch;
   if (imgAR > maxW / maxH) { cw = maxW; ch = maxW / imgAR; }
   else { ch = maxH; cw = maxH * imgAR; }
@@ -5909,19 +6146,24 @@ function rmGetObjMean() {
   if (!rmState.objFrames || !rmState.objFrames.length) return [128, 128, 128];
   return getCanvasMean(rmState.objFrames[0].canvas);
 }
-function rmRecompute() {
+/* バー値 → 補正済みフレーム生成 */
+function rmAdjustWithBars() {
   if (!rmState.objFrames) return;
-  const target = rmGetSampleMean();
-  const objMean = rmGetObjMean();
-  const blend = rmState.intensity;
-  const shiftR = (target[0] - objMean[0]) * blend;
-  const shiftG = (target[1] - objMean[1]) * blend;
-  const shiftB = (target[2] - objMean[2]) * blend;
-  const lumT = 0.299 * target[0] + 0.587 * target[1] + 0.114 * target[2];
-  const lumO = 0.299 * objMean[0] + 0.587 * objMean[1] + 0.114 * objMean[2];
-  const lumRatio = lumO > 4
-    ? Math.min(1.6, Math.max(0.4, ((lumT * blend + lumO * (1 - blend)) / lumO)))
-    : 1;
+  const b = rmState.bars;
+  const brightnessF = 1 + b.brightness / 100;
+  const contrastF = 1 + b.contrast / 100;
+  const satF = 1 + b.sat / 100;
+  const hueRad = (b.hue * Math.PI) / 180;
+  const cH = Math.cos(hueRad), sH = Math.sin(hueRad);
+  // 色相回転行列 (YIQ近似)
+  const hueMat = [
+    0.299 + 0.701 * cH + 0.168 * sH, 0.587 - 0.587 * cH + 0.330 * sH, 0.114 - 0.114 * cH - 0.497 * sH,
+    0.299 - 0.299 * cH - 0.328 * sH, 0.587 + 0.413 * cH + 0.035 * sH, 0.114 - 0.114 * cH + 0.292 * sH,
+    0.299 - 0.300 * cH + 1.250 * sH, 0.587 - 0.588 * cH - 1.050 * sH, 0.114 + 0.886 * cH - 0.203 * sH,
+  ];
+  const tempShift = b.temp * 0.4;
+  const tintShift = b.tint * 0.3;
+
   rmState.adjustedFrames = [];
   for (const fr of rmState.objFrames) {
     const src = fr.canvas;
@@ -5932,26 +6174,99 @@ function rmRecompute() {
     const img = octx.getImageData(0, 0, src.width, src.height);
     const data = img.data;
     for (let i = 0; i < data.length; i += 4) {
-      let rr = data[i] * lumRatio + shiftR;
-      let gg = data[i+1] * lumRatio + shiftG;
-      let bb = data[i+2] * lumRatio + shiftB;
-      data[i]   = Math.max(0, Math.min(255, rr));
-      data[i+1] = Math.max(0, Math.min(255, gg));
-      data[i+2] = Math.max(0, Math.min(255, bb));
+      let r = data[i], g = data[i+1], bv = data[i+2];
+      // 明るさ
+      r *= brightnessF; g *= brightnessF; bv *= brightnessF;
+      // コントラスト
+      r = (r - 128) * contrastF + 128;
+      g = (g - 128) * contrastF + 128;
+      bv = (bv - 128) * contrastF + 128;
+      // 色相回転
+      if (b.hue !== 0) {
+        const r2 = r * hueMat[0] + g * hueMat[1] + bv * hueMat[2];
+        const g2 = r * hueMat[3] + g * hueMat[4] + bv * hueMat[5];
+        const b2 = r * hueMat[6] + g * hueMat[7] + bv * hueMat[8];
+        r = r2; g = g2; bv = b2;
+      }
+      // 彩度
+      const gray = 0.299*r + 0.587*g + 0.114*bv;
+      r = gray + (r - gray) * satF;
+      g = gray + (g - gray) * satF;
+      bv = gray + (bv - gray) * satF;
+      // 色温度 (orange ↔ blue)
+      r += tempShift;
+      bv -= tempShift;
+      // 色合い (pink ↔ green)
+      r += tintShift * 0.5;
+      g -= tintShift;
+      bv += tintShift * 0.5;
+      data[i]   = Math.max(0, Math.min(255, r));
+      data[i+1] = Math.max(0, Math.min(255, g));
+      data[i+2] = Math.max(0, Math.min(255, bv));
     }
     octx.putImageData(img, 0, 0);
     rmState.adjustedFrames.push({ canvas: out, delay: fr.delay });
   }
-  // メインキャンバスに部屋画像 + サンプル点マーカー を描画
   rmDrawMain();
-  // 保存される時の状態プレビューも更新
   renderRmSavePreview();
+}
+
+/* 部屋画像のサンプル点からバーを自動算出 */
+function rmAutoAdjustFromSample() {
+  if (!rmState.roomImg || !rmState.objFrames || rmState.sampleX === null) return;
+  const target = rmGetSampleMean();
+  const objMean = rmGetObjMean();
+  // 明度
+  const lumT = 0.299 * target[0] + 0.587 * target[1] + 0.114 * target[2];
+  const lumO = 0.299 * objMean[0] + 0.587 * objMean[1] + 0.114 * objMean[2];
+  if (lumO > 4) {
+    const brightnessDelta = ((lumT / lumO) - 1) * 100;
+    rmState.bars.brightness = Math.max(-100, Math.min(100, Math.round(brightnessDelta * 0.6)));
+  }
+  // 色温度: R-B 差
+  const tempT = target[0] - target[2];
+  const tempO = objMean[0] - objMean[2];
+  rmState.bars.temp = Math.max(-100, Math.min(100, Math.round((tempT - tempO) * 0.7)));
+  // 色合い: G の差 (反対方向にすると pink/green)
+  const tintT = target[1] - (target[0] + target[2]) / 2;
+  const tintO = objMean[1] - (objMean[0] + objMean[2]) / 2;
+  rmState.bars.tint = Math.max(-100, Math.min(100, Math.round(-(tintT - tintO) * 0.8)));
+  // 彩度: 色のばらつき (簡易)
+  rmState.bars.sat = 0;
+  rmState.bars.contrast = 0;
+  rmState.bars.hue = 0;
+  // バーUIに反映
+  syncBarsUI();
+  rmAdjustWithBars();
+}
+
+function syncBarsUI() {
+  const b = rmState.bars;
+  for (const k of ['brightness', 'contrast', 'hue', 'sat', 'temp', 'tint']) {
+    const slider = document.querySelector(`.rm-bar[data-k="${k}"]`);
+    const val = document.getElementById('bar-v-' + k);
+    if (slider) slider.value = b[k];
+    if (val) val.textContent = b[k];
+  }
+}
+
+/* 旧 rmRecompute は今後使わない (互換のため残置: バーUIに移行) */
+function rmRecompute() {
+  rmAutoAdjustFromSample();
 }
 function rmDrawMain() {
   if (!rmState.active || !state.canvasW) return;
   ctx.clearRect(0, 0, state.canvasW, state.canvasH);
+  if (rmState.manualMode) {
+    // 手動モード: 調整後画像 (or 元) を中央プレビューに表示
+    const frames = rmState.adjustedFrames || rmState.objFrames;
+    if (frames && frames.length) {
+      ctx.drawImage(frames[rmState._objCurFrame].canvas, 0, 0, state.canvasW, state.canvasH);
+    }
+    return;
+  }
+  // 部屋画像モード: 部屋画像を背景に描画 + サンプル点マーカー
   ctx.drawImage(rmState.roomImg, 0, 0, state.canvasW, state.canvasH);
-  // サンプル点マーカー
   if (rmState.sampleX !== null) {
     const dispScale = state.canvasW / rmState.roomImg.naturalWidth;
     const cx = rmState.sampleX * dispScale;
@@ -5972,9 +6287,9 @@ function rmDrawMain() {
   }
 }
 
-// クリックでサンプル点更新
+// クリックでサンプル点更新 (部屋画像モードのみ)
 function rmCanvasClick(e) {
-  if (!rmState.active) return;
+  if (!rmState.active || rmState.manualMode) return;
   e.preventDefault();
   e.stopPropagation();
   const r = canvas.getBoundingClientRect();
@@ -5983,22 +6298,48 @@ function rmCanvasClick(e) {
   const dispScale = state.canvasW / rmState.roomImg.naturalWidth;
   rmState.sampleX = cx / dispScale;
   rmState.sampleY = cy / dispScale;
-  rmRecompute();
+  rmAutoAdjustFromSample();
 }
 canvas.addEventListener('pointerdown', e => {
-  if (rmState.active) rmCanvasClick(e);
+  if (rmState.active && !rmState.manualMode) rmCanvasClick(e);
 }, true);
 
-rmIntensitySlider.addEventListener('input', () => {
-  rmState.intensity = parseFloat(rmIntensitySlider.value);
-  rmIntensityVal.textContent = Math.round(rmState.intensity * 100) + '%';
-  rmRecompute();
+/* バーUIイベント (リアルタイム反映) */
+document.querySelectorAll('.rm-bar').forEach(slider => {
+  slider.addEventListener('input', () => {
+    if (!rmState.active) return;
+    const k = slider.dataset.k;
+    rmState.bars[k] = parseInt(slider.value, 10);
+    const valEl = document.getElementById('bar-v-' + k);
+    if (valEl) valEl.textContent = rmState.bars[k];
+    rmAdjustWithBars();
+  });
 });
+/* バー折りたたみ */
+rmBarsToggle.addEventListener('click', () => {
+  rmBarsPane.classList.toggle('collapsed');
+});
+/* リセットボタン */
+rmBarsReset.addEventListener('click', () => {
+  rmState.bars = { brightness: 0, contrast: 0, hue: 0, sat: 0, temp: 0, tint: 0 };
+  syncBarsUI();
+  rmAdjustWithBars();
+});
+
+/* 旧 intensity slider は使わない */
+if (rmIntensitySlider) {
+  rmIntensitySlider.addEventListener('input', () => {
+    rmState.intensity = parseFloat(rmIntensitySlider.value);
+    if (rmIntensityVal) rmIntensityVal.textContent = Math.round(rmState.intensity * 100) + '%';
+  });
+}
 
 function exitRoomMatchPreview() {
   rmStopObjAnim();
   rmState.active = false;
+  rmState.manualMode = false;
   rmSavePane.classList.remove('shown');
+  if (rmBarsPane) rmBarsPane.style.display = 'none';
   rmIntensity.style.display = 'none';
   rmControls.style.display = 'none';
   canvas.classList.remove('rm-active');
@@ -6475,7 +6816,7 @@ patternToggleBtn.addEventListener('click', () => {
   } else {
     // OFF時: 手動範囲もOFFにする
     state.manualRange = false;
-    manualRangeToggleBtn.setAttribute('aria-pressed', 'false');
+    updateManualRangeLabel();
   }
   recalculateFrame();
   draw();
@@ -6490,7 +6831,7 @@ manualRangeToggleBtn.addEventListener('click', () => {
     return;
   }
   state.manualRange = !state.manualRange;
-  manualRangeToggleBtn.setAttribute('aria-pressed', state.manualRange ? 'true' : 'false');
+  updateManualRangeLabel();
   if (state.manualRange) {
     // ON: マニュアル矩形をデフォルト(中央 60%)で初期化
     if (!state.manualRect) {
@@ -6507,6 +6848,11 @@ manualRangeToggleBtn.addEventListener('click', () => {
   updateSaveBtn();
   updatePatternInfo();
 });
+function updateManualRangeLabel() {
+  manualRangeToggleBtn.setAttribute('aria-pressed', state.manualRange ? 'true' : 'false');
+  const label = document.getElementById('manualRangeLabel');
+  if (label) label.textContent = state.manualRange ? '比の固定解除' : '比の固定';
+}
 document.querySelectorAll('.arr').forEach(btn => {
   btn.addEventListener('click', () => {
     dismissSplitHint();

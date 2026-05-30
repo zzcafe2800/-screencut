@@ -1298,22 +1298,23 @@ footer.controls {
 .pattern-toggle .pt-label { font-size: 0; line-height: 0; }
 .pattern-toggle .pt-label::before { font-size: 11px; line-height: 1; }
 
-/* 手動範囲トグル (パターンモード時のみ表示、パターン indicator の右) */
+/* 手動範囲トグル (パターンモード時のみ、下中央) */
 .manual-range-toggle {
   position: absolute;
   bottom: 14px;
-  left: calc(50% + 110px);
+  left: 50%;
+  transform: translateX(-50%);
   background: rgba(255,255,255,0.95);
   border: 1px solid #e47f39;
   border-radius: 999px;
-  height: 26px;
-  padding: 0 12px;
+  height: 28px;
+  padding: 0 14px;
   display: none;
   align-items: center;
   gap: 5px;
   cursor: pointer;
   color: #c46221;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
   z-index: 9;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -1364,12 +1365,20 @@ footer.controls {
 .save-preview-pane.collapsed .spp-body { display: none; }
 .save-preview-pane.collapsed .spp-toggle .ic-collapse { display: none; }
 .save-preview-pane:not(.collapsed) .spp-toggle .ic-expand { display: none; }
-/* 部屋マッチの保存プレビューは右下に配置 */
+/* 部屋マッチの保存プレビューは右下に配置、少し大きめに */
 .save-preview-pane.rm-save-pane {
   top: auto;
   right: 12px;
   bottom: 12px;
+  max-width: 300px;
 }
+.save-preview-pane.rm-save-pane #rmSavePreviewCanvas {
+  max-width: 260px;
+  max-height: 200px;
+}
+.save-preview-pane.rm-save-pane .spp-body { padding: 10px 12px; }
+.save-preview-pane.rm-save-pane .spp-title { font-size: 10.5px; margin-bottom: 2px; }
+.save-preview-pane.rm-save-pane .spp-dim { font-size: 11px; }
 .spp-toggle {
   background: transparent;
   border: none;
@@ -1534,7 +1543,7 @@ footer.controls {
 .rm-btn-confirm:hover { background: #4a8aa3; }
 
 canvas.rm-active { cursor: crosshair; }
-.arrows { display: flex; flex-direction: column; margin-left: 2px; }
+.arrows { display: flex; flex-direction: column; margin-left: 2px; position: relative; }
 .arr {
   width: 16px; height: 12px;
   background: none; border: none; cursor: pointer;
@@ -1546,6 +1555,46 @@ canvas.rm-active { cursor: crosshair; }
 }
 .arr:hover { color: var(--accent); }
 .arr:active { transform: scale(0.85); }
+
+/* 「ここを押せるよ」のおしゃれな気付き */
+@keyframes split-breathing {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(91,156,184,0)); }
+  50% { transform: scale(1.08); filter: drop-shadow(0 0 5px rgba(91,156,184,0.6)); }
+}
+@keyframes arrow-bob {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(-1.5px); opacity: 1; }
+}
+@keyframes arrow-bob-down {
+  0%, 100% { transform: translateY(0); opacity: 0.5; }
+  50% { transform: translateY(1.5px); opacity: 1; }
+}
+.splits.pulse-hint .num {
+  animation: split-breathing 2.2s ease-in-out infinite;
+  color: var(--accent);
+  font-weight: 500;
+}
+.splits.pulse-hint .arr[data-delta="1"] {
+  animation: arrow-bob 1.4s ease-in-out infinite;
+  color: var(--accent);
+}
+.splits.pulse-hint .arr[data-delta="-1"] {
+  animation: arrow-bob-down 1.4s ease-in-out 0.3s infinite;
+  color: var(--accent);
+}
+.splits.pulse-hint .split-field {
+  position: relative;
+}
+.splits.pulse-hint .split-field::after {
+  content: '';
+  position: absolute;
+  inset: -3px -8px;
+  border-radius: 8px;
+  background: radial-gradient(circle, rgba(91,156,184,0.18), transparent 70%);
+  animation: split-breathing 2.2s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
 
 @media (max-width: 760px) {
   body { grid-template-columns: 1fr; grid-template-rows: 200px 1fr; }
@@ -1579,6 +1628,38 @@ canvas.rm-active { cursor: crosshair; }
   box-shadow: 0 8px 24px rgba(44, 62, 80, 0.18);
 }
 .toast.shown { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ボタン上の小さなツールチップ */
+.bubble-tooltip {
+  position: fixed;
+  transform: translate(-50%, -100%) translateY(6px);
+  padding: 6px 12px;
+  background: rgba(44, 62, 80, 0.94);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 250;
+  box-shadow: 0 4px 12px rgba(44, 62, 80, 0.25);
+  white-space: nowrap;
+}
+.bubble-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(44, 62, 80, 0.94);
+  border-bottom: 0;
+}
+.bubble-tooltip.shown {
+  opacity: 1;
+  transform: translate(-50%, -100%) translateY(0);
+}
 
 /* ===== Guide overlay & card ===== */
 .guide-overlay {
@@ -1878,6 +1959,7 @@ canvas.rm-active { cursor: crosshair; }
       <span class="ratio-small" id="ratioText">—<span class="colon">:</span>—</span>
     </div>
     <div class="file-info">
+      <div class="quality-info" id="qInfo"></div>
       <button class="size-badge" id="fileSize" data-tier="white" title="クリックでサイズと色の関係を表示">—</button>
       <span class="dim" id="dimLine">— × — px</span>
       <span class="frames" id="framesInfo"></span>
@@ -1895,7 +1977,6 @@ canvas.rm-active { cursor: crosshair; }
         <div>ここで離す</div>
       </div>
     </div>
-    <div class="pattern-rect-info" id="patternRectInfo"></div>
     <button class="manual-range-toggle" id="manualRangeToggle" type="button" aria-pressed="false">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="4" y="4" width="16" height="16" rx="1" stroke-dasharray="3 3"/>
@@ -2078,7 +2159,6 @@ canvas.rm-active { cursor: crosshair; }
       </svg>
     </button>
   </div>
-  <div class="quality-info" id="qInfo"></div>
   <div class="trim-panel" id="trimPanel">
     <div class="trim-bar" id="trimBar">
       <div class="trim-track"></div>
@@ -2096,7 +2176,7 @@ canvas.rm-active { cursor: crosshair; }
     </label>
     <button id="roomMatch" class="btn btn-accent" hidden>部屋にマッチ君</button>
     <button id="save" class="btn" disabled>保存</button>
-    <div class="splits">
+    <div class="splits" id="splitsContainer">
       <button class="pattern-toggle" id="patternToggle" type="button" title="分割 / パターン切替" aria-pressed="false">
         <svg class="ic-split" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="18" height="18" rx="1.5"/>
@@ -2162,26 +2242,18 @@ canvas.rm-active { cursor: crosshair; }
         </svg>
       </div>
       <div class="recommend-intro">
-        部屋の画像と、飾る予定の画像 / GIF を入れると、<br>
-        <b>飾る場所の色合い・明るさ・色温度</b>に自動で寄せて<br>
-        部屋になじむように調整します。
+        現在の画像を、選んだお部屋の<br>
+        <b>色合い・明るさ・色温度</b>に自動で寄せて、なじむように調整します。
       </div>
       <div class="room-files">
         <div class="room-file-slot" id="roomSlotRoom">
-          <span class="room-file-label">① お部屋画像</span>
+          <span class="room-file-label">お部屋画像</span>
           <input type="file" id="roomFileRoom" accept="image/*" hidden>
           <label for="roomFileRoom" class="room-file-btn">選択</label>
           <span class="room-file-name" id="roomNameRoom">未選択</span>
         </div>
-        <div class="room-file-slot" id="roomSlotObj">
-          <span class="room-file-label">② 飾る画像 / GIF</span>
-          <input type="file" id="roomFileObj" accept="image/*,.gif" hidden>
-          <label for="roomFileObj" class="room-file-btn">選択</label>
-          <span class="room-file-name" id="roomNameObj">未選択</span>
-        </div>
       </div>
       <div class="recommend-row">
-        <button id="roomStart" class="cancel" disabled>マッチ開始</button>
         <button class="cancel" id="roomCancel">やめる</button>
       </div>
     </div>
@@ -4069,6 +4141,23 @@ function selectItem(item, el) {
   draw();
   updateDimLine();
   updateSaveBtn();
+  // 「ここを押せるよ」アニメ起動 (まだ枚数を変えていない時)
+  triggerSplitHint();
+}
+
+let _splitHintShown = false;
+function triggerSplitHint() {
+  if (_splitHintShown) return;
+  const el = document.getElementById('splitsContainer');
+  if (!el) return;
+  el.classList.add('pulse-hint');
+  _splitHintShown = true;
+  // 一定時間で自動的に消す(長すぎないよう12秒)
+  setTimeout(() => el.classList.remove('pulse-hint'), 12000);
+}
+function dismissSplitHint() {
+  const el = document.getElementById('splitsContainer');
+  if (el) el.classList.remove('pulse-hint');
 }
 
 /* ===== Decode GIF to frame array using omggif ===== */
@@ -5016,7 +5105,33 @@ function deformAutoFit() {
   state.deformOffsetY = state.frameY - (state.canvasH - state.frameH) / 2;
   draw();
 }
-deformAutoBtn.addEventListener('click', deformAutoFit);
+deformAutoBtn.addEventListener('click', () => {
+  if (!state.ratio) {
+    // ボタン上に数秒「アイテム比が未選択」のツールチップを出す
+    showBubbleTooltip(deformAutoBtn, 'アイテム比が未選択');
+    return;
+  }
+  deformAutoFit();
+});
+
+/* ボタンの上に短時間表示するツールチップ */
+function showBubbleTooltip(targetEl, msg) {
+  // 既存があれば削除
+  document.querySelectorAll('.bubble-tooltip').forEach(e => e.remove());
+  const tip = document.createElement('div');
+  tip.className = 'bubble-tooltip';
+  tip.textContent = msg;
+  document.body.appendChild(tip);
+  const r = targetEl.getBoundingClientRect();
+  tip.style.left = (r.left + r.width / 2) + 'px';
+  tip.style.top = (r.top - 6) + 'px';
+  // フェードイン
+  requestAnimationFrame(() => tip.classList.add('shown'));
+  setTimeout(() => {
+    tip.classList.remove('shown');
+    setTimeout(() => tip.remove(), 250);
+  }, 1800);
+}
 // overlay は削除済み
 shrinkPickBtn.addEventListener('click', () => {
   state.eyedropperActive = !state.eyedropperActive;
@@ -5561,12 +5676,8 @@ const roomMatchOverlay = document.getElementById('roomMatchOverlay');
 const roomMatchCloseBtn = document.getElementById('roomMatchClose');
 const roomCancelBtn = document.getElementById('roomCancel');
 const roomFileRoom = document.getElementById('roomFileRoom');
-const roomFileObj = document.getElementById('roomFileObj');
 const roomNameRoom = document.getElementById('roomNameRoom');
-const roomNameObj = document.getElementById('roomNameObj');
 const roomSlotRoom = document.getElementById('roomSlotRoom');
-const roomSlotObj = document.getElementById('roomSlotObj');
-const roomStartBtn = document.getElementById('roomStart');
 const roomIntroEl = document.getElementById('roomIntro');
 const roomWorkspaceEl = document.getElementById('roomWorkspace');
 const roomCanvas = document.getElementById('roomCanvas');
@@ -5576,18 +5687,14 @@ const roomBackBtn = document.getElementById('roomBack');
 const roomStatusEl = document.getElementById('roomStatus');
 
 const roomState = {
-  roomImg: null,        // HTMLImageElement
-  objFrames: null,      // [{canvas, delay}] (静止画は1枚)
+  roomImg: null,
+  objFrames: null,
   objW: 0, objH: 0,
-  // 表示は roomCanvas に縮小して描画
-  dispScale: 1,         // roomCanvas 表示倍率
-  // ステージ上の配置矩形 (roomCanvas座標)
+  dispScale: 1,
   rect: { x: 0, y: 0, w: 0, h: 0 },
-  // ドラッグ状態
-  drag: null,           // 'move' | 'resize' | 'create' | null
+  drag: null,
   dragStart: null,
-  // 色補正 結果フレーム
-  adjustedFrames: null, // [{canvas, delay}]
+  adjustedFrames: null,
   showOriginal: false,
   currentFrame: 0,
   _rafId: null,
@@ -5604,18 +5711,13 @@ function openRoomMatch() {
   roomState.adjustedFrames = null;
   roomState.showOriginal = false;
   roomNameRoom.textContent = '未選択';
-  roomNameObj.textContent = '未選択';
   roomSlotRoom.classList.remove('filled');
-  roomSlotObj.classList.remove('filled');
   // 現在プレビューに画像があれば「飾る画像」として自動取得
   if (state.loaded && state.frames.length > 0) {
     roomState.objFrames = state.frames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
     roomState.objW = state.naturalW;
     roomState.objH = state.naturalH;
-    roomNameObj.innerHTML = '<b style="color:var(--accent)">現在の画像</b>を使用中';
-    roomSlotObj.classList.add('filled');
   }
-  roomStartBtn.disabled = !(roomState.roomImg && roomState.objFrames);
   roomIntroEl.style.display = '';
   roomWorkspaceEl.style.display = 'none';
   openOverlay(roomMatchOverlay);
@@ -5635,7 +5737,10 @@ roomBackBtn.addEventListener('click', () => {
 });
 
 function checkRoomReady() {
-  roomStartBtn.disabled = !(roomState.roomImg && roomState.objFrames);
+  // 部屋画像が読み込まれ、現在のプレビューにオブジェがあれば自動開始
+  if (roomState.roomImg && roomState.objFrames) {
+    setTimeout(() => startRoomWorkspace(), 60);
+  }
 }
 roomFileRoom.addEventListener('change', async e => {
   const f = e.target.files[0]; if (!f) return; e.target.value = '';
@@ -5656,45 +5761,6 @@ roomFileRoom.addEventListener('change', async e => {
     URL.revokeObjectURL(url);
   }
   checkRoomReady();
-});
-roomFileObj.addEventListener('change', async e => {
-  const f = e.target.files[0]; if (!f) return; e.target.value = '';
-  try {
-    const isGif = f.type === 'image/gif' || /\.gif$/i.test(f.name);
-    if (isGif) {
-      const buf = await f.arrayBuffer();
-      const decoded = decodeGifToFrames(buf);
-      roomState.objFrames = decoded.frames;
-      roomState.objW = decoded.width;
-      roomState.objH = decoded.height;
-    } else {
-      const url = URL.createObjectURL(f);
-      const img = await new Promise((res, rej) => {
-        const i = new Image();
-        i.onload = () => res(i);
-        i.onerror = rej;
-        i.src = url;
-      });
-      const c = document.createElement('canvas');
-      c.width = img.naturalWidth; c.height = img.naturalHeight;
-      c.getContext('2d').drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
-      roomState.objFrames = [{ canvas: c, delay: 0 }];
-      roomState.objW = img.naturalWidth;
-      roomState.objH = img.naturalHeight;
-    }
-    roomNameObj.textContent = f.name;
-    roomSlotObj.classList.add('filled');
-  } catch (err) {
-    console.error(err);
-    alert('飾る画像の読み込みに失敗しました');
-  }
-  checkRoomReady();
-});
-
-roomStartBtn.addEventListener('click', () => {
-  if (!roomState.roomImg || !roomState.objFrames) return;
-  startRoomWorkspace();
 });
 
 function startRoomWorkspace() {
@@ -5785,8 +5851,8 @@ function renderRmSavePreview() {
   const frames = rmState.adjustedFrames || rmState.objFrames;
   if (!frames || !frames.length) return;
   const src = frames[rmState._objCurFrame].canvas;
-  // 縮小して表示 (最大 160×110)
-  const maxW = 160, maxH = 110;
+  // 部屋プレビュー用は少し大きく(最大 260×200)
+  const maxW = 260, maxH = 200;
   const ar = src.width / src.height;
   let dw, dh;
   if (ar > maxW / maxH) { dw = maxW; dh = maxW / ar; }
@@ -6381,17 +6447,11 @@ function renderPatternSavePreview() {
 }
 
 function updatePatternInfo() {
-  const el = document.getElementById('patternRectInfo');
-  if (!el) return;
   if (state.pattern && state.loaded) {
-    el.textContent = `パターン: ${state.splitW} × ${state.splitH} タイル`;
-    el.classList.add('shown');
     patternPreviewPane.classList.add('shown');
     renderPatternSavePreview();
-    // 手動範囲トグル表示
     manualRangeToggleBtn.classList.add('shown');
   } else {
-    el.classList.remove('shown');
     patternPreviewPane.classList.remove('shown');
     manualRangeToggleBtn.classList.remove('shown');
   }
@@ -6449,6 +6509,7 @@ manualRangeToggleBtn.addEventListener('click', () => {
 });
 document.querySelectorAll('.arr').forEach(btn => {
   btn.addEventListener('click', () => {
+    dismissSplitHint();
     const t = btn.dataset.target;
     const d = parseInt(btn.dataset.delta, 10);
     if (state.splitLock) {
@@ -6823,12 +6884,6 @@ makeDroppable(roomSlotRoom, f => {
   dt.items.add(f);
   roomFileRoom.files = dt.files;
   roomFileRoom.dispatchEvent(new Event('change'));
-});
-makeDroppable(roomSlotObj, f => {
-  const dt = new DataTransfer();
-  dt.items.add(f);
-  roomFileObj.files = dt.files;
-  roomFileObj.dispatchEvent(new Event('change'));
 });
 
 </script>

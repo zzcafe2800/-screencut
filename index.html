@@ -8126,9 +8126,38 @@ async function buildSyncGifBlob(framesData) {
    この関数ひとつで、画像なら PNG・GIFなら全フレーム再エンコードを行う。
    - transformedFrames が1枚なら PNG 出力
    - 2枚以上なら全フレームを切り出して GIF 再構築 (画質低下も適用) */
+/* 整数サイズで「目標比」に最も近づける ±1px 調整 (面積最小タイブレーク) */
+function fitAspect(initW, initH, targetAspect) {
+  if (!isFinite(targetAspect) || targetAspect <= 0) return { w: initW, h: initH };
+  let best = { w: initW, h: initH };
+  let bestDiff = Math.abs(initW / initH - targetAspect);
+  let bestArea = initW * initH;
+  for (let dw = -1; dw <= 1; dw++) {
+    for (let dh = -1; dh <= 1; dh++) {
+      const w = initW + dw;
+      const h = initH + dh;
+      if (w < 1 || h < 1) continue;
+      const diff = Math.abs(w / h - targetAspect);
+      const area = w * h;
+      // 比がより一致 OR 同等で面積が小さい(=軽い) → 採用
+      if (diff < bestDiff - 1e-9 ||
+         (Math.abs(diff - bestDiff) < 1e-9 && area < bestArea)) {
+        best = { w, h };
+        bestDiff = diff;
+        bestArea = area;
+      }
+    }
+  }
+  return best;
+}
+
 async function processCell(cell, transformedFrames, brightness, qualityLevel, onProgress) {
-  const w = Math.max(1, Math.round(cell.w));
-  const h = Math.max(1, Math.round(cell.h));
+  // 目標比 = ソース上のセル比 (= アイテム比 / パターン比 / 手動範囲比)
+  const targetAspect = cell.w / cell.h;
+  // 初期サイズも比を維持するよう ±1px 補正
+  const fit0 = fitAspect(Math.max(1, Math.round(cell.w)), Math.max(1, Math.round(cell.h)), targetAspect);
+  const w = fit0.w;
+  const h = fit0.h;
   const brightnessFilter = brightness > 0
     ? `brightness(${getBrightnessFactor(brightness)})`
     : null;
@@ -8149,8 +8178,11 @@ async function processCell(cell, transformedFrames, brightness, qualityLevel, on
     // 静止画 → PNG (画質低下も適用)
     if (qualityLevel > 0) {
       const sc = 1 / Math.sqrt(Math.pow(QUALITY_FACTOR, qualityLevel));
-      const outW = Math.max(1, Math.round(w * sc));
-      const outH = Math.max(1, Math.round(h * sc));
+      let outW = Math.max(1, Math.round(w * sc));
+      let outH = Math.max(1, Math.round(h * sc));
+      // 縦横比を保つよう ±1px 調整
+      const f = fitAspect(outW, outH, targetAspect);
+      outW = f.w; outH = f.h;
       const small = document.createElement('canvas');
       small.width = outW; small.height = outH;
       small.getContext('2d').drawImage(cellFrames[0].canvas, 0, 0, outW, outH);
@@ -8165,6 +8197,9 @@ async function processCell(cell, transformedFrames, brightness, qualityLevel, on
     const sc = 1 / Math.sqrt(Math.pow(QUALITY_FACTOR, qualityLevel));
     outW = Math.max(1, Math.round(w * sc));
     outH = Math.max(1, Math.round(h * sc));
+    // 縦横比を保つよう ±1px 調整
+    const f = fitAspect(outW, outH, targetAspect);
+    outW = f.w; outH = f.h;
   }
 
   // 動くGIF → main thread で再エンコード
@@ -8254,8 +8289,11 @@ async function save() {
         w: state.frameW * sxR,
         h: state.frameH * syR,
       };
-      const tileW = Math.round(cellSrc.w);
-      const tileH = Math.round(cellSrc.h);
+      // タイル1枚分の目標比 = アイテム比 (cellSrc.w / cellSrc.h)
+      const tileAspect = cellSrc.w / cellSrc.h;
+      const tileFit = fitAspect(Math.max(1, Math.round(cellSrc.w)), Math.max(1, Math.round(cellSrc.h)), tileAspect);
+      const tileW = tileFit.w;
+      const tileH = tileFit.h;
       const outW = tileW * state.splitW;
       const outH = tileH * state.splitH;
       saveBtn.innerHTML = 'パターン生成…';
@@ -8265,12 +8303,10 @@ async function save() {
       const tiledFrames = [];
       for (let fIdx = 0; fIdx < transformed.length; fIdx++) {
         const fr = transformed[fIdx];
-        // 単一フレームのタイルキャンバス
         const tileC = document.createElement('canvas');
         tileC.width = outW;
         tileC.height = outH;
         const tctx = tileC.getContext('2d');
-        // 明るさフィルター適用
         if (state.brightness > 0) {
           tctx.filter = `brightness(${getBrightnessFactor(state.brightness)})`;
         }
@@ -8282,12 +8318,16 @@ async function save() {
           }
         }
         tctx.filter = 'none';
-        // 画質低下適用
+        // 画質低下適用 (パターン全体の縦横比を維持)
         let finalCanvas = tileC;
         if (state.quality > 0) {
           const sc = getQualityScale();
-          const sw = Math.max(1, Math.round(outW * sc));
-          const sh = Math.max(1, Math.round(outH * sc));
+          let sw = Math.max(1, Math.round(outW * sc));
+          let sh = Math.max(1, Math.round(outH * sc));
+          // パターン全体は (splitW * tileW) : (splitH * tileH) で正方形ロックで splitW=splitH なので
+          // tileAspect が outAspect とほぼ同じ。fitAspect で全体比を整える
+          const fit = fitAspect(sw, sh, outW / outH);
+          sw = fit.w; sh = fit.h;
           const small = document.createElement('canvas');
           small.width = sw; small.height = sh;
           small.getContext('2d').drawImage(tileC, 0, 0, sw, sh);

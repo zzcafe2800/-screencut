@@ -1804,8 +1804,8 @@ canvas.rm-active { cursor: crosshair; }
 }
 .lp-row {
   display: grid;
-  grid-template-columns: 30px 1fr auto;
-  gap: 6px;
+  grid-template-columns: 30px 1fr 18px auto;
+  gap: 4px 6px;
   align-items: center;
   background: #f7fafb;
   border: 1.5px solid transparent;
@@ -1845,6 +1845,27 @@ canvas.rm-active { cursor: crosshair; }
 }
 .lp-row .lp-vis:hover { color: var(--accent); }
 .lp-row .lp-vis.hidden-ic { color: rgba(0,0,0,0.25); }
+.lp-move {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  align-items: center;
+}
+.lp-move-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--fg-faint);
+  width: 14px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+}
+.lp-move-btn:hover:not(:disabled) { color: var(--accent); background: rgba(91,156,184,0.12); }
+.lp-move-btn:disabled { opacity: 0.25; cursor: not-allowed; }
 .lp-bg-row {
   display: flex;
   gap: 4px;
@@ -4980,6 +5001,11 @@ function ensureFirstLayer() {
     currentFrame: 0,
     naturalW: state.naturalW,
     naturalH: state.naturalH,
+    // 個別エフェクト (レイヤー0は state.* と同期)
+    brightness: state.brightness,
+    rotation: state.rotation,
+    flipH: state.flipH,
+    flipV: state.flipV,
   });
   state.selectedLayers = new Set([0]);
 }
@@ -5033,6 +5059,10 @@ async function loadAsNewLayer(file) {
     currentFrame: 0,
     naturalW: nW,
     naturalH: nH,
+    brightness: 0,
+    rotation: 0,
+    flipH: false,
+    flipV: false,
   });
   state.selectedLayers = new Set([state.layers.length - 1]);
   renderLayerPanel();
@@ -5041,6 +5071,35 @@ async function loadAsNewLayer(file) {
   // 追加したレイヤーが GIF / 動画ならアニメ開始 (まだ動いてなければ)
   if (frames.length > 1 && !state._rafId) startAnimation();
   showToast(`レイヤー${state.layers.length}を追加しました`);
+}
+
+/* レイヤー並べ替え (i: 現在の index, dir: +1=上へ / -1=下へ) */
+function moveLayer(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= state.layers.length) return;
+  [state.layers[i], state.layers[j]] = [state.layers[j], state.layers[i]];
+  const newSel = new Set();
+  for (const idx of state.selectedLayers) {
+    if (idx === i) newSel.add(j);
+    else if (idx === j) newSel.add(i);
+    else newSel.add(idx);
+  }
+  state.selectedLayers = newSel;
+  if (i === 0 || j === 0) {
+    const newBase = state.layers[0];
+    state.frames = newBase.frames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+    state.naturalW = newBase.naturalW;
+    state.naturalH = newBase.naturalH;
+    state.brightness = newBase.brightness;
+    state.rotation = newBase.rotation;
+    state.flipH = newBase.flipH;
+    state.flipV = newBase.flipV;
+    state.currentFrame = 0;
+    recomputeLayout();
+    updateBrightnessGauge();
+  }
+  renderLayerPanel();
+  draw();
 }
 
 /* レイヤーパネルの表示更新 */
@@ -5080,6 +5139,30 @@ function renderLayerPanel() {
     nm.className = 'lp-name';
     nm.textContent = L.name;
     row.appendChild(nm);
+    // 並べ替え ↑ / ↓
+    const moveBox = document.createElement('div');
+    moveBox.className = 'lp-move';
+    const upBtn = document.createElement('button');
+    upBtn.className = 'lp-move-btn';
+    upBtn.title = '上へ';
+    upBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>`;
+    upBtn.disabled = i === state.layers.length - 1;
+    upBtn.addEventListener('click', ev => {
+      ev.stopPropagation();
+      moveLayer(i, +1);
+    });
+    const dnBtn = document.createElement('button');
+    dnBtn.className = 'lp-move-btn';
+    dnBtn.title = '下へ';
+    dnBtn.innerHTML = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>`;
+    dnBtn.disabled = i === 0;
+    dnBtn.addEventListener('click', ev => {
+      ev.stopPropagation();
+      moveLayer(i, -1);
+    });
+    moveBox.appendChild(upBtn);
+    moveBox.appendChild(dnBtn);
+    row.appendChild(moveBox);
     // 表示/非表示
     const vis = document.createElement('button');
     vis.className = 'lp-vis' + (L.visible ? '' : ' hidden-ic');
@@ -5103,6 +5186,7 @@ function renderLayerPanel() {
         state.selectedLayers.add(i);
       }
       renderLayerPanel();
+      updateBrightnessGauge();
       draw();
     });
     layerList.appendChild(row);
@@ -5559,32 +5643,45 @@ function draw() {
   }
   ctx.restore();
 
-  // 追加レイヤー(layers[1..]) を本体画像の上に合成
+  // 追加レイヤー(layers[1..]) を本体画像の上に合成 (各レイヤー独自の効果を適用)
   if (state.layers.length >= 2) {
     for (let i = 1; i < state.layers.length; i++) {
       const L = state.layers[i];
       if (!L.visible) continue;
       const fr = L.frames[L.currentFrame % L.frames.length];
       if (!fr) continue;
-      // レイヤー画像のキャンバス座標系での位置/大きさを計算
-      const baseScale = state.canvasW / state.naturalW;  // 1レイヤー目の基準にキャンバス全体スケール
+      const baseScale = state.canvasW / state.naturalW;
       const drawW = L.naturalW * L.scaleX * baseScale;
       const drawH = L.naturalH * L.scaleY * baseScale;
       const cx = state.canvasW / 2 + L.offsetX;
       const cy = state.canvasH / 2 + L.offsetY;
-      ctx.drawImage(fr.canvas, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
+      // レイヤーの transform を適用して描画
+      ctx.save();
+      if (L.brightness > 0) {
+        ctx.filter = `brightness(${getBrightnessFactor(L.brightness)})`;
+      }
+      ctx.translate(cx, cy);
+      ctx.rotate(L.rotation * Math.PI / 180);
+      ctx.scale(L.flipH ? -1 : 1, L.flipV ? -1 : 1);
+      const isLR90 = L.rotation === 90 || L.rotation === 270;
+      const dw = isLR90 ? drawH : drawW;
+      const dh = isLR90 ? drawW : drawH;
+      ctx.drawImage(fr.canvas, -dw / 2, -dh / 2, dw, dh);
+      ctx.restore();
       // 選択中のレイヤーは枠を表示
       if (state.selectedLayers.has(i)) {
+        const sw = isLR90 ? drawH : drawW;
+        const sh = isLR90 ? drawW : drawH;
         ctx.save();
         ctx.strokeStyle = 'rgba(91,156,184,0.85)';
         ctx.lineWidth = 2;
         ctx.setLineDash([6, 4]);
-        ctx.strokeRect(cx - drawW / 2, cy - drawH / 2, drawW, drawH);
+        ctx.strokeRect(cx - sw / 2, cy - sh / 2, sw, sh);
         ctx.setLineDash([]);
-        // 左上に丸ハンドル(ドラッグ用、視覚的補助)
+        // 左上に丸ハンドル(ドラッグ用)
         ctx.fillStyle = '#5b9cb8';
         ctx.beginPath();
-        ctx.arc(cx - drawW / 2, cy - drawH / 2, 6, 0, Math.PI * 2);
+        ctx.arc(cx - sw / 2, cy - sh / 2, 6, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#fff';
         ctx.lineWidth = 2;
@@ -5812,10 +5909,13 @@ function updateToolBtns() {
   if (!showTrim) closeTrimPanel();
 }
 function updateBrightnessGauge() {
-  const fill = (state.brightness / BRIGHTNESS_MAX) * 360;
+  // 選択中レイヤーがあればその値、なければ state.brightness
+  const primary = getPrimarySelectedLayer();
+  const b = primary ? primary.brightness : state.brightness;
+  const fill = (b / BRIGHTNESS_MAX) * 360;
   brightnessBtn.style.setProperty('--fill', fill + 'deg');
-  if (state.brightness > 0) {
-    bLevelEl.textContent = state.brightness;
+  if (b > 0) {
+    bLevelEl.textContent = b;
     bLevelEl.classList.add('shown');
   } else {
     bLevelEl.classList.remove('shown');
@@ -7825,15 +7925,61 @@ document.querySelectorAll('.arr').forEach(btn => {
   });
 });
 
-/* ===== Transform buttons ===== */
-flipHBtn.addEventListener('click', () => { state.flipH = !state.flipH; draw(); });
-flipVBtn.addEventListener('click', () => { state.flipV = !state.flipV; draw(); });
+/* ===== Transform buttons (選択レイヤー対象) ===== */
+function getPrimarySelectedLayer() {
+  if (state.layers.length < 2) return null;
+  const idx = state.selectedLayers.values().next().value;
+  if (idx === undefined) return null;
+  return state.layers[idx];
+}
+/* 効果をレイヤー対象に適用 / 単一画像モードでは state.* を変更 */
+function applyToSelectedOrState(mutator) {
+  if (state.layers.length < 2) {
+    // 単一画像モード: 直接 state を変更
+    mutator(state, true);
+    return;
+  }
+  if (state.selectedLayers.size === 0) {
+    // 何も選択されていない: layer 0 にだけ適用
+    mutator(state.layers[0], false);
+  } else {
+    for (const idx of state.selectedLayers) {
+      mutator(state.layers[idx], false);
+    }
+  }
+  // レイヤー0が選択 or 単一なら state.* と同期
+  if (state.layers[0] && (state.selectedLayers.size === 0 || state.selectedLayers.has(0))) {
+    state.brightness = state.layers[0].brightness;
+    state.rotation = state.layers[0].rotation;
+    state.flipH = state.layers[0].flipH;
+    state.flipV = state.layers[0].flipV;
+  }
+}
+flipHBtn.addEventListener('click', () => {
+  applyToSelectedOrState((tgt, isLegacy) => {
+    tgt.flipH = !tgt.flipH;
+  });
+  draw();
+});
+flipVBtn.addEventListener('click', () => {
+  applyToSelectedOrState((tgt, isLegacy) => {
+    tgt.flipV = !tgt.flipV;
+  });
+  draw();
+});
 rotateBtn.addEventListener('click', () => {
-  state.rotation = (state.rotation + 90) % 360;
-  recomputeLayout();
+  // レイヤー0 (= 単一画像モード or base 選択時) は recomputeLayout を呼ぶ
+  const affectsLayer0 = state.layers.length < 2 || state.selectedLayers.has(0) || state.selectedLayers.size === 0;
+  applyToSelectedOrState((tgt) => {
+    tgt.rotation = (tgt.rotation + 90) % 360;
+  });
+  if (affectsLayer0) recomputeLayout();
+  else draw();
 });
 brightnessBtn.addEventListener('click', () => {
-  state.brightness = (state.brightness + 1) % (BRIGHTNESS_MAX + 1);
+  applyToSelectedOrState((tgt) => {
+    tgt.brightness = (tgt.brightness + 1) % (BRIGHTNESS_MAX + 1);
+  });
   updateBrightnessGauge();
   draw();
 });
@@ -8172,11 +8318,25 @@ function compositeAllLayers() {
       if (li === 0) {
         cctx.drawImage(fr.canvas, 0, 0, W, H);
       } else {
-        const drawW = L.naturalW * L.scaleX * (state.canvasW / state.naturalW) * ratio;
-        const drawH = L.naturalH * L.scaleY * (state.canvasH / state.naturalH) * ratio;
+        const baseRatio = state.canvasW / state.naturalW;
+        const drawWcanvas = L.naturalW * L.scaleX * baseRatio;
+        const drawHcanvas = L.naturalH * L.scaleY * baseRatio;
+        const drawW = drawWcanvas * ratio;
+        const drawH = drawHcanvas * ratio;
         const cx = W / 2 + L.offsetX * ratio;
         const cy = H / 2 + L.offsetY * ratio;
-        cctx.drawImage(fr.canvas, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
+        cctx.save();
+        if (L.brightness > 0) {
+          cctx.filter = `brightness(${getBrightnessFactor(L.brightness)})`;
+        }
+        cctx.translate(cx, cy);
+        cctx.rotate(L.rotation * Math.PI / 180);
+        cctx.scale(L.flipH ? -1 : 1, L.flipV ? -1 : 1);
+        const isLR90 = L.rotation === 90 || L.rotation === 270;
+        const dw = isLR90 ? drawH : drawW;
+        const dh = isLR90 ? drawW : drawH;
+        cctx.drawImage(fr.canvas, -dw / 2, -dh / 2, dw, dh);
+        cctx.restore();
       }
     }
     out.push({ canvas: c, delay: baseFrames[fi].delay });

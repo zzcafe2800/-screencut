@@ -30,8 +30,9 @@
 <meta name="twitter:description" content="動画からのGIF変換、画像編集、複数分割などの多様な機能を備えた便利なサイト。">
 <meta name="twitter:image" content="https://zzcafe2800.github.io/-screencut/ogp.png">
 
-<!-- ===== Favicon (SVGインライン) ===== -->
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%235b9cb8'/%3E%3Ctext x='32' y='44' font-family='Georgia,serif' font-style='italic' font-size='34' fill='%23ffffff' text-anchor='middle' font-weight='600'%3Ea.%3C/text%3E%3C/svg%3E">
+<!-- ===== Favicon ===== -->
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
 
 <!-- ===== 構造化データ (JSON-LD): GoogleがWebアプリと認識しやすくする ===== -->
 <script type="application/ld+json">
@@ -593,9 +594,62 @@ header.info {
   font-size: 15px;
   font-weight: 700;
   color: var(--accent);
-  min-width: 16px;
+  min-width: 26px;
   text-align: center;
 }
+/* 画像位置 2D パッド */
+.shrink-pos-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+.shrink-pos-label {
+  font-size: 11px;
+  color: var(--fg-muted);
+  font-weight: 600;
+}
+.shrink-pos-pad {
+  width: 60px; height: 60px;
+  background: linear-gradient(135deg, rgba(91,156,184,0.10), rgba(91,156,184,0.20));
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  position: relative;
+  cursor: crosshair;
+  flex: 0 0 auto;
+  touch-action: none;
+}
+.shrink-pos-pad::before, .shrink-pos-pad::after {
+  content: '';
+  position: absolute;
+  background: rgba(91,156,184,0.25);
+}
+.shrink-pos-pad::before { left: 50%; top: 4px; bottom: 4px; width: 1px; }
+.shrink-pos-pad::after { top: 50%; left: 4px; right: 4px; height: 1px; }
+.shrink-pos-dot {
+  position: absolute;
+  width: 10px; height: 10px;
+  background: var(--accent);
+  border: 2px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  left: 50%; top: 50%;
+}
+.shrink-pos-reset {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  width: 24px; height: 24px;
+  font-size: 14px;
+  cursor: pointer;
+  color: var(--fg-faint);
+  padding: 0;
+}
+.shrink-pos-reset:hover { color: var(--accent); border-color: var(--accent); }
 canvas.eyedropper-active { cursor: crosshair !important; }
 canvas.deform-active { cursor: grab; }
 canvas.deform-active:active { cursor: grabbing; }
@@ -2695,7 +2749,7 @@ canvas.rm-active { cursor: crosshair; }
       </div>
     </div>
 
-    <!-- 加工くん プレビュー直接モード -->
+    <!-- 加工くん お部屋プレビュー (色サンプル用) -->
     <div class="save-preview-pane rm-save-pane" id="rmSavePane">
       <button class="spp-toggle" id="rmSaveToggle" type="button" title="非表示/表示">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2704,9 +2758,9 @@ canvas.rm-active { cursor: crosshair; }
         </svg>
       </button>
       <div class="spp-body">
-        <div class="spp-title">保存される状態</div>
+        <div class="spp-title">合わせる場所をタップ</div>
         <canvas id="rmSavePreviewCanvas"></canvas>
-        <div class="spp-dim" id="rmSavePreviewDim"></div>
+        <div class="spp-dim" id="rmSavePreviewDim">お部屋の画像を読み込んでね</div>
       </div>
     </div>
 
@@ -2758,29 +2812,11 @@ canvas.rm-active { cursor: crosshair; }
       </div>
     </div>
     <div class="shrink-panel" id="shrinkPanel">
-      <!-- モードチューザー (起動時に表示) -->
-      <div class="sp-mode-chooser" id="shrinkChooser">
-        <div class="sp-title-row">
-          <div class="sp-title">どう変える?</div>
-          <button type="button" class="sp-close-btn" id="shrinkChooserClose" aria-label="閉じる">×</button>
-        </div>
+      <!-- 旧パネル内チューザー: 不要(上のチューザーで置き換え) -->
+      <div class="sp-mode-chooser" id="shrinkInPanelChooser" hidden style="display:none !important;">
         <div class="sp-mode-row">
-          <button type="button" class="sp-mode-btn" id="shrinkModeBg">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="3" y="3" width="18" height="18" rx="1.5"/>
-              <rect x="8" y="8" width="8" height="8" rx="0.5" fill="currentColor" opacity="0.35" stroke="none"/>
-            </svg>
-            <span>背景拡張</span>
-            <small>周りに色を足す</small>
-          </button>
-          <button type="button" class="sp-mode-btn" id="shrinkModeDeform">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M4 12h16M12 4v16"/>
-              <path d="M3 9l1 -2 2 -1M21 9l-1 -2 -2 -1M3 15l1 2 2 1M21 15l-1 2 -2 1"/>
-            </svg>
-            <span>画像変形</span>
-            <small>つかんで伸ばす</small>
-          </button>
+          <button type="button" class="sp-mode-btn" id="shrinkModeBg"></button>
+          <button type="button" class="sp-mode-btn" id="shrinkModeDeform"></button>
         </div>
       </div>
       <!-- 背景拡張モード -->
@@ -2793,8 +2829,15 @@ canvas.rm-active { cursor: crosshair; }
         </div>
         <div class="shrink-level-row">
           <span class="shrink-level-label">余白の大きさ</span>
-          <input type="range" id="shrinkLevelSlider" min="1" max="5" step="1" value="1" class="shrink-level-slider">
-          <span class="shrink-level-value" id="shrinkLevelValue">1</span>
+          <input type="range" id="shrinkLevelSlider" min="0.1" max="5" step="0.1" value="0.5" class="shrink-level-slider">
+          <span class="shrink-level-value" id="shrinkLevelValue">0.5</span>
+        </div>
+        <div class="shrink-pos-row">
+          <span class="shrink-pos-label">画像位置</span>
+          <div class="shrink-pos-pad" id="shrinkPosPad">
+            <span class="shrink-pos-dot" id="shrinkPosDot"></span>
+          </div>
+          <button type="button" class="shrink-pos-reset" id="shrinkPosReset" title="中央に戻す">⊕</button>
         </div>
       </div>
       <!-- 画像変形モード -->
@@ -2895,16 +2938,33 @@ canvas.rm-active { cursor: crosshair; }
         </button>
       </div>
     </div>
-    <button class="brightness-btn" id="shrink" title="縮小 (背景を付けて中央を小さく)" disabled>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-        <!-- inward diagonal arrows: >< -->
-        <path d="M4 4l6 6M4 8V4h4"/>
-        <path d="M20 4l-6 6M20 8V4h-4"/>
-        <path d="M4 20l6-6M4 16v4h4"/>
-        <path d="M20 20l-6-6M20 16v4h-4"/>
-      </svg>
-      <span class="q-level" id="shLevel"></span>
-    </button>
+    <div class="effect-wrap">
+      <button class="brightness-btn" id="shrink" title="背景拡張 / 画像変形" disabled>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4l6 6M4 8V4h4"/>
+          <path d="M20 4l-6 6M20 8V4h-4"/>
+          <path d="M4 20l6-6M4 16v4h4"/>
+          <path d="M20 20l-6-6M20 16v4h-4"/>
+        </svg>
+        <span class="q-level" id="shLevel"></span>
+      </button>
+      <div class="effect-chooser" id="shrinkChooser" hidden>
+        <button class="ec-btn" id="ecShrinkBg" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="1.5"/>
+            <rect x="8" y="8" width="8" height="8" rx="0.5" fill="currentColor" opacity="0.35" stroke="none"/>
+          </svg>
+          <span>背景拡張</span>
+        </button>
+        <button class="ec-btn" id="ecShrinkDeform" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 12h16M12 4v16"/>
+            <path d="M3 9l1 -2 2 -1M21 9l-1 -2 -2 -1M3 15l1 2 2 1M21 15l-1 2 -2 1"/>
+          </svg>
+          <span>画像変形</span>
+        </button>
+      </div>
+    </div>
     <button class="brightness-btn trim-btn" id="trimToggle" title="長さ調節" hidden>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <!-- timeline with two markers icon -->
@@ -4570,8 +4630,10 @@ const state = {
   simpSmooth: 2,         // 滑らかさブラー (0..6)
   simpEdge: 0.3,         // 輪郭忠実度 (0..1)
   _simpCache: null,
-  shrink: 0,             // 0=オフ, 1..5で 0.85..0.25倍にズーム
+  shrink: 0,             // 0=オフ, 0.1..5.0 連続。背景比率
   shrinkBgColor: '#ffffff', // 背景色 (スポイト)
+  shrinkOffsetX: 0,         // 画像位置オフセット (-1..1)
+  shrinkOffsetY: 0,
   eyedropperActive: false,
   shrinkSubMode: null,      // null=未選択, 'bg'=背景拡張, 'deform'=画像変形
   deformActive: false,      // 画像変形中
@@ -4635,7 +4697,7 @@ const shLevelEl = document.getElementById('shLevel');
 const shrinkPanel = document.getElementById('shrinkPanel');
 const shrinkSwatch = document.getElementById('shrinkSwatch');
 const shrinkPickBtn = document.getElementById('shrinkPickBtn');
-const shrinkChooserEl = document.getElementById('shrinkChooser');
+const shrinkChooserEl = document.getElementById('shrinkInPanelChooser');
 const shrinkBgModeEl = document.getElementById('shrinkBgMode');
 const shrinkDeformModeEl = document.getElementById('shrinkDeformMode');
 const shrinkModeBgBtn = document.getElementById('shrinkModeBg');
@@ -5250,6 +5312,7 @@ async function loadAsNewLayer(file) {
   draw();
   // 追加したレイヤーが GIF / 動画ならアニメ開始 (まだ動いてなければ)
   if (frames.length > 1 && !state._rafId) startAnimation();
+  updateFileSize();
   showToast(`レイヤー${state.layers.length}を追加しました`);
 }
 
@@ -5306,6 +5369,7 @@ function deleteLayer(i) {
   renderLayerPanel();
   updateLayerPanelVisibility();
   draw();
+  updateFileSize();
   showToast('レイヤーを削除しました');
 }
 
@@ -5475,6 +5539,7 @@ function renderLayerPanel() {
       ev.stopPropagation();
       L.visible = !L.visible;
       renderLayerPanel();
+      updateFileSize();
       draw();
     });
     row.appendChild(vis);
@@ -6059,7 +6124,11 @@ function draw() {
   const frame = state.frames[state.currentFrame];
   if (!frame) return;
 
-  // Draw current source frame with rotation/flip/brightness/quality/simplify/shrink applied
+  // 色加工モード中、対象がベースでない場合はベース描画もスキップ (非選択は非表示)
+  const skipBase = rmState && rmState.active && rmState.targetLayerIdx !== null && rmState.targetLayerIdx !== 0;
+  if (skipBase) {
+    // ベース描画をスキップして、レイヤー処理へ進む
+  } else {  // Draw current source frame with rotation/flip/brightness/quality/simplify/shrink applied
   const sourceCanvas = (state.simplify > 0 || (state.shrink > 0 && state.shrinkSubMode === "bg") || state.deformActive) ? getEffectFrame(state.currentFrame) : frame.canvas;
   ctx.save();
   if (state.brightness > 0) {
@@ -6090,12 +6159,15 @@ function draw() {
     ctx.drawImage(sourceCanvas, -drawW / 2, -drawH / 2, drawW, drawH);
   }
   ctx.restore();
+  }  // skipBase else end
 
   // 追加レイヤー(layers[1..]) を本体画像の上に合成 (各レイヤー独自の効果を適用)
   if (state.layers.length >= 2) {
     for (let i = 1; i < state.layers.length; i++) {
       const L = state.layers[i];
       if (!L.visible) continue;
+      // 色加工モード中は対象レイヤーのみ表示 (他は非表示で効果から除外)
+      if (rmState && rmState.active && rmState.targetLayerIdx !== null && rmState.targetLayerIdx !== i) continue;
       const lfi = L.currentFrame % L.frames.length;
       // 単純化を適用 (per-layer)
       const srcCanvas = L.simplify > 0 ? getLayerSimplifiedFrame(L, lfi) : L.frames[lfi].canvas;
@@ -6369,10 +6441,35 @@ function sizeTier(bytes) {
 }
 function getEstimatedSize() {
   if (!state.loaded) return null;
-  const base = state.frames.length > 1 ? (state.gifBaseSize || state.fileSize) : state.fileSize;
+  // 統合時 (2レイヤー以上) は合成後のサイズを推定
+  // ベース容量 + 各追加レイヤーの予想容量
+  let base;
+  if (state.layers.length >= 2) {
+    base = state.fileSize || estimateLayerByteSize(state.layers[0]);
+    for (let i = 1; i < state.layers.length; i++) {
+      const L = state.layers[i];
+      if (!L.visible) continue;
+      base += estimateLayerByteSize(L) * 0.6;  // 圧縮重なり考慮で 60%
+    }
+  } else {
+    base = state.frames.length > 1 ? (state.gifBaseSize || state.fileSize) : state.fileSize;
+  }
   if (!base) return null;
   if (state.quality === 0) return base;
   return base / Math.pow(QUALITY_FACTOR, state.quality);
+}
+
+/* レイヤーのおおよそのバイト数推定 */
+function estimateLayerByteSize(L) {
+  if (!L || !L.frames || !L.frames.length) return 0;
+  const w = L.naturalW || L.frames[0].canvas.width;
+  const h = L.naturalH || L.frames[0].canvas.height;
+  // GIF: w*h*0.5 byte/pixel * frame数 (0.5バイト/ピクセルが GIF 圧縮の経験的目安)
+  // 静止画: w*h*1.2 byte (PNG 圧縮目安)
+  if (L.frames.length > 1) {
+    return Math.round(w * h * 0.4 * L.frames.length);
+  }
+  return Math.round(w * h * 1.0);
 }
 function updateFileSize() {
   if (!state.loaded) {
@@ -6579,23 +6676,21 @@ simplifyBtn.addEventListener('click', () => {
     ch.hidden = true;
   }
 });
-/* 単純化を選択 → 従来の単純化レベル循環 (選択レイヤー対象) */
+/* 単純化を選択 → スライダーパネル直行 (循環は廃止、レベル1で開始) */
 document.getElementById('ecSimplify').addEventListener('click', () => {
   document.getElementById('effectChooser').hidden = true;
-  // 単純化を選択レイヤーに適用 (なければ state)
   applyToSelectedOrState((tgt, isLegacy) => {
-    tgt.simplify = (tgt.simplify + 1) % (SIMPLIFY_MAX + 1);
-    if (tgt.simplify > 0) {
-      const preset = SIMPLIFY_PRESETS[tgt.simplify];
+    // 既に有効なら何もしない (パネル表示中の意図しないリセットを防ぐ)
+    if (tgt.simplify === 0) {
+      tgt.simplify = 1;
+      const preset = SIMPLIFY_PRESETS[1];
       tgt.simpLevels = preset[0];
       tgt.simpSmooth = preset[1];
       tgt.simpEdge = preset[2];
     }
-    // キャッシュ無効化
     if (isLegacy) state._simpCache = null;
     else tgt._simpCache = null;
   });
-  // レイヤー0が対象なら state.* も同期
   if (state.layers[0] && (state.selectedLayers.size === 0 || state.selectedLayers.has(0))) {
     const L0 = state.layers[0];
     state.simplify = L0.simplify;
@@ -6711,7 +6806,8 @@ function getLayerSimplifiedFrame(L, idx) {
 const SHRINK_MAX = 5;
 function getShrinkScale(level = state.shrink) {
   if (level <= 0) return 1;
-  return 1 - level * 0.15;  // L1=0.85, L2=0.70, L3=0.55, L4=0.40, L5=0.25
+  // 0.1〜5.0 まで連続的に。1単位=0.15縮小に揃え、低レベルでは細かく
+  return Math.max(0.05, 1 - level * 0.15);
 }
 function autoSampleBgColor(c) {
   // 4隅の 6x6 領域を平均
@@ -6732,7 +6828,6 @@ function autoSampleBgColor(c) {
   return `rgb(${r},${g},${b})`;
 }
 function applyShrinkToCanvas(srcCanvas) {
-  // チューザー表示中はまだ縮小を反映しない (subMode が 'bg' のときだけ)
   if (state.shrink === 0 || state.shrinkSubMode !== 'bg') return srcCanvas;
   const W = srcCanvas.width, H = srcCanvas.height;
   const out = document.createElement('canvas');
@@ -6742,7 +6837,10 @@ function applyShrinkToCanvas(srcCanvas) {
   octx.fillRect(0, 0, W, H);
   const sc = getShrinkScale();
   const sw = W * sc, sh = H * sc;
-  octx.drawImage(srcCanvas, (W - sw) / 2, (H - sh) / 2, sw, sh);
+  // 位置オフセット (state.shrinkOffsetX/Y, -1〜1 の正規化値 → 余白範囲内)
+  const offX = (state.shrinkOffsetX || 0) * (W - sw) / 2;
+  const offY = (state.shrinkOffsetY || 0) * (H - sh) / 2;
+  octx.drawImage(srcCanvas, (W - sw) / 2 + offX, (H - sh) / 2 + offY, sw, sh);
   return out;
 }
 function applyDeformToCanvas(srcCanvas) {
@@ -6799,15 +6897,12 @@ function updateShrinkGauge() {
 function updateShrinkPanelView() {
   // どのサブパネルを出すか
   if (state.shrinkSubMode === 'bg') {
-    shrinkChooserEl.style.display = 'none';
     shrinkBgModeEl.style.display = '';
     shrinkDeformModeEl.style.display = 'none';
   } else if (state.shrinkSubMode === 'deform') {
-    shrinkChooserEl.style.display = 'none';
     shrinkBgModeEl.style.display = 'none';
     shrinkDeformModeEl.style.display = '';
   } else {
-    shrinkChooserEl.style.display = '';
     shrinkBgModeEl.style.display = 'none';
     shrinkDeformModeEl.style.display = 'none';
   }
@@ -6825,73 +6920,74 @@ function resetDeform() {
 
 shrinkBtn.addEventListener('click', () => {
   if (shrinkBtn.disabled) return;
-  // 非ベースレイヤー選択中はヒントを出す (背景拡張/画像変形はベースのみ対象)
-  if (state.layers.length >= 2 && state.selectedLayers.size > 0 && !state.selectedLayers.has(0)) {
-    queueToast('縮小・画像変形はベース画像にのみ適用されます', 2200);
-  }
-  // 起動: チューザー表示 (現在オフ時のみ)
-  if (state.shrink === 0 && !state.deformActive) {
-    state.shrinkSubMode = null;  // チューザー表示
-    state.shrink = 1;            // パネルを開くために1にしておく (ゲージ準備)
-    // 色は事前にサンプル
-    if (state.frames.length > 0) {
-      state.shrinkBgColor = autoSampleBgColor(state.frames[0].canvas);
-    }
-    updateShrinkGauge();
-    updateShrinkPanelView();
+  // 既に開いてる場合は閉じる(クリックでオフ)
+  if (state.shrinkSubMode === 'bg' || state.deformActive) {
+    closeShrinkPanel();
     return;
   }
-  // BGモード中: 次の段階へ (5の次は0=オフへ)
-  if (state.shrinkSubMode === 'bg' && state.shrink > 0) {
-    state.shrink = (state.shrink + 1) % (SHRINK_MAX + 1);
-    if (state.shrink === 0) {
-      // オフに戻る
-      state.shrinkSubMode = null;
-    }
-    updateShrinkGauge();
-    updateShrinkPanelView();
-    draw();
-    return;
-  }
-  // 変形モード中: クリックで終了
-  if (state.deformActive) {
-    resetDeform();
-    state.shrinkSubMode = null;
-    state.shrink = 0;
-    updateShrinkGauge();
-    updateShrinkPanelView();
-    draw();
-    return;
+  // チューザー表示
+  const ch = document.getElementById('shrinkChooser');
+  if (ch.hidden) {
+    ch.hidden = false;
+    setTimeout(() => {
+      const onAway = (ev) => {
+        if (!ch.contains(ev.target) && ev.target !== shrinkBtn && !shrinkBtn.contains(ev.target)) {
+          ch.hidden = true;
+          document.removeEventListener('pointerdown', onAway, true);
+        }
+      };
+      document.addEventListener('pointerdown', onAway, true);
+    }, 0);
+  } else {
+    ch.hidden = true;
   }
 });
 
-shrinkModeBgBtn.addEventListener('click', () => {
+/* チューザーから背景拡張モードへ */
+document.getElementById('ecShrinkBg').addEventListener('click', () => {
+  document.getElementById('shrinkChooser').hidden = true;
+  if (state.layers.length >= 2 && state.selectedLayers.size > 0 && !state.selectedLayers.has(0)) {
+    queueToast('背景拡張はベース画像にのみ適用されます', 2000);
+  }
   state.shrinkSubMode = 'bg';
-  // BGモードはレベル1で開始
-  if (state.shrink === 0) state.shrink = 1;
-  // スライダー同期
+  if (state.shrink === 0) state.shrink = 0.5;
+  if (state.frames.length > 0) state.shrinkBgColor = autoSampleBgColor(state.frames[0].canvas);
   const sl = document.getElementById('shrinkLevelSlider');
   const sv = document.getElementById('shrinkLevelValue');
   if (sl) sl.value = String(state.shrink);
-  if (sv) sv.textContent = String(state.shrink);
+  if (sv) sv.textContent = state.shrink.toFixed(1);
+  updateShrinkPosDot();
   updateShrinkGauge();
   updateShrinkPanelView();
   draw();
 });
-shrinkModeDeformBtn.addEventListener('click', () => {
+
+/* チューザーから画像変形モードへ (アイテム比チェック) */
+document.getElementById('ecShrinkDeform').addEventListener('click', () => {
+  document.getElementById('shrinkChooser').hidden = true;
+  if (!state.ratio) {
+    triggerSidebarAttention();
+    queueToast('アイテム比を選択してください', 2200);
+    return;
+  }
+  if (state.layers.length >= 2 && state.selectedLayers.size > 0 && !state.selectedLayers.has(0)) {
+    queueToast('画像変形はベース画像にのみ適用されます', 2000);
+  }
   state.shrinkSubMode = 'deform';
-  state.shrink = 0;  // BGレベルは無効化
+  state.shrink = 0;
   state.deformActive = true;
-  state.deformOffsetX = 0;
-  state.deformOffsetY = 0;
-  state.deformScaleX = 1;
-  state.deformScaleY = 1;
+  state.deformOffsetX = 0; state.deformOffsetY = 0;
+  state.deformScaleX = 1; state.deformScaleY = 1;
   canvas.classList.add('deform-active');
   state._deformHintVisible = true;
   updateShrinkGauge();
   updateShrinkPanelView();
   draw();
 });
+
+// 旧 in-panel chooser ボタンは新チューザーで置き換え済み (空ハンドラで残してエラー回避)
+shrinkModeBgBtn.addEventListener('click', () => {});
+shrinkModeDeformBtn.addEventListener('click', () => {});
 
 /* 縮小パネル: 閉じる関数 (×ボタン or 外側タップ) */
 function closeShrinkPanel() {
@@ -6976,10 +7072,49 @@ const shrinkLevelSlider = document.getElementById('shrinkLevelSlider');
 const shrinkLevelValue = document.getElementById('shrinkLevelValue');
 if (shrinkLevelSlider) {
   shrinkLevelSlider.addEventListener('input', () => {
-    const v = parseInt(shrinkLevelSlider.value, 10);
+    const v = parseFloat(shrinkLevelSlider.value);
     state.shrink = v;
-    shrinkLevelValue.textContent = String(v);
+    shrinkLevelValue.textContent = v.toFixed(1);
     updateShrinkGauge();
+    draw();
+  });
+}
+
+// 画像位置オフセット (2D パッド)
+const shrinkPosPad = document.getElementById('shrinkPosPad');
+const shrinkPosDot = document.getElementById('shrinkPosDot');
+const shrinkPosReset = document.getElementById('shrinkPosReset');
+function updateShrinkPosDot() {
+  if (!shrinkPosDot) return;
+  // -1..1 → 0..100% of pad
+  const x = ((state.shrinkOffsetX || 0) + 1) * 50;
+  const y = ((state.shrinkOffsetY || 0) + 1) * 50;
+  shrinkPosDot.style.left = x + '%';
+  shrinkPosDot.style.top = y + '%';
+}
+if (shrinkPosPad) {
+  const handlePad = (ev) => {
+    const r = shrinkPosPad.getBoundingClientRect();
+    const x = (ev.clientX - r.left) / r.width;
+    const y = (ev.clientY - r.top) / r.height;
+    state.shrinkOffsetX = Math.max(-1, Math.min(1, x * 2 - 1));
+    state.shrinkOffsetY = Math.max(-1, Math.min(1, y * 2 - 1));
+    updateShrinkPosDot();
+    draw();
+  };
+  shrinkPosPad.addEventListener('pointerdown', ev => {
+    ev.preventDefault();
+    shrinkPosPad.setPointerCapture(ev.pointerId);
+    handlePad(ev);
+  });
+  shrinkPosPad.addEventListener('pointermove', ev => {
+    if (ev.buttons === 0 && ev.pointerType !== 'touch') return;
+    handlePad(ev);
+  });
+  shrinkPosReset.addEventListener('click', () => {
+    state.shrinkOffsetX = 0;
+    state.shrinkOffsetY = 0;
+    updateShrinkPosDot();
     draw();
   });
 }
@@ -7654,6 +7789,20 @@ const rmBarsPane = document.getElementById('rmBars');
 const rmBarsToggle = document.getElementById('rmBarsToggle');
 const rmBarsReset = document.getElementById('rmBarsReset');
 
+/* お部屋プレビューのクリック: サンプル点取得 */
+if (rmSavePreviewCanvas) {
+  rmSavePreviewCanvas.style.cursor = 'crosshair';
+  rmSavePreviewCanvas.addEventListener('click', ev => {
+    if (!rmState.active || rmState.manualMode || !rmState.roomImg) return;
+    const r = rmSavePreviewCanvas.getBoundingClientRect();
+    const cx = (ev.clientX - r.left) / r.width;
+    const cy = (ev.clientY - r.top) / r.height;
+    rmState.sampleX = Math.max(0, Math.min(rmState.roomImg.naturalWidth - 1, Math.round(cx * rmState.roomImg.naturalWidth)));
+    rmState.sampleY = Math.max(0, Math.min(rmState.roomImg.naturalHeight - 1, Math.round(cy * rmState.roomImg.naturalHeight)));
+    rmAutoAdjustFromSample();
+  });
+}
+
 const rmState = {
   active: false,
   manualMode: false,             // true: 部屋画像なし、バーのみ
@@ -7681,44 +7830,62 @@ function startRoomMatchPreviewMode(manualMode) {
   rmState.sampleX = null;
   rmState.sampleY = null;
   rmState._objCurFrame = 0;
+  rmState.targetLayerIdx = roomState.targetLayerIdx;
   // バー値リセット
   rmState.bars = { brightness: 0, contrast: 0, hue: 0, sat: 0, temp: 0, tint: 0 };
   syncBarsUI();
-  // メインキャンバスのレイアウトを準備
-  if (rmState.manualMode) {
-    // 手動モード: 元の画像のサイズで描画(部屋画像なし)
-    state.naturalW = rmState.objW;
-    state.naturalH = rmState.objH;
-    state.loaded = true;
-    state.frames = [];
-    rmComputeCanvasSize();
-  } else {
-    // 部屋画像モード
-    state.naturalW = rmState.roomImg.naturalWidth;
-    state.naturalH = rmState.roomImg.naturalHeight;
-    state.loaded = true;
-    state.frames = [];
-    rmComputeCanvasSize();
-  }
+  // 対象レイヤーの元フレームをバックアップ (やめる時の復元用)
+  rmState._origLayerFrames = roomState.objFrames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+  // メインキャンバスを置き換えない: 既存の loaded 状態を維持
   // UI overlay 表示
-  if (!rmState.manualMode) {
-    rmSavePane.classList.add('shown');
-  } else {
-    rmSavePane.classList.remove('shown');
-  }
   rmBarsPane.style.display = 'flex';
   rmControls.style.display = '';
-  canvas.classList.add(rmState.manualMode ? 'shown' : 'rm-active', 'shown');
-  updateEmpty();
-  if (!rmState.manualMode) {
+  // お部屋画像があれば右下プレビューに描画
+  if (!rmState.manualMode && rmState.roomImg) {
+    rmSavePane.classList.add('shown');
+    drawRoomPreview();
     // 中央のサンプル点で初期マッチ
     rmState.sampleX = rmState.roomImg.naturalWidth / 2;
     rmState.sampleY = rmState.roomImg.naturalHeight / 2;
     rmAutoAdjustFromSample();
   } else {
+    rmSavePane.classList.remove('shown');
     rmAdjustWithBars();
   }
-  if (rmState.objFrames.length > 1) rmStartObjAnim();
+  draw();
+}
+
+/* お部屋プレビューに画像を描画 (右下) */
+function drawRoomPreview() {
+  if (!rmState.roomImg) return;
+  const c = document.getElementById('rmSavePreviewCanvas');
+  if (!c) return;
+  const maxW = 200, maxH = 200;
+  const ar = rmState.roomImg.naturalWidth / rmState.roomImg.naturalHeight;
+  let cw, ch;
+  if (ar > 1) { cw = maxW; ch = Math.round(maxW / ar); }
+  else { ch = maxH; cw = Math.round(maxH * ar); }
+  c.width = cw; c.height = ch;
+  const cctx = c.getContext('2d');
+  cctx.drawImage(rmState.roomImg, 0, 0, cw, ch);
+  // サンプル点を描画
+  if (rmState.sampleX != null && rmState.sampleY != null) {
+    const sx = (rmState.sampleX / rmState.roomImg.naturalWidth) * cw;
+    const sy = (rmState.sampleY / rmState.roomImg.naturalHeight) * ch;
+    cctx.save();
+    cctx.strokeStyle = 'rgba(91,156,184,0.95)';
+    cctx.lineWidth = 2;
+    cctx.fillStyle = 'rgba(91,156,184,0.4)';
+    cctx.beginPath();
+    cctx.arc(sx, sy, 7, 0, Math.PI * 2);
+    cctx.fill();
+    cctx.stroke();
+    cctx.fillStyle = '#fff';
+    cctx.beginPath();
+    cctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+    cctx.fill();
+    cctx.restore();
+  }
 }
 
 function rmComputeCanvasSize() {
@@ -7872,8 +8039,19 @@ function rmAdjustWithBars() {
     octx.putImageData(img, 0, 0);
     rmState.adjustedFrames.push({ canvas: out, delay: fr.delay });
   }
-  rmDrawMain();
-  renderRmSavePreview();
+  // ライブプレビュー: 対象レイヤーのフレームを adjusted で上書き(やめる時は backup から復元)
+  if (rmState.targetLayerIdx !== null && state.layers[rmState.targetLayerIdx]) {
+    state.layers[rmState.targetLayerIdx].frames = rmState.adjustedFrames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+    if (rmState.targetLayerIdx === 0) {
+      state.frames = rmState.adjustedFrames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+    }
+  } else if (state.frames && state.frames.length) {
+    // 単一画像モード
+    state.frames = rmState.adjustedFrames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+  }
+  draw();
+  // お部屋プレビュー再描画 (サンプル点更新含む)
+  drawRoomPreview();
 }
 
 /* 部屋画像のサンプル点からバーを自動算出 */
@@ -8011,99 +8189,41 @@ function exitRoomMatchPreview() {
 }
 
 rmCancelBtn.addEventListener('click', () => {
-  // 元の画像を復元 (rmState.objFrames は元の画像のリファレンス)
-  if (rmState.objFrames && rmState.objFrames.length) {
-    state.fileType = rmState.objFrames.length > 1 ? 'gif' : 'image';
-    state.naturalW = rmState.objW;
-    state.naturalH = rmState.objH;
-    state.frames = rmState.objFrames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
-    state.loaded = true;
-    state.currentFrame = 0;
-    exitRoomMatchPreview();
-    recomputeLayout();
-    updateEmpty();
-    updateFileSize();
-    updateFramesInfo();
-    updateToolBtns();
-    updateSaveBtn();
-    if (state.frames.length > 1) startAnimation();
-  } else {
-    exitRoomMatchPreview();
-    state.loaded = false;
-    state.frames = [];
-    state.naturalW = 0;
-    state.naturalH = 0;
-    canvas.classList.remove('shown');
-    updateEmpty();
-    updateFileSize();
-    updateFramesInfo();
-    updateToolBtns();
-    updateSaveBtn();
+  // 元のフレームを復元 (rmState._origLayerFrames がバックアップ)
+  if (rmState._origLayerFrames && rmState._origLayerFrames.length) {
+    const orig = rmState._origLayerFrames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+    if (rmState.targetLayerIdx !== null && state.layers[rmState.targetLayerIdx]) {
+      state.layers[rmState.targetLayerIdx].frames = orig;
+      if (rmState.targetLayerIdx === 0) {
+        state.frames = orig.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+      }
+    } else {
+      state.frames = orig;
+    }
   }
+  exitRoomMatchPreview();
+  draw();
+  updateFileSize();
 });
 
 rmConfirmBtn.addEventListener('click', () => {
-  if (!rmState.adjustedFrames) return;
-  const adjusted = rmState.adjustedFrames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
-  // 対象レイヤーがある場合 → そのレイヤーのフレームを更新
-  if (roomState.targetLayerIdx !== null && state.layers[roomState.targetLayerIdx]) {
-    const L = state.layers[roomState.targetLayerIdx];
-    L.frames = adjusted;
-    // ベースレイヤー(0)の場合は state.frames も同期
-    if (roomState.targetLayerIdx === 0) {
-      state.frames = adjusted.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
-      state.fileType = adjusted.length > 1 ? 'gif' : 'image';
-      stopAnimation();
-      resetTrim();
-      if (state.frames.length > 1) startAnimation();
-    }
-    exitRoomMatchPreview();
-    renderLayerPanel();
-    updateLayerPanelVisibility();
-    updateFileSize();
-    updateFramesInfo();
-    updateEmpty();
-    updateToolBtns();
-    recomputeLayout();
-    updateSaveBtn();
-    updateTrimUI();
-    draw();
-    showToast(`レイヤー${roomState.targetLayerIdx + 1}を調整しました`);
-    return;
-  }
-  // 単一画像モード: 既存の処理
-  state.fileType = rmState.objFrames.length > 1 ? 'gif' : 'image';
-  state.fileSize = 0;
-  state.naturalW = rmState.objW;
-  state.naturalH = rmState.objH;
-  state.frames = adjusted;
-  state.loaded = true;
-  state.rotation = 0; state.flipH = false; state.flipV = false;
-  state.brightness = 0; state.quality = 0; state.gifBaseSize = 0;
-  state.simplify = 0; state._simpCache = null;
-  state.shrink = 0; state.eyedropperActive = false;
-  state.shrinkSubMode = null;
-  state.deformActive = false; state.deformOffsetX = 0; state.deformOffsetY = 0;
-  state.deformScaleX = 1; state.deformScaleY = 1;
-  state.currentFrame = 0;
-  stopAnimation();
-  resetTrim();
+  // ライブプレビューで既に適用済み(rmAdjustWithBars が書き込んでいる)
+  // ここでは確定 + 終了処理のみ
   exitRoomMatchPreview();
-  updateBrightnessGauge();
-  updateQualityGauge();
-  updateQualityInfo();
-  updateSimplifyGauge();
-  updateShrinkGauge();
+  renderLayerPanel();
+  updateLayerPanelVisibility();
   updateFileSize();
   updateFramesInfo();
   updateEmpty();
   updateToolBtns();
-  recomputeLayout();
   updateSaveBtn();
   updateTrimUI();
-  if (state.frames.length > 1) startAnimation();
-  updateSidebarTop3();
-  showToast('部屋に合わせて調整しました');
+  draw();
+  if (rmState.targetLayerIdx !== null && rmState.targetLayerIdx > 0) {
+    showToast(`レイヤー${rmState.targetLayerIdx + 1}を調整しました`);
+  } else {
+    showToast('色加工を反映しました');
+  }
 });
 
 /* roomCanvas クリック・ドラッグ: 移動 / リサイズ / 新規作成 */

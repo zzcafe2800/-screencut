@@ -440,6 +440,52 @@ header.info {
   font-family: Georgia, serif;
   font-style: italic;
 }
+/* 部屋サムネくん ボタン (薄ピンク系で差別化) */
+.btn-thumbkun {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #c95a8a;
+  border: 1.5px solid #e6a6c4;
+  padding: 7px 16px;
+}
+.btn-thumbkun .lk-main { font-size: 12.5px; font-weight: 700; letter-spacing: 0.03em; }
+.btn-thumbkun:hover { background: #fdeff6; border-color: #d669a0; }
+.btn-thumbkun.active { background: #d669a0; color: #fff; border-color: #d669a0; }
+/* thumb-mode: アイテム比サイドバーを隠してアイテムパネルを出す */
+body.thumb-mode #categories,
+body.thumb-mode #sidebarTop3,
+body.thumb-mode .search-row,
+body.thumb-mode #searchResults { display: none !important; }
+body.thumb-mode #splitsContainer,
+body.thumb-mode #manualRangeToggle { display: none !important; }
+.thumb-items-panel { padding: 8px 4px; }
+.thumb-items-panel[hidden] { display: none; }
+.thumb-items-panel .ti-title {
+  font-family: Georgia, serif; font-style: italic; font-weight: 700;
+  font-size: 15px; color: var(--accent); margin: 4px 0 12px 4px;
+}
+.ti-empty {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; padding: 24px 12px; text-align: center;
+  color: var(--fg-faint);
+}
+.ti-empty p { font-size: 12px; line-height: 1.5; margin: 0; }
+.ti-add-btn {
+  background: var(--accent); color: #fff; border: none;
+  border-radius: 999px; padding: 8px 18px; font-size: 12px;
+  font-weight: 700; cursor: pointer;
+}
+.ti-add-btn:hover { background: #4a8aa3; }
+.ti-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 4px; }
+.ti-thumb {
+  aspect-ratio: 1; border: 1px solid var(--line); border-radius: 8px;
+  overflow: hidden; cursor: pointer; background: #faf7f8;
+  display: flex; align-items: center; justify-content: center;
+}
+.ti-thumb img { width: 100%; height: 100%; object-fit: contain; }
+.ti-thumb:hover { border-color: var(--accent); }
 
 /* Simplify (Cutout) slider panel */
 .simplify-panel {
@@ -2528,19 +2574,20 @@ canvas.rm-active { cursor: crosshair; }
 .welcome-card h3 { margin-bottom: 18px; }
 .welcome-more-btn {
   display: block;
-  margin: 20px auto 0;
+  margin: 16px auto 0;
   background: transparent;
-  color: var(--accent);
-  border: 1.5px solid var(--accent);
-  border-radius: 999px;
-  padding: 8px 22px;
-  font-size: 12.5px;
-  font-weight: 700;
+  color: var(--fg-faint);
+  border: none;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
   cursor: pointer;
-  letter-spacing: 0.06em;
-  transition: all 0.15s;
+  letter-spacing: 0.04em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s;
 }
-.welcome-more-btn:hover { background: var(--accent); color: #fff; }
+.welcome-more-btn:hover { color: var(--accent); }
 .welcome-more-btn.hidden { display: none; }
 .welcome-more {
   margin-top: 14px;
@@ -2788,6 +2835,21 @@ canvas.rm-active { cursor: crosshair; }
     <div class="st3-list" id="sidebarTop3List"></div>
   </div>
   <nav id="categories"></nav>
+  <div id="thumbItemsPanel" class="thumb-items-panel" hidden>
+    <div class="ti-title">装飾アイテム</div>
+    <div class="ti-empty" id="thumbItemsEmpty">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.4">
+        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+        <path d="M17.5 14v7M14 17.5h7"/>
+      </svg>
+      <p>登録した装飾アイテムが<br>ここに並びます</p>
+      <label for="thumbItemFile" class="ti-add-btn">アイテムを追加</label>
+      <input type="file" id="thumbItemFile" accept="image/*,.gif" hidden>
+    </div>
+    <div class="ti-list" id="thumbItemsList"></div>
+  </div>
 </aside>
 
 <main>
@@ -2961,6 +3023,10 @@ canvas.rm-active { cursor: crosshair; }
           </div>
           <button type="button" class="shrink-pos-reset" id="shrinkPosReset" title="中央に戻す">⊕</button>
         </div>
+        <div class="sp-action-row">
+          <button type="button" class="sp-cancel-btn" id="shrinkBgCancel">やめる</button>
+          <button type="button" class="sp-confirm-btn" id="shrinkBgConfirm">決定</button>
+        </div>
       </div>
       <!-- 画像変形モード -->
       <div class="sp-deform-mode" id="shrinkDeformMode" style="display:none">
@@ -2968,7 +3034,11 @@ canvas.rm-active { cursor: crosshair; }
         <div class="sp-deform-hint">枠の左上■を掴んで伸縮、本体ドラッグで移動</div>
         <div class="sp-deform-row">
           <button type="button" class="sp-auto-btn" id="deformAutoBtn">自動</button>
-          <button type="button" class="sp-edit-btn" id="deformEditBtn">戻る</button>
+          <button type="button" class="sp-edit-btn" id="deformEditBtn">リセット</button>
+        </div>
+        <div class="sp-action-row">
+          <button type="button" class="sp-cancel-btn" id="deformCancel">やめる</button>
+          <button type="button" class="sp-confirm-btn" id="deformConfirm">決定</button>
         </div>
       </div>
     </div>
@@ -3110,6 +3180,9 @@ canvas.rm-active { cursor: crosshair; }
     <label for="file" class="btn btn-accent btn-loadkun" id="loadKun">
       <span class="lk-main">読み込み君</span>
     </label>
+    <button id="thumbKun" class="btn btn-thumbkun" type="button" title="部屋サムネくん (自由加工モード)">
+      <span class="lk-main">部屋サムネくん</span>
+    </button>
     <button id="roomMatch" class="btn btn-accent" hidden style="display:none !important;">加工くん</button>
     <button id="save" class="btn" disabled>保存</button>
     <div class="splits" id="splitsContainer">
@@ -3418,21 +3491,6 @@ canvas.rm-active { cursor: crosshair; }
         <div class="num">9</div>
         <div class="illust">
           <svg viewBox="0 0 110 56" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="8" y="12" width="46" height="32" rx="2"/>
-            <path d="M14 18h20M14 24h28M14 30h22M14 36h26" opacity="0.5"/>
-            <circle cx="48" cy="16" r="3" fill="#d669a0" stroke="none"/>
-            <text x="48" y="17" font-size="3" stroke="none" fill="white" text-anchor="middle">★</text>
-            <path d="M58 28h12M64 24l4 4-4 4"/>
-            <rect x="74" y="12" width="30" height="32" rx="2"/>
-            <path d="M80 18l3 3 5-5M80 26l3 3 5-5M80 34l3 3 5-5"/>
-          </svg>
-        </div>
-        <div class="txt"><b>ピン留め</b><br>よく使うものを上に固定</div>
-      </div>
-      <div class="guide-step">
-        <div class="num">10</div>
-        <div class="illust">
-          <svg viewBox="0 0 110 56" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
             <rect x="8" y="14" width="42" height="28" rx="2"/>
             <path d="M14 22h30M14 28h22M14 34h26" opacity="0.5"/>
             <path d="M56 28h10M62 24l4 4-4 4"/>
@@ -3464,41 +3522,11 @@ canvas.rm-active { cursor: crosshair; }
 </div>
 
 <div id="guideOverlay" class="guide-overlay" role="dialog" aria-modal="true">
-  <div class="guide-card">
+  <div class="guide-card" style="max-width:340px">
     <button id="guideClose" class="guide-close" aria-label="閉じる">×</button>
-    <h3>GIFの再生がずれる対処法</h3>
-    <div class="guide-intro">
-      お部屋を公開した際、分割したGIFが <b>ぴったり同じタイミングで再生されます</b>。<br>
-      コツは「すべて同時に読み込む」だけ。
-    </div>
-    <div class="guide-step">
-      <div class="num">1</div>
-      <div class="illust">
-        <svg viewBox="0 0 110 56" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="8" y="10" width="20" height="36" rx="1.5"/>
-          <rect x="34" y="10" width="20" height="36" rx="1.5"/>
-          <rect x="60" y="10" width="20" height="36" rx="1.5"/>
-          <rect x="86" y="10" width="20" height="36" rx="1.5"/>
-          <circle cx="18" cy="28" r="3"/>
-          <circle cx="44" cy="28" r="3"/>
-          <circle cx="70" cy="28" r="3"/>
-          <circle cx="96" cy="28" r="3"/>
-        </svg>
-      </div>
-      <div class="txt">分割したGIFを<b>すべて並べて配置</b></div>
-    </div>
-    <div class="guide-step">
-      <div class="num">2</div>
-      <div class="illust">
-        <svg viewBox="0 0 110 56" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="8" y="10" width="20" height="36" rx="1.5" stroke-width="2.4"/>
-          <rect x="34" y="10" width="20" height="36" rx="1.5" stroke-width="2.4"/>
-          <rect x="60" y="10" width="20" height="36" rx="1.5" stroke-width="2.4"/>
-          <rect x="86" y="10" width="20" height="36" rx="1.5" stroke-width="2.4"/>
-          <path d="M18 28l2 2 4-4M44 28l2 2 4-4M70 28l2 2 4-4M96 28l2 2 4-4"/>
-        </svg>
-      </div>
-      <div class="txt"><b>同時に一気に</b>読み込めば<br>ぴったりループします</div>
+    <h3>お部屋で同時に再生するコツ</h3>
+    <div class="guide-intro" style="margin-bottom:0">
+      分割GIFは<b>すべて同時に読み込む</b>とぴったり揃って再生されます。
     </div>
   </div>
 </div>
@@ -4384,6 +4412,7 @@ Object.defineProperty(__gifSandbox, 'onmessage', {
 
 /* Synchronous bridge: encode one frame using the sandboxed worker code */
 function __encEncoderYield() {
+  if (typeof document !== 'undefined' && document.hidden) return Promise.resolve();
   return new Promise(resolve => {
     if (!__encEncoderYield._ch) __encEncoderYield._ch = new MessageChannel();
     __encEncoderYield._ch.port1.onmessage = () => resolve();
@@ -4872,10 +4901,14 @@ const welcomeMoreBtn = document.getElementById('welcomeMoreBtn');
 const welcomeMore = document.getElementById('welcomeMore');
 if (welcomeMoreBtn) {
   welcomeMoreBtn.addEventListener('click', () => {
-    welcomeMore.hidden = false;
-    welcomeMoreBtn.classList.add('hidden');
-    // 開いた直後にスムーズスクロール
-    setTimeout(() => welcomeMore.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+    if (welcomeMore.hidden) {
+      welcomeMore.hidden = false;
+      welcomeMoreBtn.textContent = '閉じる';
+      setTimeout(() => welcomeMore.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+    } else {
+      welcomeMore.hidden = true;
+      welcomeMoreBtn.textContent = 'もっと見る';
+    }
   });
 }
 const shareOverlay = document.getElementById('shareOverlay');
@@ -5341,6 +5374,84 @@ fileInput.addEventListener('change', e => {
   });
   e.target.value = '';  // allow re-selection of same file
 });
+
+/* ===== 部屋サムネくん モード (自由加工: アイテム比なし) ===== */
+state.thumbMode = false;
+state.thumbItems = [];  // 登録された装飾アイテム {url, name}
+const thumbKunBtn = document.getElementById('thumbKun');
+const thumbItemsPanel = document.getElementById('thumbItemsPanel');
+const thumbItemFile = document.getElementById('thumbItemFile');
+const thumbItemsList = document.getElementById('thumbItemsList');
+const thumbItemsEmpty = document.getElementById('thumbItemsEmpty');
+
+function renderThumbItems() {
+  if (!thumbItemsList) return;
+  thumbItemsList.innerHTML = '';
+  if (state.thumbItems.length === 0) {
+    if (thumbItemsEmpty) thumbItemsEmpty.style.display = '';
+    return;
+  }
+  if (thumbItemsEmpty) thumbItemsEmpty.style.display = 'none';
+  state.thumbItems.forEach((it) => {
+    const d = document.createElement('div');
+    d.className = 'ti-thumb';
+    const img = document.createElement('img');
+    img.src = it.url;
+    d.appendChild(img);
+    d.title = it.name + ' (タップでレイヤー追加)';
+    d.addEventListener('click', () => {
+      // アイテムをレイヤーとして追加
+      fetch(it.url).then(r => r.blob()).then(b => {
+        const file = new File([b], it.name, { type: b.type || 'image/png' });
+        if (!state.loaded) {
+          loadAnyFile(file);
+        } else {
+          loadAsNewLayer(file);
+        }
+      });
+    });
+    thumbItemsList.appendChild(d);
+  });
+}
+
+if (thumbItemFile) {
+  thumbItemFile.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (f) {
+      const url = URL.createObjectURL(f);
+      state.thumbItems.push({ url, name: f.name });
+      renderThumbItems();
+    }
+    e.target.value = '';
+  });
+}
+
+const thumbKunBtnEl = thumbKunBtn;
+if (thumbKunBtnEl) {
+  thumbKunBtnEl.addEventListener('click', () => {
+    state.thumbMode = !state.thumbMode;
+    document.body.classList.toggle('thumb-mode', state.thumbMode);
+    thumbKunBtnEl.classList.toggle('active', state.thumbMode);
+    if (thumbItemsPanel) thumbItemsPanel.hidden = !state.thumbMode;
+    if (state.thumbMode) {
+      // アイテム比の制約を外す (自由なキャンバス)
+      state.ratio = null;
+      state.splitW = 1; state.splitH = 1;
+      state.pattern = false;
+      if (typeof dismissSidebarAttention === 'function') dismissSidebarAttention();
+      renderThumbItems();
+      if (typeof recomputeLayout === 'function') recomputeLayout();
+      if (typeof recalculateFrame === 'function') recalculateFrame();
+      if (typeof updateSaveBtn === 'function') updateSaveBtn();
+      draw();
+      showToast('部屋サムネくん: 自由加工モード');
+    } else {
+      showToast('通常モードに戻りました');
+      if (typeof updateSaveBtn === 'function') updateSaveBtn();
+      draw();
+    }
+  });
+}
 
 /* ===== レイヤー機能 (統合機能 v1) =====
  * state.layers[]   各レイヤー: {frames, name, offsetX, offsetY, scaleX, scaleY, visible, currentFrame, naturalW, naturalH}
@@ -6254,7 +6365,14 @@ function recalculateFrame() {
     state.frameH = r.h;
     return;
   }
-  if (!state.ratio) return;
+  if (!state.ratio) {
+    // 部屋サムネくん: アイテム比なし → 枠 = キャンバス全体
+    if (state.thumbMode) {
+      state.frameX = 0; state.frameY = 0;
+      state.frameW = state.canvasW; state.frameH = state.canvasH;
+    }
+    return;
+  }
   const t = getEffectiveRatio();
   let fw = state.canvasW, fh = fw / t;
   if (fh > state.canvasH) { fh = state.canvasH; fw = fh * t; }
@@ -6682,9 +6800,15 @@ function updateDimLine() {
 }
 function updateEmpty() { emptyMsg.classList.toggle('hidden', state.loaded); }
 function updateSaveBtn() {
-  const enabled = state.loaded && state.ratio;
+  const enabled = state.loaded && (state.ratio || state.thumbMode);
   saveBtn.disabled = !enabled;
   if (!enabled) { saveBtn.innerHTML = '保存'; return; }
+  // 部屋サムネくん: アイテム比なしで全体を1枚保存
+  if (state.thumbMode) {
+    const fmt = state.fileType === 'gif' ? 'gif' : 'png';
+    saveBtn.innerHTML = `保存<span class="fmt">${fmt}</span>`;
+    return;
+  }
   const total = state.splitW * state.splitH;
   let fmt;
   if (state.pattern) {
@@ -7235,6 +7359,42 @@ if (shrinkChooserCloseBtn) {
     closeShrinkPanel();
   });
 }
+
+/* 背景拡張・画像変形を実フレームに焼き込んで確定 */
+function bakeShrinkOrDeform() {
+  const targetBg = state.shrink > 0 && state.shrinkSubMode === 'bg';
+  const targetDeform = state.deformActive;
+  if (!targetBg && !targetDeform) return;
+  // 焼き込み対象: レイヤー対応 (レイヤー0/単一画像のみ。getEffectFrame は state.frames を見る)
+  const baked = state.frames.map((fr, i) => ({ canvas: getEffectFrame(i), delay: fr.delay }));
+  state.frames = baked;
+  if (state.layers.length >= 1 && state.layers[0]) {
+    state.layers[0].frames = baked.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+  }
+  // エフェクト状態をクリア (焼き込み済み)
+  state.shrink = 0;
+  state.shrinkSubMode = null;
+  state.deformActive = false;
+  state.deformOffsetX = 0; state.deformOffsetY = 0;
+  state.deformScaleX = 1; state.deformScaleY = 1;
+  state.shrinkOffsetX = 0; state.shrinkOffsetY = 0;
+  state.eyedropperActive = false;
+  canvas.classList.remove('deform-active', 'eyedropper-active');
+  shrinkPickBtn.classList.remove('active');
+  updateShrinkGauge();
+  updateShrinkPanelView();
+  updateFileSize();
+  draw();
+}
+const shrinkBgConfirmBtn = document.getElementById('shrinkBgConfirm');
+const shrinkBgCancelBtn = document.getElementById('shrinkBgCancel');
+const deformConfirmBtn = document.getElementById('deformConfirm');
+const deformCancelBtn = document.getElementById('deformCancel');
+if (shrinkBgConfirmBtn) shrinkBgConfirmBtn.addEventListener('click', () => { bakeShrinkOrDeform(); showToast('背景拡張を確定しました'); });
+if (shrinkBgCancelBtn) shrinkBgCancelBtn.addEventListener('click', () => { closeShrinkPanel(); });
+if (deformConfirmBtn) deformConfirmBtn.addEventListener('click', () => { bakeShrinkOrDeform(); showToast('画像変形を確定しました'); });
+if (deformCancelBtn) deformCancelBtn.addEventListener('click', () => { closeShrinkPanel(); });
+
 /* 外側タップでも閉じる: パネル外のクリックを監視 */
 document.addEventListener('pointerdown', e => {
   if (state.shrink === 0 && !state.deformActive) return;  // パネルが開いていないなら無視
@@ -9223,9 +9383,12 @@ function download(blob, filename) {
   }
 }
 
-/* バックグラウンドタブでも throttle されない yield (setTimeout は背面で 1秒に制限される) */
+/* バックグラウンドタブでも throttle されない yield。
+   背面 (document.hidden) では microtask だけで即継続 → タイマー throttle を完全回避し全速で進む。
+   前面では MessageChannel で UI に制御を返す。 */
 let _yieldChannel = null;
 function fastYield() {
+  if (document.hidden) return Promise.resolve();
   return new Promise(resolve => {
     if (!_yieldChannel) _yieldChannel = new MessageChannel();
     _yieldChannel.port1.onmessage = () => resolve();

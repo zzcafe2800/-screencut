@@ -5176,6 +5176,11 @@ function ensureFirstLayer() {
     rotation: state.rotation,
     flipH: state.flipH,
     flipV: state.flipV,
+    simplify: state.simplify || 0,
+    simpLevels: state.simpLevels || 0,
+    simpSmooth: state.simpSmooth || 0,
+    simpEdge: state.simpEdge || 0,
+    _simpCache: null,
   });
   state.selectedLayers = new Set([0]);
 }
@@ -5233,6 +5238,11 @@ async function loadAsNewLayer(file) {
     rotation: 0,
     flipH: false,
     flipV: false,
+    simplify: 0,
+    simpLevels: 0,
+    simpSmooth: 0,
+    simpEdge: 0,
+    _simpCache: null,
   });
   state.selectedLayers = new Set([state.layers.length - 1]);
   renderLayerPanel();
@@ -5495,6 +5505,7 @@ function renderLayerPanel() {
       }
       renderLayerPanel();
       updateBrightnessGauge();
+      updateSimplifyGauge();
       draw();
     });
     layerList.appendChild(row);
@@ -5632,6 +5643,7 @@ canvas.addEventListener('pointerdown', e => {
       state.selectedLayers = new Set();
       renderLayerPanel();
       updateBrightnessGauge();
+      updateSimplifyGauge();
       draw();
     }
     return;
@@ -5644,6 +5656,7 @@ canvas.addEventListener('pointerdown', e => {
     state.selectedLayers = new Set([hit.idx]);
     renderLayerPanel();
     updateBrightnessGauge();
+    updateSimplifyGauge();
   }
   state._layerDrag = {
     idx: hit.idx,
@@ -6083,8 +6096,10 @@ function draw() {
     for (let i = 1; i < state.layers.length; i++) {
       const L = state.layers[i];
       if (!L.visible) continue;
-      const fr = L.frames[L.currentFrame % L.frames.length];
-      if (!fr) continue;
+      const lfi = L.currentFrame % L.frames.length;
+      // 単純化を適用 (per-layer)
+      const srcCanvas = L.simplify > 0 ? getLayerSimplifiedFrame(L, lfi) : L.frames[lfi].canvas;
+      if (!srcCanvas) continue;
       const baseScale = state.canvasW / state.naturalW;
       const drawW = L.naturalW * L.scaleX * baseScale;
       const drawH = L.naturalH * L.scaleY * baseScale;
@@ -6101,7 +6116,7 @@ function draw() {
       const isLR90 = L.rotation === 90 || L.rotation === 270;
       const dw = isLR90 ? drawH : drawW;
       const dh = isLR90 ? drawW : drawH;
-      ctx.drawImage(fr.canvas, -dw / 2, -dh / 2, dw, dh);
+      ctx.drawImage(srcCanvas, -dw / 2, -dh / 2, dw, dh);
       ctx.restore();
       // 選択中のレイヤーは枠を表示 (複数選択時は統合バウンディングボックスを使うので個別枠は描画しない)
       const multiActive = state.selectedLayers.size >= 2 &&
@@ -6512,18 +6527,32 @@ const SIMPLIFY_PRESETS = [
   [3,  5, 0.2],          // 5 = 強い
 ];
 function updateSimplifyGauge() {
-  const fill = (state.simplify / SIMPLIFY_MAX) * 360;
+  // 選択中レイヤーがあればその値、なければ state
+  let simplify = state.simplify;
+  let simpLevels = state.simpLevels;
+  let simpSmooth = state.simpSmooth;
+  let simpEdge = state.simpEdge;
+  if (state.layers.length >= 2) {
+    const primary = getPrimarySelectedLayer();
+    if (primary) {
+      simplify = primary.simplify;
+      simpLevels = primary.simpLevels;
+      simpSmooth = primary.simpSmooth;
+      simpEdge = primary.simpEdge;
+    }
+  }
+  const fill = (simplify / SIMPLIFY_MAX) * 360;
   simplifyBtn.style.setProperty('--fill', fill + 'deg');
-  if (state.simplify > 0) {
-    sLevelEl.textContent = state.simplify;
+  if (simplify > 0) {
+    sLevelEl.textContent = simplify;
     sLevelEl.classList.add('shown');
     simplifyPanel.classList.add('shown');
-    spLevels.value = state.simpLevels;
-    spSmooth.value = state.simpSmooth;
-    spEdge.value = state.simpEdge;
-    spLevelsVal.textContent = state.simpLevels;
-    spSmoothVal.textContent = state.simpSmooth;
-    spEdgeVal.textContent = state.simpEdge;
+    spLevels.value = simpLevels;
+    spSmooth.value = simpSmooth;
+    spEdge.value = simpEdge;
+    spLevelsVal.textContent = simpLevels;
+    spSmoothVal.textContent = simpSmooth;
+    spEdgeVal.textContent = simpEdge;
   } else {
     sLevelEl.classList.remove('shown');
     simplifyPanel.classList.remove('shown');
@@ -6550,20 +6579,31 @@ simplifyBtn.addEventListener('click', () => {
     ch.hidden = true;
   }
 });
-/* 単純化を選択 → 従来の単純化レベル循環 */
+/* 単純化を選択 → 従来の単純化レベル循環 (選択レイヤー対象) */
 document.getElementById('ecSimplify').addEventListener('click', () => {
   document.getElementById('effectChooser').hidden = true;
-  if (state.layers.length >= 2 && state.selectedLayers.size > 0 && !state.selectedLayers.has(0)) {
-    queueToast('単純化はベース画像にのみ適用されます', 2200);
+  // 単純化を選択レイヤーに適用 (なければ state)
+  applyToSelectedOrState((tgt, isLegacy) => {
+    tgt.simplify = (tgt.simplify + 1) % (SIMPLIFY_MAX + 1);
+    if (tgt.simplify > 0) {
+      const preset = SIMPLIFY_PRESETS[tgt.simplify];
+      tgt.simpLevels = preset[0];
+      tgt.simpSmooth = preset[1];
+      tgt.simpEdge = preset[2];
+    }
+    // キャッシュ無効化
+    if (isLegacy) state._simpCache = null;
+    else tgt._simpCache = null;
+  });
+  // レイヤー0が対象なら state.* も同期
+  if (state.layers[0] && (state.selectedLayers.size === 0 || state.selectedLayers.has(0))) {
+    const L0 = state.layers[0];
+    state.simplify = L0.simplify;
+    state.simpLevels = L0.simpLevels;
+    state.simpSmooth = L0.simpSmooth;
+    state.simpEdge = L0.simpEdge;
+    state._simpCache = null;
   }
-  state.simplify = (state.simplify + 1) % (SIMPLIFY_MAX + 1);
-  if (state.simplify > 0) {
-    const preset = SIMPLIFY_PRESETS[state.simplify];
-    state.simpLevels = preset[0];
-    state.simpSmooth = preset[1];
-    state.simpEdge = preset[2];
-  }
-  invalidateSimplifyCache();
   updateSimplifyGauge();
   draw();
 });
@@ -6581,6 +6621,18 @@ document.getElementById('ecColorAdjust').addEventListener('click', () => {
     spSmoothVal.textContent = state.simpSmooth;
     spEdgeVal.textContent = state.simpEdge;
     invalidateSimplifyCache();
+    // 選択レイヤーにも反映
+    if (state.layers.length >= 2) {
+      const targets = state.selectedLayers.size > 0 ? [...state.selectedLayers] : [0];
+      for (const idx of targets) {
+        const L = state.layers[idx];
+        if (!L) continue;
+        L.simpLevels = state.simpLevels;
+        L.simpSmooth = state.simpSmooth;
+        L.simpEdge = state.simpEdge;
+        L._simpCache = null;
+      }
+    }
     draw();
   });
 });
@@ -6636,6 +6688,22 @@ function getSimplifiedFrame(idx) {
   if (state._simpCache.has(idx)) return state._simpCache.get(idx);
   const result = applySimplifyToCanvas(state.frames[idx].canvas);
   state._simpCache.set(idx, result);
+  return result;
+}
+
+/* レイヤー個別の simplified frame (state.* を一時swap して既存ロジックを再利用) */
+function getLayerSimplifiedFrame(L, idx) {
+  if (!L || L.simplify === 0) return L.frames[idx].canvas;
+  if (!L._simpCache) L._simpCache = new Map();
+  if (L._simpCache.has(idx)) return L._simpCache.get(idx);
+  // state.* を一時 swap して applySimplifyToCanvas を再利用
+  const sl = state.simpLevels, ss = state.simpSmooth, se = state.simpEdge;
+  state.simpLevels = L.simpLevels;
+  state.simpSmooth = L.simpSmooth;
+  state.simpEdge = L.simpEdge;
+  const result = applySimplifyToCanvas(L.frames[idx].canvas);
+  state.simpLevels = sl; state.simpSmooth = ss; state.simpEdge = se;
+  L._simpCache.set(idx, result);
   return result;
 }
 
@@ -8769,20 +8837,29 @@ async function save() {
   let savedFlipH = null;
   let savedFlipV = null;
   let savedBrightness = null;
+  let savedSimplify = null;
+  let savedShrink = null;
+  let savedDeformActive = null;
   if (state.layers.length >= 2) {
     saveBtn.innerHTML = 'レイヤー合成中…';
     await new Promise(r => setTimeout(r, 0));
     savedFrames = state.frames;
     state.frames = compositeAllLayers();
-    // 合成済みは全 transform がベイク済みなので、save の transformFrameToCanvas を実質 no-op に
+    // 合成済みは全 transform / 全 effect がベイク済みなので、後段の重複適用を防ぐ
     savedRot = state.rotation;
     savedFlipH = state.flipH;
     savedFlipV = state.flipV;
     savedBrightness = state.brightness;
+    savedSimplify = state.simplify;
+    savedShrink = state.shrink;
+    savedDeformActive = state.deformActive;
     state.rotation = 0;
     state.flipH = false;
     state.flipV = false;
     state.brightness = 0;
+    state.simplify = 0;
+    state.shrink = 0;
+    state.deformActive = false;
   }
 
   try {
@@ -8945,6 +9022,9 @@ async function save() {
       if (savedFlipH !== null) state.flipH = savedFlipH;
       if (savedFlipV !== null) state.flipV = savedFlipV;
       if (savedBrightness !== null) state.brightness = savedBrightness;
+      if (savedSimplify !== null) state.simplify = savedSimplify;
+      if (savedShrink !== null) state.shrink = savedShrink;
+      if (savedDeformActive !== null) state.deformActive = savedDeformActive;
     }
     saveBtn.innerHTML = orig;
     updateSaveBtn();
@@ -8964,6 +9044,12 @@ function compositeAllLayers() {
   const H = state.canvasH;
   const naturalW = state.naturalW;
   const naturalH = state.naturalH;
+  // レイヤー0 の effect-applied frames を事前計算 (simplify/shrink/deform を一括適用)
+  const baseEffectsActive = state.simplify > 0 || (state.shrink > 0 && state.shrinkSubMode === 'bg') || state.deformActive;
+  const layer0Source = [];
+  for (let fi = 0; fi < baseFrames.length; fi++) {
+    layer0Source.push(baseEffectsActive ? getEffectFrame(fi) : baseFrames[fi].canvas);
+  }
   const out = [];
   for (let fi = 0; fi < baseFrames.length; fi++) {
     const c = document.createElement('canvas');
@@ -8981,7 +9067,8 @@ function compositeAllLayers() {
       const fr = L.frames[lfi];
       if (!fr) continue;
       if (li === 0) {
-        // ベース: canvas全体に rotation/flip/brightness をベイク
+        // ベース: 事前計算した effect-applied canvas を rotation/flip/brightness と一緒にベイク
+        const srcCanvas = layer0Source[fi];
         cctx.save();
         if (L.brightness > 0) cctx.filter = `brightness(${getBrightnessFactor(L.brightness)})`;
         cctx.translate(W / 2, H / 2);
@@ -8990,10 +9077,11 @@ function compositeAllLayers() {
         const isLR90 = L.rotation === 90 || L.rotation === 270;
         const dw = isLR90 ? H : W;
         const dh = isLR90 ? W : H;
-        cctx.drawImage(fr.canvas, -dw / 2, -dh / 2, dw, dh);
+        cctx.drawImage(srcCanvas, -dw / 2, -dh / 2, dw, dh);
         cctx.restore();
       } else {
         // 追加レイヤー: 表示時と同じ canvas-pixel オフセット/スケール
+        const srcCanvas = L.simplify > 0 ? getLayerSimplifiedFrame(L, lfi) : fr.canvas;
         const baseScale = state.canvasW / naturalW;
         const drawW = L.naturalW * L.scaleX * baseScale;
         const drawH = L.naturalH * L.scaleY * baseScale;
@@ -9007,7 +9095,7 @@ function compositeAllLayers() {
         const isLR90 = L.rotation === 90 || L.rotation === 270;
         const dw = isLR90 ? drawH : drawW;
         const dh = isLR90 ? drawW : drawH;
-        cctx.drawImage(fr.canvas, -dw / 2, -dh / 2, dw, dh);
+        cctx.drawImage(srcCanvas, -dw / 2, -dh / 2, dw, dh);
         cctx.restore();
       }
     }

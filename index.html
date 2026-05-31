@@ -467,6 +467,73 @@ header.info {
   margin-bottom: 6px;
 }
 .simplify-panel .sp-row { display: flex; flex-direction: column; gap: 2px; margin-bottom: 6px; }
+.sp-action-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+.pattern-save-mode {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+.psm-btn {
+  flex: 1;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 5px 0;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--fg-muted);
+}
+.psm-btn.active {
+  background: #e47f39;
+  color: #fff;
+  border-color: #e47f39;
+}
+/* 色加工中レイヤー変更不可 吹き出し */
+.layer-lock-bubble {
+  position: fixed;
+  transform: translate(-50%, -100%);
+  background: #333;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+.layer-lock-bubble.shown { opacity: 1; }
+.layer-lock-bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: -5px;
+  transform: translateX(-50%);
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid #333;
+}
+.sp-cancel-btn, .sp-confirm-btn {
+  flex: 1;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 0;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.sp-cancel-btn { background: #f0f0f0; color: var(--fg-muted); }
+.sp-cancel-btn:hover { background: #e4e4e4; }
+.sp-confirm-btn { background: var(--accent); color: #fff; }
+.sp-confirm-btn:hover { background: #4a8aa3; }
 .simplify-panel label {
   display: flex; justify-content: space-between;
   color: var(--fg); font-weight: 500;
@@ -1619,6 +1686,19 @@ footer.controls {
   color: #fff;
   border-color: var(--accent);
 }
+.split-reset {
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--fg-faint);
+  padding: 0;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.split-reset:hover { color: var(--accent); border-color: var(--accent); }
 
 /* パターン切替トグル: 分割=青、パターン=オレンジ */
 .pattern-toggle {
@@ -2727,6 +2807,10 @@ canvas.rm-active { cursor: crosshair; }
         <div class="spp-title">保存プレビュー</div>
         <canvas id="patternPreviewCanvas"></canvas>
         <div class="spp-dim" id="patternPreviewDim"></div>
+        <div class="pattern-save-mode">
+          <button type="button" class="psm-btn active" id="psmWhole" data-mode="whole">全体</button>
+          <button type="button" class="psm-btn" id="psmSingle" data-mode="single">一か所</button>
+        </div>
       </div>
     </div>
 
@@ -2809,6 +2893,10 @@ canvas.rm-active { cursor: crosshair; }
       <div class="sp-row">
         <label>輪郭 <span id="spEdgeVal">0.3</span></label>
         <input type="range" id="spEdge" min="0" max="1" step="0.05" value="0.3">
+      </div>
+      <div class="sp-action-row">
+        <button type="button" class="sp-cancel-btn" id="simpCancelBtn">やめる</button>
+        <button type="button" class="sp-confirm-btn" id="simpConfirmBtn">決定</button>
       </div>
     </div>
     <div class="shrink-panel" id="shrinkPanel">
@@ -3026,6 +3114,11 @@ canvas.rm-active { cursor: crosshair; }
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2"/>
           <path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+      </button>
+      <button class="split-reset" id="splitReset" type="button" title="1×1 に戻す">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="4" width="16" height="16" rx="2"/>
         </svg>
       </button>
     </div>
@@ -5561,7 +5654,12 @@ function renderLayerPanel() {
       row.appendChild(ph);
     }
     // クリックで選択トグル
-    row.addEventListener('click', () => {
+    row.addEventListener('click', (ev) => {
+      // 色加工中はレイヤー変更不可 → 吹き出し
+      if (rmState && rmState.active) {
+        showLayerLockBubble(row);
+        return;
+      }
       if (state.selectedLayers.has(i)) {
         if (state.selectedLayers.size > 1) state.selectedLayers.delete(i);
         else state.selectedLayers.delete(i);  // 単独なら解除可
@@ -5578,6 +5676,24 @@ function renderLayerPanel() {
   // 背景モードハイライト
   lpBgTransparent.classList.toggle('active', state.bgMode === 'transparent');
   lpBgWhite.classList.toggle('active', state.bgMode === 'white');
+}
+
+/* 色加工中のレイヤー変更不可 吹き出し */
+function showLayerLockBubble(anchorEl) {
+  let b = document.getElementById('layerLockBubble');
+  if (!b) {
+    b = document.createElement('div');
+    b.id = 'layerLockBubble';
+    b.className = 'layer-lock-bubble';
+    b.textContent = '色加工中は変更不可';
+    document.body.appendChild(b);
+  }
+  const r = anchorEl.getBoundingClientRect();
+  b.style.left = (r.left + r.width / 2) + 'px';
+  b.style.top = (r.top - 8) + 'px';
+  b.classList.add('shown');
+  clearTimeout(b._t);
+  b._t = setTimeout(() => b.classList.remove('shown'), 1600);
 }
 
 layerPanelToggle.addEventListener('click', () => {
@@ -6124,11 +6240,7 @@ function draw() {
   const frame = state.frames[state.currentFrame];
   if (!frame) return;
 
-  // 色加工モード中、対象がベースでない場合はベース描画もスキップ (非選択は非表示)
-  const skipBase = rmState && rmState.active && rmState.targetLayerIdx !== null && rmState.targetLayerIdx !== 0;
-  if (skipBase) {
-    // ベース描画をスキップして、レイヤー処理へ進む
-  } else {  // Draw current source frame with rotation/flip/brightness/quality/simplify/shrink applied
+  {  // Draw current source frame with rotation/flip/brightness/quality/simplify/shrink applied
   const sourceCanvas = (state.simplify > 0 || (state.shrink > 0 && state.shrinkSubMode === "bg") || state.deformActive) ? getEffectFrame(state.currentFrame) : frame.canvas;
   ctx.save();
   if (state.brightness > 0) {
@@ -6159,15 +6271,13 @@ function draw() {
     ctx.drawImage(sourceCanvas, -drawW / 2, -drawH / 2, drawW, drawH);
   }
   ctx.restore();
-  }  // skipBase else end
+  }  // base draw block end
 
   // 追加レイヤー(layers[1..]) を本体画像の上に合成 (各レイヤー独自の効果を適用)
   if (state.layers.length >= 2) {
     for (let i = 1; i < state.layers.length; i++) {
       const L = state.layers[i];
       if (!L.visible) continue;
-      // 色加工モード中は対象レイヤーのみ表示 (他は非表示で効果から除外)
-      if (rmState && rmState.active && rmState.targetLayerIdx !== null && rmState.targetLayerIdx !== i) continue;
       const lfi = L.currentFrame % L.frames.length;
       // 単純化を適用 (per-layer)
       const srcCanvas = L.simplify > 0 ? getLayerSimplifiedFrame(L, lfi) : L.frames[lfi].canvas;
@@ -6732,7 +6842,50 @@ document.getElementById('ecColorAdjust').addEventListener('click', () => {
   });
 });
 
-/* Posterize + smoothing で Cutout 風処理 */
+/* 単純化パネル: やめる (オフに戻す) */
+document.getElementById('simpCancelBtn').addEventListener('click', () => {
+  applyToSelectedOrState((tgt, isLegacy) => {
+    tgt.simplify = 0;
+    if (isLegacy) state._simpCache = null;
+    else tgt._simpCache = null;
+  });
+  if (state.layers[0] && (state.selectedLayers.size === 0 || state.selectedLayers.has(0))) {
+    state.simplify = 0;
+    state._simpCache = null;
+  }
+  updateSimplifyGauge();
+  draw();
+  showToast('単純化をやめました');
+});
+/* 単純化パネル: 決定 (単純化をフレームに焼き込んで確定) */
+document.getElementById('simpConfirmBtn').addEventListener('click', () => {
+  if (state.layers.length >= 2) {
+    const targets = state.selectedLayers.size > 0 ? [...state.selectedLayers] : [0];
+    for (const idx of targets) {
+      const L = state.layers[idx];
+      if (!L || L.simplify === 0) continue;
+      // 焼き込み
+      L.frames = L.frames.map((fr, fi) => ({ canvas: getLayerSimplifiedFrame(L, fi), delay: fr.delay }));
+      L.simplify = 0;
+      L._simpCache = null;
+      if (idx === 0) {
+        state.frames = L.frames.map(fr => ({ canvas: fr.canvas, delay: fr.delay }));
+        state.simplify = 0;
+        state._simpCache = null;
+      }
+    }
+  } else if (state.simplify > 0) {
+    // 単一画像モード: state.frames に焼き込み
+    state.frames = state.frames.map((fr, fi) => ({ canvas: getSimplifiedFrame(fi), delay: fr.delay }));
+    state.simplify = 0;
+    state._simpCache = null;
+  }
+  simplifyPanel.classList.remove('shown');
+  updateSimplifyGauge();
+  updateFileSize();
+  draw();
+  showToast('単純化を確定しました');
+});
 function applySimplifyToCanvas(srcCanvas) {
   const W = srcCanvas.width, H = srcCanvas.height;
   // Step1: ぼかし (smooth)
@@ -8549,6 +8702,7 @@ const patternToggleBtn = document.getElementById('patternToggle');
 const manualRangeToggleBtn = document.getElementById('manualRangeToggle');
 state.splitLock = false;
 state.pattern = false;
+state.patternSaveMode = 'whole';  // 'whole'=全体, 'single'=一か所(1タイル)
 state.manualRange = false;
 state.manualRect = null;        // {x,y,w,h} in canvas coords (when manualRange is ON)
 state._manualDrag = null;       // long-press drag state for defining the rect
@@ -8570,8 +8724,37 @@ splitLockBtn.addEventListener('click', () => {
   }
 });
 
-/* パターン切替トグル: 分割 ↔ パターン */
-/* パターン保存プレビューのレンダリング */
+const splitResetBtn = document.getElementById('splitReset');
+splitResetBtn.addEventListener('click', () => {
+  state.splitW = 1;
+  state.splitH = 1;
+  splitWNum.textContent = 1;
+  splitHNum.textContent = 1;
+  recalculateFrame();
+  draw();
+  updateDimLine();
+  updateSaveBtn();
+  if (state.pattern) updatePatternInfo();
+  showToast('1×1 に戻しました');
+});
+
+// パターン保存モード (全体 / 一か所)
+const psmWhole = document.getElementById('psmWhole');
+const psmSingle = document.getElementById('psmSingle');
+if (psmWhole && psmSingle) {
+  psmWhole.addEventListener('click', () => {
+    state.patternSaveMode = 'whole';
+    psmWhole.classList.add('active');
+    psmSingle.classList.remove('active');
+    renderPatternSavePreview();
+  });
+  psmSingle.addEventListener('click', () => {
+    state.patternSaveMode = 'single';
+    psmSingle.classList.add('active');
+    psmWhole.classList.remove('active');
+    renderPatternSavePreview();
+  });
+}
 const patternPreviewPane = document.getElementById('patternPreviewPane');
 const patternPreviewToggle = document.getElementById('patternPreviewToggle');
 const patternPreviewCanvas = document.getElementById('patternPreviewCanvas');
@@ -9004,11 +9187,12 @@ async function save() {
     }));
 
     // 変換後の自然サイズ→キャンバス比率
-    const isRot90 = state.rotation === 90 || state.rotation === 270;
-    const effW = isRot90 ? state.naturalH : state.naturalW;
-    const effH = isRot90 ? state.naturalW : state.naturalH;
-    const sxR = effW / state.canvasW;
-    const syR = effH / state.canvasH;
+    // ※レイヤー合成時は state.frames が canvas寸法の合成画像になるため、
+    //   naturalW/H ではなく実際の transformed canvas 寸法から比率を出す
+    const srcW = transformed.length ? transformed[0].canvas.width : state.canvasW;
+    const srcH = transformed.length ? transformed[0].canvas.height : state.canvasH;
+    const sxR = srcW / state.canvasW;
+    const syR = srcH / state.canvasH;
 
     // パターンモード: セルを N×M にタイル化して1枚の画像/GIFとして書き出す
     if (state.pattern) {
@@ -9024,8 +9208,12 @@ async function save() {
       const tileFit = fitAspect(Math.max(1, Math.round(cellSrc.w)), Math.max(1, Math.round(cellSrc.h)), tileAspect);
       const tileW = tileFit.w;
       const tileH = tileFit.h;
-      const outW = tileW * state.splitW;
-      const outH = tileH * state.splitH;
+      // 保存モード: 全体 or 一か所(1タイル)
+      const singleMode = state.patternSaveMode === 'single';
+      const tilesX = singleMode ? 1 : state.splitW;
+      const tilesY = singleMode ? 1 : state.splitH;
+      const outW = tileW * tilesX;
+      const outH = tileH * tilesY;
       saveBtn.innerHTML = 'パターン生成…';
       await new Promise(r => setTimeout(r, 0));
 
@@ -9040,8 +9228,8 @@ async function save() {
         if (state.brightness > 0) {
           tctx.filter = `brightness(${getBrightnessFactor(state.brightness)})`;
         }
-        for (let py = 0; py < state.splitH; py++) {
-          for (let px = 0; px < state.splitW; px++) {
+        for (let py = 0; py < tilesY; py++) {
+          for (let px = 0; px < tilesX; px++) {
             tctx.drawImage(fr.canvas,
               cellSrc.x, cellSrc.y, cellSrc.w, cellSrc.h,
               px * tileW, py * tileH, tileW, tileH);

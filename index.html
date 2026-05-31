@@ -521,6 +521,35 @@ header.info {
   border-right: 5px solid transparent;
   border-top: 5px solid #333;
 }
+/* 読み込み中オーバーレイ */
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(255,255,255,0.82);
+  backdrop-filter: blur(2px);
+  z-index: 50;
+}
+.loading-overlay[hidden] { display: none; }
+.loading-spinner {
+  width: 38px; height: 38px;
+  border: 3px solid rgba(91,156,184,0.25);
+  border-top-color: var(--accent);
+  border-radius: 999px;
+  animation: loadingSpin 0.8s linear infinite;
+}
+@keyframes loadingSpin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+}
 .sp-cancel-btn, .sp-confirm-btn {
   flex: 1;
   border: none;
@@ -1697,6 +1726,7 @@ footer.controls {
   padding: 0;
   transition: all 0.15s;
   flex-shrink: 0;
+  margin-left: -2px;
 }
 .split-reset:hover { color: var(--accent); border-color: var(--accent); }
 
@@ -2779,6 +2809,10 @@ canvas.rm-active { cursor: crosshair; }
   <div class="canvas-wrap" id="canvasWrap">
     <canvas id="canvas"></canvas>
     <div class="empty-msg" id="emptyMsg">ここに画像・GIFをドロップ</div>
+    <div class="loading-overlay" id="loadingOverlay" hidden>
+      <div class="loading-spinner"></div>
+      <div class="loading-text" id="loadingText">読み込み中…</div>
+    </div>
     <div class="drop-overlay" id="dropOverlay">
       <div class="drop-overlay-inner">
         <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -3117,8 +3151,10 @@ canvas.rm-active { cursor: crosshair; }
         </svg>
       </button>
       <button class="split-reset" id="splitReset" type="button" title="1×1 に戻す">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="4" y="4" width="16" height="16" rx="2"/>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 12a9 9 0 109-9 9 9 0 00-7 3.3"/>
+          <path d="M3 3v4h4"/>
+          <text x="12" y="16" font-size="9" stroke="none" fill="currentColor" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-weight="700">1</text>
         </svg>
       </button>
     </div>
@@ -4347,6 +4383,13 @@ Object.defineProperty(__gifSandbox, 'onmessage', {
 })(__gifSandbox);
 
 /* Synchronous bridge: encode one frame using the sandboxed worker code */
+function __encEncoderYield() {
+  return new Promise(resolve => {
+    if (!__encEncoderYield._ch) __encEncoderYield._ch = new MessageChannel();
+    __encEncoderYield._ch.port1.onmessage = () => resolve();
+    __encEncoderYield._ch.port2.postMessage(0);
+  });
+}
 function __encodeFrameSync(frameInput) {
   let result = null;
   __gifSandbox.postMessage = (frame) => { result = frame; };
@@ -4362,7 +4405,9 @@ function __encodeFrameSync(frameInput) {
    framesData: [{rgba: Uint8ClampedArray|Uint8Array, delay: number_ms}]
    Yields between frames so the UI stays responsive.
    onProgress(i, total) is optional. */
-async function encodeAnimatedGIF(width, height, framesData, onProgress) {
+async function encodeAnimatedGIF(width, height, framesData, onProgress, opts) {
+  opts = opts || {};
+  const sampleQuality = opts.sampleQuality || 10;  // NeuQuant sample factor (大=軽い/粗い)
   const parts = [];
   for (let i = 0; i < framesData.length; i++) {
     if (onProgress) onProgress(i, framesData.length);
@@ -4373,14 +4418,14 @@ async function encodeAnimatedGIF(width, height, framesData, onProgress) {
       transparent: null,
       repeat: 0,
       delay: framesData[i].delay,
-      quality: 10,
+      quality: sampleQuality,
       dither: false,
       globalPalette: false,
       data: framesData[i].rgba,
       canTransfer: false,
     }));
-    // Yield to UI thread between frames
-    if (i + 1 < framesData.length) await new Promise(r => setTimeout(r, 0));
+    // Yield to UI thread between frames (background-tab safe)
+    if (i + 1 < framesData.length) await __encEncoderYield();
   }
   // Concatenate paged byte streams into one Uint8Array
   let total = 0;
@@ -5257,14 +5302,35 @@ function isVideoFile(f) {
   if (!f) return false;
   return f.type.startsWith('video/') || /\.(mp4|mov|m4v|webm|ogv|avi|mkv)$/i.test(f.name);
 }
+function showLoading(text) {
+  const o = document.getElementById('loadingOverlay');
+  const t = document.getElementById('loadingText');
+  if (t) t.textContent = text || '読み込み中…';
+  if (o) o.hidden = false;
+}
+function updateLoadingText(text) {
+  const t = document.getElementById('loadingText');
+  if (t) t.textContent = text;
+}
+function hideLoading() {
+  const o = document.getElementById('loadingOverlay');
+  if (o) o.hidden = true;
+}
+
 async function loadAnyFile(f) {
   if (!f) return;
-  if (isVideoFile(f)) {
-    // 動画は GIF変換君 と同じ処理
-    await loadVideoAsGif(f);
-  } else {
-    // 画像 / GIF は通常読み込み
-    await loadFile(f);
+  showLoading(isVideoFile(f) ? '動画を変換中…' : '読み込み中…');
+  await new Promise(r => requestAnimationFrame(() => r()));  // オーバーレイを先に描画
+  try {
+    if (isVideoFile(f)) {
+      // 動画は GIF変換君 と同じ処理
+      await loadVideoAsGif(f);
+    } else {
+      // 画像 / GIF は通常読み込み
+      await loadFile(f);
+    }
+  } finally {
+    hideLoading();
   }
 }
 fileInput.addEventListener('change', e => {
@@ -5680,20 +5746,25 @@ function renderLayerPanel() {
 
 /* 色加工中のレイヤー変更不可 吹き出し */
 function showLayerLockBubble(anchorEl) {
-  let b = document.getElementById('layerLockBubble');
+  showIconBubble(anchorEl, '色加工中は変更不可', 'above-row');
+}
+
+/* アイコンの上に出る汎用吹き出し */
+function showIconBubble(anchorEl, text, variant) {
+  let b = document.getElementById('iconBubble');
   if (!b) {
     b = document.createElement('div');
-    b.id = 'layerLockBubble';
+    b.id = 'iconBubble';
     b.className = 'layer-lock-bubble';
-    b.textContent = '色加工中は変更不可';
     document.body.appendChild(b);
   }
+  b.textContent = text;
   const r = anchorEl.getBoundingClientRect();
   b.style.left = (r.left + r.width / 2) + 'px';
   b.style.top = (r.top - 8) + 'px';
   b.classList.add('shown');
   clearTimeout(b._t);
-  b._t = setTimeout(() => b.classList.remove('shown'), 1600);
+  b._t = setTimeout(() => b.classList.remove('shown'), 2000);
 }
 
 layerPanelToggle.addEventListener('click', () => {
@@ -7119,8 +7190,8 @@ document.getElementById('ecShrinkBg').addEventListener('click', () => {
 document.getElementById('ecShrinkDeform').addEventListener('click', () => {
   document.getElementById('shrinkChooser').hidden = true;
   if (!state.ratio) {
+    showIconBubble(shrinkBtn, 'アイテム比を選択してください');
     triggerSidebarAttention();
-    queueToast('アイテム比を選択してください', 2200);
     return;
   }
   if (state.layers.length >= 2 && state.selectedLayers.size > 0 && !state.selectedLayers.has(0)) {
@@ -9094,6 +9165,23 @@ async function processCell(cell, transformedFrames, brightness, qualityLevel, on
   }
 
   // 動くGIF → main thread で再エンコード
+  // 品質低下レベルに応じて減色(ポスタライズ): 色の種類を減らすと LZW がよく効いて容量減
+  // level1-2: 6bit(64階調) / 3-4: 5bit(32) / 5-7: 4bit(16)
+  let posterizeBits = 0;
+  if (qualityLevel >= 5) posterizeBits = 4;
+  else if (qualityLevel >= 3) posterizeBits = 5;
+  else if (qualityLevel >= 1) posterizeBits = 6;
+  const posterize = (rgba) => {
+    if (posterizeBits === 0 || posterizeBits >= 8) return rgba;
+    const levels = 1 << posterizeBits;          // 例: 4bit → 16
+    const step = 255 / (levels - 1);
+    for (let i = 0; i < rgba.length; i += 4) {
+      rgba[i]   = Math.round(Math.round(rgba[i]   / step) * step);
+      rgba[i+1] = Math.round(Math.round(rgba[i+1] / step) * step);
+      rgba[i+2] = Math.round(Math.round(rgba[i+2] / step) * step);
+    }
+    return rgba;
+  };
   const framesData = cellFrames.map(fr => {
     if (qualityLevel === 0) {
       return { rgba: fr.canvas.getContext('2d').getImageData(0, 0, w, h).data, delay: fr.delay };
@@ -9103,9 +9191,12 @@ async function processCell(cell, transformedFrames, brightness, qualityLevel, on
     small.width = outW; small.height = outH;
     const sctx = small.getContext('2d');
     sctx.drawImage(fr.canvas, 0, 0, outW, outH);
-    return { rgba: sctx.getImageData(0, 0, outW, outH).data, delay: fr.delay };
+    const rgba = sctx.getImageData(0, 0, outW, outH).data;
+    return { rgba: posterize(rgba), delay: fr.delay };
   });
-  const bytes = await encodeAnimatedGIF(outW, outH, framesData, onProgress);
+  // 品質低下が大きいほど粗くサンプリング(=パレット計算が粗く、容量減)
+  const sampleQuality = qualityLevel > 0 ? Math.min(30, 10 + qualityLevel * 3) : 10;
+  const bytes = await encodeAnimatedGIF(outW, outH, framesData, onProgress, { sampleQuality });
   return new Blob([bytes], { type: 'image/gif' });
 }
 
@@ -9126,6 +9217,20 @@ function download(blob, filename) {
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
+  // 実際の保存容量を表示 (推定とのズレを正直に伝える)
+  if (blob && blob.size) {
+    queueToast(`保存しました (${formatBytes(blob.size)})`, 2600);
+  }
+}
+
+/* バックグラウンドタブでも throttle されない yield (setTimeout は背面で 1秒に制限される) */
+let _yieldChannel = null;
+function fastYield() {
+  return new Promise(resolve => {
+    if (!_yieldChannel) _yieldChannel = new MessageChannel();
+    _yieldChannel.port1.onmessage = () => resolve();
+    _yieldChannel.port2.postMessage(0);
+  });
 }
 
 async function save() {
@@ -9145,7 +9250,7 @@ async function save() {
   let savedDeformActive = null;
   if (state.layers.length >= 2) {
     saveBtn.innerHTML = 'レイヤー合成中…';
-    await new Promise(r => setTimeout(r, 0));
+    await fastYield();
     savedFrames = state.frames;
     state.frames = compositeAllLayers();
     // 合成済みは全 transform / 全 effect がベイク済みなので、後段の重複適用を防ぐ
@@ -9168,7 +9273,7 @@ async function save() {
   try {
     // 全フレームに 回転/反転 を適用(画像レベル統合)
     saveBtn.innerHTML = '変換中…';
-    await new Promise(r => setTimeout(r, 0));
+    await fastYield();
     // トリミング適用: 範囲内のフレームのみ取り出す
     const lo = Math.max(0, Math.min(state.trimStart, state.frames.length - 1));
     const hi = Math.max(lo, Math.min(state.trimEnd, state.frames.length - 1));
@@ -9212,10 +9317,18 @@ async function save() {
       const singleMode = state.patternSaveMode === 'single';
       const tilesX = singleMode ? 1 : state.splitW;
       const tilesY = singleMode ? 1 : state.splitH;
-      const outW = tileW * tilesX;
-      const outH = tileH * tilesY;
+      let outW = tileW * tilesX;
+      let outH = tileH * tilesY;
+      // GIF パターンは出力が巨大だとエンコーダが落ちるため上限でスケール
+      const PATTERN_MAX = isGif ? 1100 : 4000;
+      let patternScale = 1;
+      if (Math.max(outW, outH) > PATTERN_MAX) {
+        patternScale = PATTERN_MAX / Math.max(outW, outH);
+        outW = Math.max(1, Math.round(outW * patternScale));
+        outH = Math.max(1, Math.round(outH * patternScale));
+      }
       saveBtn.innerHTML = 'パターン生成…';
-      await new Promise(r => setTimeout(r, 0));
+      await fastYield();
 
       // 各フレームをタイル化
       const tiledFrames = [];
@@ -9228,11 +9341,14 @@ async function save() {
         if (state.brightness > 0) {
           tctx.filter = `brightness(${getBrightnessFactor(state.brightness)})`;
         }
+        // スケール適用後のタイル寸法
+        const dTileW = tileW * patternScale;
+        const dTileH = tileH * patternScale;
         for (let py = 0; py < tilesY; py++) {
           for (let px = 0; px < tilesX; px++) {
             tctx.drawImage(fr.canvas,
               cellSrc.x, cellSrc.y, cellSrc.w, cellSrc.h,
-              px * tileW, py * tileH, tileW, tileH);
+              px * dTileW, py * dTileH, dTileW, dTileH);
           }
         }
         tctx.filter = 'none';
@@ -9253,21 +9369,39 @@ async function save() {
         }
         tiledFrames.push({ canvas: finalCanvas, delay: fr.delay });
         saveBtn.innerHTML = `タイル ${fIdx + 1}/${transformed.length}`;
-        await new Promise(r => setTimeout(r, 0));
+        await fastYield();
       }
       // エンコード
       let blob;
       if (isGif) {
         saveBtn.innerHTML = 'GIFエンコード…';
-        const framesData = tiledFrames.map(fr => ({
-          canvas: fr.canvas,
-          delay: fr.delay,
-        }));
         const gifW = tiledFrames[0].canvas.width;
         const gifH = tiledFrames[0].canvas.height;
+        // 減色(ポスタライズ): 品質低下レベルに応じて
+        let posterizeBits = 0;
+        if (state.quality >= 5) posterizeBits = 4;
+        else if (state.quality >= 3) posterizeBits = 5;
+        else if (state.quality >= 1) posterizeBits = 6;
+        const posterize = (rgba) => {
+          if (posterizeBits === 0 || posterizeBits >= 8) return rgba;
+          const levels = 1 << posterizeBits;
+          const step = 255 / (levels - 1);
+          for (let i = 0; i < rgba.length; i += 4) {
+            rgba[i]   = Math.round(Math.round(rgba[i]   / step) * step);
+            rgba[i+1] = Math.round(Math.round(rgba[i+1] / step) * step);
+            rgba[i+2] = Math.round(Math.round(rgba[i+2] / step) * step);
+          }
+          return rgba;
+        };
+        // canvas → rgba に変換 (エンコーダは rgba を要求する)
+        const framesData = tiledFrames.map(fr => {
+          const rgba = fr.canvas.getContext('2d').getImageData(0, 0, gifW, gifH).data;
+          return { rgba: posterize(rgba), delay: fr.delay };
+        });
+        const sampleQuality = state.quality > 0 ? Math.min(30, 10 + state.quality * 3) : 10;
         const gifBuf = await encodeAnimatedGIF(gifW, gifH, framesData, (cur, total) => {
           saveBtn.innerHTML = `GIF ${cur}/${total}`;
-        });
+        }, { sampleQuality });
         blob = new Blob([gifBuf], { type: 'image/gif' });
       } else {
         blob = await new Promise(res => tiledFrames[0].canvas.toBlob(res, 'image/png'));
@@ -9293,12 +9427,30 @@ async function save() {
 
     // 統合処理: 1セルずつ processCell を呼ぶ
     const blobs = [];
+    const saveStartT = performance.now();
     for (let k = 0; k < cells.length; k++) {
       const c = cells[k];
       blobs.push(await processCell(c, transformed, state.brightness, state.quality, (fIdx, fTotal) => {
-        saveBtn.innerHTML = `${k + 1}/${cells.length} (${fIdx + 1}/${fTotal})`;
+        // 経過時間と残りセル数から残り秒数を計算
+        const elapsed = (performance.now() - saveStartT) / 1000;
+        const doneUnits = k + (fIdx + 1) / fTotal;
+        const totalUnits = cells.length;
+        if (doneUnits > 0.3) {
+          const perUnit = elapsed / doneUnits;
+          const remain = Math.max(0, Math.ceil(perUnit * (totalUnits - doneUnits)));
+          saveBtn.innerHTML = `残り ${remain} 秒`;
+        } else {
+          saveBtn.innerHTML = `書き出し中…`;
+        }
       }));
-      saveBtn.innerHTML = `書き出し ${k + 1}/${cells.length}`;
+      // セル完了ごとにも残り秒数を更新
+      const elapsed = (performance.now() - saveStartT) / 1000;
+      const done = k + 1;
+      if (done > 0) {
+        const perCell = elapsed / done;
+        const remain = Math.max(0, Math.ceil(perCell * (cells.length - done)));
+        saveBtn.innerHTML = done < cells.length ? `残り ${remain} 秒` : '仕上げ中…';
+      }
     }
 
     // 1セル → そのまま保存 / 2セル以上 → ZIPにまとめて1ファイルでダウンロード
@@ -9314,7 +9466,7 @@ async function save() {
         const name = String(i + 1).padStart(pad, '0') + ext;
         files.push({ name: folderName + '/' + name, data: new Uint8Array(buf) });
       }
-      await new Promise(r => setTimeout(r, 0));
+      await fastYield();
       const zipBlob = makeZip(files);
       download(zipBlob, folderName + '.zip');
       // 動くGIF分割の場合は使い方カードを出す

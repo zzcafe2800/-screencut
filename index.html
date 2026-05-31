@@ -543,6 +543,59 @@ header.info {
 }
 .shrink-pick-btn:hover { background: #4a8aa3; }
 .shrink-pick-btn.active:hover { background: #c0392b; }
+/* 背景拡張: 余白サイズの横スライダー */
+.shrink-level-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+}
+.shrink-level-label {
+  font-size: 11px;
+  color: var(--fg-muted);
+  flex: 0 0 auto;
+  font-weight: 600;
+}
+.shrink-level-slider {
+  flex: 1 1 auto;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 5px;
+  background: linear-gradient(to right, rgba(91,156,184,0.25), var(--accent));
+  border-radius: 999px;
+  cursor: pointer;
+  margin: 0;
+}
+.shrink-level-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  background: var(--accent);
+  border: 2px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+  cursor: grab;
+}
+.shrink-level-slider::-webkit-slider-thumb:active { cursor: grabbing; }
+.shrink-level-slider::-moz-range-thumb {
+  width: 18px; height: 18px;
+  background: var(--accent);
+  border: 2px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.25);
+  cursor: grab;
+}
+.shrink-level-value {
+  font-family: Georgia, serif;
+  font-style: italic;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 16px;
+  text-align: center;
+}
 canvas.eyedropper-active { cursor: crosshair !important; }
 canvas.deform-active { cursor: grab; }
 canvas.deform-active:active { cursor: grabbing; }
@@ -694,6 +747,52 @@ canvas.deform-active:active { cursor: grabbing; }
   line-height: 1;
 }
 .add-layer-btn.has-layers .layer-count-badge { display: flex; }
+
+/* 単純化ボタンのチューザー (単純化 or 色加工) */
+.effect-wrap { position: relative; display: flex; }
+.effect-chooser {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  padding: 6px;
+  display: flex;
+  gap: 4px;
+  z-index: 50;
+}
+.effect-chooser[hidden] { display: none; }
+.effect-chooser::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #fff;
+  border-bottom: 0;
+}
+.ec-btn {
+  background: transparent;
+  border: none;
+  padding: 8px 12px 7px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: var(--fg);
+  font-size: 11px;
+  font-weight: 600;
+  transition: background 0.15s;
+  min-width: 56px;
+}
+.ec-btn:hover { background: rgba(91,156,184,0.15); color: var(--accent); }
+.ec-btn svg { color: var(--accent); }
 
 .tool-divider { width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
 
@@ -1828,13 +1927,13 @@ canvas.rm-active { cursor: crosshair; }
 }
 .lp-row {
   display: grid;
-  grid-template-columns: 30px 1fr auto auto 16px;
+  grid-template-columns: 16px 30px 1fr auto auto;
   gap: 4px 6px;
   align-items: center;
   background: #f7fafb;
   border: 1.5px solid transparent;
   border-radius: 6px;
-  padding: 4px 6px 4px 4px;
+  padding: 4px 5px 4px 3px;
   cursor: pointer;
   transition: background 0.12s, border-color 0.12s;
 }
@@ -2692,6 +2791,11 @@ canvas.rm-active { cursor: crosshair; }
           <span class="shrink-swatch" id="shrinkSwatch" style="background:#fff"></span>
           <button class="shrink-pick-btn" id="shrinkPickBtn" type="button">スポイト</button>
         </div>
+        <div class="shrink-level-row">
+          <span class="shrink-level-label">余白の大きさ</span>
+          <input type="range" id="shrinkLevelSlider" min="1" max="5" step="1" value="1" class="shrink-level-slider">
+          <span class="shrink-level-value" id="shrinkLevelValue">1</span>
+        </div>
       </div>
       <!-- 画像変形モード -->
       <div class="sp-deform-mode" id="shrinkDeformMode" style="display:none">
@@ -2760,15 +2864,37 @@ canvas.rm-active { cursor: crosshair; }
       </svg>
       <span class="q-level" id="qLevel"></span>
     </button>
-    <button class="brightness-btn" id="simplify" title="単純化 (色数を減らす)" disabled>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-        <!-- cutout-like blob icon -->
-        <path d="M5 7c1-3 6-3 8-1s5 0 6 2-1 5-2 7-5 4-8 3-5-3-5-6 0-3 1-5z"/>
-        <circle cx="9" cy="11" r="1.2" fill="currentColor" stroke="none"/>
-        <circle cx="15" cy="13" r="1.2" fill="currentColor" stroke="none"/>
-      </svg>
-      <span class="q-level" id="sLevel"></span>
-    </button>
+    <div class="effect-wrap">
+      <button class="brightness-btn" id="simplify" title="単純化 / 色加工" disabled>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 7c1-3 6-3 8-1s5 0 6 2-1 5-2 7-5 4-8 3-5-3-5-6 0-3 1-5z"/>
+          <circle cx="9" cy="11" r="1.2" fill="currentColor" stroke="none"/>
+          <circle cx="15" cy="13" r="1.2" fill="currentColor" stroke="none"/>
+        </svg>
+        <span class="q-level" id="sLevel"></span>
+      </button>
+      <div class="effect-chooser" id="effectChooser" hidden>
+        <button class="ec-btn" id="ecSimplify" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 7c1-3 6-3 8-1s5 0 6 2-1 5-2 7-5 4-8 3-5-3-5-6 0-3 1-5z"/>
+            <circle cx="9" cy="11" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="15" cy="13" r="1.2" fill="currentColor" stroke="none"/>
+          </svg>
+          <span>単純化</span>
+        </button>
+        <button class="ec-btn" id="ecColorAdjust" type="button">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <!-- パレット風アイコン -->
+            <path d="M12 2C6.5 2 2 6.3 2 11.5c0 3.6 2.4 5.5 5 5.5h1.5a2 2 0 012 2v.5c0 1.4 1.1 2.5 2.5 2.5C18 22 22 17.5 22 12c0-5.5-4.5-10-10-10z"/>
+            <circle cx="7.5" cy="10.5" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="11" cy="7" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="16" cy="8.5" r="1.2" fill="currentColor" stroke="none"/>
+            <circle cx="17.5" cy="13" r="1.2" fill="currentColor" stroke="none"/>
+          </svg>
+          <span>色加工</span>
+        </button>
+      </div>
+    </div>
     <button class="brightness-btn" id="shrink" title="縮小 (背景を付けて中央を小さく)" disabled>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
         <!-- inward diagonal arrows: >< -->
@@ -2802,7 +2928,7 @@ canvas.rm-active { cursor: crosshair; }
     <label for="file" class="btn btn-accent btn-loadkun" id="loadKun">
       <span class="lk-main">読み込み君</span>
     </label>
-    <button id="roomMatch" class="btn btn-accent" hidden>加工くん</button>
+    <button id="roomMatch" class="btn btn-accent" hidden style="display:none !important;">加工くん</button>
     <button id="save" class="btn" disabled>保存</button>
     <div class="splits" id="splitsContainer">
       <button class="pattern-toggle" id="patternToggle" type="button" title="分割 / パターン切替" aria-pressed="false">
@@ -5286,6 +5412,19 @@ function renderLayerPanel() {
     const row = document.createElement('div');
     row.className = 'lp-row';
     if (state.selectedLayers.has(i)) row.classList.add('selected');
+    // グリップ (左端、掴んで並べ替え)
+    const grip = document.createElement('button');
+    grip.className = 'lp-grip';
+    grip.title = '掴んで並べ替え';
+    grip.innerHTML = `<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
+      <circle cx="2" cy="2" r="1.4"/><circle cx="8" cy="2" r="1.4"/>
+      <circle cx="2" cy="7" r="1.4"/><circle cx="8" cy="7" r="1.4"/>
+      <circle cx="2" cy="12" r="1.4"/><circle cx="8" cy="12" r="1.4"/>
+    </svg>`;
+    grip.dataset.layerIdx = String(i);
+    grip.addEventListener('click', ev => ev.stopPropagation());
+    setupGripDrag(grip, row, i);
+    row.appendChild(grip);
     // サムネ
     const thumb = document.createElement('div');
     thumb.className = 'lp-thumb';
@@ -5346,19 +5485,6 @@ function renderLayerPanel() {
       ph.className = 'lp-del-ph';
       row.appendChild(ph);
     }
-    // グリップ (右端: 6点アイコン、ここを掴むと並べ替え可能)
-    const grip = document.createElement('button');
-    grip.className = 'lp-grip';
-    grip.title = '掴んで並べ替え';
-    grip.innerHTML = `<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
-      <circle cx="2" cy="2" r="1.4"/><circle cx="8" cy="2" r="1.4"/>
-      <circle cx="2" cy="7" r="1.4"/><circle cx="8" cy="7" r="1.4"/>
-      <circle cx="2" cy="12" r="1.4"/><circle cx="8" cy="12" r="1.4"/>
-    </svg>`;
-    grip.dataset.layerIdx = String(i);
-    grip.addEventListener('click', ev => ev.stopPropagation());
-    setupGripDrag(grip, row, i);
-    row.appendChild(grip);
     // クリックで選択トグル
     row.addEventListener('click', () => {
       if (state.selectedLayers.has(i)) {
@@ -6113,6 +6239,50 @@ function draw() {
     ctx.lineWidth = 1.5;
     ctx.strokeRect(dr.x - hr, dr.y - hr, hr * 2, hr * 2);
     ctx.restore();
+
+    // ヒント吹き出し「ここでつかんで調節」(初回表示、どこかタップで消える)
+    if (state._deformHintVisible) {
+      ctx.save();
+      const label = 'ここでつかんで調節';
+      ctx.font = 'bold 12px system-ui, sans-serif';
+      const padX = 10, padY = 6;
+      const textW = ctx.measureText(label).width;
+      const bw = textW + padX * 2;
+      const bh = 24;
+      let bx = dr.x - 8;  // 左上ハンドルの左寄り
+      let by = dr.y - hr - bh - 10;  // ハンドルの上
+      // 画面外にはみ出さないように調整
+      if (bx < 4) bx = 4;
+      if (bx + bw > state.canvasW - 4) bx = state.canvasW - 4 - bw;
+      if (by < 4) by = dr.y + hr + 10;  // 下に出す
+      // 吹き出し本体
+      ctx.fillStyle = 'rgba(91,156,184,0.95)';
+      ctx.shadowColor = 'rgba(0,0,0,0.25)';
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 2;
+      if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bw, bh, 12);
+        ctx.fill();
+      } else {
+        ctx.fillRect(bx, by, bw, bh);
+      }
+      // しっぽ (下向き、ハンドルの真上を指す)
+      ctx.shadowBlur = 0;
+      const tailX = Math.max(bx + 14, Math.min(dr.x - hr / 2, bx + bw - 14));
+      const tailY = by + bh;
+      ctx.beginPath();
+      ctx.moveTo(tailX - 6, tailY);
+      ctx.lineTo(tailX + 6, tailY);
+      ctx.lineTo(tailX, tailY + 7);
+      ctx.closePath();
+      ctx.fill();
+      // テキスト
+      ctx.fillStyle = '#fff';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label, bx + padX, by + bh / 2);
+      ctx.restore();
+    }
   }
 
   // パターンモードのプレビューもリアルタイム更新
@@ -6362,6 +6532,30 @@ function updateSimplifyGauge() {
 function invalidateSimplifyCache() { state._simpCache = null; }
 simplifyBtn.addEventListener('click', () => {
   if (simplifyBtn.disabled) return;
+  // チューザーを表示 (単純化 or 色加工)
+  const ch = document.getElementById('effectChooser');
+  if (ch.hidden) {
+    ch.hidden = false;
+    // クリック外で閉じる
+    setTimeout(() => {
+      const onAway = (ev) => {
+        if (!ch.contains(ev.target) && ev.target !== simplifyBtn) {
+          ch.hidden = true;
+          document.removeEventListener('pointerdown', onAway, true);
+        }
+      };
+      document.addEventListener('pointerdown', onAway, true);
+    }, 0);
+  } else {
+    ch.hidden = true;
+  }
+});
+/* 単純化を選択 → 従来の単純化レベル循環 */
+document.getElementById('ecSimplify').addEventListener('click', () => {
+  document.getElementById('effectChooser').hidden = true;
+  if (state.layers.length >= 2 && state.selectedLayers.size > 0 && !state.selectedLayers.has(0)) {
+    queueToast('単純化はベース画像にのみ適用されます', 2200);
+  }
   state.simplify = (state.simplify + 1) % (SIMPLIFY_MAX + 1);
   if (state.simplify > 0) {
     const preset = SIMPLIFY_PRESETS[state.simplify];
@@ -6372,6 +6566,11 @@ simplifyBtn.addEventListener('click', () => {
   invalidateSimplifyCache();
   updateSimplifyGauge();
   draw();
+});
+/* 色加工を選択 → 加工くんモーダル */
+document.getElementById('ecColorAdjust').addEventListener('click', () => {
+  document.getElementById('effectChooser').hidden = true;
+  openRoomMatch();
 });
 [spLevels, spSmooth, spEdge].forEach(el => {
   el.addEventListener('input', () => {
@@ -6558,6 +6757,10 @@ function resetDeform() {
 
 shrinkBtn.addEventListener('click', () => {
   if (shrinkBtn.disabled) return;
+  // 非ベースレイヤー選択中はヒントを出す (背景拡張/画像変形はベースのみ対象)
+  if (state.layers.length >= 2 && state.selectedLayers.size > 0 && !state.selectedLayers.has(0)) {
+    queueToast('縮小・画像変形はベース画像にのみ適用されます', 2200);
+  }
   // 起動: チューザー表示 (現在オフ時のみ)
   if (state.shrink === 0 && !state.deformActive) {
     state.shrinkSubMode = null;  // チューザー表示
@@ -6598,6 +6801,11 @@ shrinkModeBgBtn.addEventListener('click', () => {
   state.shrinkSubMode = 'bg';
   // BGモードはレベル1で開始
   if (state.shrink === 0) state.shrink = 1;
+  // スライダー同期
+  const sl = document.getElementById('shrinkLevelSlider');
+  const sv = document.getElementById('shrinkLevelValue');
+  if (sl) sl.value = String(state.shrink);
+  if (sv) sv.textContent = String(state.shrink);
   updateShrinkGauge();
   updateShrinkPanelView();
   draw();
@@ -6611,7 +6819,7 @@ shrinkModeDeformBtn.addEventListener('click', () => {
   state.deformScaleX = 1;
   state.deformScaleY = 1;
   canvas.classList.add('deform-active');
-  // overlay は削除済み
+  state._deformHintVisible = true;
   updateShrinkGauge();
   updateShrinkPanelView();
   draw();
@@ -6695,6 +6903,18 @@ shrinkPickBtn.addEventListener('click', () => {
   shrinkPickBtn.classList.toggle('active', state.eyedropperActive);
   canvas.classList.toggle('eyedropper-active', state.eyedropperActive);
 });
+// 背景拡張の余白サイズ調整スライダー
+const shrinkLevelSlider = document.getElementById('shrinkLevelSlider');
+const shrinkLevelValue = document.getElementById('shrinkLevelValue');
+if (shrinkLevelSlider) {
+  shrinkLevelSlider.addEventListener('input', () => {
+    const v = parseInt(shrinkLevelSlider.value, 10);
+    state.shrink = v;
+    shrinkLevelValue.textContent = String(v);
+    updateShrinkGauge();
+    draw();
+  });
+}
 // canvas クリックでスポイト処理 (既存の枠ドラッグより先に判定)
 canvas.addEventListener('pointerdown', e => {
   if (!state.eyedropperActive) return;
@@ -6745,6 +6965,10 @@ canvas.addEventListener('pointerdown', e => {
   if (!state.deformActive) return;
   e.preventDefault();
   e.stopPropagation();
+  // 初回タップでヒントを消す
+  if (state._deformHintVisible) {
+    state._deformHintVisible = false;
+  }
   canvas.setPointerCapture(e.pointerId);
   const p = deformLocalPos(e);
   const rect = deformDisplayRect();
@@ -8541,11 +8765,24 @@ async function save() {
   const orig = saveBtn.innerHTML;
   // レイヤー合成 (2層以上)
   let savedFrames = null;
+  let savedRot = null;
+  let savedFlipH = null;
+  let savedFlipV = null;
+  let savedBrightness = null;
   if (state.layers.length >= 2) {
     saveBtn.innerHTML = 'レイヤー合成中…';
     await new Promise(r => setTimeout(r, 0));
     savedFrames = state.frames;
     state.frames = compositeAllLayers();
+    // 合成済みは全 transform がベイク済みなので、save の transformFrameToCanvas を実質 no-op に
+    savedRot = state.rotation;
+    savedFlipH = state.flipH;
+    savedFlipV = state.flipV;
+    savedBrightness = state.brightness;
+    state.rotation = 0;
+    state.flipH = false;
+    state.flipV = false;
+    state.brightness = 0;
   }
 
   try {
@@ -8702,7 +8939,13 @@ async function save() {
     console.error(err);
     alert('保存に失敗しました: ' + err.message);
   } finally {
-    if (savedFrames) state.frames = savedFrames;
+    if (savedFrames) {
+      state.frames = savedFrames;
+      if (savedRot !== null) state.rotation = savedRot;
+      if (savedFlipH !== null) state.flipH = savedFlipH;
+      if (savedFlipV !== null) state.flipV = savedFlipV;
+      if (savedBrightness !== null) state.brightness = savedBrightness;
+    }
     saveBtn.innerHTML = orig;
     updateSaveBtn();
   }
@@ -8710,14 +8953,17 @@ async function save() {
 saveBtn.addEventListener('click', save);
 
 /* レイヤーをすべて合成して 1枚の連続フレームを作る (natural 解像度) */
+/* レイヤーをすべて合成して 1枚の連続フレームを作る (canvas寸法、全 transform ベイク) */
 function compositeAllLayers() {
   if (state.layers.length === 0) return state.frames;
   if (state.layers.length === 1) return state.layers[0].frames;
   const base = state.layers[0];
   const baseFrames = base.frames;
-  const W = state.naturalW;
-  const H = state.naturalH;
-  const ratio = W / state.canvasW;  // canvas px → natural px
+  // canvas 寸法で出力 (state.rotation 反映後)
+  const W = state.canvasW;
+  const H = state.canvasH;
+  const naturalW = state.naturalW;
+  const naturalH = state.naturalH;
   const out = [];
   for (let fi = 0; fi < baseFrames.length; fi++) {
     const c = document.createElement('canvas');
@@ -8727,7 +8973,7 @@ function compositeAllLayers() {
       cctx.fillStyle = '#ffffff';
       cctx.fillRect(0, 0, W, H);
     }
-    // 全レイヤーを下から上へ描画
+    // 全レイヤーを下から上へ描画 (各レイヤー独自の transform 適用)
     for (let li = 0; li < state.layers.length; li++) {
       const L = state.layers[li];
       if (!L.visible) continue;
@@ -8735,19 +8981,26 @@ function compositeAllLayers() {
       const fr = L.frames[lfi];
       if (!fr) continue;
       if (li === 0) {
-        cctx.drawImage(fr.canvas, 0, 0, W, H);
-      } else {
-        const baseRatio = state.canvasW / state.naturalW;
-        const drawWcanvas = L.naturalW * L.scaleX * baseRatio;
-        const drawHcanvas = L.naturalH * L.scaleY * baseRatio;
-        const drawW = drawWcanvas * ratio;
-        const drawH = drawHcanvas * ratio;
-        const cx = W / 2 + L.offsetX * ratio;
-        const cy = H / 2 + L.offsetY * ratio;
+        // ベース: canvas全体に rotation/flip/brightness をベイク
         cctx.save();
-        if (L.brightness > 0) {
-          cctx.filter = `brightness(${getBrightnessFactor(L.brightness)})`;
-        }
+        if (L.brightness > 0) cctx.filter = `brightness(${getBrightnessFactor(L.brightness)})`;
+        cctx.translate(W / 2, H / 2);
+        cctx.rotate(L.rotation * Math.PI / 180);
+        cctx.scale(L.flipH ? -1 : 1, L.flipV ? -1 : 1);
+        const isLR90 = L.rotation === 90 || L.rotation === 270;
+        const dw = isLR90 ? H : W;
+        const dh = isLR90 ? W : H;
+        cctx.drawImage(fr.canvas, -dw / 2, -dh / 2, dw, dh);
+        cctx.restore();
+      } else {
+        // 追加レイヤー: 表示時と同じ canvas-pixel オフセット/スケール
+        const baseScale = state.canvasW / naturalW;
+        const drawW = L.naturalW * L.scaleX * baseScale;
+        const drawH = L.naturalH * L.scaleY * baseScale;
+        const cx = W / 2 + L.offsetX;
+        const cy = H / 2 + L.offsetY;
+        cctx.save();
+        if (L.brightness > 0) cctx.filter = `brightness(${getBrightnessFactor(L.brightness)})`;
         cctx.translate(cx, cy);
         cctx.rotate(L.rotation * Math.PI / 180);
         cctx.scale(L.flipH ? -1 : 1, L.flipV ? -1 : 1);

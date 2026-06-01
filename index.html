@@ -2206,9 +2206,12 @@ canvas.rm-active { cursor: crosshair; }
 .layer-panel[hidden] { display: none !important; }
 .layer-panel.collapsed { max-width: 30px; }
 /* サムネモード: レイヤーを左サイドバー下部へ移動 */
-.lp-title-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.lp-title-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; }
+.lp-title-row .lp-title { flex: 1; }
 .lp-add {
   width: 22px; height: 22px;
+  flex: 0 0 auto;
+  margin-left: auto;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--accent); color: #fff;
   border-radius: 6px; font-size: 16px; font-weight: 700;
@@ -2283,6 +2286,10 @@ body.thumb-mode .lp-bg-row { display: none !important; }
 }
 .lp-row:hover { background: rgba(91,156,184,0.10); }
 .lp-row.selected { border-color: var(--accent); background: rgba(91,156,184,0.15); }
+/* サムネモード: レイヤーカードを全幅に */
+body.thumb-mode .lp-list { width: 100%; }
+body.thumb-mode .lp-row { width: 100%; box-sizing: border-box; }
+body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 .lp-row.lp-row-dragging { opacity: 0.5; }
 .lp-row.lp-row-dropping {
   border-top: 2px solid var(--accent);
@@ -5659,22 +5666,40 @@ function drawThumbMode() {
       ctx.restore();
     }
   }
-  // 選択レイヤーごとに白枠 + 右上■ハンドル
+  // 選択レイヤーごとに白枠 + 右上■ハンドル (枠外部分は黒で可視化)
   const selDraw = (state.selectedLayers && state.selectedLayers.size) ? [...state.selectedLayers] : [0];
+  const CW = state.canvasW, CH = state.canvasH;
   ctx.save();
   for (const idx of selDraw) {
     const lr = thumbLayerRect(idx);
     if (!lr) continue;
-    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+    // 枠線: 4辺を個別に描画。canvas外にはみ出す辺は黒、内側は白。
     ctx.lineWidth = 2;
     ctx.setLineDash([]);
-    ctx.strokeRect(lr.x, lr.y, lr.w, lr.h);
+    const edges = [
+      [lr.x, lr.y, lr.x + lr.w, lr.y],               // 上
+      [lr.x + lr.w, lr.y, lr.x + lr.w, lr.y + lr.h], // 右
+      [lr.x, lr.y + lr.h, lr.x + lr.w, lr.y + lr.h], // 下
+      [lr.x, lr.y, lr.x, lr.y + lr.h],               // 左
+    ];
+    for (const [x1, y1, x2, y2] of edges) {
+      // 辺の中点が canvas 外なら黒
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      const outside = mx < 0 || mx > CW || my < 0 || my > CH;
+      ctx.strokeStyle = outside ? 'rgba(0,0,0,0.92)' : 'rgba(255,255,255,0.95)';
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    }
+    // 右上■ハンドル: 真の位置が canvas 外なら枠内へクランプし黒で描画
     const hs = 14;
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = 'rgba(91,156,184,0.9)';
+    let hx = lr.x + lr.w, hy = lr.y;
+    const off = hx < 0 || hx > CW || hy < 0 || hy > CH;
+    const cxh = Math.max(hs / 2, Math.min(CW - hs / 2, hx));
+    const cyh = Math.max(hs / 2, Math.min(CH - hs / 2, hy));
+    ctx.fillStyle = off ? '#000000' : '#ffffff';
+    ctx.strokeStyle = off ? 'rgba(255,255,255,0.9)' : 'rgba(91,156,184,0.9)';
     ctx.lineWidth = 1.5;
-    ctx.fillRect(lr.x + lr.w - hs / 2, lr.y - hs / 2, hs, hs);
-    ctx.strokeRect(lr.x + lr.w - hs / 2, lr.y - hs / 2, hs, hs);
+    ctx.fillRect(cxh - hs / 2, cyh - hs / 2, hs, hs);
+    ctx.strokeRect(cxh - hs / 2, cyh - hs / 2, hs, hs);
   }
   ctx.restore();
 }
@@ -6368,12 +6393,15 @@ canvas.addEventListener('pointerdown', e => {
   const y = ((e.clientY - r.top) / r.height) * state.canvasH;
   const sel = thumbSelectedList();
   const hs = 16;
-  // 1) 選択レイヤーの右上■ → 変形
+  const CW = state.canvasW, CH = state.canvasH;
+  // 1) 選択レイヤーの右上■ → 変形 (枠外はクランプ位置で判定)
   for (const idx of sel) {
     const rect = thumbLayerRect(idx);
     if (!rect) continue;
-    const hx = rect.x + rect.w, hy = rect.y;
-    if (Math.abs(x - hx) <= hs && Math.abs(y - hy) <= hs) {
+    let hx = rect.x + rect.w, hy = rect.y;
+    const cxh = Math.max(7, Math.min(CW - 7, hx));
+    const cyh = Math.max(7, Math.min(CH - 7, hy));
+    if (Math.abs(x - cxh) <= hs && Math.abs(y - cyh) <= hs) {
       e.preventDefault(); canvas.setPointerCapture(e.pointerId);
       state._thumbDrag = { mode: 'scale', idx, anchorX: rect.x, anchorY: rect.y + rect.h,
         startW: rect.w, startH: rect.h };
@@ -6787,6 +6815,14 @@ async function loadFile(file) {
     if (state.frames.length > 1) startAnimation();
     updateQualityInfo();
     updateSidebarTop3();
+    // 部屋サムネくん: 読み込み後にレイヤー0を用意して枠内配置 + パネル常時表示
+    if (state.thumbMode) {
+      ensureFirstLayer();
+      initThumbTransform();
+      renderLayerPanel();
+      relocateLayerPanel();
+      updateLayerPanelVisibility();
+    }
     // 読み込み完了通知
     const isAnimGif = state.frames.length > 1;
     showToast(isAnimGif ? 'GIFを読み込みました' : '画像を読み込みました');
@@ -10294,27 +10330,39 @@ function openPreview() {
   const head = card.querySelector('.pc-head');
   if (!head) return;
   let drag = null;
-  head.addEventListener('pointerdown', e => {
-    if (e.target.closest('.pc-close')) return;
-    const rect = card.getBoundingClientRect();
-    drag = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
-    head.setPointerCapture(e.pointerId);
-    head.style.cursor = 'grabbing';
-    e.preventDefault();
-  });
-  head.addEventListener('pointermove', e => {
+  function onMove(e) {
     if (!drag) return;
     const left = e.clientX - drag.dx;
     const top = e.clientY - drag.dy;
     card.style.left = left + 'px';
     card.style.top = top + 'px';
+    card.style.right = 'auto';
     card.style.transform = 'none';
-    state._previewPos = { left, top };  // 非表示でも保持
+    state._previewPos = { left, top };
+    e.preventDefault();
+  }
+  function onUp() {
+    drag = null;
+    head.style.cursor = 'grab';
+    document.removeEventListener('pointermove', onMove);
+    document.removeEventListener('pointerup', onUp);
+  }
+  head.addEventListener('pointerdown', e => {
+    if (e.target.closest('.pc-close')) return;
+    // 現在の実位置を基準に (transform を解除して left/top に固定)
+    const rect = card.getBoundingClientRect();
+    card.style.left = rect.left + 'px';
+    card.style.top = rect.top + 'px';
+    card.style.right = 'auto';
+    card.style.transform = 'none';
+    drag = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+    head.style.cursor = 'grabbing';
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    e.preventDefault();
   });
-  const end = e => { if (drag) { drag = null; head.style.cursor = 'grab'; } };
-  head.addEventListener('pointerup', end);
-  head.addEventListener('pointercancel', end);
   head.style.cursor = 'grab';
+  head.style.touchAction = 'none';
 })();
 function closePreview() {
   if (!previewCard) return;

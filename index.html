@@ -487,6 +487,67 @@ body.thumb-mode #manualRangeToggle { display: none !important; }
 .ti-thumb img { width: 100%; height: 100%; object-fit: contain; }
 .ti-thumb:hover { border-color: var(--accent); }
 
+/* プレビューモード */
+.preview-toggle {
+  position: absolute;
+  top: 50%; right: 0;
+  transform: translateY(-50%);
+  z-index: 40;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  padding: 10px 6px;
+  cursor: pointer;
+  color: var(--accent);
+  box-shadow: -2px 0 8px rgba(0,0,0,0.06);
+}
+.preview-toggle span { font-size: 9px; font-weight: 700; writing-mode: vertical-rl; letter-spacing: 0.1em; }
+.preview-toggle:hover { background: #f0f7fa; }
+.preview-toggle.active { background: var(--accent); color: #fff; }
+.preview-card {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 60;
+  background: #1c1d22;
+  border: 1px solid #33343a;
+  border-radius: 14px;
+  padding: 14px 16px 16px;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  width: min(380px, 92%);
+  color: #e8e8ea;
+}
+.preview-card[hidden] { display: none; }
+.pc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.pc-title { font-weight: 700; font-size: 14px; color: #fff; }
+.pc-sub { font-size: 10px; color: #9a9aa2; margin-bottom: 12px; }
+.pc-close { background: #33343a; border: none; border-radius: 6px; width: 24px; height: 24px; font-size: 16px; line-height: 1; cursor: pointer; color: #ccc; padding: 0; }
+.pc-close:hover { background: #44454d; }
+.pc-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pc-room { display: flex; flex-direction: column; gap: 4px; }
+.pc-room-thumb {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  background: #2a2b31;
+  border-radius: 6px;
+  overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+}
+.pc-room.pc-mine .pc-room-thumb { box-shadow: 0 0 0 2px #5b9cb8; }
+.pc-room-thumb canvas, .pc-room-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pc-room-meta { font-size: 10px; color: #cfcfd4; line-height: 1.4; }
+.pc-room-meta .pc-name { font-weight: 700; color: #fff; }
+.pc-room.pc-mine .pc-room-meta .pc-name { color: #7ec0dc; }
+.pc-room-meta .pc-stat { color: #8a8a92; }
+.pc-size-row { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 11px; color: #9a9aa2; }
+.pc-size-row input { flex: 1; }
+
 /* Simplify (Cutout) slider panel */
 .simplify-panel {
   position: absolute;
@@ -2853,6 +2914,28 @@ canvas.rm-active { cursor: crosshair; }
 </aside>
 
 <main>
+  <!-- プレビューモード: 小さく表示した時の見え方を確認 -->
+  <button id="previewToggle" class="preview-toggle" type="button" title="プレビュー (小さい時の見え方)">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1"/>
+      <rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/>
+      <rect x="14" y="14" width="7" height="7" rx="1"/>
+    </svg>
+    <span>プレビュー</span>
+  </button>
+  <div id="previewCard" class="preview-card" hidden>
+    <div class="pc-head">
+      <span class="pc-title">小さい時の見え方</span>
+      <button id="previewClose" class="pc-close" aria-label="閉じる">×</button>
+    </div>
+    <div class="pc-sub">他のお部屋に並んだ時、自分のサムネが目立つか確認</div>
+    <div class="pc-grid" id="previewGrid"></div>
+    <div class="pc-size-row">
+      <span>大きさ</span>
+      <input type="range" id="previewSize" min="120" max="320" step="10" value="200">
+    </div>
+  </div>
   <header class="info">
     <div class="ratio-label">
       <div class="name-row">
@@ -5375,7 +5458,8 @@ fileInput.addEventListener('change', e => {
   e.target.value = '';  // allow re-selection of same file
 });
 
-/* ===== 部屋サムネくん モード (自由加工: アイテム比なし) ===== */
+/* ===== 部屋サムネくん モード (自由加工: サムネ比固定) ===== */
+const THUMB_RATIO = { w: 2, h: 1 };  // 参考UIの1枚サムネ比 (約2:1)
 state.thumbMode = false;
 state.thumbItems = [];  // 登録された装飾アイテム {url, name}
 const thumbKunBtn = document.getElementById('thumbKun');
@@ -6366,10 +6450,14 @@ function recalculateFrame() {
     return;
   }
   if (!state.ratio) {
-    // 部屋サムネくん: アイテム比なし → 枠 = キャンバス全体
+    // 部屋サムネくん: サムネ比を固定 (参考UIの1枚=約2:1)
     if (state.thumbMode) {
-      state.frameX = 0; state.frameY = 0;
-      state.frameW = state.canvasW; state.frameH = state.canvasH;
+      const t = THUMB_RATIO.w / THUMB_RATIO.h;
+      let fw = state.canvasW, fh = fw / t;
+      if (fh > state.canvasH) { fh = state.canvasH; fw = fh * t; }
+      state.frameW = fw; state.frameH = fh;
+      state.frameX = (state.canvasW - fw) / 2;
+      state.frameY = (state.canvasH - fh) / 2;
     }
     return;
   }
@@ -6414,6 +6502,12 @@ function pickContrastLineColor() {
 
 function draw() {
   if (!state.canvasW || !state.canvasH) return;
+  // プレビューカードが開いていれば内容を更新 (再帰防止フラグ付き)
+  if (typeof previewCard !== 'undefined' && previewCard && !previewCard.hidden && !window.__inPreviewRefresh) {
+    window.__inPreviewRefresh = true;
+    try { renderPreviewGrid(); } catch (e) {}
+    window.__inPreviewRefresh = false;
+  }
   ctx.clearRect(0, 0, state.canvasW, state.canvasH);
   // 加工くん プレビュー直接モード中は専用描画
   if (typeof rmState !== 'undefined' && rmState && rmState.active) {
@@ -9657,6 +9751,100 @@ saveBtn.addEventListener('click', save);
 
 /* レイヤーをすべて合成して 1枚の連続フレームを作る (natural 解像度) */
 /* レイヤーをすべて合成して 1枚の連続フレームを作る (canvas寸法、全 transform ベイク) */
+/* ===== プレビューモード (小さい時の見え方) ===== */
+const previewToggle = document.getElementById('previewToggle');
+const previewCard = document.getElementById('previewCard');
+const previewClose = document.getElementById('previewClose');
+const previewGrid = document.getElementById('previewGrid');
+const previewSize = document.getElementById('previewSize');
+
+// 参考UI風のダミールーム (自分のサムネを真ん中に挟む)
+const PREVIEW_ROOMS = [
+  { name: 'シーサイドカフェ', stat: '3 / 16 players ・ 19.0MB', hue: 200 },
+  { name: '気ままに作業部屋', stat: '3 / 10 players ・ 443.0KB', hue: 30 },
+  { name: 'あなたのお部屋', stat: '1 / 8 players ・ —', mine: true },
+  { name: '学校の教室', stat: '9 / 15 players ・ 15.0MB', hue: 150 },
+  { name: 'Chill cafe', stat: '14 / 15 players ・ 7.0MB', hue: 280 },
+];
+
+function renderPreviewGrid() {
+  if (!previewGrid) return;
+  previewGrid.innerHTML = '';
+  const cardW = parseInt(previewSize.value, 10);
+  previewCard.style.width = cardW + 'px';
+  // 自分の合成サムネ canvas を生成
+  let mineCanvas = null;
+  try {
+    mineCanvas = buildThumbPreviewCanvas();
+  } catch (e) { mineCanvas = null; }
+  PREVIEW_ROOMS.forEach(room => {
+    const r = document.createElement('div');
+    r.className = 'pc-room' + (room.mine ? ' pc-mine' : '');
+    const th = document.createElement('div');
+    th.className = 'pc-room-thumb';
+    if (room.mine && mineCanvas) {
+      th.appendChild(mineCanvas);
+    } else if (!room.mine) {
+      // ダミー: ほんのり色のグラデ
+      th.style.background = `linear-gradient(135deg, hsl(${room.hue},25%,28%), hsl(${room.hue},20%,16%))`;
+    } else {
+      th.textContent = '画像を読み込んでね';
+      th.style.fontSize = '10px';
+      th.style.color = '#888';
+    }
+    const meta = document.createElement('div');
+    meta.className = 'pc-room-meta';
+    meta.innerHTML = `<span class="pc-name">${room.name}</span><br><span class="pc-stat">${room.stat}</span>`;
+    r.appendChild(th);
+    r.appendChild(meta);
+    previewGrid.appendChild(r);
+  });
+}
+
+/* 現在の編集結果を 2:1 にクロップした小さなプレビュー canvas を作る */
+function buildThumbPreviewCanvas() {
+  if (!state.loaded || !state.frames.length) return null;
+  // 合成 (レイヤーあれば合成、なければ現フレーム)
+  const src = (state.layers.length >= 2) ? compositeAllLayers()[state.currentFrame % Math.max(1, compositeAllLayers().length)] : null;
+  const baseCanvas = src ? src.canvas : (state.frames[state.currentFrame] || state.frames[0]).canvas;
+  // 枠 (frameX/Y/W/H) は canvas座標。baseCanvas は canvas寸法か natural寸法かで変わるため比率換算
+  const out = document.createElement('canvas');
+  // 2:1 の小さめ出力
+  const PW = 240, PH = 120;
+  out.width = PW; out.height = PH;
+  const octx = out.getContext('2d');
+  octx.fillStyle = state.bgMode === 'white' ? '#fff' : '#2a2b31';
+  octx.fillRect(0, 0, PW, PH);
+  // クロップ領域 (canvas座標) を baseCanvas のスケールに換算
+  const sx = baseCanvas.width / state.canvasW;
+  const sy = baseCanvas.height / state.canvasH;
+  const cropX = state.frameX * sx;
+  const cropY = state.frameY * sy;
+  const cropW = state.frameW * sx;
+  const cropH = state.frameH * sy;
+  octx.drawImage(baseCanvas, cropX, cropY, cropW, cropH, 0, 0, PW, PH);
+  return out;
+}
+
+function openPreview() {
+  if (!previewCard) return;
+  previewCard.hidden = false;
+  previewToggle.classList.add('active');
+  renderPreviewGrid();
+}
+function closePreview() {
+  if (!previewCard) return;
+  previewCard.hidden = true;
+  previewToggle.classList.remove('active');
+}
+if (previewToggle) {
+  previewToggle.addEventListener('click', () => {
+    if (previewCard.hidden) openPreview(); else closePreview();
+  });
+}
+if (previewClose) previewClose.addEventListener('click', closePreview);
+if (previewSize) previewSize.addEventListener('input', renderPreviewGrid);
+
 function compositeAllLayers() {
   if (state.layers.length === 0) return state.frames;
   if (state.layers.length === 1) return state.layers[0].frames;

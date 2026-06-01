@@ -550,6 +550,11 @@ body.thumb-mode #manualRangeToggle { display: none !important; }
 .tt-color-swatch { width: 14px; height: 14px; border-radius: 4px; background: #2a2b31; border: 1px solid rgba(255,255,255,0.4); }
 /* サムネモード: 画質低下を隠す */
 body.thumb-mode #quality { display: none !important; }
+/* サムネモード: ヘッダのアイテム比・容量・サイズを隠す */
+body.thumb-mode .ratio-label,
+body.thumb-mode .file-info { display: none !important; }
+/* サムネモード: 背景拡張/画像変形ボタンを隠す (枠の白ハンドルで変形できるため) */
+body.thumb-mode #shrink { display: none !important; }
 .preview-card {
   position: absolute;
   top: 50%; left: 50%;
@@ -2200,6 +2205,17 @@ canvas.rm-active { cursor: crosshair; }
 }
 .layer-panel[hidden] { display: none !important; }
 .layer-panel.collapsed { max-width: 30px; }
+/* サムネモード: レイヤーを左サイドバー下部へ移動 (サムネくんボタンに被らないよう底上げ) */
+body.thumb-mode .layer-panel {
+  position: fixed;
+  left: 8px;
+  right: auto;
+  top: auto;
+  bottom: 64px;
+  transform: none;
+  max-width: 168px;
+  z-index: 46;
+}
 .layer-panel.collapsed .lp-body { display: none; }
 .layer-panel.collapsed .lp-toggle .ic-collapse { display: none; }
 .layer-panel:not(.collapsed) .lp-toggle .ic-expand { display: none; }
@@ -5520,20 +5536,22 @@ fileInput.addEventListener('change', e => {
 /* 読み込み画像をサムネ枠に収める初期 transform */
 function initThumbTransform() {
   if (!state.loaded || !state.canvasW) {
-    state.thumbTransform = { scale: 1, offsetX: 0, offsetY: 0 };
+    state.thumbTransform = { scaleX: 1, scaleY: 1, offsetX: 0, offsetY: 0 };
     return;
   }
-  // 画像が枠を「contain」する初期スケール
   const iw = state.naturalW, ih = state.naturalH;
   const cw = state.canvasW, chh = state.canvasH;
   const sc = Math.min(cw / iw, chh / ih);
-  state.thumbTransform = { scale: sc, offsetX: 0, offsetY: 0 };
+  state.thumbTransform = { scaleX: sc, scaleY: sc, offsetX: 0, offsetY: 0 };
 }
 /* サムネ画像の表示矩形 (canvas px) */
 function thumbImgRect() {
-  const t = state.thumbTransform || { scale: 1, offsetX: 0, offsetY: 0 };
-  const w = state.naturalW * t.scale;
-  const h = state.naturalH * t.scale;
+  let t = state.thumbTransform;
+  if (!t) t = { scaleX: 1, scaleY: 1, offsetX: 0, offsetY: 0 };
+  // 旧形式 (scale) 互換
+  if (t.scaleX === undefined && t.scale !== undefined) { t.scaleX = t.scale; t.scaleY = t.scale; }
+  const w = state.naturalW * t.scaleX;
+  const h = state.naturalH * t.scaleY;
   const cx = state.canvasW / 2 + t.offsetX;
   const cy = state.canvasH / 2 + t.offsetY;
   return { x: cx - w / 2, y: cy - h / 2, w, h };
@@ -6259,14 +6277,12 @@ canvas.addEventListener('pointerdown', e => {
   const hs = 16;
   const hx = rect.x + rect.w, hy = rect.y;  // 右上ハンドル位置
   const t = state.thumbTransform;
-  // 右上■ハンドル → 拡縮 (左下アンカー固定)
+  // 右上■ハンドル → 自由変形 (左下アンカー固定、W/H 独立)
   if (Math.abs(x - hx) <= hs && Math.abs(y - hy) <= hs) {
     e.preventDefault(); canvas.setPointerCapture(e.pointerId);
     state._thumbDrag = {
-      mode: 'scale', startX: x, startY: y,
-      startScale: t.scale, startOffX: t.offsetX, startOffY: t.offsetY,
-      anchorX: rect.x, anchorY: rect.y + rect.h,  // 左下
-      startW: rect.w, startH: rect.h,
+      mode: 'scale',
+      anchorX: rect.x, anchorY: rect.y + rect.h,  // 左下を固定
     };
     return;
   }
@@ -6287,14 +6303,14 @@ canvas.addEventListener('pointermove', e => {
     t.offsetX = d.startOffX + (x - d.startX);
     t.offsetY = d.startOffY + (y - d.startY);
   } else if (d.mode === 'scale') {
-    // 左下アンカー固定で右上をドラッグ → 対角線距離でスケール
+    // 左下アンカー固定で右上を自由ドラッグ → W/H を独立に
     const newW = Math.max(20, x - d.anchorX);
-    const ratio = newW / d.startW;
-    t.scale = Math.max(0.05, d.startScale * ratio);
-    // 左下を固定: アンカー(左下)が動かないよう offset 再計算
-    const w = state.naturalW * t.scale;
-    const h = state.naturalH * t.scale;
-    // 左下 = (cx - w/2, cy + h/2) を anchorX,anchorY に合わせる
+    const newH = Math.max(20, d.anchorY - y);
+    t.scaleX = Math.max(0.03, newW / state.naturalW);
+    t.scaleY = Math.max(0.03, newH / state.naturalH);
+    // 左下を固定するよう offset 再計算
+    const w = state.naturalW * t.scaleX;
+    const h = state.naturalH * t.scaleY;
     const cx = d.anchorX + w / 2;
     const cy = d.anchorY - h / 2;
     t.offsetX = cx - state.canvasW / 2;

@@ -5,28 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- ===== SEO ===== -->
-<title>便利くんG - アイテムサイズ画像加工&動画GIF変換ツール</title>
+<title>便利くん - アイテムサイズ画像加工&動画GIF変換ツール</title>
 <meta name="description" content="動画からのGIF変換、画像編集、複数分割などの多様な機能を備えた便利なサイト。アイテムのサイズに合わせる自動調節や、お部屋に色合いを合わせる「加工くん」も搭載。">
-<meta name="keywords" content="便利くんG,GIF変換,動画GIF,画像加工,アスペクト比,切り抜き,分割,パターン,部屋にマッチ,色合わせ,オンラインツール,無料">
-<meta name="author" content="便利くんG">
+<meta name="keywords" content="便利くん,GIF変換,動画GIF,画像加工,アスペクト比,切り抜き,分割,パターン,部屋にマッチ,色合わせ,オンラインツール,無料">
+<meta name="author" content="便利くん">
 <link rel="canonical" href="https://zzcafe2800.github.io/-screencut/">
 <meta name="theme-color" content="#5b9cb8">
 
 <!-- ===== OGP (X/LINE/Facebookシェア用) ===== -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="便利くんG">
-<meta property="og:title" content="便利くんG - アイテムサイズ画像加工&動画GIF変換ツール">
+<meta property="og:site_name" content="便利くん">
+<meta property="og:title" content="便利くん - アイテムサイズ画像加工&動画GIF変換ツール">
 <meta property="og:description" content="動画からのGIF変換、画像編集、複数分割などの多様な機能を備えた便利なサイト。アイテムのサイズに合わせる自動調節や、お部屋に色合いを合わせる「加工くん」も搭載。">
 <meta property="og:url" content="https://zzcafe2800.github.io/-screencut/">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:image" content="https://zzcafe2800.github.io/-screencut/ogp.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="便利くんG ロゴ">
+<meta property="og:image:alt" content="便利くん ロゴ">
 
 <!-- ===== Twitter (X) Card ===== -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="便利くんG - アイテムサイズ画像加工&動画GIF変換ツール">
+<meta name="twitter:title" content="便利くん - アイテムサイズ画像加工&動画GIF変換ツール">
 <meta name="twitter:description" content="動画からのGIF変換、画像編集、複数分割などの多様な機能を備えた便利なサイト。">
 <meta name="twitter:image" content="https://zzcafe2800.github.io/-screencut/ogp.png">
 
@@ -39,8 +39,8 @@
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "便利くんG",
-  "alternateName": "便利君G",
+  "name": "便利くん",
+  "alternateName": "便利くん",
   "url": "https://zzcafe2800.github.io/-screencut/",
   "description": "動画からのGIF変換、画像編集、複数分割などの多様な機能を備えた便利なサイト。アイテムのサイズに合わせる自動調節や、お部屋に色合いを合わせる「加工くん」も搭載。",
   "applicationCategory": "MultimediaApplication",
@@ -440,15 +440,20 @@ header.info {
   font-family: Georgia, serif;
   font-style: italic;
 }
-/* 部屋サムネくん ボタン (薄ピンク系で差別化) */
+/* 部屋サムネくん ボタン (画面左下に固定) */
 .btn-thumbkun {
+  position: fixed;
+  left: 14px; bottom: 14px;
+  z-index: 45;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: #fff;
   color: #c95a8a;
   border: 1.5px solid #e6a6c4;
-  padding: 7px 16px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.14);
 }
 .btn-thumbkun .lk-main { font-size: 12.5px; font-weight: 700; letter-spacing: 0.03em; }
 .btn-thumbkun:hover { background: #fdeff6; border-color: #d669a0; }
@@ -506,6 +511,7 @@ body.thumb-mode #manualRangeToggle { display: none !important; }
 .preview-toggle span { font-size: 9px; font-weight: 700; writing-mode: vertical-rl; letter-spacing: 0.1em; }
 .preview-toggle:hover { background: #f0f7fa; }
 .preview-toggle.active { background: var(--accent); color: #fff; }
+.preview-toggle[hidden] { display: none !important; }
 .preview-card {
   position: absolute;
   top: 50%; left: 50%;
@@ -5460,8 +5466,137 @@ fileInput.addEventListener('change', e => {
 });
 
 /* ===== 部屋サムネくん モード (自由加工: サムネ比固定) ===== */
+/* 読み込み画像をサムネ枠に収める初期 transform */
+function initThumbTransform() {
+  if (!state.loaded || !state.canvasW) {
+    state.thumbTransform = { scale: 1, offsetX: 0, offsetY: 0 };
+    return;
+  }
+  // 画像が枠を「contain」する初期スケール
+  const iw = state.naturalW, ih = state.naturalH;
+  const cw = state.canvasW, chh = state.canvasH;
+  const sc = Math.min(cw / iw, chh / ih);
+  state.thumbTransform = { scale: sc, offsetX: 0, offsetY: 0 };
+}
+/* サムネ画像の表示矩形 (canvas px) */
+function thumbImgRect() {
+  const t = state.thumbTransform || { scale: 1, offsetX: 0, offsetY: 0 };
+  const w = state.naturalW * t.scale;
+  const h = state.naturalH * t.scale;
+  const cx = state.canvasW / 2 + t.offsetX;
+  const cy = state.canvasH / 2 + t.offsetY;
+  return { x: cx - w / 2, y: cy - h / 2, w, h };
+}
+/* サムネモード: 白枠・ハンドルを除いた canvas 内容を全フレーム合成 (出力用) */
+function compositeThumbFrames() {
+  const W = Math.round(state.canvasW), H = Math.round(state.canvasH);
+  const baseFrames = state.frames;
+  const rect = thumbImgRect();
+  const out = [];
+  for (let fi = 0; fi < baseFrames.length; fi++) {
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    const cc = c.getContext('2d');
+    cc.fillStyle = state.bgMode === 'white' ? '#ffffff' : '#2a2b31';
+    cc.fillRect(0, 0, W, H);
+    // ベース画像
+    const src = (state.simplify > 0) ? getSimplifiedFrame(fi) : baseFrames[fi].canvas;
+    cc.save();
+    if (state.brightness > 0) cc.filter = `brightness(${getBrightnessFactor(state.brightness)})`;
+    const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+    cc.translate(cx, cy);
+    cc.rotate((state.rotation || 0) * Math.PI / 180);
+    cc.scale(state.flipH ? -1 : 1, state.flipV ? -1 : 1);
+    const isLR90 = state.rotation === 90 || state.rotation === 270;
+    const dw = isLR90 ? rect.h : rect.w, dh = isLR90 ? rect.w : rect.h;
+    cc.drawImage(src, -dw / 2, -dh / 2, dw, dh);
+    cc.restore();
+    // 追加レイヤー
+    for (let i = 1; i < state.layers.length; i++) {
+      const L = state.layers[i];
+      if (!L.visible) continue;
+      const lfi = (i === 0 ? fi : (L.frames.length > 1 ? fi % L.frames.length : 0));
+      const lsrc = L.simplify > 0 ? getLayerSimplifiedFrame(L, lfi) : (L.frames[lfi] && L.frames[lfi].canvas);
+      if (!lsrc) continue;
+      const baseScale = state.canvasW / state.naturalW;
+      const lw = L.naturalW * L.scaleX * baseScale, lh = L.naturalH * L.scaleY * baseScale;
+      const lcx = W / 2 + L.offsetX, lcy = H / 2 + L.offsetY;
+      cc.save();
+      if (L.brightness > 0) cc.filter = `brightness(${getBrightnessFactor(L.brightness)})`;
+      cc.translate(lcx, lcy);
+      cc.rotate(L.rotation * Math.PI / 180);
+      cc.scale(L.flipH ? -1 : 1, L.flipV ? -1 : 1);
+      const lr90 = L.rotation === 90 || L.rotation === 270;
+      const ldw = lr90 ? lh : lw, ldh = lr90 ? lw : lh;
+      cc.drawImage(lsrc, -ldw / 2, -ldh / 2, ldw, ldh);
+      cc.restore();
+    }
+    out.push({ canvas: c, delay: baseFrames[fi].delay });
+  }
+  return out;
+}
+
+/* サムネモードの描画: 背景 → ベース画像(白枠+右上■) → 追加レイヤー */
+function drawThumbMode() {
+  if (!state.thumbTransform) initThumbTransform();
+  ctx.fillStyle = state.bgMode === 'white' ? '#ffffff' : '#2a2b31';
+  ctx.fillRect(0, 0, state.canvasW, state.canvasH);
+  const rect = thumbImgRect();
+  const frame = state.frames[state.currentFrame] || state.frames[0];
+  const srcCanvas = (state.simplify > 0) ? getSimplifiedFrame(state.currentFrame) : frame.canvas;
+  ctx.save();
+  if (state.brightness > 0) ctx.filter = `brightness(${getBrightnessFactor(state.brightness)})`;
+  const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
+  ctx.translate(cx, cy);
+  ctx.rotate((state.rotation || 0) * Math.PI / 180);
+  ctx.scale(state.flipH ? -1 : 1, state.flipV ? -1 : 1);
+  const isLR90 = state.rotation === 90 || state.rotation === 270;
+  const dw = isLR90 ? rect.h : rect.w;
+  const dh = isLR90 ? rect.w : rect.h;
+  ctx.drawImage(srcCanvas, -dw / 2, -dh / 2, dw, dh);
+  ctx.restore();
+  // 追加レイヤー
+  if (state.layers.length >= 2) {
+    for (let i = 1; i < state.layers.length; i++) {
+      const L = state.layers[i];
+      if (!L.visible) continue;
+      const lfi = L.currentFrame % L.frames.length;
+      const lsrc = L.simplify > 0 ? getLayerSimplifiedFrame(L, lfi) : L.frames[lfi].canvas;
+      if (!lsrc) continue;
+      const baseScale = state.canvasW / state.naturalW;
+      const lw = L.naturalW * L.scaleX * baseScale;
+      const lh = L.naturalH * L.scaleY * baseScale;
+      const lcx = state.canvasW / 2 + L.offsetX;
+      const lcy = state.canvasH / 2 + L.offsetY;
+      ctx.save();
+      if (L.brightness > 0) ctx.filter = `brightness(${getBrightnessFactor(L.brightness)})`;
+      ctx.translate(lcx, lcy);
+      ctx.rotate(L.rotation * Math.PI / 180);
+      ctx.scale(L.flipH ? -1 : 1, L.flipV ? -1 : 1);
+      const lr90 = L.rotation === 90 || L.rotation === 270;
+      const ldw = lr90 ? lh : lw, ldh = lr90 ? lw : lh;
+      ctx.drawImage(lsrc, -ldw / 2, -ldh / 2, ldw, ldh);
+      ctx.restore();
+    }
+  }
+  // 白枠 + 右上■ハンドル
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([]);
+  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+  const hs = 14;
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = 'rgba(91,156,184,0.9)';
+  ctx.lineWidth = 1.5;
+  ctx.fillRect(rect.x + rect.w - hs / 2, rect.y - hs / 2, hs, hs);
+  ctx.strokeRect(rect.x + rect.w - hs / 2, rect.y - hs / 2, hs, hs);
+  ctx.restore();
+}
 const THUMB_RATIO = { w: 203, h: 111 };  // 参考サムネ単体の実測比 (約1.83:1)
 state.thumbMode = false;
+state.thumbTransform = null;  // {scale, offsetX, offsetY} 読み込み画像の枠内位置
+state._thumbDrag = null;      // ドラッグ状態
 state.thumbItems = [];  // 登録された装飾アイテム {url, name}
 const thumbKunBtn = document.getElementById('thumbKun');
 const thumbItemsPanel = document.getElementById('thumbItemsPanel');
@@ -5528,6 +5663,7 @@ if (thumbKunBtnEl) {
       state.splitW = 1; state.splitH = 1;
       state.pattern = false;
       if (typeof dismissSidebarAttention === 'function') dismissSidebarAttention();
+      initThumbTransform();
       renderThumbItems();
       if (typeof recomputeLayout === 'function') recomputeLayout();
       if (typeof recalculateFrame === 'function') recalculateFrame();
@@ -6031,6 +6167,64 @@ function getMultiSelectBBox() {
   return { left: minX, top: minY, right: maxX, bottom: maxY, indices: selectedNonBase };
 }
 
+/* 部屋サムネくん: ベース画像のドラッグ移動 / 右上■で拡縮 */
+canvas.addEventListener('pointerdown', e => {
+  if (!state.thumbMode || !state.loaded) return;
+  if (typeof rmState !== 'undefined' && rmState && rmState.active) return;
+  const r = canvas.getBoundingClientRect();
+  const x = ((e.clientX - r.left) / r.width) * state.canvasW;
+  const y = ((e.clientY - r.top) / r.height) * state.canvasH;
+  const rect = thumbImgRect();
+  const hs = 16;
+  const hx = rect.x + rect.w, hy = rect.y;  // 右上ハンドル位置
+  const t = state.thumbTransform;
+  // 右上■ハンドル → 拡縮 (左下アンカー固定)
+  if (Math.abs(x - hx) <= hs && Math.abs(y - hy) <= hs) {
+    e.preventDefault(); canvas.setPointerCapture(e.pointerId);
+    state._thumbDrag = {
+      mode: 'scale', startX: x, startY: y,
+      startScale: t.scale, startOffX: t.offsetX, startOffY: t.offsetY,
+      anchorX: rect.x, anchorY: rect.y + rect.h,  // 左下
+      startW: rect.w, startH: rect.h,
+    };
+    return;
+  }
+  // 画像本体 → 移動
+  if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
+    e.preventDefault(); canvas.setPointerCapture(e.pointerId);
+    state._thumbDrag = { mode: 'move', startX: x, startY: y, startOffX: t.offsetX, startOffY: t.offsetY };
+  }
+});
+canvas.addEventListener('pointermove', e => {
+  if (!state.thumbMode || !state._thumbDrag) return;
+  const r = canvas.getBoundingClientRect();
+  const x = ((e.clientX - r.left) / r.width) * state.canvasW;
+  const y = ((e.clientY - r.top) / r.height) * state.canvasH;
+  const d = state._thumbDrag;
+  const t = state.thumbTransform;
+  if (d.mode === 'move') {
+    t.offsetX = d.startOffX + (x - d.startX);
+    t.offsetY = d.startOffY + (y - d.startY);
+  } else if (d.mode === 'scale') {
+    // 左下アンカー固定で右上をドラッグ → 対角線距離でスケール
+    const newW = Math.max(20, x - d.anchorX);
+    const ratio = newW / d.startW;
+    t.scale = Math.max(0.05, d.startScale * ratio);
+    // 左下を固定: アンカー(左下)が動かないよう offset 再計算
+    const w = state.naturalW * t.scale;
+    const h = state.naturalH * t.scale;
+    // 左下 = (cx - w/2, cy + h/2) を anchorX,anchorY に合わせる
+    const cx = d.anchorX + w / 2;
+    const cy = d.anchorY - h / 2;
+    t.offsetX = cx - state.canvasW / 2;
+    t.offsetY = cy - state.canvasH / 2;
+  }
+  draw();
+});
+const _thumbEnd = e => { if (state._thumbDrag) { state._thumbDrag = null; draw(); } };
+canvas.addEventListener('pointerup', _thumbEnd);
+canvas.addEventListener('pointercancel', _thumbEnd);
+
 canvas.addEventListener('pointerdown', e => {
   if (state.layers.length < 2) return;
   if (state.deformActive || state.eyedropperActive) return;
@@ -6416,10 +6610,16 @@ function recomputeLayout() {
   }
   const cw = wrap.clientWidth, ch = wrap.clientHeight;
   if (cw <= 0 || ch <= 0) return;
-  const isRot90 = state.rotation === 90 || state.rotation === 270;
-  const effW = isRot90 ? state.naturalH : state.naturalW;
-  const effH = isRot90 ? state.naturalW : state.naturalH;
-  const r = effW / effH;
+  // 部屋サムネくん: キャンバス自体をサムネ比 (203:111) にする
+  let r;
+  if (state.thumbMode) {
+    r = THUMB_RATIO.w / THUMB_RATIO.h;
+  } else {
+    const isRot90 = state.rotation === 90 || state.rotation === 270;
+    const effW = isRot90 ? state.naturalH : state.naturalW;
+    const effH = isRot90 ? state.naturalW : state.naturalH;
+    r = effW / effH;
+  }
   let dw = cw, dh = cw / r;
   if (dh > ch) { dh = ch; dw = ch * r; }
   state.canvasW = dw;
@@ -6520,6 +6720,13 @@ function draw() {
     return;
   }
   if (!state.loaded || state.frames.length === 0) return;
+
+  // 部屋サムネくん: サムネ枠 = キャンバス全体。画像を transform で配置 + 白枠 + 右上■
+  if (state.thumbMode) {
+    drawThumbMode();
+    return;
+  }
+
   // 背景モード(レイヤーパネル設定)
   if (state.bgMode === 'white' && state.layers.length >= 2) {
     ctx.fillStyle = '#ffffff';
@@ -9510,7 +9717,17 @@ async function save() {
   let savedSimplify = null;
   let savedShrink = null;
   let savedDeformActive = null;
-  if (state.layers.length >= 2) {
+  if (state.thumbMode) {
+    saveBtn.innerHTML = 'サムネ生成中…';
+    await fastYield();
+    savedFrames = state.frames;
+    savedRot = state.rotation; savedFlipH = state.flipH; savedFlipV = state.flipV;
+    savedBrightness = state.brightness; savedSimplify = state.simplify;
+    savedShrink = state.shrink; savedDeformActive = state.deformActive;
+    state.frames = compositeThumbFrames();
+    state.rotation = 0; state.flipH = false; state.flipV = false;
+    state.brightness = 0; state.simplify = 0; state.shrink = 0; state.deformActive = false;
+  } else if (state.layers.length >= 2) {
     saveBtn.innerHTML = 'レイヤー合成中…';
     await fastYield();
     savedFrames = state.frames;

@@ -2205,17 +2205,28 @@ canvas.rm-active { cursor: crosshair; }
 }
 .layer-panel[hidden] { display: none !important; }
 .layer-panel.collapsed { max-width: 30px; }
-/* サムネモード: レイヤーを左サイドバー下部へ移動 (サムネくんボタンに被らないよう底上げ) */
-body.thumb-mode .layer-panel {
-  position: fixed;
-  left: 8px;
-  right: auto;
-  top: auto;
-  bottom: 64px;
-  transform: none;
-  max-width: 168px;
-  z-index: 46;
+/* サムネモード: レイヤーを左サイドバー下部へ移動 */
+.lp-title-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.lp-add {
+  width: 22px; height: 22px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent); color: #fff;
+  border-radius: 6px; font-size: 16px; font-weight: 700;
+  cursor: pointer; line-height: 1;
 }
+.lp-add:hover { background: #4a8aa3; }
+body.thumb-mode .layer-panel {
+  position: static;
+  left: auto; right: auto; top: auto; bottom: auto;
+  transform: none;
+  max-width: none;
+  width: 100%;
+  margin-top: 10px;
+  box-shadow: none;
+  border: 1px solid var(--line);
+  z-index: auto;
+}
+body.thumb-mode .layer-panel .lp-toggle { display: none; }
 .layer-panel.collapsed .lp-body { display: none; }
 .layer-panel.collapsed .lp-toggle .ic-collapse { display: none; }
 .layer-panel:not(.collapsed) .lp-toggle .ic-expand { display: none; }
@@ -2960,29 +2971,18 @@ body.thumb-mode .layer-panel {
   <div id="thumbItemsPanel" class="thumb-items-panel" hidden>
     <div class="ti-title">装飾アイテム</div>
     <div class="ti-empty" id="thumbItemsEmpty">
-      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" opacity="0.4">
-        <rect x="3" y="3" width="7" height="7" rx="1.5"/>
-        <rect x="14" y="3" width="7" height="7" rx="1.5"/>
-        <rect x="3" y="14" width="7" height="7" rx="1.5"/>
-        <path d="M17.5 14v7M14 17.5h7"/>
-      </svg>
-      <p>登録した装飾アイテムが<br>ここに並びます</p>
-      <label for="thumbItemFile" class="ti-add-btn">アイテムを追加</label>
+      <label for="thumbItemFile" class="ti-add-btn">＋ アイテム追加</label>
       <input type="file" id="thumbItemFile" accept="image/*,.gif" hidden>
     </div>
     <div class="ti-list" id="thumbItemsList"></div>
+    <!-- サムネモード: レイヤーパネルをここに移動 (JSで) -->
+    <div id="thumbLayerSlot"></div>
   </div>
 </aside>
 
 <main>
-  <!-- プレビューモード: 小さい時の見え方を確認 (部屋サムネくん時のみ) -->
-  <button id="previewToggle" class="preview-toggle" type="button" title="プレビュー (小さい時の見え方)" hidden>
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="3" y="3" width="7" height="7" rx="1"/>
-      <rect x="14" y="3" width="7" height="7" rx="1"/>
-      <rect x="3" y="14" width="7" height="7" rx="1"/>
-      <rect x="14" y="14" width="7" height="7" rx="1"/>
-    </svg>
+  <!-- プレビューモード: 右端ボタンは廃止 (上部ツールバーのプレビューボタンで開閉) -->
+  <button id="previewToggle" class="preview-toggle" type="button" title="プレビュー" hidden style="display:none !important">
     <span>プレビュー</span>
   </button>
   <div id="previewCard" class="preview-card" hidden>
@@ -3015,11 +3015,14 @@ body.thumb-mode .layer-panel {
   <div class="canvas-wrap" id="canvasWrap">
     <canvas id="canvas"></canvas>
     <div class="thumb-toolbar" id="thumbToolbar" hidden>
-      <button class="tt-btn" id="thumbFixBtn" type="button" title="固定 / 自由">
+      <button class="tt-btn" id="thumbPreviewBtn" type="button" title="プレビュー表示">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 9V7a5 5 0 0110 0M5 9h12a2 2 0 012 2v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7a2 2 0 012-2z" id="ttLockIcon"/>
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
         </svg>
-        <span id="thumbFixLabel">自由</span>
+        <span>プレビュー</span>
       </button>
       <label class="tt-btn tt-color" title="背景色">
         <span class="tt-color-swatch" id="thumbBgSwatch"></span>
@@ -3076,7 +3079,11 @@ body.thumb-mode .layer-panel {
         </svg>
       </button>
       <div class="lp-body">
-        <div class="lp-title">レイヤー</div>
+        <div class="lp-title-row">
+          <span class="lp-title">レイヤー</span>
+          <label for="thumbLayerAddFile" class="lp-add" title="画像を追加">＋</label>
+          <input type="file" id="thumbLayerAddFile" accept="image/*,.gif,video/*" hidden>
+        </div>
         <div class="lp-list" id="layerList"></div>
         <div class="lp-bg-row">
           <span class="lp-bg-label">背景</span>
@@ -5733,20 +5740,27 @@ if (thumbKunBtnEl) {
     // サムネツールバー
     const ttb = document.getElementById('thumbToolbar');
     if (ttb) ttb.hidden = !state.thumbMode;
+    // レイヤーパネルの場所を切替 + 表示制御
+    relocateLayerPanel();
     if (state.thumbMode) {
       // アイテム比の制約を外す (自由なキャンバス)
       state.ratio = null;
       state.splitW = 1; state.splitH = 1;
       state.pattern = false;
+      state.thumbFixed = false;
       if (typeof dismissSidebarAttention === 'function') dismissSidebarAttention();
       initThumbTransform();
+      ensureFirstLayer();   // レイヤー0を用意 (常時パネル表示のため)
       renderThumbItems();
+      renderLayerPanel();
+      updateLayerPanelVisibility();
       if (typeof recomputeLayout === 'function') recomputeLayout();
       if (typeof recalculateFrame === 'function') recalculateFrame();
       if (typeof updateSaveBtn === 'function') updateSaveBtn();
       draw();
       showToast('部屋サムネくん: 自由加工モード');
     } else {
+      updateLayerPanelVisibility();
       showToast('通常モードに戻りました');
       if (typeof updateSaveBtn === 'function') updateSaveBtn();
       draw();
@@ -5754,16 +5768,14 @@ if (thumbKunBtnEl) {
   });
 }
 
-/* サムネツールバー: 固定/自由 トグル */
-const thumbFixBtn = document.getElementById('thumbFixBtn');
-const thumbFixLabel = document.getElementById('thumbFixLabel');
-if (thumbFixBtn) {
-  thumbFixBtn.addEventListener('click', () => {
-    state.thumbFixed = !state.thumbFixed;
-    thumbFixBtn.classList.toggle('fixed', state.thumbFixed);
-    if (thumbFixLabel) thumbFixLabel.textContent = state.thumbFixed ? '固定' : '自由';
-    draw();
-    showToast(state.thumbFixed ? '位置を固定しました' : '自由に動かせます');
+/* サムネツールバー: プレビュー表示トグル */
+const thumbPreviewBtn = document.getElementById('thumbPreviewBtn');
+if (thumbPreviewBtn) {
+  thumbPreviewBtn.addEventListener('click', () => {
+    const pc = document.getElementById('previewCard');
+    if (!pc) return;
+    if (pc.hidden) { openPreview(); thumbPreviewBtn.classList.add('fixed'); }
+    else { closePreview(); thumbPreviewBtn.classList.remove('fixed'); }
   });
 }
 /* サムネツールバー: 背景色 */
@@ -5775,6 +5787,32 @@ if (thumbBgColorInput) {
     if (thumbBgSwatch) thumbBgSwatch.style.background = thumbBgColorInput.value;
     draw();
   });
+}
+
+/* レイヤーパネルの「+」: 画像をレイヤー追加 */
+const thumbLayerAddFile = document.getElementById('thumbLayerAddFile');
+if (thumbLayerAddFile) {
+  thumbLayerAddFile.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (f) {
+      if (!state.loaded) loadAnyFile(f);
+      else loadAsNewLayer(f);
+    }
+    e.target.value = '';
+  });
+}
+
+/* レイヤーパネルをサムネ時はサイドバーへ、通常時はcanvas-wrapへ移動 */
+function relocateLayerPanel() {
+  const lp = document.getElementById('layerPanel');
+  const slot = document.getElementById('thumbLayerSlot');
+  if (!lp) return;
+  if (state.thumbMode) {
+    if (slot && lp.parentNode !== slot) slot.appendChild(lp);
+  } else {
+    const cw = document.getElementById('canvasWrap');
+    if (cw && lp.parentNode !== cw) cw.appendChild(lp);
+  }
 }
 
 /* ===== レイヤー機能 (統合機能 v1) =====
@@ -5999,7 +6037,10 @@ function moveLayer(i, dir) {
 
 /* レイヤーパネルの表示更新 */
 function updateLayerPanelVisibility() {
-  if (state.layers.length >= 2) {
+  // サムネモードでは常時表示 (画像0個以上)
+  if (state.thumbMode) {
+    layerPanel.hidden = false;
+  } else if (state.layers.length >= 2) {
     layerPanel.hidden = false;
   } else {
     layerPanel.hidden = true;

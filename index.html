@@ -512,6 +512,44 @@ body.thumb-mode #manualRangeToggle { display: none !important; }
 .preview-toggle:hover { background: #f0f7fa; }
 .preview-toggle.active { background: var(--accent); color: #fff; }
 .preview-toggle[hidden] { display: none !important; }
+/* プレビューボタンを目立たせる */
+.preview-toggle {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  padding: 14px 8px;
+  box-shadow: -3px 0 12px rgba(91,156,184,0.4);
+}
+.preview-toggle span { font-size: 11px; }
+.preview-toggle svg { stroke-width: 2; }
+.preview-toggle:hover { background: #4a8aa3; }
+/* サムネ用ツールバー (canvas上部) */
+.thumb-toolbar {
+  position: absolute;
+  top: 8px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex; gap: 8px;
+  background: rgba(28,29,34,0.85);
+  border-radius: 999px;
+  padding: 5px 8px;
+}
+.thumb-toolbar[hidden] { display: none; }
+.tt-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+  border: none; border-radius: 999px;
+  padding: 6px 12px; font-size: 11px; font-weight: 600;
+  cursor: pointer;
+}
+.tt-btn:hover { background: rgba(255,255,255,0.22); }
+.tt-btn.fixed { background: #d669a0; }
+.tt-color { position: relative; overflow: hidden; }
+.tt-color input[type=color] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.tt-color-swatch { width: 14px; height: 14px; border-radius: 4px; background: #2a2b31; border: 1px solid rgba(255,255,255,0.4); }
+/* サムネモード: 画質低下を隠す */
+body.thumb-mode #quality { display: none !important; }
 .preview-card {
   position: absolute;
   top: 50%; left: 50%;
@@ -2960,6 +2998,19 @@ canvas.rm-active { cursor: crosshair; }
 
   <div class="canvas-wrap" id="canvasWrap">
     <canvas id="canvas"></canvas>
+    <div class="thumb-toolbar" id="thumbToolbar" hidden>
+      <button class="tt-btn" id="thumbFixBtn" type="button" title="固定 / 自由">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 9V7a5 5 0 0110 0M5 9h12a2 2 0 012 2v7a2 2 0 01-2 2H7a2 2 0 01-2-2v-7a2 2 0 012-2z" id="ttLockIcon"/>
+        </svg>
+        <span id="thumbFixLabel">自由</span>
+      </button>
+      <label class="tt-btn tt-color" title="背景色">
+        <span class="tt-color-swatch" id="thumbBgSwatch"></span>
+        <span>背景</span>
+        <input type="color" id="thumbBgColor" value="#2a2b31">
+      </label>
+    </div>
     <div class="empty-msg" id="emptyMsg">ここに画像・GIFをドロップ</div>
     <div class="loading-overlay" id="loadingOverlay" hidden>
       <div class="loading-spinner"></div>
@@ -5497,7 +5548,7 @@ function compositeThumbFrames() {
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
     const cc = c.getContext('2d');
-    cc.fillStyle = state.bgMode === 'white' ? '#ffffff' : '#2a2b31';
+    cc.fillStyle = state.thumbBgColor || (state.bgMode === 'white' ? '#ffffff' : '#2a2b31');
     cc.fillRect(0, 0, W, H);
     // ベース画像
     const src = (state.simplify > 0) ? getSimplifiedFrame(fi) : baseFrames[fi].canvas;
@@ -5539,7 +5590,7 @@ function compositeThumbFrames() {
 /* サムネモードの描画: 背景 → ベース画像(白枠+右上■) → 追加レイヤー */
 function drawThumbMode() {
   if (!state.thumbTransform) initThumbTransform();
-  ctx.fillStyle = state.bgMode === 'white' ? '#ffffff' : '#2a2b31';
+  ctx.fillStyle = state.thumbBgColor || (state.bgMode === 'white' ? '#ffffff' : '#2a2b31');
   ctx.fillRect(0, 0, state.canvasW, state.canvasH);
   const rect = thumbImgRect();
   const frame = state.frames[state.currentFrame] || state.frames[0];
@@ -5579,24 +5630,28 @@ function drawThumbMode() {
       ctx.restore();
     }
   }
-  // 白枠 + 右上■ハンドル
-  ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.95)';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([]);
-  ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
-  const hs = 14;
-  ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = 'rgba(91,156,184,0.9)';
-  ctx.lineWidth = 1.5;
-  ctx.fillRect(rect.x + rect.w - hs / 2, rect.y - hs / 2, hs, hs);
-  ctx.strokeRect(rect.x + rect.w - hs / 2, rect.y - hs / 2, hs, hs);
-  ctx.restore();
+  // 白枠 + 右上■ハンドル (固定モードでは非表示)
+  if (!state.thumbFixed) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([]);
+    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    const hs = 14;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = 'rgba(91,156,184,0.9)';
+    ctx.lineWidth = 1.5;
+    ctx.fillRect(rect.x + rect.w - hs / 2, rect.y - hs / 2, hs, hs);
+    ctx.strokeRect(rect.x + rect.w - hs / 2, rect.y - hs / 2, hs, hs);
+    ctx.restore();
+  }
 }
 const THUMB_RATIO = { w: 203, h: 111 };  // 参考サムネ単体の実測比 (約1.83:1)
 state.thumbMode = false;
 state.thumbTransform = null;  // {scale, offsetX, offsetY} 読み込み画像の枠内位置
 state._thumbDrag = null;      // ドラッグ状態
+state.thumbFixed = false;     // true=固定(動かせない)
+state.thumbBgColor = '#2a2b31'; // サムネ背景色
 state.thumbItems = [];  // 登録された装飾アイテム {url, name}
 const thumbKunBtn = document.getElementById('thumbKun');
 const thumbItemsPanel = document.getElementById('thumbItemsPanel');
@@ -5657,6 +5712,9 @@ if (thumbKunBtnEl) {
     const pvt = document.getElementById('previewToggle');
     if (pvt) pvt.hidden = !state.thumbMode;
     if (!state.thumbMode) { const pc = document.getElementById('previewCard'); if (pc) pc.hidden = true; }
+    // サムネツールバー
+    const ttb = document.getElementById('thumbToolbar');
+    if (ttb) ttb.hidden = !state.thumbMode;
     if (state.thumbMode) {
       // アイテム比の制約を外す (自由なキャンバス)
       state.ratio = null;
@@ -5675,6 +5733,29 @@ if (thumbKunBtnEl) {
       if (typeof updateSaveBtn === 'function') updateSaveBtn();
       draw();
     }
+  });
+}
+
+/* サムネツールバー: 固定/自由 トグル */
+const thumbFixBtn = document.getElementById('thumbFixBtn');
+const thumbFixLabel = document.getElementById('thumbFixLabel');
+if (thumbFixBtn) {
+  thumbFixBtn.addEventListener('click', () => {
+    state.thumbFixed = !state.thumbFixed;
+    thumbFixBtn.classList.toggle('fixed', state.thumbFixed);
+    if (thumbFixLabel) thumbFixLabel.textContent = state.thumbFixed ? '固定' : '自由';
+    draw();
+    showToast(state.thumbFixed ? '位置を固定しました' : '自由に動かせます');
+  });
+}
+/* サムネツールバー: 背景色 */
+const thumbBgColorInput = document.getElementById('thumbBgColor');
+const thumbBgSwatch = document.getElementById('thumbBgSwatch');
+if (thumbBgColorInput) {
+  thumbBgColorInput.addEventListener('input', () => {
+    state.thumbBgColor = thumbBgColorInput.value;
+    if (thumbBgSwatch) thumbBgSwatch.style.background = thumbBgColorInput.value;
+    draw();
   });
 }
 
@@ -6169,7 +6250,7 @@ function getMultiSelectBBox() {
 
 /* 部屋サムネくん: ベース画像のドラッグ移動 / 右上■で拡縮 */
 canvas.addEventListener('pointerdown', e => {
-  if (!state.thumbMode || !state.loaded) return;
+  if (!state.thumbMode || !state.loaded || state.thumbFixed) return;
   if (typeof rmState !== 'undefined' && rmState && rmState.active) return;
   const r = canvas.getBoundingClientRect();
   const x = ((e.clientX - r.left) / r.width) * state.canvasW;
@@ -9675,6 +9756,7 @@ function todayMMDD() {
   return String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
 }
 function buildBaseName() {
+  if (state.thumbMode || !state.ratio) return 'thumb' + todayMMDD();
   return sanitize(state.ratio.name) + todayMMDD();
 }
 function download(blob, filename) {
@@ -10024,25 +10106,25 @@ function renderPreviewGrid() {
 /* 現在の編集結果を 2:1 にクロップした小さなプレビュー canvas を作る */
 function buildThumbPreviewCanvas() {
   if (!state.loaded || !state.frames.length) return null;
-  // 合成 (レイヤーあれば合成、なければ現フレーム)
-  const src = (state.layers.length >= 2) ? compositeAllLayers()[state.currentFrame % Math.max(1, compositeAllLayers().length)] : null;
-  const baseCanvas = src ? src.canvas : (state.frames[state.currentFrame] || state.frames[0]).canvas;
-  // 枠 (frameX/Y/W/H) は canvas座標。baseCanvas は canvas寸法か natural寸法かで変わるため比率換算
+  const PW = 240, PH = Math.round(PW * THUMB_RATIO.h / THUMB_RATIO.w);
   const out = document.createElement('canvas');
-  // 2:1 の小さめ出力
-  const PW = 240, PH = 120;
   out.width = PW; out.height = PH;
   const octx = out.getContext('2d');
+  // サムネモード: 保存と同じ合成結果 (枠の中身) を縮小して表示
+  if (state.thumbMode) {
+    const frames = compositeThumbFrames();
+    const baseCanvas = (frames[state.currentFrame] || frames[0]).canvas;
+    octx.drawImage(baseCanvas, 0, 0, PW, PH);
+    return out;
+  }
+  // 通常: 枠をクロップ
+  const src = (state.layers.length >= 2) ? compositeAllLayers()[state.currentFrame % Math.max(1, compositeAllLayers().length)] : null;
+  const baseCanvas = src ? src.canvas : (state.frames[state.currentFrame] || state.frames[0]).canvas;
   octx.fillStyle = state.bgMode === 'white' ? '#fff' : '#2a2b31';
   octx.fillRect(0, 0, PW, PH);
-  // クロップ領域 (canvas座標) を baseCanvas のスケールに換算
   const sx = baseCanvas.width / state.canvasW;
   const sy = baseCanvas.height / state.canvasH;
-  const cropX = state.frameX * sx;
-  const cropY = state.frameY * sy;
-  const cropW = state.frameW * sx;
-  const cropH = state.frameH * sy;
-  octx.drawImage(baseCanvas, cropX, cropY, cropW, cropH, 0, 0, PW, PH);
+  octx.drawImage(baseCanvas, state.frameX*sx, state.frameY*sy, state.frameW*sx, state.frameH*sy, 0, 0, PW, PH);
   return out;
 }
 

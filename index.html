@@ -576,8 +576,8 @@ body.thumb-mode #shrink { display: none !important; }
 .pc-close:hover { background: #44454d; }
 .pc-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px 14px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px 10px;
 }
 .pc-room { display: flex; flex-direction: column; gap: 5px; }
 .pc-room-thumb {
@@ -2227,6 +2227,7 @@ body.thumb-mode .layer-panel {
   z-index: auto;
 }
 body.thumb-mode .layer-panel .lp-toggle { display: none; }
+body.thumb-mode .lp-bg-row { display: none !important; }
 .layer-panel.collapsed .lp-body { display: none; }
 .layer-panel.collapsed .lp-toggle .ic-collapse { display: none; }
 .layer-panel:not(.collapsed) .lp-toggle .ic-expand { display: none; }
@@ -3029,6 +3030,9 @@ body.thumb-mode .layer-panel .lp-toggle { display: none; }
         <span>背景</span>
         <input type="color" id="thumbBgColor" value="#2a2b31">
       </label>
+      <button class="tt-btn" id="thumbAspectBtn" type="button" title="変形のしかた">
+        <span id="thumbAspectLabel">自由</span>
+      </button>
     </div>
     <div class="empty-msg" id="emptyMsg">ここに画像・GIFをドロップ</div>
     <div class="loading-overlay" id="loadingOverlay" hidden>
@@ -5655,27 +5659,31 @@ function drawThumbMode() {
       ctx.restore();
     }
   }
-  // 白枠 + 右上■ハンドル (固定モードでは非表示)
-  if (!state.thumbFixed) {
-    ctx.save();
+  // 選択レイヤーごとに白枠 + 右上■ハンドル
+  const selDraw = (state.selectedLayers && state.selectedLayers.size) ? [...state.selectedLayers] : [0];
+  ctx.save();
+  for (const idx of selDraw) {
+    const lr = thumbLayerRect(idx);
+    if (!lr) continue;
     ctx.strokeStyle = 'rgba(255,255,255,0.95)';
     ctx.lineWidth = 2;
     ctx.setLineDash([]);
-    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.strokeRect(lr.x, lr.y, lr.w, lr.h);
     const hs = 14;
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = 'rgba(91,156,184,0.9)';
     ctx.lineWidth = 1.5;
-    ctx.fillRect(rect.x + rect.w - hs / 2, rect.y - hs / 2, hs, hs);
-    ctx.strokeRect(rect.x + rect.w - hs / 2, rect.y - hs / 2, hs, hs);
-    ctx.restore();
+    ctx.fillRect(lr.x + lr.w - hs / 2, lr.y - hs / 2, hs, hs);
+    ctx.strokeRect(lr.x + lr.w - hs / 2, lr.y - hs / 2, hs, hs);
   }
+  ctx.restore();
 }
 const THUMB_RATIO = { w: 203, h: 111 };  // 参考サムネ単体の実測比 (約1.83:1)
 state.thumbMode = false;
 state.thumbTransform = null;  // {scale, offsetX, offsetY} 読み込み画像の枠内位置
 state._thumbDrag = null;      // ドラッグ状態
-state.thumbFixed = false;     // true=固定(動かせない)
+state.thumbFixed = false;     // (旧) 未使用
+state.thumbAspectLock = false; // false=自由(左右独立) true=固定(比率保持)
 state.thumbBgColor = '#2a2b31'; // サムネ背景色
 state.thumbItems = [];  // 登録された装飾アイテム {url, name}
 const thumbKunBtn = document.getElementById('thumbKun');
@@ -5778,6 +5786,18 @@ if (thumbPreviewBtn) {
     else { closePreview(); thumbPreviewBtn.classList.remove('fixed'); }
   });
 }
+/* サムネツールバー: 変形のしかた (自由/固定) */
+const thumbAspectBtn = document.getElementById('thumbAspectBtn');
+const thumbAspectLabel = document.getElementById('thumbAspectLabel');
+if (thumbAspectBtn) {
+  thumbAspectBtn.addEventListener('click', () => {
+    state.thumbAspectLock = !state.thumbAspectLock;
+    thumbAspectBtn.classList.toggle('fixed', state.thumbAspectLock);
+    if (thumbAspectLabel) thumbAspectLabel.textContent = state.thumbAspectLock ? '固定' : '自由';
+    showToast(state.thumbAspectLock ? '比率を保って変形' : '左右自由に変形');
+  });
+}
+
 /* サムネツールバー: 背景色 */
 const thumbBgColorInput = document.getElementById('thumbBgColor');
 const thumbBgSwatch = document.getElementById('thumbBgSwatch');
@@ -6307,30 +6327,69 @@ function getMultiSelectBBox() {
   return { left: minX, top: minY, right: maxX, bottom: maxY, indices: selectedNonBase };
 }
 
-/* 部屋サムネくん: ベース画像のドラッグ移動 / 右上■で拡縮 */
+/* レイヤーの表示矩形 (サムネ canvas px) */
+function thumbLayerRect(idx) {
+  if (idx === 0) return thumbImgRect();
+  const L = state.layers[idx];
+  if (!L) return null;
+  const baseScale = state.canvasW / state.naturalW;
+  const w = L.naturalW * L.scaleX * baseScale;
+  const h = L.naturalH * L.scaleY * baseScale;
+  const cx = state.canvasW / 2 + L.offsetX;
+  const cy = state.canvasH / 2 + L.offsetY;
+  return { x: cx - w / 2, y: cy - h / 2, w, h };
+}
+function setThumbLayerRect(idx, r) {
+  if (idx === 0) {
+    const t = state.thumbTransform;
+    t.scaleX = r.w / state.naturalW;
+    t.scaleY = r.h / state.naturalH;
+    t.offsetX = (r.x + r.w / 2) - state.canvasW / 2;
+    t.offsetY = (r.y + r.h / 2) - state.canvasH / 2;
+  } else {
+    const L = state.layers[idx];
+    const baseScale = state.canvasW / state.naturalW;
+    L.scaleX = r.w / (L.naturalW * baseScale);
+    L.scaleY = r.h / (L.naturalH * baseScale);
+    L.offsetX = (r.x + r.w / 2) - state.canvasW / 2;
+    L.offsetY = (r.y + r.h / 2) - state.canvasH / 2;
+  }
+}
+function thumbSelectedList() {
+  return (state.selectedLayers && state.selectedLayers.size) ? [...state.selectedLayers] : [0];
+}
+
+/* 部屋サムネくん: 選択レイヤーのドラッグ移動 / 右上■で変形 */
 canvas.addEventListener('pointerdown', e => {
-  if (!state.thumbMode || !state.loaded || state.thumbFixed) return;
+  if (!state.thumbMode || !state.loaded) return;
   if (typeof rmState !== 'undefined' && rmState && rmState.active) return;
   const r = canvas.getBoundingClientRect();
   const x = ((e.clientX - r.left) / r.width) * state.canvasW;
   const y = ((e.clientY - r.top) / r.height) * state.canvasH;
-  const rect = thumbImgRect();
+  const sel = thumbSelectedList();
   const hs = 16;
-  const hx = rect.x + rect.w, hy = rect.y;  // 右上ハンドル位置
-  const t = state.thumbTransform;
-  // 右上■ハンドル → 自由変形 (左下アンカー固定、W/H 独立)
-  if (Math.abs(x - hx) <= hs && Math.abs(y - hy) <= hs) {
-    e.preventDefault(); canvas.setPointerCapture(e.pointerId);
-    state._thumbDrag = {
-      mode: 'scale',
-      anchorX: rect.x, anchorY: rect.y + rect.h,  // 左下を固定
-    };
-    return;
+  // 1) 選択レイヤーの右上■ → 変形
+  for (const idx of sel) {
+    const rect = thumbLayerRect(idx);
+    if (!rect) continue;
+    const hx = rect.x + rect.w, hy = rect.y;
+    if (Math.abs(x - hx) <= hs && Math.abs(y - hy) <= hs) {
+      e.preventDefault(); canvas.setPointerCapture(e.pointerId);
+      state._thumbDrag = { mode: 'scale', idx, anchorX: rect.x, anchorY: rect.y + rect.h,
+        startW: rect.w, startH: rect.h };
+      return;
+    }
   }
-  // 画像本体 → 移動
-  if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
-    e.preventDefault(); canvas.setPointerCapture(e.pointerId);
-    state._thumbDrag = { mode: 'move', startX: x, startY: y, startOffX: t.offsetX, startOffY: t.offsetY };
+  // 2) 選択レイヤーの本体 → 移動 (選択中すべてを一緒に)
+  for (const idx of sel) {
+    const rect = thumbLayerRect(idx);
+    if (!rect) continue;
+    if (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h) {
+      e.preventDefault(); canvas.setPointerCapture(e.pointerId);
+      const starts = sel.map(i => { const rr = thumbLayerRect(i); return { idx: i, x: rr.x, y: rr.y, w: rr.w, h: rr.h }; });
+      state._thumbDrag = { mode: 'move', startX: x, startY: y, starts };
+      return;
+    }
   }
 });
 canvas.addEventListener('pointermove', e => {
@@ -6339,23 +6398,21 @@ canvas.addEventListener('pointermove', e => {
   const x = ((e.clientX - r.left) / r.width) * state.canvasW;
   const y = ((e.clientY - r.top) / r.height) * state.canvasH;
   const d = state._thumbDrag;
-  const t = state.thumbTransform;
   if (d.mode === 'move') {
-    t.offsetX = d.startOffX + (x - d.startX);
-    t.offsetY = d.startOffY + (y - d.startY);
+    const dx = x - d.startX, dy = y - d.startY;
+    for (const s of d.starts) {
+      setThumbLayerRect(s.idx, { x: s.x + dx, y: s.y + dy, w: s.w, h: s.h });
+    }
   } else if (d.mode === 'scale') {
-    // 左下アンカー固定で右上を自由ドラッグ → W/H を独立に
-    const newW = Math.max(20, x - d.anchorX);
-    const newH = Math.max(20, d.anchorY - y);
-    t.scaleX = Math.max(0.03, newW / state.naturalW);
-    t.scaleY = Math.max(0.03, newH / state.naturalH);
-    // 左下を固定するよう offset 再計算
-    const w = state.naturalW * t.scaleX;
-    const h = state.naturalH * t.scaleY;
-    const cx = d.anchorX + w / 2;
-    const cy = d.anchorY - h / 2;
-    t.offsetX = cx - state.canvasW / 2;
-    t.offsetY = cy - state.canvasH / 2;
+    let newW = Math.max(20, x - d.anchorX);
+    let newH = Math.max(20, d.anchorY - y);
+    if (state.thumbAspectLock) {
+      // 比率保持: 元の比に合わせる
+      const ar = d.startW / d.startH;
+      // 大きい方の変化に合わせる
+      if (newW / newH > ar) newH = newW / ar; else newW = newH * ar;
+    }
+    setThumbLayerRect(d.idx, { x: d.anchorX, y: d.anchorY - newH, w: newW, h: newH });
   }
   draw();
 });
@@ -6364,6 +6421,7 @@ canvas.addEventListener('pointerup', _thumbEnd);
 canvas.addEventListener('pointercancel', _thumbEnd);
 
 canvas.addEventListener('pointerdown', e => {
+  if (state.thumbMode) return;  // サムネモードは専用処理が担当 (canvasクリック選択は無効)
   if (state.layers.length < 2) return;
   if (state.deformActive || state.eyedropperActive) return;
   if (typeof rmState !== 'undefined' && rmState && rmState.active) return;
@@ -9841,8 +9899,50 @@ function fastYield() {
   });
 }
 
+/* 部屋サムネくん 専用保存: サムネ枠の中身を直接 PNG/GIF で書き出す */
+async function saveThumb() {
+  saveBtn.disabled = true;
+  const orig = saveBtn.innerHTML;
+  try {
+    saveBtn.innerHTML = 'サムネ生成中…';
+    await fastYield();
+    const frames = compositeThumbFrames();
+    if (!frames || !frames.length) { showToast('画像がありません'); return; }
+    const baseName = buildBaseName();
+    if (frames.length > 1) {
+      // GIF
+      saveBtn.innerHTML = 'GIFエンコード…';
+      const W = frames[0].canvas.width, H = frames[0].canvas.height;
+      const framesData = frames.map(fr => ({
+        rgba: fr.canvas.getContext('2d').getImageData(0, 0, W, H).data,
+        delay: fr.delay,
+      }));
+      const buf = await encodeAnimatedGIF(W, H, framesData, (cur, total) => {
+        saveBtn.innerHTML = `GIF ${cur}/${total}`;
+      });
+      download(new Blob([buf], { type: 'image/gif' }), baseName + '.gif');
+    } else {
+      // PNG
+      const blob = await new Promise(res => frames[0].canvas.toBlob(res, 'image/png'));
+      download(blob, baseName + '.png');
+    }
+  } catch (e) {
+    console.error(e);
+    showToast('保存に失敗しました');
+  } finally {
+    saveBtn.innerHTML = orig;
+    updateSaveBtn();
+  }
+}
+
 async function save() {
-  if (!state.loaded || !state.ratio) return;
+  if (!state.loaded) return;
+  // 部屋サムネくん: サムネ枠の中身を直接エクスポート (クロップ機構を通さない)
+  if (state.thumbMode) {
+    await saveThumb();
+    return;
+  }
+  if (!state.ratio) return;
   const total = state.splitW * state.splitH;
   const baseName = buildBaseName();
   saveBtn.disabled = true;
@@ -9856,17 +9956,7 @@ async function save() {
   let savedSimplify = null;
   let savedShrink = null;
   let savedDeformActive = null;
-  if (state.thumbMode) {
-    saveBtn.innerHTML = 'サムネ生成中…';
-    await fastYield();
-    savedFrames = state.frames;
-    savedRot = state.rotation; savedFlipH = state.flipH; savedFlipV = state.flipV;
-    savedBrightness = state.brightness; savedSimplify = state.simplify;
-    savedShrink = state.shrink; savedDeformActive = state.deformActive;
-    state.frames = compositeThumbFrames();
-    state.rotation = 0; state.flipH = false; state.flipV = false;
-    state.brightness = 0; state.simplify = 0; state.shrink = 0; state.deformActive = false;
-  } else if (state.layers.length >= 2) {
+  if (state.layers.length >= 2) {
     saveBtn.innerHTML = 'レイヤー合成中…';
     await fastYield();
     savedFrames = state.frames;
@@ -10189,8 +10279,43 @@ function openPreview() {
   if (!previewCard) return;
   previewCard.hidden = false;
   previewToggle.classList.add('active');
+  // 保存された位置を復元
+  if (state._previewPos) {
+    previewCard.style.left = state._previewPos.left + 'px';
+    previewCard.style.top = state._previewPos.top + 'px';
+    previewCard.style.transform = 'none';
+  }
   renderPreviewGrid();
 }
+/* プレビューカードのドラッグ移動 (ヘッダを掴む) */
+(function setupPreviewDrag() {
+  const card = document.getElementById('previewCard');
+  if (!card) return;
+  const head = card.querySelector('.pc-head');
+  if (!head) return;
+  let drag = null;
+  head.addEventListener('pointerdown', e => {
+    if (e.target.closest('.pc-close')) return;
+    const rect = card.getBoundingClientRect();
+    drag = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+    head.setPointerCapture(e.pointerId);
+    head.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+  head.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const left = e.clientX - drag.dx;
+    const top = e.clientY - drag.dy;
+    card.style.left = left + 'px';
+    card.style.top = top + 'px';
+    card.style.transform = 'none';
+    state._previewPos = { left, top };  // 非表示でも保持
+  });
+  const end = e => { if (drag) { drag = null; head.style.cursor = 'grab'; } };
+  head.addEventListener('pointerup', end);
+  head.addEventListener('pointercancel', end);
+  head.style.cursor = 'grab';
+})();
 function closePreview() {
   if (!previewCard) return;
   previewCard.hidden = true;

@@ -3037,14 +3037,48 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <!-- 1 画像 -->
       <div class="tp-pane" data-pane="image">
         <label for="file" class="tp-action">お部屋画像を読み込み</label>
-        <p class="tp-note">下のアイコンで色合い・反転などを調節。複数読み込んで重ねられます。</p>
+        <p class="tp-note">下のアイコンで色合い・反転などを調節。複数重ねOK。</p>
+        <label class="tp-mini tp-check"><input type="checkbox" id="thumbBgGrad"> 背景グラデーション</label>
+        <div class="tp-adjust" id="thumbBgGradBox" hidden>
+          <div class="tp-row"><input type="color" id="thumbBgGrad1" class="tp-color" value="#2a2b31"><span class="tp-mini">→</span><input type="color" id="thumbBgGrad2" class="tp-color" value="#5b9cb8"><label class="tp-mini">方向</label><input type="range" id="thumbBgGradAngle" min="0" max="360" value="135"></div>
+        </div>
+        <label class="tp-mini tp-check"><input type="checkbox" id="thumbPat"> 模様(黒い柄)</label>
+        <div class="tp-adjust" id="thumbPatBox" hidden>
+          <div class="tp-row"><label class="tp-mini">形</label>
+            <select id="thumbPatShape" class="tp-select">
+              <option value="dot">● 丸</option><option value="ring">○ 輪</option>
+              <option value="square">■ 四角</option><option value="diamond">◆ ひし形</option>
+              <option value="star">★ 星</option><option value="cross">＋ 十字</option>
+              <option value="tri">▲ 三角</option>
+            </select>
+          </div>
+          <div class="tp-row"><label class="tp-mini">色</label><input type="color" id="thumbPatColor" class="tp-color" value="#000000"><label class="tp-mini">濃さ</label><input type="range" id="thumbPatOpacity" min="0" max="100" value="18"></div>
+          <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbPatSize" min="2" max="40" value="8"><label class="tp-mini">間隔</label><input type="range" id="thumbPatGap" min="10" max="120" value="40"></div>
+          <label class="tp-mini tp-check"><input type="checkbox" id="thumbPatStagger"> 互い違い</label>
+        </div>
+        <label class="tp-mini tp-check"><input type="checkbox" id="thumbSpot"> スポットライト</label>
+        <div class="tp-adjust" id="thumbSpotBox" hidden>
+          <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbSpotR" min="10" max="100" value="55"><label class="tp-mini">ぼかし</label><input type="range" id="thumbSpotSoft" min="0" max="100" value="60"></div>
+          <div class="tp-row"><label class="tp-mini">暗さ</label><input type="range" id="thumbSpotDark" min="0" max="95" value="55"><label class="tp-mini">縦横</label><input type="range" id="thumbSpotRatio" min="40" max="200" value="100"></div>
+          <p class="tp-note">中央が明るく外へ暗くぼけます。中心はドラッグで移動。</p>
+        </div>
       </div>
       <!-- 2 アバター -->
       <div class="tp-pane" data-pane="avatar" hidden>
         <label for="thumbAvatarFile" class="tp-action">アバター画像を追加</label>
         <input type="file" id="thumbAvatarFile" accept="image/*,.gif" hidden>
         <button class="tp-sub" id="thumbAvatarMatch" type="button">お部屋の色に合わせる</button>
-        <p class="tp-note">追加後、枠内の好きな位置へドラッグ。色合いは下のアイコンで調節。</p>
+        <p class="tp-note">選択中のレイヤーに適用:</p>
+        <label class="tp-mini tp-check"><input type="checkbox" id="thumbLBorder"> 境界線</label>
+        <div class="tp-adjust" id="thumbLBorderBox" hidden>
+          <div class="tp-row"><label class="tp-mini">太さ</label><input type="range" id="thumbLBorderW" min="1" max="30" value="6"><label class="tp-mini">色</label><input type="color" id="thumbLBorderColor" class="tp-color" value="#ffffff"></div>
+        </div>
+        <label class="tp-mini tp-check"><input type="checkbox" id="thumbLShadow"> 影</label>
+        <div class="tp-adjust" id="thumbLShadowBox" hidden>
+          <div class="tp-row"><label class="tp-mini">色</label><input type="color" id="thumbLShadowColor" class="tp-color" value="#000000"><label class="tp-mini">ぼかし</label><input type="range" id="thumbLShadowBlur" min="0" max="60" value="16"></div>
+          <div class="tp-row"><label class="tp-mini">方向</label><input type="range" id="thumbLShadowAngle" min="0" max="360" value="135"><label class="tp-mini">距離</label><input type="range" id="thumbLShadowDist" min="0" max="50" value="10"></div>
+        </div>
+        <p class="tp-note">追加後ドラッグで移動、右上■で変形。</p>
       </div>
       <!-- 3 タイトル -->
       <div class="tp-pane" data-pane="title" hidden>
@@ -3098,6 +3132,14 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
           <div class="tp-row"><label class="tp-mini">色相</label><input type="range" id="thumbFrameHue" min="0" max="360" value="0"></div>
           <div class="tp-row"><label class="tp-mini">明るさ</label><input type="range" id="thumbFrameBright" min="40" max="200" value="100"></div>
           <div class="tp-row"><label class="tp-mini">濃さ</label><input type="range" id="thumbFrameContrast" min="50" max="250" value="100"></div>
+          <button class="tp-mini tp-check" id="thumbFrameMore" type="button" style="background:none;border:none;text-decoration:underline;cursor:pointer;text-align:left;padding:0;color:var(--accent)">もっと ▾</button>
+          <div class="tp-adjust" id="thumbFrameMoreBox" hidden>
+            <div class="tp-row"><label class="tp-mini">彩度</label><input type="range" id="thumbFrameSat" min="0" max="300" value="100"></div>
+            <div class="tp-row"><label class="tp-mini">セピア</label><input type="range" id="thumbFrameSepia" min="0" max="100" value="0"></div>
+            <div class="tp-row"><label class="tp-mini">ぼかし</label><input type="range" id="thumbFrameBlur" min="0" max="20" value="0"></div>
+            <div class="tp-row"><label class="tp-mini">透明</label><input type="range" id="thumbFrameAlpha" min="0" max="100" value="100"></div>
+            <label class="tp-mini tp-check"><input type="checkbox" id="thumbFrameInvert"> 色反転</label>
+          </div>
         </div>
         <p class="tp-note">枠を選ぶと適用。もう一度押すと解除。</p>
       </div>
@@ -5711,8 +5753,8 @@ function compositeThumbFrames() {
     const c = document.createElement('canvas');
     c.width = W; c.height = H;
     const cc = c.getContext('2d');
-    cc.fillStyle = state.thumbBgColor || (state.bgMode === 'white' ? '#ffffff' : '#2a2b31');
-    cc.fillRect(0, 0, W, H);
+    fillThumbBg(cc, W, H);
+    drawThumbPattern(cc, W, H);
     // ベース画像
     const src = (state.simplify > 0) ? getSimplifiedFrame(fi) : baseFrames[fi].canvas;
     cc.save();
@@ -5737,17 +5779,30 @@ function compositeThumbFrames() {
       const lcx = W / 2 + L.offsetX, lcy = H / 2 + L.offsetY;
       cc.save();
       cc.globalAlpha = (L.opacity != null ? L.opacity : 1);
+      if (L.shadow && L.shadow.on) {
+        const a = (L.shadow.angle || 0) * Math.PI / 180;
+        cc.shadowColor = L.shadow.color; cc.shadowBlur = L.shadow.blur || 0;
+        cc.shadowOffsetX = Math.cos(a) * (L.shadow.dist || 0);
+        cc.shadowOffsetY = Math.sin(a) * (L.shadow.dist || 0);
+      }
       if (L.brightness > 0) cc.filter = `brightness(${getBrightnessFactor(L.brightness)})`;
       cc.translate(lcx, lcy);
       cc.rotate(L.rotation * Math.PI / 180);
       cc.scale(L.flipH ? -1 : 1, L.flipV ? -1 : 1);
       const lr90 = L.rotation === 90 || L.rotation === 270;
       const ldw = lr90 ? lh : lw, ldh = lr90 ? lw : lh;
+      if (L.border && L.border.on) {
+        cc.save(); cc.shadowColor = 'transparent'; cc.fillStyle = L.border.color;
+        const bw = (L.border.width || 0) * 2;
+        cc.fillRect(-ldw / 2 - bw, -ldh / 2 - bw, ldw + bw * 2, ldh + bw * 2);
+        cc.restore();
+      }
       cc.drawImage(lsrc, -ldw / 2, -ldh / 2, ldw, ldh);
       cc.restore();
     }
     // タイトル + 枠 (出力用、選択枠は描かない)
     state._exporting = true;
+    drawThumbSpot(cc, W, H);
     drawThumbTitles(cc);
     drawThumbFrame(cc);
     state._exporting = false;
@@ -5759,8 +5814,8 @@ function compositeThumbFrames() {
 /* サムネモードの描画: 背景 → ベース画像(白枠+右上■) → 追加レイヤー */
 function drawThumbMode() {
   if (!state.thumbTransform) initThumbTransform();
-  ctx.fillStyle = state.thumbBgColor || (state.bgMode === 'white' ? '#ffffff' : '#2a2b31');
-  ctx.fillRect(0, 0, state.canvasW, state.canvasH);
+  fillThumbBg(ctx, state.canvasW, state.canvasH);
+  drawThumbPattern(ctx, state.canvasW, state.canvasH);
   const rect = thumbImgRect();
   const frame = state.frames[state.currentFrame] || state.frames[0];
   const srcCanvas = (state.simplify > 0) ? getSimplifiedFrame(state.currentFrame) : frame.canvas;
@@ -5792,16 +5847,32 @@ function drawThumbMode() {
       const lcy = state.canvasH / 2 + L.offsetY;
       ctx.save();
       ctx.globalAlpha = (L.opacity != null ? L.opacity : 1);
+      if (L.shadow && L.shadow.on) {
+        const a = (L.shadow.angle || 0) * Math.PI / 180;
+        ctx.shadowColor = L.shadow.color; ctx.shadowBlur = L.shadow.blur || 0;
+        ctx.shadowOffsetX = Math.cos(a) * (L.shadow.dist || 0);
+        ctx.shadowOffsetY = Math.sin(a) * (L.shadow.dist || 0);
+      }
       if (L.brightness > 0) ctx.filter = `brightness(${getBrightnessFactor(L.brightness)})`;
       ctx.translate(lcx, lcy);
       ctx.rotate(L.rotation * Math.PI / 180);
       ctx.scale(L.flipH ? -1 : 1, L.flipV ? -1 : 1);
       const lr90 = L.rotation === 90 || L.rotation === 270;
       const ldw = lr90 ? lh : lw, ldh = lr90 ? lw : lh;
+      if (L.border && L.border.on) {
+        ctx.save();
+        ctx.shadowColor = 'transparent';
+        ctx.fillStyle = L.border.color;
+        const bw = (L.border.width || 0) * 2;
+        ctx.fillRect(-ldw / 2 - bw, -ldh / 2 - bw, ldw + bw * 2, ldh + bw * 2);
+        ctx.restore();
+      }
       ctx.drawImage(lsrc, -ldw / 2, -ldh / 2, ldw, ldh);
       ctx.restore();
     }
   }
+  // スポットライト (画像・レイヤーの上)
+  drawThumbSpot(ctx, state.canvasW, state.canvasH);
   // タイトル (ベース・レイヤーの上)
   drawThumbTitles(ctx);
   // 枠 (最前面・位置固定)
@@ -5856,12 +5927,95 @@ function drawThumbMode() {
   }
   ctx.restore();
 }
+/* 背景塗り (単色 or グラデ) */
+function fillThumbBg(c, W, H) {
+  const g = state.thumbBgGrad;
+  if (g && g.on) {
+    const a = (g.angle || 0) * Math.PI / 180;
+    const cx = W / 2, cy = H / 2;
+    const len = Math.abs(Math.cos(a)) * W + Math.abs(Math.sin(a)) * H;
+    const dx = Math.cos(a) * len / 2, dy = Math.sin(a) * len / 2;
+    const grad = c.createLinearGradient(cx - dx, cy - dy, cx + dx, cy + dy);
+    grad.addColorStop(0, g.c1); grad.addColorStop(1, g.c2);
+    c.fillStyle = grad;
+  } else {
+    c.fillStyle = state.thumbBgColor || '#2a2b31';
+  }
+  c.fillRect(0, 0, W, H);
+}
+/* 等間隔の模様 */
+function drawThumbPattern(c, W, H) {
+  const p = state.thumbPattern;
+  if (!p || !p.on) return;
+  const sc = W / 960;
+  const gap = Math.max(6, p.gap * sc);
+  const sz = Math.max(1, p.size * sc);
+  c.save();
+  c.globalAlpha = (p.opacity || 0) / 100;
+  c.fillStyle = p.color; c.strokeStyle = p.color; c.lineWidth = Math.max(1, sz * 0.18);
+  let row = 0;
+  for (let y = gap / 2; y < H + gap; y += gap, row++) {
+    const off = (p.stagger && row % 2) ? gap / 2 : 0;
+    for (let x = gap / 2 + off; x < W + gap; x += gap) {
+      drawPatShape(c, p.shape, x, y, sz);
+    }
+  }
+  c.restore();
+}
+function drawPatShape(c, shape, x, y, s) {
+  const r = s / 2;
+  c.beginPath();
+  switch (shape) {
+    case 'ring': c.arc(x, y, r, 0, Math.PI * 2); c.stroke(); break;
+    case 'square': c.fillRect(x - r, y - r, s, s); break;
+    case 'diamond': c.moveTo(x, y - r); c.lineTo(x + r, y); c.lineTo(x, y + r); c.lineTo(x - r, y); c.closePath(); c.fill(); break;
+    case 'cross': { const t = Math.max(1, s * 0.28); c.fillRect(x - t / 2, y - r, t, s); c.fillRect(x - r, y - t / 2, s, t); break; }
+    case 'tri': c.moveTo(x, y - r); c.lineTo(x + r, y + r); c.lineTo(x - r, y + r); c.closePath(); c.fill(); break;
+    case 'star': {
+      for (let i = 0; i < 5; i++) {
+        const a1 = -Math.PI / 2 + i * 2 * Math.PI / 5;
+        const a2 = a1 + Math.PI / 5;
+        c.lineTo(x + Math.cos(a1) * r, y + Math.sin(a1) * r);
+        c.lineTo(x + Math.cos(a2) * r * 0.45, y + Math.sin(a2) * r * 0.45);
+      }
+      c.closePath(); c.fill(); break;
+    }
+    default: c.arc(x, y, r, 0, Math.PI * 2); c.fill();
+  }
+}
+/* スポットライト (中央明・外暗、楕円) */
+function drawThumbSpot(c, W, H) {
+  const s = state.thumbSpot;
+  if (!s || !s.on) return;
+  const cx = (s.cxr != null ? s.cxr : 0.5) * W;
+  const cy = (s.cyr != null ? s.cyr : 0.5) * H;
+  const baseR = (s.r / 100) * Math.max(W, H) * 0.7;
+  const ratio = (s.ratio || 100) / 100;
+  const rx = baseR, ry = baseR / ratio;
+  const inner = Math.max(0, 1 - (s.soft || 0) / 100);
+  c.save();
+  c.translate(cx, cy);
+  c.scale(1, ry / rx);
+  const grad = c.createRadialGradient(0, 0, rx * inner, 0, 0, rx);
+  grad.addColorStop(0, 'rgba(0,0,0,0)');
+  grad.addColorStop(1, `rgba(0,0,0,${(s.dark || 0) / 100})`);
+  c.fillStyle = grad;
+  c.beginPath(); c.arc(0, 0, rx, 0, Math.PI * 2); c.fill();
+  // 楕円の外側(角)も暗くする: 全面に薄く
+  c.restore();
+  // 楕円外の四隅を暗く塗る (グラデの外側)
+  c.save();
+  c.fillStyle = `rgba(0,0,0,${(s.dark || 0) / 100})`;
+  c.globalCompositeOperation = 'source-over';
+  c.restore();
+}
 /* 枠 (a*.png) を最前面に固定描画。色相/明るさ/コントラスト適用 */
 function drawThumbFrame(c) {
   const f = state.thumbFrame;
   if (!f || !f.img) return;
   c.save();
-  c.filter = `hue-rotate(${f.hue || 0}deg) brightness(${(f.bright || 100) / 100}) contrast(${(f.contrast || 100) / 100})`;
+  c.globalAlpha = (f.alpha != null ? f.alpha : 100) / 100;
+  c.filter = `hue-rotate(${f.hue || 0}deg) brightness(${(f.bright || 100) / 100}) contrast(${(f.contrast || 100) / 100}) saturate(${(f.sat != null ? f.sat : 100) / 100}) sepia(${(f.sepia || 0) / 100}) blur(${(f.blur || 0)}px) invert(${f.invert ? 1 : 0})`;
   const sc = (f.scale || 100) / 100;
   const w = state.canvasW * sc, h = state.canvasH * sc;
   c.drawImage(f.img, (state.canvasW - w) / 2, (state.canvasH - h) / 2, w, h);
@@ -5961,6 +6115,9 @@ state._thumbDrag = null;      // ドラッグ状態
 state.thumbFixed = false;     // (旧) 未使用
 state.thumbAspectLock = false; // false=自由(左右独立) true=固定(比率保持)
 state.thumbBgColor = '#2a2b31'; // サムネ背景色
+state.thumbBgGrad = { on: false, c1: '#2a2b31', c2: '#5b9cb8', angle: 135 };
+state.thumbPattern = { on: false, shape: 'dot', color: '#000000', opacity: 18, size: 8, gap: 40, stagger: false };
+state.thumbSpot = { on: false, cxr: 0.5, cyr: 0.5, r: 55, soft: 60, dark: 55, ratio: 100 };
 state.thumbItems = [];  // ユーザー追加アイテム {url, name}
 state.thumbAssetItems = []; // 自動読み込み i*.png
 state.thumbFrames = [];     // 自動読み込み a*.png
@@ -6201,17 +6358,112 @@ if (thumbTitleDel) {
 }
 
 /* 枠の調整 */
-['thumbFrameHue', 'thumbFrameBright', 'thumbFrameContrast', 'thumbFrameScale'].forEach(id => {
+['thumbFrameHue', 'thumbFrameBright', 'thumbFrameContrast', 'thumbFrameScale',
+ 'thumbFrameSat', 'thumbFrameSepia', 'thumbFrameBlur', 'thumbFrameAlpha'].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('input', () => {
     if (!state.thumbFrame) return;
-    state.thumbFrame.hue = +document.getElementById('thumbFrameHue').value;
-    state.thumbFrame.bright = +document.getElementById('thumbFrameBright').value;
-    state.thumbFrame.contrast = +document.getElementById('thumbFrameContrast').value;
-    state.thumbFrame.scale = +document.getElementById('thumbFrameScale').value;
+    const f = state.thumbFrame;
+    f.hue = +document.getElementById('thumbFrameHue').value;
+    f.bright = +document.getElementById('thumbFrameBright').value;
+    f.contrast = +document.getElementById('thumbFrameContrast').value;
+    f.scale = +document.getElementById('thumbFrameScale').value;
+    f.sat = +document.getElementById('thumbFrameSat').value;
+    f.sepia = +document.getElementById('thumbFrameSepia').value;
+    f.blur = +document.getElementById('thumbFrameBlur').value;
+    f.alpha = +document.getElementById('thumbFrameAlpha').value;
     draw();
   });
+});
+const thumbFrameInvert = document.getElementById('thumbFrameInvert');
+if (thumbFrameInvert) thumbFrameInvert.addEventListener('change', () => { if (state.thumbFrame) { state.thumbFrame.invert = thumbFrameInvert.checked; draw(); } });
+const thumbFrameMore = document.getElementById('thumbFrameMore');
+if (thumbFrameMore) thumbFrameMore.addEventListener('click', () => {
+  const box = document.getElementById('thumbFrameMoreBox');
+  box.hidden = !box.hidden;
+  thumbFrameMore.textContent = box.hidden ? 'もっと ▾' : '閉じる ▴';
+});
+
+/* 背景グラデーション */
+function syncBgGrad() {
+  const g = state.thumbBgGrad;
+  g.on = document.getElementById('thumbBgGrad').checked;
+  g.c1 = document.getElementById('thumbBgGrad1').value;
+  g.c2 = document.getElementById('thumbBgGrad2').value;
+  g.angle = +document.getElementById('thumbBgGradAngle').value;
+  document.getElementById('thumbBgGradBox').hidden = !g.on;
+  draw();
+}
+['thumbBgGrad', 'thumbBgGrad1', 'thumbBgGrad2', 'thumbBgGradAngle'].forEach(id => {
+  const el = document.getElementById(id); if (!el) return;
+  el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', syncBgGrad);
+});
+
+/* 模様 */
+function syncPattern() {
+  const p = state.thumbPattern;
+  p.on = document.getElementById('thumbPat').checked;
+  p.shape = document.getElementById('thumbPatShape').value;
+  p.color = document.getElementById('thumbPatColor').value;
+  p.opacity = +document.getElementById('thumbPatOpacity').value;
+  p.size = +document.getElementById('thumbPatSize').value;
+  p.gap = +document.getElementById('thumbPatGap').value;
+  p.stagger = document.getElementById('thumbPatStagger').checked;
+  document.getElementById('thumbPatBox').hidden = !p.on;
+  draw();
+}
+['thumbPat', 'thumbPatShape', 'thumbPatColor', 'thumbPatOpacity', 'thumbPatSize', 'thumbPatGap', 'thumbPatStagger'].forEach(id => {
+  const el = document.getElementById(id); if (!el) return;
+  el.addEventListener((el.type === 'checkbox' || el.tagName === 'SELECT') ? 'change' : 'input', syncPattern);
+});
+
+/* スポットライト */
+function syncSpot() {
+  const s = state.thumbSpot;
+  s.on = document.getElementById('thumbSpot').checked;
+  s.r = +document.getElementById('thumbSpotR').value;
+  s.soft = +document.getElementById('thumbSpotSoft').value;
+  s.dark = +document.getElementById('thumbSpotDark').value;
+  s.ratio = +document.getElementById('thumbSpotRatio').value;
+  document.getElementById('thumbSpotBox').hidden = !s.on;
+  draw();
+}
+['thumbSpot', 'thumbSpotR', 'thumbSpotSoft', 'thumbSpotDark', 'thumbSpotRatio'].forEach(id => {
+  const el = document.getElementById(id); if (!el) return;
+  el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', syncSpot);
+});
+
+/* 選択レイヤーの境界線・影 */
+function selLayer() {
+  const sel = (state.selectedLayers && state.selectedLayers.size) ? [...state.selectedLayers] : [];
+  return sel.length ? state.layers[sel[0]] : null;
+}
+function syncLayerDeco() {
+  const L = selLayer();
+  if (!L) { showToast('対象のレイヤーを選択してください'); 
+    document.getElementById('thumbLBorder').checked = false;
+    document.getElementById('thumbLShadow').checked = false;
+    return; }
+  L.border = {
+    on: document.getElementById('thumbLBorder').checked,
+    width: +document.getElementById('thumbLBorderW').value,
+    color: document.getElementById('thumbLBorderColor').value,
+  };
+  L.shadow = {
+    on: document.getElementById('thumbLShadow').checked,
+    color: document.getElementById('thumbLShadowColor').value,
+    blur: +document.getElementById('thumbLShadowBlur').value,
+    angle: +document.getElementById('thumbLShadowAngle').value,
+    dist: +document.getElementById('thumbLShadowDist').value,
+  };
+  document.getElementById('thumbLBorderBox').hidden = !L.border.on;
+  document.getElementById('thumbLShadowBox').hidden = !L.shadow.on;
+  draw();
+}
+['thumbLBorder', 'thumbLBorderW', 'thumbLBorderColor', 'thumbLShadow', 'thumbLShadowColor', 'thumbLShadowBlur', 'thumbLShadowAngle', 'thumbLShadowDist'].forEach(id => {
+  const el = document.getElementById(id); if (!el) return;
+  el.addEventListener(el.type === 'checkbox' ? 'change' : 'input', syncLayerDeco);
 });
 
 const thumbKunBtnEl = thumbKunBtn;
@@ -6895,6 +7147,15 @@ canvas.addEventListener('pointerdown', e => {
   const sel = thumbSelectedList();
   const hs = 16;
   const CW = state.canvasW, CH = state.canvasH;
+  // スポットライト中心のドラッグ
+  if (state.thumbSpot && state.thumbSpot.on) {
+    const scx = state.thumbSpot.cxr * CW, scy = state.thumbSpot.cyr * CH;
+    if (Math.hypot(x - scx, y - scy) <= 22) {
+      e.preventDefault(); canvas.setPointerCapture(e.pointerId);
+      state._thumbDrag = { mode: 'spot', startX: x, startY: y, startCxr: state.thumbSpot.cxr, startCyr: state.thumbSpot.cyr };
+      return;
+    }
+  }
   // 0) タイトルの当たり判定 (最前面優先)
   for (let i = state.thumbTitles.length - 1; i >= 0; i--) {
     const t = state.thumbTitles[i];
@@ -6951,6 +7212,12 @@ canvas.addEventListener('pointermove', e => {
   const x = ((e.clientX - r.left) / r.width) * state.canvasW;
   const y = ((e.clientY - r.top) / r.height) * state.canvasH;
   const d = state._thumbDrag;
+  if (d.mode === 'spot') {
+    state.thumbSpot.cxr = Math.max(0, Math.min(1, d.startCxr + (x - d.startX) / state.canvasW));
+    state.thumbSpot.cyr = Math.max(0, Math.min(1, d.startCyr + (y - d.startY) / state.canvasH));
+    draw();
+    return;
+  }
   if (d.mode === 'title') {
     const t = state.thumbTitles[d.idx];
     if (t) {

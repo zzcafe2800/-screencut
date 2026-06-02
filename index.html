@@ -491,6 +491,8 @@ body.thumb-mode #manualRangeToggle { display: none !important; }
   border-radius: 7px 7px 0 0; cursor: pointer;
 }
 .tp-tab.active { background: var(--accent); color: #fff; }
+.tp-tab-detail { margin-left: 2px; border: 1px solid var(--accent); color: var(--accent); }
+.tp-tab-detail.active { border-color: var(--accent); }
 .tp-pane { display: flex; flex-direction: column; gap: 8px; padding: 0 4px 8px; }
 .tp-pane[hidden] { display: none; }
 .tp-action {
@@ -3110,137 +3112,151 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <button class="tp-tab" data-tab="title">タイトル</button>
       <button class="tp-tab" data-tab="frame">枠</button>
       <button class="tp-tab" data-tab="item">アイテム</button>
+      <button class="tp-tab tp-tab-detail" data-tab="detail">詳細</button>
     </div>
     <div class="tp-panes">
-      <!-- 1 画像 -->
+      <!-- 画像 (追加のみ) -->
       <div class="tp-pane" data-pane="image">
         <label for="file" class="tp-action">お部屋画像を読み込み</label>
-        <p class="tp-note">下のアイコンで色合い・反転などを調節。複数重ねOK。</p>
-        <label class="tp-mini tp-check"><input type="checkbox" id="thumbBgGrad"> 背景グラデーション</label>
-        <div class="tp-adjust" id="thumbBgGradBox" hidden>
-          <div class="tp-row"><input type="color" id="thumbBgGrad1" class="tp-color" value="#2a2b31"><span class="tp-mini">→</span><input type="color" id="thumbBgGrad2" class="tp-color" value="#5b9cb8"><label class="tp-mini">方向</label><input type="range" id="thumbBgGradAngle" min="0" max="360" value="135"></div>
-        </div>
-        <label class="tp-mini tp-check"><input type="checkbox" id="thumbPat"> 模様(黒い柄)</label>
-        <div class="tp-adjust" id="thumbPatBox" hidden>
-          <div class="tp-row"><label class="tp-mini">形</label>
-            <select id="thumbPatShape" class="tp-select">
-              <option value="dot">● 丸</option><option value="ring">○ 輪</option>
-              <option value="square">■ 四角</option><option value="diamond">◆ ひし形</option>
-              <option value="star">★ 星</option><option value="cross">＋ 十字</option>
-              <option value="tri">▲ 三角</option>
-            </select>
-          </div>
-          <div class="tp-row"><label class="tp-mini">色</label><input type="color" id="thumbPatColor" class="tp-color" value="#000000"><label class="tp-mini">濃さ</label><input type="range" id="thumbPatOpacity" min="0" max="100" value="18"></div>
-          <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbPatSize" min="2" max="40" value="8"><label class="tp-mini">間隔</label><input type="range" id="thumbPatGap" min="10" max="120" value="40"></div>
-          <label class="tp-mini tp-check"><input type="checkbox" id="thumbPatStagger"> 互い違い</label>
-        </div>
-        <label class="tp-mini tp-check"><input type="checkbox" id="thumbSpot"> スポットライト</label>
-        <div class="tp-adjust" id="thumbSpotBox" hidden>
-          <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbSpotR" min="10" max="100" value="55"><label class="tp-mini">ぼかし</label><input type="range" id="thumbSpotSoft" min="0" max="100" value="60"></div>
-          <div class="tp-row"><label class="tp-mini">暗さ</label><input type="range" id="thumbSpotDark" min="0" max="95" value="55"><label class="tp-mini">縦横</label><input type="range" id="thumbSpotRatio" min="40" max="200" value="100"></div>
-          <p class="tp-note">中央が明るく外へ暗くぼけます。中心はドラッグで移動。</p>
-        </div>
+        <p class="tp-note">読み込むとレイヤーになります。色や位置は「詳細」で調節。</p>
       </div>
-      <!-- 2 アバター -->
+      <!-- アバター (追加のみ) -->
       <div class="tp-pane" data-pane="avatar" hidden>
         <label for="thumbAvatarFile" class="tp-action">アバター画像を追加</label>
         <input type="file" id="thumbAvatarFile" accept="image/*,.gif" hidden>
         <button class="tp-sub" id="thumbAvatarMatch" type="button">お部屋の色に合わせる</button>
-        <p class="tp-note">選択中のレイヤーに適用:</p>
-        <label class="tp-mini tp-check"><input type="checkbox" id="thumbLBorder"> 境界線</label>
-        <div class="tp-adjust" id="thumbLBorderBox" hidden>
-          <div class="tp-row"><label class="tp-mini">太さ</label><input type="range" id="thumbLBorderW" min="1" max="30" value="6"><label class="tp-mini">色</label><input type="color" id="thumbLBorderColor" class="tp-color" value="#ffffff"></div>
-        </div>
-        <label class="tp-mini tp-check"><input type="checkbox" id="thumbLShadow"> 影</label>
-        <div class="tp-adjust" id="thumbLShadowBox" hidden>
-          <div class="tp-row"><label class="tp-mini">色</label><input type="color" id="thumbLShadowColor" class="tp-color" value="#000000"><label class="tp-mini">ぼかし</label><input type="range" id="thumbLShadowBlur" min="0" max="60" value="16"></div>
-          <div class="tp-row"><label class="tp-mini">方向</label><input type="range" id="thumbLShadowAngle" min="0" max="360" value="135"><label class="tp-mini">距離</label><input type="range" id="thumbLShadowDist" min="0" max="50" value="10"></div>
-        </div>
-        <p class="tp-note">追加後ドラッグで移動、右上■で変形。</p>
+        <p class="tp-note">追加するとレイヤーに。境界線・影は「詳細」で。</p>
       </div>
-      <!-- 3 タイトル -->
+      <!-- タイトル (作成のみ) -->
       <div class="tp-pane" data-pane="title" hidden>
-        <input type="text" id="thumbTitleText" class="tp-input" placeholder="タイトル文字" maxlength="40">
-        <div class="tp-row">
-          <select id="thumbTitleFont" class="tp-select">
-            <option value="'Hiragino Sans','Yu Gothic',sans-serif">ゴシック</option>
-            <option value="'Hiragino Maru Gothic ProN','Rounded Mplus 1c','Quicksand',sans-serif">丸ゴシック</option>
-            <option value="'Hiragino Mincho ProN','Yu Mincho',serif">明朝</option>
-            <option value="'Georgia','Times New Roman',serif">Serif</option>
-            <option value="'Arial Black','Impact',sans-serif">極太</option>
-            <option value="'Impact','Haettenschweiler',sans-serif">Impact</option>
-            <option value="'Brush Script MT','Segoe Script',cursive">手書き</option>
-            <option value="'Courier New',monospace">等幅</option>
-            <option value="'Palatino Linotype','Book Antiqua',serif">上品Serif</option>
-            <option value="'Trebuchet MS',sans-serif">モダン</option>
-          </select>
-          <input type="color" id="thumbTitleColor" class="tp-color" value="#ffffff">
-        </div>
-        <div class="tp-row"><label class="tp-mini">サイズ</label><input type="range" id="thumbTitleSize" min="16" max="160" value="60"></div>
-        <label class="tp-mini tp-check"><input type="checkbox" id="thumbTitleStroke" checked> フチ</label>
-        <!-- 影 -->
-        <label class="tp-mini tp-check"><input type="checkbox" id="thumbTitleShadow"> 影をつける</label>
-        <div class="tp-adjust" id="thumbTitleShadowBox" hidden>
-          <div class="tp-row"><label class="tp-mini">影色</label><input type="color" id="thumbTitleShadowColor" class="tp-color" value="#000000"><label class="tp-mini">ぼかし</label><input type="range" id="thumbTitleShadowBlur" min="0" max="40" value="8"></div>
-          <div class="tp-row"><label class="tp-mini">方向</label><input type="range" id="thumbTitleShadowAngle" min="0" max="360" value="135"><label class="tp-mini">距離</label><input type="range" id="thumbTitleShadowDist" min="0" max="30" value="6"></div>
-        </div>
-        <!-- グラデ -->
-        <label class="tp-mini tp-check"><input type="checkbox" id="thumbTitleGrad"> グラデーション</label>
-        <div class="tp-adjust" id="thumbTitleGradBox" hidden>
-          <div class="tp-row"><input type="color" id="thumbTitleGrad1" class="tp-color" value="#ffd36e"><span class="tp-mini">→</span><input type="color" id="thumbTitleGrad2" class="tp-color" value="#ff7ac3"><label class="tp-mini">角度</label><input type="range" id="thumbTitleGradAngle" min="0" max="360" value="90"></div>
-        </div>
-        <!-- 背景カード -->
-        <label class="tp-mini tp-check"><input type="checkbox" id="thumbTitleBg"> 文字の下にカード</label>
-        <div class="tp-adjust" id="thumbTitleBgBox" hidden>
-          <div class="tp-row"><label class="tp-mini">色</label><input type="color" id="thumbTitleBgColor" class="tp-color" value="#000000"><label class="tp-mini">不透明</label><input type="range" id="thumbTitleBgOpacity" min="0" max="100" value="50"></div>
-          <div class="tp-row"><label class="tp-mini">余白</label><input type="range" id="thumbTitleBgPad" min="0" max="60" value="16"><label class="tp-mini">角丸</label><input type="range" id="thumbTitleBgRadius" min="0" max="40" value="8"></div>
-          <div class="tp-row"><label class="tp-mini">端ぼかし</label><input type="range" id="thumbTitleBgFade" min="0" max="100" value="0"></div>
-        </div>
-        <div class="tp-row">
-          <button class="tp-action" id="thumbTitleAdd" type="button" style="flex:1">＋ 追加</button>
-          <button class="tp-sub" id="thumbTitleDel" type="button" style="flex:0 0 auto">削除</button>
-        </div>
-        <div class="tp-charsize" id="thumbCharSize" hidden>
-          <div class="tp-mini">文字ごとのサイズ(文字をタップ)</div>
-          <div class="tp-chars" id="thumbCharChips"></div>
-          <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbCharScale" min="20" max="220" value="100" disabled></div>
-        </div>
-        <p class="tp-note">追加後ドラッグで移動。タップで選択すると上の項目が反映。</p>
+        <button class="tp-action" id="thumbTitleAdd" type="button">＋ タイトルを作成</button>
+        <p class="tp-note">作成すると「詳細」で文字・色・フォント・影などを設定できます。</p>
       </div>
-      <!-- 4 枠 -->
+      <!-- 枠 (一覧のみ) -->
       <div class="tp-pane" data-pane="frame" hidden>
         <div class="tp-grid" id="thumbFrameGrid"><p class="tp-note" id="thumbFrameEmpty">枠を読み込み中…</p></div>
-        <div class="tp-adjust" id="thumbFrameAdjust" hidden>
-          <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbFrameScale" min="90" max="112" value="100"></div>
-          <div class="tp-row"><label class="tp-mini">色相</label><input type="range" id="thumbFrameHue" min="0" max="360" value="0"></div>
-          <div class="tp-row"><label class="tp-mini">明るさ</label><input type="range" id="thumbFrameBright" min="40" max="200" value="100"></div>
-          <div class="tp-row"><label class="tp-mini">濃さ</label><input type="range" id="thumbFrameContrast" min="50" max="250" value="100"></div>
-          <button class="tp-mini tp-check" id="thumbFrameMore" type="button" style="background:none;border:none;text-decoration:underline;cursor:pointer;text-align:left;padding:0;color:var(--accent)">もっと ▾</button>
-          <div class="tp-adjust" id="thumbFrameMoreBox" hidden>
-            <div class="tp-row"><label class="tp-mini">彩度</label><input type="range" id="thumbFrameSat" min="0" max="300" value="100"></div>
-            <div class="tp-row"><label class="tp-mini">セピア</label><input type="range" id="thumbFrameSepia" min="0" max="100" value="0"></div>
-            <div class="tp-row"><label class="tp-mini">ぼかし</label><input type="range" id="thumbFrameBlur" min="0" max="20" value="0"></div>
-            <div class="tp-row"><label class="tp-mini">透明</label><input type="range" id="thumbFrameAlpha" min="0" max="100" value="100"></div>
-            <label class="tp-mini tp-check"><input type="checkbox" id="thumbFrameInvert"> 色反転</label>
-          </div>
-        </div>
-        <p class="tp-note">枠を選ぶと適用。もう一度押すと解除。</p>
+        <p class="tp-note">枠を選ぶと適用、もう一度で解除。調節は「詳細」で。</p>
       </div>
-      <!-- 5 アイテム -->
+      <!-- アイテム (一覧のみ) -->
       <div class="tp-pane" data-pane="item" hidden>
         <div class="tp-grid" id="thumbItemsList"><p class="tp-note" id="thumbItemsEmpty">アイテムを読み込み中…</p></div>
         <label for="thumbItemFile" class="tp-sub">自分の画像を追加</label>
         <input type="file" id="thumbItemFile" accept="image/*,.gif" hidden>
-        <p class="tp-note">タップでレイヤーとして追加。</p>
       </div>
-    </div>
-    <!-- 壁紙(背景)の詳細 -->
-    <div id="thumbWallDetail" class="tp-wall" hidden>
-      <div class="tp-mini" style="font-weight:700;color:var(--accent)">壁紙(背景)</div>
-      <div class="tp-row"><label class="tp-mini">色</label><input type="color" id="wallColor" class="tp-color" value="#2a2b31"><button class="tp-sub" id="wallTransp" type="button" style="flex:0 0 auto;padding:5px 10px">透明</button></div>
-      <label class="tp-mini tp-check"><input type="checkbox" id="wallGrad"> グラデーション</label>
-      <div class="tp-adjust" id="wallGradBox" hidden>
-        <div class="tp-row"><input type="color" id="wallGrad1" class="tp-color" value="#2a2b31"><span class="tp-mini">→</span><input type="color" id="wallGrad2" class="tp-color" value="#5b9cb8"><label class="tp-mini">方向</label><input type="range" id="wallGradAngle" min="0" max="360" value="135"></div>
+      <!-- 詳細 (選択レイヤーに応じて切替) -->
+      <div class="tp-pane" data-pane="detail" hidden>
+        <div id="detailEmpty" class="tp-note" style="text-align:center;padding:18px 4px">レイヤーを選択してください</div>
+
+        <!-- 壁紙(背景) -->
+        <div id="detailWall" hidden>
+          <div class="tp-mini" style="font-weight:700;color:var(--accent);margin-bottom:6px">壁紙(背景)</div>
+          <div class="tp-row"><label class="tp-mini">色</label><input type="color" id="wallColor" class="tp-color" value="#2a2b31"><button class="tp-sub" id="wallTransp" type="button" style="flex:0 0 auto;padding:5px 10px">透明</button></div>
+          <label class="tp-mini tp-check"><input type="checkbox" id="wallGrad"> グラデーション</label>
+          <div class="tp-adjust" id="wallGradBox" hidden>
+            <div class="tp-row"><input type="color" id="wallGrad1" class="tp-color" value="#2a2b31"><span class="tp-mini">→</span><input type="color" id="wallGrad2" class="tp-color" value="#5b9cb8"><label class="tp-mini">方向</label><input type="range" id="wallGradAngle" min="0" max="360" value="135"></div>
+          </div>
+          <label class="tp-mini tp-check"><input type="checkbox" id="thumbPat"> 模様(黒い柄)</label>
+          <div class="tp-adjust" id="thumbPatBox" hidden>
+            <div class="tp-row"><label class="tp-mini">形</label>
+              <select id="thumbPatShape" class="tp-select">
+                <option value="dot">● 丸</option><option value="ring">○ 輪</option>
+                <option value="square">■ 四角</option><option value="diamond">◆ ひし形</option>
+                <option value="star">★ 星</option><option value="cross">＋ 十字</option>
+                <option value="tri">▲ 三角</option>
+              </select>
+            </div>
+            <div class="tp-row"><label class="tp-mini">色</label><input type="color" id="thumbPatColor" class="tp-color" value="#000000"><label class="tp-mini">濃さ</label><input type="range" id="thumbPatOpacity" min="0" max="100" value="18"></div>
+            <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbPatSize" min="2" max="40" value="8"><label class="tp-mini">間隔</label><input type="range" id="thumbPatGap" min="10" max="120" value="40"></div>
+            <label class="tp-mini tp-check"><input type="checkbox" id="thumbPatStagger"> 互い違い</label>
+          </div>
+          <label class="tp-mini tp-check"><input type="checkbox" id="thumbSpot"> スポットライト</label>
+          <div class="tp-adjust" id="thumbSpotBox" hidden>
+            <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbSpotR" min="10" max="100" value="55"><label class="tp-mini">ぼかし</label><input type="range" id="thumbSpotSoft" min="0" max="100" value="60"></div>
+            <div class="tp-row"><label class="tp-mini">暗さ</label><input type="range" id="thumbSpotDark" min="0" max="95" value="55"><label class="tp-mini">縦横</label><input type="range" id="thumbSpotRatio" min="40" max="200" value="100"></div>
+            <p class="tp-note">中心はプレビュー上でドラッグ。</p>
+          </div>
+          <label class="tp-mini tp-check"><input type="checkbox" id="thumbBgGrad" hidden></label>
+          <div id="thumbBgGradBox" hidden>
+            <input type="color" id="thumbBgGrad1" value="#2a2b31"><input type="color" id="thumbBgGrad2" value="#5b9cb8"><input type="range" id="thumbBgGradAngle" min="0" max="360" value="135">
+          </div>
+        </div>
+
+        <!-- レイヤー(画像/アバター/アイテム) -->
+        <div id="detailLayer" hidden>
+          <div class="tp-mini" id="detailLayerName" style="font-weight:700;color:var(--accent);margin-bottom:6px">レイヤー</div>
+          <label class="tp-mini tp-check"><input type="checkbox" id="thumbLBorder"> 境界線</label>
+          <div class="tp-adjust" id="thumbLBorderBox" hidden>
+            <div class="tp-row"><label class="tp-mini">太さ</label><input type="range" id="thumbLBorderW" min="1" max="30" value="6"><label class="tp-mini">色</label><input type="color" id="thumbLBorderColor" class="tp-color" value="#ffffff"></div>
+          </div>
+          <label class="tp-mini tp-check"><input type="checkbox" id="thumbLShadow"> 影</label>
+          <div class="tp-adjust" id="thumbLShadowBox" hidden>
+            <div class="tp-row"><label class="tp-mini">色</label><input type="color" id="thumbLShadowColor" class="tp-color" value="#000000"><label class="tp-mini">ぼかし</label><input type="range" id="thumbLShadowBlur" min="0" max="60" value="16"></div>
+            <div class="tp-row"><label class="tp-mini">方向</label><input type="range" id="thumbLShadowAngle" min="0" max="360" value="135"><label class="tp-mini">距離</label><input type="range" id="thumbLShadowDist" min="0" max="50" value="10"></div>
+          </div>
+          <p class="tp-note">透明度はレイヤー一覧、移動・変形はプレビューで。</p>
+        </div>
+
+        <!-- タイトル -->
+        <div id="detailTitle" hidden>
+          <input type="text" id="thumbTitleText" class="tp-input" placeholder="タイトル文字" maxlength="40">
+          <div class="tp-row">
+            <select id="thumbTitleFont" class="tp-select">
+              <option value="'Hiragino Sans','Yu Gothic',sans-serif">ゴシック</option>
+              <option value="'Hiragino Maru Gothic ProN','Rounded Mplus 1c','Quicksand',sans-serif">丸ゴシック</option>
+              <option value="'Hiragino Mincho ProN','Yu Mincho',serif">明朝</option>
+              <option value="'Georgia','Times New Roman',serif">Serif</option>
+              <option value="'Arial Black','Impact',sans-serif">極太</option>
+              <option value="'Impact','Haettenschweiler',sans-serif">Impact</option>
+              <option value="'Brush Script MT','Segoe Script',cursive">手書き</option>
+              <option value="'Courier New',monospace">等幅</option>
+              <option value="'Palatino Linotype','Book Antiqua',serif">上品Serif</option>
+              <option value="'Trebuchet MS',sans-serif">モダン</option>
+            </select>
+            <input type="color" id="thumbTitleColor" class="tp-color" value="#ffffff">
+          </div>
+          <div class="tp-row"><label class="tp-mini">サイズ</label><input type="range" id="thumbTitleSize" min="16" max="160" value="60"></div>
+          <label class="tp-mini tp-check"><input type="checkbox" id="thumbTitleStroke" checked> フチ</label>
+          <label class="tp-mini tp-check"><input type="checkbox" id="thumbTitleShadow"> 影をつける</label>
+          <div class="tp-adjust" id="thumbTitleShadowBox" hidden>
+            <div class="tp-row"><label class="tp-mini">影色</label><input type="color" id="thumbTitleShadowColor" class="tp-color" value="#000000"><label class="tp-mini">ぼかし</label><input type="range" id="thumbTitleShadowBlur" min="0" max="40" value="8"></div>
+            <div class="tp-row"><label class="tp-mini">方向</label><input type="range" id="thumbTitleShadowAngle" min="0" max="360" value="135"><label class="tp-mini">距離</label><input type="range" id="thumbTitleShadowDist" min="0" max="30" value="6"></div>
+          </div>
+          <label class="tp-mini tp-check"><input type="checkbox" id="thumbTitleGrad"> グラデーション</label>
+          <div class="tp-adjust" id="thumbTitleGradBox" hidden>
+            <div class="tp-row"><input type="color" id="thumbTitleGrad1" class="tp-color" value="#ffd36e"><span class="tp-mini">→</span><input type="color" id="thumbTitleGrad2" class="tp-color" value="#ff7ac3"><label class="tp-mini">角度</label><input type="range" id="thumbTitleGradAngle" min="0" max="360" value="90"></div>
+          </div>
+          <label class="tp-mini tp-check"><input type="checkbox" id="thumbTitleBg"> 文字の下にカード</label>
+          <div class="tp-adjust" id="thumbTitleBgBox" hidden>
+            <div class="tp-row"><label class="tp-mini">色</label><input type="color" id="thumbTitleBgColor" class="tp-color" value="#000000"><label class="tp-mini">不透明</label><input type="range" id="thumbTitleBgOpacity" min="0" max="100" value="50"></div>
+            <div class="tp-row"><label class="tp-mini">余白</label><input type="range" id="thumbTitleBgPad" min="0" max="60" value="16"><label class="tp-mini">角丸</label><input type="range" id="thumbTitleBgRadius" min="0" max="40" value="8"></div>
+            <div class="tp-row"><label class="tp-mini">端ぼかし</label><input type="range" id="thumbTitleBgFade" min="0" max="100" value="0"></div>
+          </div>
+          <div class="tp-charsize" id="thumbCharSize" hidden>
+            <div class="tp-mini">文字ごとのサイズ(文字をタップ)</div>
+            <div class="tp-chars" id="thumbCharChips"></div>
+            <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbCharScale" min="20" max="220" value="100" disabled></div>
+          </div>
+          <button class="tp-sub" id="thumbTitleDel" type="button">このタイトルを削除</button>
+        </div>
+
+        <!-- 枠 -->
+        <div id="detailFrame" hidden>
+          <div class="tp-mini" style="font-weight:700;color:var(--accent);margin-bottom:6px">枠</div>
+          <div class="tp-adjust" id="thumbFrameAdjust">
+            <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbFrameScale" min="90" max="112" value="100"></div>
+            <div class="tp-row"><label class="tp-mini">色相</label><input type="range" id="thumbFrameHue" min="0" max="360" value="0"></div>
+            <div class="tp-row"><label class="tp-mini">明るさ</label><input type="range" id="thumbFrameBright" min="40" max="200" value="100"></div>
+            <div class="tp-row"><label class="tp-mini">濃さ</label><input type="range" id="thumbFrameContrast" min="50" max="250" value="100"></div>
+            <button class="tp-mini tp-check" id="thumbFrameMore" type="button" style="background:none;border:none;text-decoration:underline;cursor:pointer;text-align:left;padding:0;color:var(--accent)">もっと ▾</button>
+            <div class="tp-adjust" id="thumbFrameMoreBox" hidden>
+              <div class="tp-row"><label class="tp-mini">彩度</label><input type="range" id="thumbFrameSat" min="0" max="300" value="100"></div>
+              <div class="tp-row"><label class="tp-mini">セピア</label><input type="range" id="thumbFrameSepia" min="0" max="100" value="0"></div>
+              <div class="tp-row"><label class="tp-mini">ぼかし</label><input type="range" id="thumbFrameBlur" min="0" max="20" value="0"></div>
+              <div class="tp-row"><label class="tp-mini">透明</label><input type="range" id="thumbFrameAlpha" min="0" max="100" value="100"></div>
+              <label class="tp-mini tp-check"><input type="checkbox" id="thumbFrameInvert"> 色反転</label>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <!-- レイヤーパネルをここに移動 (JSで) -->
@@ -6398,19 +6414,22 @@ function applyThumbFrame(url) {
   // 2回目クリックで解除
   if (state.thumbFrame && state.thumbFrame.url === url) {
     state.thumbFrame = null;
-    document.getElementById('thumbFrameAdjust').hidden = true;
-    renderThumbFrames(); draw();
+    renderThumbFrames();
+    if (typeof updateDetailPanel === 'function') updateDetailPanel();
+    draw();
     return;
   }
   const img = new Image();
   img.onload = () => {
     state.thumbFrame = { img, url, hue: 0, bright: 100, contrast: 100, scale: 100 };
-    document.getElementById('thumbFrameAdjust').hidden = false;
     document.getElementById('thumbFrameHue').value = 0;
     document.getElementById('thumbFrameBright').value = 100;
     document.getElementById('thumbFrameContrast').value = 100;
     document.getElementById('thumbFrameScale').value = 100;
+    state._wallpaperSel = false; state.selectedTitle = -1; state.selectedLayers.clear();
     renderThumbFrames();
+    switchThumbTab('detail');
+    renderLayerPanel();
     draw();
   };
   img.src = url;
@@ -6437,13 +6456,38 @@ document.querySelectorAll('.tp-tab').forEach(tab => {
 function switchThumbTab(name) {
   document.querySelectorAll('.tp-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.tp-pane').forEach(p => { p.hidden = (p.dataset.pane !== name); });
+  if (name === 'detail') updateDetailPanel();
 }
-/* レイヤー種別に応じた詳細タブを開く */
+/* 統合詳細パネル: 現在の選択に応じてセクションを出し分け */
+function updateDetailPanel() {
+  const secs = ['detailEmpty', 'detailWall', 'detailLayer', 'detailTitle', 'detailFrame'];
+  const show = {};
+  secs.forEach(id => show[id] = false);
+  if (state._wallpaperSel) {
+    show.detailWall = true; if (typeof syncWallControls === 'function') syncWallControls();
+  } else if (state.selectedTitle >= 0 && state.thumbTitles[state.selectedTitle]) {
+    show.detailTitle = true; syncControlsToTitle(state.thumbTitles[state.selectedTitle]); renderCharChips();
+  } else if (state.selectedLayers && state.selectedLayers.size) {
+    show.detailLayer = true;
+    const i = [...state.selectedLayers][0];
+    const L = state.layers[i];
+    const kind = (L && L.kind) || (i === 0 ? 'base' : 'item');
+    const nm = document.getElementById('detailLayerName');
+    if (nm) nm.textContent = kind === 'base' ? 'お部屋画像' : kind === 'avatar' ? 'アバター' : 'アイテム';
+    if (typeof reflectLayerDeco === 'function') reflectLayerDeco();
+  } else if (state.thumbFrame) {
+    show.detailFrame = true;
+  } else {
+    show.detailEmpty = true;
+  }
+  secs.forEach(id => { const e = document.getElementById(id); if (e) e.hidden = !show[id]; });
+}
+/* レイヤーを単独選択して詳細を開く */
 function openThumbDetailForLayer(i) {
-  const L = state.layers[i];
-  const kind = (L && L.kind) || (i === 0 ? 'base' : 'item');
-  // base=画像 / avatar=アバター / item=アバター(共通の境界線・影パネル)
-  switchThumbTab(kind === 'base' ? 'image' : 'avatar');
+  state.selectedLayers = new Set([i]);
+  state._wallpaperSel = false;
+  state.selectedTitle = -1;
+  switchThumbTab('detail');
 }
 
 /* アバター追加 + 色合わせ */
@@ -6588,10 +6632,14 @@ const thumbTitleAdd = document.getElementById('thumbTitleAdd');
 if (thumbTitleAdd) {
   thumbTitleAdd.addEventListener('click', () => {
     const c = thumbTitleControls();
-    if (!c.text.value.trim()) { showToast('文字を入力してください'); return; }
+    if (c.text && !c.text.value.trim()) c.text.value = 'タイトル';
     const t = readTitleFromControls();
     state.thumbTitles.push(t);
     state.selectedTitle = state.thumbTitles.length - 1;
+    state._wallpaperSel = false;
+    state.selectedLayers.clear();
+    switchThumbTab('detail');
+    renderLayerPanel();
     draw();
   });
 }
@@ -7338,13 +7386,8 @@ function renderLayerPanel() {
       edit.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>`;
       edit.addEventListener('click', ev => {
         ev.stopPropagation();
-        // このレイヤーを単独選択して詳細(アバタータブ)へ
-        state.selectedLayers = new Set([i]);
-        state._wallpaperSel = false;
-        const wd = document.getElementById('thumbWallDetail'); if (wd) wd.hidden = true;
         openThumbDetailForLayer(i);
         renderLayerPanel();
-        if (typeof reflectLayerDeco === 'function') reflectLayerDeco();
         draw();
       });
       row.appendChild(edit);
@@ -7397,7 +7440,12 @@ function renderLayerPanel() {
       renderLayerPanel();
       updateBrightnessGauge();
       updateSimplifyGauge();
-      if (state.thumbMode && typeof reflectLayerDeco === 'function') reflectLayerDeco();
+      if (state.thumbMode) {
+        state._wallpaperSel = false;
+        state.selectedTitle = -1;
+        if (typeof reflectLayerDeco === 'function') reflectLayerDeco();
+        if (typeof updateDetailPanel === 'function') updateDetailPanel();
+      }
       draw();
     });
     layerList.appendChild(row);
@@ -7424,9 +7472,13 @@ function renderLayerPanel() {
     wr.appendChild(dot); wr.appendChild(lbl);
     wr.addEventListener('click', () => {
       state._wallpaperSel = !state._wallpaperSel;
-      const wd = document.getElementById('thumbWallDetail');
-      if (wd) wd.hidden = !state._wallpaperSel;
-      if (state._wallpaperSel) { state.selectedLayers.clear(); syncWallControls(); }
+      if (state._wallpaperSel) {
+        state.selectedLayers.clear();
+        state.selectedTitle = -1;
+        switchThumbTab('detail');
+      } else {
+        updateDetailPanel();
+      }
       renderLayerPanel();
       draw();
     });
@@ -7595,7 +7647,11 @@ canvas.addEventListener('pointerdown', e => {
     if (x >= tx - w / 2 - 8 && x <= tx + w / 2 + 8 && y >= ty - fs / 2 - 6 && y <= ty + fs / 2 + 6) {
       e.preventDefault(); canvas.setPointerCapture(e.pointerId);
       state.selectedTitle = i;
+      state._wallpaperSel = false;
+      state.selectedLayers.clear();
       if (typeof syncControlsToTitle === 'function') syncControlsToTitle(t);
+      if (typeof updateDetailPanel === 'function') updateDetailPanel();
+      if (typeof renderLayerPanel === 'function') renderLayerPanel();
       state._thumbDrag = { mode: 'title', idx: i, startX: x, startY: y, startXr: t.xr, startYr: t.yr };
       draw();
       return;

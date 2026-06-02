@@ -510,6 +510,7 @@ body.thumb-mode #manualRangeToggle { display: none !important; }
 .tp-thumb:hover { border-color: var(--accent); }
 .tp-thumb.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
 .tp-adjust { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.tp-check { display: flex; align-items: center; gap: 6px; cursor: pointer; }
 .thumb-items-panel .ti-title {
   font-family: Georgia, serif; font-style: italic; font-weight: 700;
   font-size: 15px; color: var(--accent); margin: 4px 0 12px 4px;
@@ -2276,6 +2277,9 @@ body.thumb-mode .layer-panel {
 }
 body.thumb-mode .layer-panel .lp-toggle { display: none; }
 body.thumb-mode .lp-bg-row { display: none !important; }
+.lp-kind { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; display: inline-block; }
+.lp-opacity { display: flex; align-items: center; gap: 6px; padding: 2px 4px 6px; font-size: 10px; color: var(--fg-muted); }
+.lp-opacity input { flex: 1; }
 .layer-panel.collapsed .lp-body { display: none; }
 .layer-panel.collapsed .lp-toggle .ic-collapse { display: none; }
 .layer-panel:not(.collapsed) .lp-toggle .ic-expand { display: none; }
@@ -2333,7 +2337,7 @@ body.thumb-mode .lp-bg-row { display: none !important; }
 .lp-row.selected { border-color: var(--accent); background: rgba(91,156,184,0.15); }
 /* サムネモード: レイヤーカードを全幅に */
 body.thumb-mode .lp-list { width: 100%; }
-body.thumb-mode .lp-row { width: 100%; box-sizing: border-box; }
+body.thumb-mode .lp-row { width: 100%; box-sizing: border-box; grid-template-columns: 14px 9px 26px 1fr auto auto; }
 body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 .lp-row.lp-row-dragging { opacity: 0.5; }
 .lp-row.lp-row-dropping {
@@ -3048,29 +3052,54 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         <div class="tp-row">
           <select id="thumbTitleFont" class="tp-select">
             <option value="'Hiragino Sans','Yu Gothic',sans-serif">ゴシック</option>
+            <option value="'Hiragino Maru Gothic ProN','Rounded Mplus 1c','Quicksand',sans-serif">丸ゴシック</option>
             <option value="'Hiragino Mincho ProN','Yu Mincho',serif">明朝</option>
-            <option value="'Georgia',serif">Serif</option>
-            <option value="'Arial Black',sans-serif">極太</option>
+            <option value="'Georgia','Times New Roman',serif">Serif</option>
+            <option value="'Arial Black','Impact',sans-serif">極太</option>
+            <option value="'Impact','Haettenschweiler',sans-serif">Impact</option>
+            <option value="'Brush Script MT','Segoe Script',cursive">手書き</option>
+            <option value="'Courier New',monospace">等幅</option>
+            <option value="'Palatino Linotype','Book Antiqua',serif">上品Serif</option>
+            <option value="'Trebuchet MS',sans-serif">モダン</option>
           </select>
           <input type="color" id="thumbTitleColor" class="tp-color" value="#ffffff">
         </div>
-        <div class="tp-row">
-          <label class="tp-mini">サイズ</label>
-          <input type="range" id="thumbTitleSize" min="16" max="120" value="48">
+        <div class="tp-row"><label class="tp-mini">サイズ</label><input type="range" id="thumbTitleSize" min="16" max="160" value="60"></div>
+        <label class="tp-mini tp-check"><input type="checkbox" id="thumbTitleStroke" checked> フチ</label>
+        <!-- 影 -->
+        <label class="tp-mini tp-check"><input type="checkbox" id="thumbTitleShadow"> 影をつける</label>
+        <div class="tp-adjust" id="thumbTitleShadowBox" hidden>
+          <div class="tp-row"><label class="tp-mini">影色</label><input type="color" id="thumbTitleShadowColor" class="tp-color" value="#000000"><label class="tp-mini">ぼかし</label><input type="range" id="thumbTitleShadowBlur" min="0" max="40" value="8"></div>
+          <div class="tp-row"><label class="tp-mini">方向</label><input type="range" id="thumbTitleShadowAngle" min="0" max="360" value="135"><label class="tp-mini">距離</label><input type="range" id="thumbTitleShadowDist" min="0" max="30" value="6"></div>
         </div>
-        <label class="tp-mini" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="thumbTitleStroke" checked> フチをつける</label>
-        <button class="tp-action" id="thumbTitleAdd" type="button">タイトルを追加</button>
-        <p class="tp-note">追加後ドラッグで移動。タップで選択して編集。</p>
+        <!-- グラデ -->
+        <label class="tp-mini tp-check"><input type="checkbox" id="thumbTitleGrad"> グラデーション</label>
+        <div class="tp-adjust" id="thumbTitleGradBox" hidden>
+          <div class="tp-row"><input type="color" id="thumbTitleGrad1" class="tp-color" value="#ffd36e"><span class="tp-mini">→</span><input type="color" id="thumbTitleGrad2" class="tp-color" value="#ff7ac3"><label class="tp-mini">角度</label><input type="range" id="thumbTitleGradAngle" min="0" max="360" value="90"></div>
+        </div>
+        <!-- 背景カード -->
+        <label class="tp-mini tp-check"><input type="checkbox" id="thumbTitleBg"> 文字の下にカード</label>
+        <div class="tp-adjust" id="thumbTitleBgBox" hidden>
+          <div class="tp-row"><label class="tp-mini">色</label><input type="color" id="thumbTitleBgColor" class="tp-color" value="#000000"><label class="tp-mini">不透明</label><input type="range" id="thumbTitleBgOpacity" min="0" max="100" value="50"></div>
+          <div class="tp-row"><label class="tp-mini">余白</label><input type="range" id="thumbTitleBgPad" min="0" max="60" value="16"><label class="tp-mini">角丸</label><input type="range" id="thumbTitleBgRadius" min="0" max="40" value="8"></div>
+          <div class="tp-row"><label class="tp-mini">端ぼかし</label><input type="range" id="thumbTitleBgFade" min="0" max="100" value="0"></div>
+        </div>
+        <div class="tp-row">
+          <button class="tp-action" id="thumbTitleAdd" type="button" style="flex:1">＋ 追加</button>
+          <button class="tp-sub" id="thumbTitleDel" type="button" style="flex:0 0 auto">削除</button>
+        </div>
+        <p class="tp-note">追加後ドラッグで移動。タップで選択すると上の項目がそのまま反映。</p>
       </div>
       <!-- 4 枠 -->
       <div class="tp-pane" data-pane="frame" hidden>
         <div class="tp-grid" id="thumbFrameGrid"><p class="tp-note" id="thumbFrameEmpty">枠を読み込み中…</p></div>
-        <button class="tp-sub" id="thumbFrameClear" type="button">枠なし</button>
         <div class="tp-adjust" id="thumbFrameAdjust" hidden>
+          <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbFrameScale" min="90" max="112" value="100"></div>
           <div class="tp-row"><label class="tp-mini">色相</label><input type="range" id="thumbFrameHue" min="0" max="360" value="0"></div>
           <div class="tp-row"><label class="tp-mini">明るさ</label><input type="range" id="thumbFrameBright" min="40" max="200" value="100"></div>
           <div class="tp-row"><label class="tp-mini">濃さ</label><input type="range" id="thumbFrameContrast" min="50" max="250" value="100"></div>
         </div>
+        <p class="tp-note">枠を選ぶと適用。もう一度押すと解除。</p>
       </div>
       <!-- 5 アイテム -->
       <div class="tp-pane" data-pane="item" hidden>
@@ -3137,6 +3166,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <button class="tt-btn" id="thumbAspectBtn" type="button" title="変形のしかた">
         <span id="thumbAspectLabel">自由</span>
       </button>
+      <button class="tt-btn" id="thumbFitBtn" type="button" title="枠に合わせる">フィット</button>
     </div>
     <div class="empty-msg" id="emptyMsg">ここに画像・GIFをドロップ</div>
     <div class="loading-overlay" id="loadingOverlay" hidden>
@@ -5706,6 +5736,7 @@ function compositeThumbFrames() {
       const lw = L.naturalW * L.scaleX * baseScale, lh = L.naturalH * L.scaleY * baseScale;
       const lcx = W / 2 + L.offsetX, lcy = H / 2 + L.offsetY;
       cc.save();
+      cc.globalAlpha = (L.opacity != null ? L.opacity : 1);
       if (L.brightness > 0) cc.filter = `brightness(${getBrightnessFactor(L.brightness)})`;
       cc.translate(lcx, lcy);
       cc.rotate(L.rotation * Math.PI / 180);
@@ -5734,6 +5765,8 @@ function drawThumbMode() {
   const frame = state.frames[state.currentFrame] || state.frames[0];
   const srcCanvas = (state.simplify > 0) ? getSimplifiedFrame(state.currentFrame) : frame.canvas;
   ctx.save();
+  const baseOp = (state.layers[0] && state.layers[0].opacity != null) ? state.layers[0].opacity : 1;
+  ctx.globalAlpha = baseOp;
   if (state.brightness > 0) ctx.filter = `brightness(${getBrightnessFactor(state.brightness)})`;
   const cx = rect.x + rect.w / 2, cy = rect.y + rect.h / 2;
   ctx.translate(cx, cy);
@@ -5758,6 +5791,7 @@ function drawThumbMode() {
       const lcx = state.canvasW / 2 + L.offsetX;
       const lcy = state.canvasH / 2 + L.offsetY;
       ctx.save();
+      ctx.globalAlpha = (L.opacity != null ? L.opacity : 1);
       if (L.brightness > 0) ctx.filter = `brightness(${getBrightnessFactor(L.brightness)})`;
       ctx.translate(lcx, lcy);
       ctx.rotate(L.rotation * Math.PI / 180);
@@ -5828,13 +5862,15 @@ function drawThumbFrame(c) {
   if (!f || !f.img) return;
   c.save();
   c.filter = `hue-rotate(${f.hue || 0}deg) brightness(${(f.bright || 100) / 100}) contrast(${(f.contrast || 100) / 100})`;
-  c.drawImage(f.img, 0, 0, state.canvasW, state.canvasH);
+  const sc = (f.scale || 100) / 100;
+  const w = state.canvasW * sc, h = state.canvasH * sc;
+  c.drawImage(f.img, (state.canvasW - w) / 2, (state.canvasH - h) / 2, w, h);
   c.restore();
 }
-/* タイトル文字を描画 */
+/* タイトル文字を描画 (背景カード・グラデ・影対応) */
 function drawThumbTitles(c) {
   if (!state.thumbTitles || !state.thumbTitles.length) return;
-  const scale = state.canvasW / 960;  // 960基準でサイズ指定
+  const scale = state.canvasW / 960;
   for (let i = 0; i < state.thumbTitles.length; i++) {
     const t = state.thumbTitles[i];
     const x = t.xr * state.canvasW, y = t.yr * state.canvasH;
@@ -5843,17 +5879,62 @@ function drawThumbTitles(c) {
     c.font = `bold ${fs}px ${t.font}`;
     c.textAlign = 'center';
     c.textBaseline = 'middle';
+    const w = c.measureText(t.text).width;
+    // 背景カード
+    if (t.bg && t.bg.on) {
+      const pad = (t.bg.pad || 0) * scale;
+      const bw = w + pad * 2, bh = fs + pad * 2;
+      const bx = x - bw / 2, by = y - bh / 2;
+      c.save();
+      c.globalAlpha = (t.bg.opacity != null ? t.bg.opacity : 50) / 100;
+      const fade = (t.bg.fade || 0) / 100;
+      if (fade > 0) {
+        // 端を透過させるグラデ (左右方向)
+        const g = c.createLinearGradient(bx, 0, bx + bw, 0);
+        g.addColorStop(0, 'rgba(0,0,0,0)');
+        g.addColorStop(Math.min(0.49, fade), t.bg.color);
+        g.addColorStop(Math.max(0.51, 1 - fade), t.bg.color);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        c.fillStyle = g;
+      } else {
+        c.fillStyle = t.bg.color;
+      }
+      roundRectPath(c, bx, by, bw, bh, (t.bg.radius || 0) * scale);
+      c.fill();
+      c.restore();
+    }
+    // 影
+    if (t.shadow && t.shadow.on) {
+      const a = (t.shadow.angle || 0) * Math.PI / 180;
+      const dist = (t.shadow.dist || 0) * scale;
+      c.shadowColor = t.shadow.color;
+      c.shadowBlur = (t.shadow.blur || 0) * scale;
+      c.shadowOffsetX = Math.cos(a) * dist;
+      c.shadowOffsetY = Math.sin(a) * dist;
+    }
+    // フチ
     if (t.stroke) {
       c.lineWidth = Math.max(2, fs * 0.12);
       c.strokeStyle = 'rgba(0,0,0,0.85)';
       c.lineJoin = 'round';
       c.strokeText(t.text, x, y);
     }
-    c.fillStyle = t.color;
+    // 塗り (グラデ or 単色)
+    if (t.grad && t.grad.on) {
+      const a = (t.grad.angle || 0) * Math.PI / 180;
+      const r = Math.max(w, fs) / 2;
+      const gx = Math.cos(a) * r, gy = Math.sin(a) * r;
+      const g = c.createLinearGradient(x - gx, y - gy, x + gx, y + gy);
+      g.addColorStop(0, t.grad.c1);
+      g.addColorStop(1, t.grad.c2);
+      c.fillStyle = g;
+    } else {
+      c.fillStyle = t.color;
+    }
     c.fillText(t.text, x, y);
-    // 選択中タイトルに枠
+    c.shadowColor = 'transparent'; c.shadowBlur = 0;
+    // 選択枠
     if (i === state.selectedTitle && !state._exporting) {
-      const w = c.measureText(t.text).width;
       c.strokeStyle = 'rgba(91,156,184,0.9)';
       c.lineWidth = 1.5;
       c.setLineDash([4, 3]);
@@ -5862,6 +5943,16 @@ function drawThumbTitles(c) {
     }
     c.restore();
   }
+}
+function roundRectPath(c, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  c.beginPath();
+  c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r);
+  c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r);
+  c.arcTo(x, y, x + w, y, r);
+  c.closePath();
 }
 const THUMB_RATIO = { w: 16, h: 9 };  // 部屋サムネ標準 960x540 = 16:9
 state.thumbMode = false;
@@ -5885,7 +5976,9 @@ const thumbItemsEmpty = document.getElementById('thumbItemsEmpty');
 function addImageAsLayer(url, name) {
   fetch(url).then(r => r.blob()).then(b => {
     const file = new File([b], name || 'item.png', { type: b.type || 'image/png' });
+    state._nextLayerKind = 'item';
     if (!state.loaded) loadAnyFile(file); else loadAsNewLayer(file);
+    setTimeout(() => { state._nextLayerKind = null; }, 0);
   }).catch(() => {});
 }
 function renderThumbItems() {
@@ -5955,13 +6048,21 @@ function renderThumbFrames() {
   });
 }
 function applyThumbFrame(url) {
+  // 2回目クリックで解除
+  if (state.thumbFrame && state.thumbFrame.url === url) {
+    state.thumbFrame = null;
+    document.getElementById('thumbFrameAdjust').hidden = true;
+    renderThumbFrames(); draw();
+    return;
+  }
   const img = new Image();
   img.onload = () => {
-    state.thumbFrame = { img, url, hue: 0, bright: 100, contrast: 100 };
+    state.thumbFrame = { img, url, hue: 0, bright: 100, contrast: 100, scale: 100 };
     document.getElementById('thumbFrameAdjust').hidden = false;
     document.getElementById('thumbFrameHue').value = 0;
     document.getElementById('thumbFrameBright').value = 100;
     document.getElementById('thumbFrameContrast').value = 100;
+    document.getElementById('thumbFrameScale').value = 100;
     renderThumbFrames();
     draw();
   };
@@ -5995,7 +6096,7 @@ const thumbAvatarFile = document.getElementById('thumbAvatarFile');
 if (thumbAvatarFile) {
   thumbAvatarFile.addEventListener('change', e => {
     const f = e.target.files[0];
-    if (f) { if (!state.loaded) loadAnyFile(f); else loadAsNewLayer(f); }
+    if (f) { state._nextLayerKind = 'avatar'; if (!state.loaded) loadAnyFile(f); else loadAsNewLayer(f); setTimeout(()=>{state._nextLayerKind=null;},0); }
     e.target.value = '';
   });
 }
@@ -6010,27 +6111,97 @@ if (thumbAvatarMatch) {
   });
 }
 
-/* タイトル追加 */
+/* タイトル: コントロール束ね + 選択中タイトルへリアルタイム反映 */
+function thumbTitleControls() {
+  return {
+    text: document.getElementById('thumbTitleText'),
+    font: document.getElementById('thumbTitleFont'),
+    color: document.getElementById('thumbTitleColor'),
+    size: document.getElementById('thumbTitleSize'),
+    stroke: document.getElementById('thumbTitleStroke'),
+    shadow: document.getElementById('thumbTitleShadow'),
+    shColor: document.getElementById('thumbTitleShadowColor'),
+    shBlur: document.getElementById('thumbTitleShadowBlur'),
+    shAngle: document.getElementById('thumbTitleShadowAngle'),
+    shDist: document.getElementById('thumbTitleShadowDist'),
+    grad: document.getElementById('thumbTitleGrad'),
+    g1: document.getElementById('thumbTitleGrad1'),
+    g2: document.getElementById('thumbTitleGrad2'),
+    gAngle: document.getElementById('thumbTitleGradAngle'),
+    bg: document.getElementById('thumbTitleBg'),
+    bgColor: document.getElementById('thumbTitleBgColor'),
+    bgOpacity: document.getElementById('thumbTitleBgOpacity'),
+    bgPad: document.getElementById('thumbTitleBgPad'),
+    bgRadius: document.getElementById('thumbTitleBgRadius'),
+    bgFade: document.getElementById('thumbTitleBgFade'),
+  };
+}
+function readTitleFromControls() {
+  const c = thumbTitleControls();
+  return {
+    text: c.text.value.trim() || 'タイトル',
+    xr: 0.5, yr: 0.5,
+    color: c.color.value, font: c.font.value, size: +c.size.value, stroke: c.stroke.checked,
+    shadow: { on: c.shadow.checked, color: c.shColor.value, blur: +c.shBlur.value, angle: +c.shAngle.value, dist: +c.shDist.value },
+    grad: { on: c.grad.checked, c1: c.g1.value, c2: c.g2.value, angle: +c.gAngle.value },
+    bg: { on: c.bg.checked, color: c.bgColor.value, opacity: +c.bgOpacity.value, pad: +c.bgPad.value, radius: +c.bgRadius.value, fade: +c.bgFade.value },
+  };
+}
+function syncControlsToTitle(t) {
+  const c = thumbTitleControls();
+  c.text.value = t.text; c.font.value = t.font; c.color.value = t.color;
+  c.size.value = t.size; c.stroke.checked = t.stroke;
+  c.shadow.checked = t.shadow.on; c.shColor.value = t.shadow.color; c.shBlur.value = t.shadow.blur; c.shAngle.value = t.shadow.angle; c.shDist.value = t.shadow.dist;
+  c.grad.checked = t.grad.on; c.g1.value = t.grad.c1; c.g2.value = t.grad.c2; c.gAngle.value = t.grad.angle;
+  c.bg.checked = t.bg.on; c.bgColor.value = t.bg.color; c.bgOpacity.value = t.bg.opacity; c.bgPad.value = t.bg.pad; c.bgRadius.value = t.bg.radius; c.bgFade.value = t.bg.fade;
+  toggleTitleBoxes();
+}
+function toggleTitleBoxes() {
+  const c = thumbTitleControls();
+  document.getElementById('thumbTitleShadowBox').hidden = !c.shadow.checked;
+  document.getElementById('thumbTitleGradBox').hidden = !c.grad.checked;
+  document.getElementById('thumbTitleBgBox').hidden = !c.bg.checked;
+}
+/* 選択中タイトルにライブ反映 */
+function applyControlsToSelectedTitle() {
+  if (state.selectedTitle < 0 || !state.thumbTitles[state.selectedTitle]) return;
+  const t = readTitleFromControls();
+  const cur = state.thumbTitles[state.selectedTitle];
+  t.xr = cur.xr; t.yr = cur.yr;  // 位置は保持
+  state.thumbTitles[state.selectedTitle] = t;
+  draw();
+}
+(function bindTitleControls() {
+  const c = thumbTitleControls();
+  Object.values(c).forEach(el => {
+    if (!el) return;
+    const ev = (el.type === 'checkbox' || el.tagName === 'SELECT') ? 'change' : 'input';
+    el.addEventListener(ev, () => { toggleTitleBoxes(); applyControlsToSelectedTitle(); });
+  });
+})();
 const thumbTitleAdd = document.getElementById('thumbTitleAdd');
 if (thumbTitleAdd) {
   thumbTitleAdd.addEventListener('click', () => {
-    const text = document.getElementById('thumbTitleText').value.trim();
-    if (!text) { showToast('文字を入力してください'); return; }
-    state.thumbTitles.push({
-      text,
-      xr: 0.5, yr: 0.5,
-      color: document.getElementById('thumbTitleColor').value,
-      font: document.getElementById('thumbTitleFont').value,
-      size: parseInt(document.getElementById('thumbTitleSize').value, 10),
-      stroke: document.getElementById('thumbTitleStroke').checked,
-    });
+    const c = thumbTitleControls();
+    if (!c.text.value.trim()) { showToast('文字を入力してください'); return; }
+    const t = readTitleFromControls();
+    state.thumbTitles.push(t);
     state.selectedTitle = state.thumbTitles.length - 1;
     draw();
   });
 }
+const thumbTitleDel = document.getElementById('thumbTitleDel');
+if (thumbTitleDel) {
+  thumbTitleDel.addEventListener('click', () => {
+    if (state.selectedTitle < 0) { showToast('削除するタイトルを選択してください'); return; }
+    state.thumbTitles.splice(state.selectedTitle, 1);
+    state.selectedTitle = -1;
+    draw();
+  });
+}
 
-/* 枠の色調整 */
-['thumbFrameHue', 'thumbFrameBright', 'thumbFrameContrast'].forEach(id => {
+/* 枠の調整 */
+['thumbFrameHue', 'thumbFrameBright', 'thumbFrameContrast', 'thumbFrameScale'].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('input', () => {
@@ -6038,17 +6209,10 @@ if (thumbTitleAdd) {
     state.thumbFrame.hue = +document.getElementById('thumbFrameHue').value;
     state.thumbFrame.bright = +document.getElementById('thumbFrameBright').value;
     state.thumbFrame.contrast = +document.getElementById('thumbFrameContrast').value;
+    state.thumbFrame.scale = +document.getElementById('thumbFrameScale').value;
     draw();
   });
 });
-const thumbFrameClear = document.getElementById('thumbFrameClear');
-if (thumbFrameClear) {
-  thumbFrameClear.addEventListener('click', () => {
-    state.thumbFrame = null;
-    document.getElementById('thumbFrameAdjust').hidden = true;
-    renderThumbFrames(); draw();
-  });
-}
 
 const thumbKunBtnEl = thumbKunBtn;
 if (thumbKunBtnEl) {
@@ -6103,6 +6267,26 @@ if (thumbPreviewBtn) {
     else { closePreview(); thumbPreviewBtn.classList.remove('fixed'); }
   });
 }
+/* サムネツールバー: フィット (選択画像を枠いっぱいに) */
+const thumbFitBtn = document.getElementById('thumbFitBtn');
+if (thumbFitBtn) {
+  thumbFitBtn.addEventListener('click', () => {
+    const sel = (state.selectedLayers && state.selectedLayers.size) ? [...state.selectedLayers] : [0];
+    const idx = sel[0];
+    const r = thumbLayerRect(idx);
+    if (!r) return;
+    // cover: 枠を覆う最小スケール
+    const nat = (idx === 0)
+      ? { w: state.naturalW, h: state.naturalH }
+      : { w: state.layers[idx].naturalW, h: state.layers[idx].naturalH };
+    const cover = Math.max(state.canvasW / nat.w, state.canvasH / nat.h);
+    const w = nat.w * cover, h = nat.h * cover;
+    setThumbLayerRect(idx, { x: (state.canvasW - w) / 2, y: (state.canvasH - h) / 2, w, h });
+    draw();
+    showToast('枠に合わせました');
+  });
+}
+
 /* サムネツールバー: 変形のしかた (自由/固定) */
 const thumbAspectBtn = document.getElementById('thumbAspectBtn');
 const thumbAspectLabel = document.getElementById('thumbAspectLabel');
@@ -6202,6 +6386,7 @@ function ensureFirstLayer() {
     currentFrame: 0,
     naturalW: state.naturalW,
     naturalH: state.naturalH,
+    opacity: 1, kind: 'base',
     // 個別エフェクト (レイヤー0は state.* と同期)
     brightness: state.brightness,
     rotation: state.rotation,
@@ -6265,6 +6450,7 @@ async function loadAsNewLayer(file) {
     currentFrame: 0,
     naturalW: nW,
     naturalH: nH,
+    opacity: 1, kind: state._nextLayerKind || 'item',
     brightness: 0,
     rotation: 0,
     flipH: false,
@@ -6471,6 +6657,16 @@ function renderLayerPanel() {
     grip.addEventListener('click', ev => ev.stopPropagation());
     setupGripDrag(grip, row, i);
     row.appendChild(grip);
+    // サムネモード: 種別ドット
+    if (state.thumbMode) {
+      const kd = document.createElement('span');
+      const kind = L.kind || (i === 0 ? 'base' : 'item');
+      const kc = kind === 'base' ? '#5b9cb8' : kind === 'avatar' ? '#e0699b' : '#e0a341';
+      kd.className = 'lp-kind';
+      kd.style.background = kc;
+      kd.title = kind === 'base' ? 'お部屋画像' : kind === 'avatar' ? 'アバター' : 'アイテム';
+      row.appendChild(kd);
+    }
     // サムネ
     const thumb = document.createElement('div');
     thumb.className = 'lp-thumb';
@@ -6551,6 +6747,19 @@ function renderLayerPanel() {
       draw();
     });
     layerList.appendChild(row);
+    // サムネモード: 透明度スライダー (行の下)
+    if (state.thumbMode) {
+      const op = document.createElement('div');
+      op.className = 'lp-opacity';
+      const lab = document.createElement('span'); lab.textContent = '透明度';
+      const sl = document.createElement('input');
+      sl.type = 'range'; sl.min = '0'; sl.max = '100';
+      sl.value = String(Math.round((L.opacity != null ? L.opacity : 1) * 100));
+      sl.addEventListener('input', () => { L.opacity = (+sl.value) / 100; draw(); });
+      sl.addEventListener('click', ev => ev.stopPropagation());
+      op.appendChild(lab); op.appendChild(sl);
+      layerList.appendChild(op);
+    }
   }
   // 背景モードハイライト
   lpBgTransparent.classList.toggle('active', state.bgMode === 'transparent');
@@ -6696,6 +6905,7 @@ canvas.addEventListener('pointerdown', e => {
     if (x >= tx - w / 2 - 8 && x <= tx + w / 2 + 8 && y >= ty - fs / 2 - 6 && y <= ty + fs / 2 + 6) {
       e.preventDefault(); canvas.setPointerCapture(e.pointerId);
       state.selectedTitle = i;
+      if (typeof syncControlsToTitle === 'function') syncControlsToTitle(t);
       state._thumbDrag = { mode: 'title', idx: i, startX: x, startY: y, startXr: t.xr, startYr: t.yr };
       draw();
       return;

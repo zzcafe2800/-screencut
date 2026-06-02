@@ -491,6 +491,32 @@ body.thumb-mode #manualRangeToggle { display: none !important; }
   border-radius: 7px 7px 0 0; cursor: pointer;
 }
 .tp-tab.active { background: var(--accent); color: #fff; }
+/* 詳細カード(右上に浮かせる) */
+#detailCard {
+  position: fixed; top: 64px; right: 16px; z-index: 40;
+  width: 260px; max-height: 78vh; display: flex; flex-direction: column;
+  background: #fff; border: 1px solid var(--line); border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+}
+#detailCard[hidden] { display: none; }
+.dc-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: 1px solid var(--line);
+  font-weight: 700; font-size: 13px; color: var(--accent);
+}
+.dc-head button { border: none; background: transparent; font-size: 20px; line-height: 1; color: var(--fg-muted); cursor: pointer; padding: 0 4px; }
+.dc-body { padding: 12px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+/* 作り方ガイド */
+.guide-ov { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; }
+.guide-ov[hidden] { display: none; }
+.guide-card { position: relative; width: 300px; max-width: 86vw; background: #fff; border-radius: 16px; padding: 22px 22px 18px; box-shadow: 0 16px 40px rgba(0,0,0,0.3); }
+.guide-step { font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: 0.06em; }
+.guide-title { font-size: 17px; font-weight: 700; margin: 6px 0 8px; }
+.guide-text { font-size: 13px; line-height: 1.7; color: var(--fg-muted); min-height: 78px; }
+.guide-nav { display: flex; gap: 8px; margin-top: 14px; }
+.guide-nav button { flex: 1; border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 9px; font-size: 13px; font-weight: 700; cursor: pointer; }
+.guide-nav button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.guide-close { position: absolute; top: 10px; right: 12px; border: none; background: transparent; font-size: 22px; line-height: 1; color: var(--fg-muted); cursor: pointer; }
 .tp-tab-detail { margin-left: 2px; border: 1px solid var(--accent); color: var(--accent); }
 .tp-tab-detail.active { border-color: var(--accent); }
 .tp-pane { display: flex; flex-direction: column; gap: 8px; padding: 0 4px 8px; }
@@ -2416,8 +2442,17 @@ body.thumb-mode .lp-bg-row { display: none !important; }
 .lp-row:hover { background: rgba(91,156,184,0.10); }
 .lp-row.selected { border-color: var(--accent); background: rgba(91,156,184,0.15); }
 /* サムネモード: レイヤーカードを全幅に */
-body.thumb-mode .lp-list { width: 100%; }
-body.thumb-mode .lp-row { width: 100%; box-sizing: border-box; grid-template-columns: 14px 9px 26px 1fr auto auto auto; }
+body.thumb-mode .lp-row { width: 100%; box-sizing: border-box; grid-template-columns: 14px 9px 24px 1fr auto auto auto; align-items: center; }
+/* サムネモード: レイヤーサムネを縦長1:2固定 (内容・枚数で変えない) */
+body.thumb-mode .lp-row .lp-thumb {
+  width: 24px; height: 48px; aspect-ratio: 1 / 2;
+  background: #e7e3e6;
+}
+body.thumb-mode .lp-row .lp-thumb canvas, body.thumb-mode .lp-row .lp-thumb img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+/* レイヤー一覧をスクロール可能に */
+body.thumb-mode .lp-list { width: 100%; max-height: 46vh; overflow-y: auto; }
 body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 .lp-row.lp-row-dragging { opacity: 0.5; }
 .lp-row.lp-row-dropping {
@@ -3112,7 +3147,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <button class="tp-tab" data-tab="title">タイトル</button>
       <button class="tp-tab" data-tab="frame">枠</button>
       <button class="tp-tab" data-tab="item">アイテム</button>
-      <button class="tp-tab tp-tab-detail" data-tab="detail">詳細</button>
     </div>
     <div class="tp-panes">
       <!-- 画像 (追加のみ) -->
@@ -3144,7 +3178,9 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         <input type="file" id="thumbItemFile" accept="image/*,.gif" hidden>
       </div>
       <!-- 詳細 (選択レイヤーに応じて切替) -->
-      <div class="tp-pane" data-pane="detail" hidden>
+      <div id="detailCard" hidden>
+        <div class="dc-head"><span id="detailCardTitle">詳細</span><button id="detailCardClose" type="button" aria-label="閉じる">×</button></div>
+        <div class="dc-body">
         <div id="detailEmpty" class="tp-note" style="text-align:center;padding:18px 4px">レイヤーを選択してください</div>
 
         <!-- 壁紙(背景) -->
@@ -3258,6 +3294,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
           </div>
         </div>
       </div>
+      </div>
     </div>
     <!-- レイヤーパネルをここに移動 (JSで) -->
     <div id="thumbLayerSlot"></div>
@@ -3314,7 +3351,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         <span>背景</span>
         <input type="color" id="thumbBgColor" value="#2a2b31">
       </label>
-      <button class="tt-btn" id="thumbBgTransp" type="button" title="背景を透明に">透明</button>
+      <button class="tt-btn" id="thumbGuideBtn" type="button" title="作り方ガイド">ガイド</button>
       <button class="tt-btn" id="thumbAspectBtn" type="button" title="変形のしかた">
         <span id="thumbAspectLabel">自由</span>
       </button>
@@ -3331,6 +3368,19 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
           <path d="M12 16V4M8 8l4-4 4 4M4 16v3a1 1 0 001 1h14a1 1 0 001-1v-3"/>
         </svg>
         <div>ここで離す</div>
+      </div>
+    </div>
+    <!-- 作り方ガイド -->
+    <div class="guide-ov" id="thumbGuideOv" hidden>
+      <div class="guide-card">
+        <div class="guide-step" id="tgStep">1 / 5</div>
+        <div class="guide-title" id="tgTitle"></div>
+        <div class="guide-text" id="tgText"></div>
+        <div class="guide-nav">
+          <button id="tgPrev" type="button">戻る</button>
+          <button id="tgNext" type="button" class="primary">次へ</button>
+        </div>
+        <button class="guide-close" id="tgClose" type="button" aria-label="閉じる">×</button>
       </div>
     </div>
     <!-- ぼかしツール: レイヤー選択バー -->
@@ -6428,7 +6478,7 @@ function applyThumbFrame(url) {
     document.getElementById('thumbFrameScale').value = 100;
     state._wallpaperSel = false; state.selectedTitle = -1; state.selectedLayers.clear();
     renderThumbFrames();
-    switchThumbTab('detail');
+    openDetailCard();
     renderLayerPanel();
     draw();
   };
@@ -6456,30 +6506,47 @@ document.querySelectorAll('.tp-tab').forEach(tab => {
 function switchThumbTab(name) {
   document.querySelectorAll('.tp-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
   document.querySelectorAll('.tp-pane').forEach(p => { p.hidden = (p.dataset.pane !== name); });
-  if (name === 'detail') updateDetailPanel();
 }
+/* 右上の詳細カードを開く */
+function openDetailCard() {
+  const card = document.getElementById('detailCard');
+  if (card) card.hidden = false;
+  updateDetailPanel();
+}
+function closeDetailCard() {
+  const card = document.getElementById('detailCard');
+  if (card) card.hidden = true;
+}
+(function bindDetailClose() {
+  const b = document.getElementById('detailCardClose');
+  if (b) b.addEventListener('click', () => { closeDetailCard(); });
+})();
 /* 統合詳細パネル: 現在の選択に応じてセクションを出し分け */
 function updateDetailPanel() {
   const secs = ['detailEmpty', 'detailWall', 'detailLayer', 'detailTitle', 'detailFrame'];
-  const show = {};
-  secs.forEach(id => show[id] = false);
+  const show = {}; secs.forEach(id => show[id] = false);
+  const titleEl = document.getElementById('detailCardTitle');
+  let title = '詳細';
   if (state._wallpaperSel) {
-    show.detailWall = true; if (typeof syncWallControls === 'function') syncWallControls();
+    show.detailWall = true; title = '壁紙(背景)'; if (typeof syncWallControls === 'function') syncWallControls();
   } else if (state.selectedTitle >= 0 && state.thumbTitles[state.selectedTitle]) {
-    show.detailTitle = true; syncControlsToTitle(state.thumbTitles[state.selectedTitle]); renderCharChips();
+    show.detailTitle = true; title = 'タイトル'; syncControlsToTitle(state.thumbTitles[state.selectedTitle]); renderCharChips();
   } else if (state.selectedLayers && state.selectedLayers.size) {
     show.detailLayer = true;
     const i = [...state.selectedLayers][0];
     const L = state.layers[i];
     const kind = (L && L.kind) || (i === 0 ? 'base' : 'item');
-    const nm = document.getElementById('detailLayerName');
-    if (nm) nm.textContent = kind === 'base' ? 'お部屋画像' : kind === 'avatar' ? 'アバター' : 'アイテム';
+    title = kind === 'base' ? 'お部屋画像' : kind === 'avatar' ? 'アバター' : 'アイテム';
+    const nm = document.getElementById('detailLayerName'); if (nm) nm.textContent = title;
     if (typeof reflectLayerDeco === 'function') reflectLayerDeco();
   } else if (state.thumbFrame) {
-    show.detailFrame = true;
+    show.detailFrame = true; title = '枠';
+    const mb = document.getElementById('thumbFrameMoreBox'); if (mb) mb.hidden = true;
+    const mbtn = document.getElementById('thumbFrameMore'); if (mbtn) mbtn.textContent = 'もっと ▾';
   } else {
     show.detailEmpty = true;
   }
+  if (titleEl) titleEl.textContent = title;
   secs.forEach(id => { const e = document.getElementById(id); if (e) e.hidden = !show[id]; });
 }
 /* レイヤーを単独選択して詳細を開く */
@@ -6487,7 +6554,7 @@ function openThumbDetailForLayer(i) {
   state.selectedLayers = new Set([i]);
   state._wallpaperSel = false;
   state.selectedTitle = -1;
-  switchThumbTab('detail');
+  openDetailCard();
 }
 
 /* アバター追加 + 色合わせ */
@@ -6638,7 +6705,7 @@ if (thumbTitleAdd) {
     state.selectedTitle = state.thumbTitles.length - 1;
     state._wallpaperSel = false;
     state.selectedLayers.clear();
-    switchThumbTab('detail');
+    openDetailCard();
     renderLayerPanel();
     draw();
   });
@@ -6972,21 +7039,43 @@ if (thumbAspectBtn) {
 
 /* サムネツールバー: 背景色 */
 const thumbBgColorInput = document.getElementById('thumbBgColor');
-const thumbBgTranspBtn = document.getElementById('thumbBgTransp');
-if (thumbBgTranspBtn) {
-  thumbBgTranspBtn.addEventListener('click', () => {
-    state.thumbBgTransparent = !state.thumbBgTransparent;
-    thumbBgTranspBtn.classList.toggle('fixed', state.thumbBgTransparent);
-    draw();
-    showToast(state.thumbBgTransparent ? '背景を透明にしました(PNG保存で反映)' : '背景色に戻しました');
-  });
+/* 作り方ガイド (ステップ式) */
+const GUIDE_STEPS = [
+  { t: '① お部屋画像', d: '「画像」タブから、お部屋の画像を読み込みます。読み込むとレイヤーになり、位置や色は詳細で調節できます。' },
+  { t: '② アバター(任意)', d: '人物を入れたい人は「アバター」タブから画像を追加。好きな位置へドラッグし、詳細で境界線や影をつけられます。' },
+  { t: '③ タイトル', d: '「タイトル」タブで文字を作成。詳細でフォント・色・影・グラデ・カードなどを自由に設定できます。' },
+  { t: '④ 枠', d: '「枠」タブから縁を選ぶと画像が引き立ちます。詳細で色合いや大きさを調節、もう一度選ぶと解除。' },
+  { t: '⑤ アイテム', d: 'もっと飾りたい人は「アイテム」タブから好きなものを追加。最後に右上の保存ボタンで完成です。' },
+];
+let guideIdx = 0;
+function renderGuide() {
+  document.getElementById('tgStep').textContent = (guideIdx + 1) + ' / ' + GUIDE_STEPS.length;
+  document.getElementById('tgTitle').textContent = GUIDE_STEPS[guideIdx].t;
+  document.getElementById('tgText').textContent = GUIDE_STEPS[guideIdx].d;
+  document.getElementById('tgPrev').disabled = guideIdx === 0;
+  document.getElementById('tgNext').textContent = guideIdx === GUIDE_STEPS.length - 1 ? '閉じる' : '次へ';
 }
+const thumbGuideBtn = document.getElementById('thumbGuideBtn');
+if (thumbGuideBtn) thumbGuideBtn.addEventListener('click', () => {
+  guideIdx = 0; renderGuide();
+  document.getElementById('thumbGuideOv').hidden = false;
+});
+const guideClose = document.getElementById('tgClose');
+if (guideClose) guideClose.addEventListener('click', () => { document.getElementById('thumbGuideOv').hidden = true; });
+const tgOv = document.getElementById('thumbGuideOv');
+if (tgOv) tgOv.addEventListener('click', e => { if (e.target === tgOv) tgOv.hidden = true; });
+const guidePrev = document.getElementById('tgPrev');
+if (guidePrev) guidePrev.addEventListener('click', () => { if (guideIdx > 0) { guideIdx--; renderGuide(); } });
+const guideNext = document.getElementById('tgNext');
+if (guideNext) guideNext.addEventListener('click', () => {
+  if (guideIdx < GUIDE_STEPS.length - 1) { guideIdx++; renderGuide(); }
+  else { document.getElementById('thumbGuideOv').hidden = true; }
+});
 const thumbBgSwatch = document.getElementById('thumbBgSwatch');
 if (thumbBgColorInput) {
   thumbBgColorInput.addEventListener('input', () => {
     state.thumbBgColor = thumbBgColorInput.value;
     state.thumbBgTransparent = false;
-    if (thumbBgTranspBtn) thumbBgTranspBtn.classList.remove('fixed');
     if (thumbBgSwatch) thumbBgSwatch.style.background = thumbBgColorInput.value;
     draw();
   });
@@ -7475,7 +7564,7 @@ function renderLayerPanel() {
       if (state._wallpaperSel) {
         state.selectedLayers.clear();
         state.selectedTitle = -1;
-        switchThumbTab('detail');
+        openDetailCard();
       } else {
         updateDetailPanel();
       }

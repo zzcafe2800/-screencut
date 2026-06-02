@@ -506,6 +506,19 @@ body.thumb-mode #manualRangeToggle { display: none !important; }
 }
 .dc-head button { border: none; background: transparent; font-size: 20px; line-height: 1; color: var(--fg-muted); cursor: pointer; padding: 0 4px; }
 .dc-body { padding: 12px 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+/* サムネモード: レイヤーパネルを右・中央やや下に浮かせる */
+#thumbLayerFloat { display: none; }
+body.thumb-mode #thumbLayerFloat {
+  display: block; position: fixed;
+  right: 16px; top: 56%; transform: translateY(-40%);
+  width: 200px; z-index: 38;
+}
+body.thumb-mode #thumbLayerFloat .layer-panel {
+  background: rgba(255,255,255,0.96);
+  border: 1px solid var(--line); border-radius: 12px;
+  padding: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+}
+body.thumb-mode #thumbLayerFloat .lp-list { aspect-ratio: 1 / 2; max-height: 56vh; }
 /* 作り方ガイド */
 .guide-ov { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; }
 .guide-ov[hidden] { display: none; }
@@ -574,6 +587,9 @@ body.thumb-mode #manualRangeToggle { display: none !important; }
 }
 .lp-wall-row.selected { border-color: var(--accent); background: rgba(214,105,160,0.12); }
 .lp-wall-row .lp-kind { width: 9px; height: 9px; border-radius: 50%; background: #999; }
+.lp-obj-row { gap: 8px; }
+.lp-obj-del { border: none; background: transparent; color: var(--fg-faint); font-size: 16px; line-height: 1; cursor: pointer; padding: 0 2px; }
+.lp-obj-del:hover { color: #d24a4a; }
 .thumb-items-panel .ti-title {
   font-family: Georgia, serif; font-style: italic; font-weight: 700;
   font-size: 15px; color: var(--accent); margin: 4px 0 12px 4px;
@@ -3153,6 +3169,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <!-- 画像 (追加のみ) -->
       <div class="tp-pane" data-pane="image">
         <label for="file" class="tp-action">お部屋画像を読み込み</label>
+        <button class="tp-sub" id="thumbPatAdd" type="button">模様を追加</button>
         <p class="tp-note">読み込むとレイヤーになります。色や位置は「詳細」で調節。</p>
       </div>
       <!-- アバター (追加のみ) -->
@@ -3192,8 +3209,23 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
           <div class="tp-adjust" id="wallGradBox" hidden>
             <div class="tp-row"><input type="color" id="wallGrad1" class="tp-color" value="#2a2b31"><span class="tp-mini">→</span><input type="color" id="wallGrad2" class="tp-color" value="#5b9cb8"><label class="tp-mini">方向</label><input type="range" id="wallGradAngle" min="0" max="360" value="135"></div>
           </div>
-          <label class="tp-mini tp-check"><input type="checkbox" id="thumbPat"> 模様(黒い柄)</label>
-          <div class="tp-adjust" id="thumbPatBox" hidden>
+          <label class="tp-mini tp-check"><input type="checkbox" id="thumbSpot"> スポットライト</label>
+          <div class="tp-adjust" id="thumbSpotBox" hidden>
+            <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbSpotR" min="10" max="100" value="55"><label class="tp-mini">ぼかし</label><input type="range" id="thumbSpotSoft" min="0" max="100" value="60"></div>
+            <div class="tp-row"><label class="tp-mini">暗さ</label><input type="range" id="thumbSpotDark" min="0" max="95" value="55"><label class="tp-mini">縦横</label><input type="range" id="thumbSpotRatio" min="40" max="200" value="100"></div>
+            <p class="tp-note">中心はプレビュー上でドラッグ。</p>
+          </div>
+          <label class="tp-mini tp-check" hidden><input type="checkbox" id="thumbBgGrad" hidden></label>
+          <div id="thumbBgGradBox" hidden>
+            <input type="color" id="thumbBgGrad1" value="#2a2b31"><input type="color" id="thumbBgGrad2" value="#5b9cb8"><input type="range" id="thumbBgGradAngle" min="0" max="360" value="135">
+          </div>
+        </div>
+
+        <!-- 模様 -->
+        <div id="detailPattern" hidden>
+          <div class="tp-mini" style="font-weight:700;color:var(--accent);margin-bottom:6px">模様</div>
+          <label class="tp-mini tp-check" hidden><input type="checkbox" id="thumbPat"></label>
+          <div id="thumbPatBox">
             <div class="tp-row"><label class="tp-mini">形</label>
               <select id="thumbPatShape" class="tp-select">
                 <option value="dot">● 丸</option><option value="ring">○ 輪</option>
@@ -3205,16 +3237,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
             <div class="tp-row"><label class="tp-mini">色</label><input type="color" id="thumbPatColor" class="tp-color" value="#000000"><label class="tp-mini">濃さ</label><input type="range" id="thumbPatOpacity" min="0" max="100" value="18"></div>
             <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbPatSize" min="2" max="40" value="8"><label class="tp-mini">間隔</label><input type="range" id="thumbPatGap" min="10" max="120" value="40"></div>
             <label class="tp-mini tp-check"><input type="checkbox" id="thumbPatStagger"> 互い違い</label>
-          </div>
-          <label class="tp-mini tp-check"><input type="checkbox" id="thumbSpot"> スポットライト</label>
-          <div class="tp-adjust" id="thumbSpotBox" hidden>
-            <div class="tp-row"><label class="tp-mini">大きさ</label><input type="range" id="thumbSpotR" min="10" max="100" value="55"><label class="tp-mini">ぼかし</label><input type="range" id="thumbSpotSoft" min="0" max="100" value="60"></div>
-            <div class="tp-row"><label class="tp-mini">暗さ</label><input type="range" id="thumbSpotDark" min="0" max="95" value="55"><label class="tp-mini">縦横</label><input type="range" id="thumbSpotRatio" min="40" max="200" value="100"></div>
-            <p class="tp-note">中心はプレビュー上でドラッグ。</p>
-          </div>
-          <label class="tp-mini tp-check"><input type="checkbox" id="thumbBgGrad" hidden></label>
-          <div id="thumbBgGradBox" hidden>
-            <input type="color" id="thumbBgGrad1" value="#2a2b31"><input type="color" id="thumbBgGrad2" value="#5b9cb8"><input type="range" id="thumbBgGradAngle" min="0" max="360" value="135">
           </div>
         </div>
 
@@ -3400,6 +3422,8 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <div class="bc-row"><button id="blurOff" type="button">ぼかしを消す</button></div>
       <p class="bc-note">円の中心はプレビュー上でドラッグ</p>
     </div>
+    <!-- サムネモード: レイヤーパネルの浮動配置先(右・中央やや下) -->
+    <div id="thumbLayerFloat"></div>
     <button class="manual-range-toggle" id="manualRangeToggle" type="button" aria-pressed="false">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="4" y="4" width="16" height="16" rx="1" stroke-dasharray="3 3"/>
@@ -6477,7 +6501,7 @@ function applyThumbFrame(url) {
     document.getElementById('thumbFrameBright').value = 100;
     document.getElementById('thumbFrameContrast').value = 100;
     document.getElementById('thumbFrameScale').value = 100;
-    state._wallpaperSel = false; state.selectedTitle = -1; state.selectedLayers.clear();
+    state._wallpaperSel = false; state.selectedTitle = -1; state._patternSel = false; state.selectedLayers.clear();
     renderThumbFrames();
     openDetailCard();
     renderLayerPanel();
@@ -6524,11 +6548,13 @@ function closeDetailCard() {
 })();
 /* 統合詳細パネル: 現在の選択に応じてセクションを出し分け */
 function updateDetailPanel() {
-  const secs = ['detailEmpty', 'detailWall', 'detailLayer', 'detailTitle', 'detailFrame'];
+  const secs = ['detailEmpty', 'detailWall', 'detailPattern', 'detailLayer', 'detailTitle', 'detailFrame'];
   const show = {}; secs.forEach(id => show[id] = false);
   const titleEl = document.getElementById('detailCardTitle');
   let title = '詳細';
-  if (state._wallpaperSel) {
+  if (state._patternSel) {
+    show.detailPattern = true; title = '模様'; if (typeof syncPattern === 'function') syncPatternControls();
+  } else if (state._wallpaperSel) {
     show.detailWall = true; title = '壁紙(背景)'; if (typeof syncWallControls === 'function') syncWallControls();
   } else if (state.selectedTitle >= 0 && state.thumbTitles[state.selectedTitle]) {
     show.detailTitle = true; title = 'タイトル'; syncControlsToTitle(state.thumbTitles[state.selectedTitle]); renderCharChips();
@@ -6555,6 +6581,7 @@ function openThumbDetailForLayer(i) {
   state.selectedLayers = new Set([i]);
   state._wallpaperSel = false;
   state.selectedTitle = -1;
+  state._patternSel = false;
   openDetailCard();
 }
 
@@ -6705,6 +6732,7 @@ if (thumbTitleAdd) {
     state.thumbTitles.push(t);
     state.selectedTitle = state.thumbTitles.length - 1;
     state._wallpaperSel = false;
+    state._patternSel = false;
     state.selectedLayers.clear();
     openDetailCard();
     renderLayerPanel();
@@ -6767,19 +6795,32 @@ function syncBgGrad() {
 /* 模様 */
 function syncPattern() {
   const p = state.thumbPattern;
-  p.on = document.getElementById('thumbPat').checked;
   p.shape = document.getElementById('thumbPatShape').value;
   p.color = document.getElementById('thumbPatColor').value;
   p.opacity = +document.getElementById('thumbPatOpacity').value;
   p.size = +document.getElementById('thumbPatSize').value;
   p.gap = +document.getElementById('thumbPatGap').value;
   p.stagger = document.getElementById('thumbPatStagger').checked;
-  document.getElementById('thumbPatBox').hidden = !p.on;
   draw();
 }
-['thumbPat', 'thumbPatShape', 'thumbPatColor', 'thumbPatOpacity', 'thumbPatSize', 'thumbPatGap', 'thumbPatStagger'].forEach(id => {
+function syncPatternControls() {
+  const p = state.thumbPattern; if (!p) return;
+  const set = (id, v) => { const e = document.getElementById(id); if (e) { if (e.type === 'checkbox') e.checked = v; else e.value = v; } };
+  set('thumbPatShape', p.shape); set('thumbPatColor', p.color); set('thumbPatOpacity', p.opacity);
+  set('thumbPatSize', p.size); set('thumbPatGap', p.gap); set('thumbPatStagger', p.stagger);
+}
+['thumbPatShape', 'thumbPatColor', 'thumbPatOpacity', 'thumbPatSize', 'thumbPatGap', 'thumbPatStagger'].forEach(id => {
   const el = document.getElementById(id); if (!el) return;
   el.addEventListener((el.type === 'checkbox' || el.tagName === 'SELECT') ? 'change' : 'input', syncPattern);
+});
+/* 模様を追加 (画像タブ) → 模様レイヤーを有効化して詳細へ */
+const thumbPatAdd = document.getElementById('thumbPatAdd');
+if (thumbPatAdd) thumbPatAdd.addEventListener('click', () => {
+  state.thumbPattern.on = true;
+  state._patternSel = true; state._wallpaperSel = false; state.selectedTitle = -1; state.selectedLayers.clear();
+  openDetailCard();
+  renderLayerPanel();
+  draw();
 });
 
 /* スポットライト */
@@ -7098,10 +7139,10 @@ if (thumbLayerAddFile) {
 /* レイヤーパネルをサムネ時はサイドバーへ、通常時はcanvas-wrapへ移動 */
 function relocateLayerPanel() {
   const lp = document.getElementById('layerPanel');
-  const slot = document.getElementById('thumbLayerSlot');
   if (!lp) return;
   if (state.thumbMode) {
-    if (slot && lp.parentNode !== slot) slot.appendChild(lp);
+    const fl = document.getElementById('thumbLayerFloat');
+    if (fl && lp.parentNode !== fl) fl.appendChild(lp);
   } else {
     const cw = document.getElementById('canvasWrap');
     if (cw && lp.parentNode !== cw) cw.appendChild(lp);
@@ -7532,6 +7573,7 @@ function renderLayerPanel() {
       updateSimplifyGauge();
       if (state.thumbMode) {
         state._wallpaperSel = false;
+        state._patternSel = false;
         state.selectedTitle = -1;
         if (typeof reflectLayerDeco === 'function') reflectLayerDeco();
         if (typeof updateDetailPanel === 'function') updateDetailPanel();
@@ -7553,6 +7595,43 @@ function renderLayerPanel() {
       layerList.appendChild(op);
     }
   }
+  // サムネモード: タイトル / 模様 を擬似レイヤー行として表示
+  if (state.thumbMode) {
+    // タイトル(上にあるものほどリスト上)
+    for (let ti = state.thumbTitles.length - 1; ti >= 0; ti--) {
+      const t = state.thumbTitles[ti];
+      const r = document.createElement('div');
+      r.className = 'lp-wall-row lp-obj-row' + (state.selectedTitle === ti ? ' selected' : '');
+      const dot = document.createElement('span'); dot.className = 'lp-kind'; dot.style.background = '#7b6cf0';
+      const lbl = document.createElement('span'); lbl.style.flex = '1';
+      lbl.textContent = 'T ' + (t.text || 'タイトル');
+      lbl.style.overflow = 'hidden'; lbl.style.textOverflow = 'ellipsis'; lbl.style.whiteSpace = 'nowrap';
+      const del = document.createElement('button'); del.className = 'lp-obj-del'; del.textContent = '×';
+      del.addEventListener('click', ev => { ev.stopPropagation(); state.thumbTitles.splice(ti, 1); if (state.selectedTitle === ti) state.selectedTitle = -1; renderLayerPanel(); updateDetailPanel(); draw(); });
+      r.appendChild(dot); r.appendChild(lbl); r.appendChild(del);
+      r.addEventListener('click', () => {
+        state.selectedTitle = ti; state._wallpaperSel = false; state._patternSel = false; state.selectedLayers.clear();
+        if (typeof syncControlsToTitle === 'function') syncControlsToTitle(t);
+        openDetailCard(); renderLayerPanel(); draw();
+      });
+      layerList.appendChild(r);
+    }
+    // 模様
+    if (state.thumbPattern && state.thumbPattern.on) {
+      const r = document.createElement('div');
+      r.className = 'lp-wall-row lp-obj-row' + (state._patternSel ? ' selected' : '');
+      const dot = document.createElement('span'); dot.className = 'lp-kind'; dot.style.background = '#444';
+      const lbl = document.createElement('span'); lbl.textContent = '模様'; lbl.style.flex = '1';
+      const del = document.createElement('button'); del.className = 'lp-obj-del'; del.textContent = '×';
+      del.addEventListener('click', ev => { ev.stopPropagation(); state.thumbPattern.on = false; state._patternSel = false; renderLayerPanel(); updateDetailPanel(); draw(); });
+      r.appendChild(dot); r.appendChild(lbl); r.appendChild(del);
+      r.addEventListener('click', () => {
+        state._patternSel = true; state._wallpaperSel = false; state.selectedTitle = -1; state.selectedLayers.clear();
+        openDetailCard(); renderLayerPanel(); draw();
+      });
+      layerList.appendChild(r);
+    }
+  }
   // サムネモード: 最下層に「壁紙」行 (常設)
   if (state.thumbMode) {
     const wr = document.createElement('div');
@@ -7565,6 +7644,7 @@ function renderLayerPanel() {
       if (state._wallpaperSel) {
         state.selectedLayers.clear();
         state.selectedTitle = -1;
+        state._patternSel = false;
         openDetailCard();
       } else {
         updateDetailPanel();
@@ -7738,6 +7818,7 @@ canvas.addEventListener('pointerdown', e => {
       e.preventDefault(); canvas.setPointerCapture(e.pointerId);
       state.selectedTitle = i;
       state._wallpaperSel = false;
+      state._patternSel = false;
       state.selectedLayers.clear();
       if (typeof syncControlsToTitle === 'function') syncControlsToTitle(t);
       if (typeof updateDetailPanel === 'function') updateDetailPanel();

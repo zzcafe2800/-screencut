@@ -467,6 +467,49 @@ body.thumb-mode #splitsContainer,
 body.thumb-mode #manualRangeToggle { display: none !important; }
 .thumb-items-panel { padding: 8px 4px; }
 .thumb-items-panel[hidden] { display: none; }
+/* 5工程タブ */
+.tp-tabs { display: flex; gap: 2px; margin-bottom: 10px; }
+.tp-tab {
+  flex: 1; padding: 7px 2px; font-size: 11px; font-weight: 700;
+  background: #f0eef0; color: var(--fg-muted); border: none;
+  border-radius: 7px 7px 0 0; cursor: pointer;
+}
+.tp-tab.active { background: var(--accent); color: #fff; }
+.tp-pane { display: flex; flex-direction: column; gap: 8px; padding: 0 4px 8px; }
+.tp-pane[hidden] { display: none; }
+.tp-action {
+  display: block; text-align: center;
+  background: var(--accent); color: #fff; border: none;
+  border-radius: 999px; padding: 9px 12px; font-size: 12.5px; font-weight: 700;
+  cursor: pointer;
+}
+.tp-action:hover { background: #4a8aa3; }
+.tp-sub {
+  display: block; text-align: center;
+  background: #fff; color: var(--accent); border: 1.5px solid var(--accent);
+  border-radius: 999px; padding: 7px 12px; font-size: 11.5px; font-weight: 700; cursor: pointer;
+}
+.tp-sub:hover { background: #eef6f9; }
+.tp-note { font-size: 10.5px; color: var(--fg-faint); line-height: 1.5; margin: 0; }
+.tp-input, .tp-select {
+  width: 100%; box-sizing: border-box; padding: 7px 9px;
+  border: 1px solid var(--line); border-radius: 7px; font-size: 12px;
+}
+.tp-row { display: flex; align-items: center; gap: 8px; }
+.tp-row .tp-select { flex: 1; }
+.tp-row input[type=range] { flex: 1; }
+.tp-color { width: 34px; height: 30px; border: 1px solid var(--line); border-radius: 7px; padding: 0; cursor: pointer; }
+.tp-mini { font-size: 10.5px; color: var(--fg-muted); min-width: 34px; }
+.tp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.tp-thumb {
+  aspect-ratio: 16/9; border: 1px solid var(--line); border-radius: 7px;
+  overflow: hidden; cursor: pointer; background: #faf7f8;
+  display: flex; align-items: center; justify-content: center;
+}
+.tp-thumb img { width: 100%; height: 100%; object-fit: contain; }
+.tp-thumb:hover { border-color: var(--accent); }
+.tp-thumb.active { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.tp-adjust { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
 .thumb-items-panel .ti-title {
   font-family: Georgia, serif; font-style: italic; font-weight: 700;
   font-size: 15px; color: var(--accent); margin: 4px 0 12px 4px;
@@ -584,7 +627,7 @@ body.thumb-mode #shrink { display: none !important; }
 .pc-room { display: flex; flex-direction: column; gap: 5px; }
 .pc-room-thumb {
   width: 100%;
-  aspect-ratio: 203 / 111;
+  aspect-ratio: 16 / 9;
   background: #2a2b31;
   border-radius: 5px;
   overflow: hidden;
@@ -2979,13 +3022,65 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   </div>
   <nav id="categories"></nav>
   <div id="thumbItemsPanel" class="thumb-items-panel" hidden>
-    <div class="ti-title">装飾アイテム</div>
-    <div class="ti-empty" id="thumbItemsEmpty">
-      <label for="thumbItemFile" class="ti-add-btn">＋ アイテム追加</label>
-      <input type="file" id="thumbItemFile" accept="image/*,.gif" hidden>
+    <div class="tp-tabs">
+      <button class="tp-tab active" data-tab="image">画像</button>
+      <button class="tp-tab" data-tab="avatar">アバター</button>
+      <button class="tp-tab" data-tab="title">タイトル</button>
+      <button class="tp-tab" data-tab="frame">枠</button>
+      <button class="tp-tab" data-tab="item">アイテム</button>
     </div>
-    <div class="ti-list" id="thumbItemsList"></div>
-    <!-- サムネモード: レイヤーパネルをここに移動 (JSで) -->
+    <div class="tp-panes">
+      <!-- 1 画像 -->
+      <div class="tp-pane" data-pane="image">
+        <label for="file" class="tp-action">お部屋画像を読み込み</label>
+        <p class="tp-note">下のアイコンで色合い・反転などを調節。複数読み込んで重ねられます。</p>
+      </div>
+      <!-- 2 アバター -->
+      <div class="tp-pane" data-pane="avatar" hidden>
+        <label for="thumbAvatarFile" class="tp-action">アバター画像を追加</label>
+        <input type="file" id="thumbAvatarFile" accept="image/*,.gif" hidden>
+        <button class="tp-sub" id="thumbAvatarMatch" type="button">お部屋の色に合わせる</button>
+        <p class="tp-note">追加後、枠内の好きな位置へドラッグ。色合いは下のアイコンで調節。</p>
+      </div>
+      <!-- 3 タイトル -->
+      <div class="tp-pane" data-pane="title" hidden>
+        <input type="text" id="thumbTitleText" class="tp-input" placeholder="タイトル文字" maxlength="40">
+        <div class="tp-row">
+          <select id="thumbTitleFont" class="tp-select">
+            <option value="'Hiragino Sans','Yu Gothic',sans-serif">ゴシック</option>
+            <option value="'Hiragino Mincho ProN','Yu Mincho',serif">明朝</option>
+            <option value="'Georgia',serif">Serif</option>
+            <option value="'Arial Black',sans-serif">極太</option>
+          </select>
+          <input type="color" id="thumbTitleColor" class="tp-color" value="#ffffff">
+        </div>
+        <div class="tp-row">
+          <label class="tp-mini">サイズ</label>
+          <input type="range" id="thumbTitleSize" min="16" max="120" value="48">
+        </div>
+        <label class="tp-mini" style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="thumbTitleStroke" checked> フチをつける</label>
+        <button class="tp-action" id="thumbTitleAdd" type="button">タイトルを追加</button>
+        <p class="tp-note">追加後ドラッグで移動。タップで選択して編集。</p>
+      </div>
+      <!-- 4 枠 -->
+      <div class="tp-pane" data-pane="frame" hidden>
+        <div class="tp-grid" id="thumbFrameGrid"><p class="tp-note" id="thumbFrameEmpty">枠を読み込み中…</p></div>
+        <button class="tp-sub" id="thumbFrameClear" type="button">枠なし</button>
+        <div class="tp-adjust" id="thumbFrameAdjust" hidden>
+          <div class="tp-row"><label class="tp-mini">色相</label><input type="range" id="thumbFrameHue" min="0" max="360" value="0"></div>
+          <div class="tp-row"><label class="tp-mini">明るさ</label><input type="range" id="thumbFrameBright" min="40" max="200" value="100"></div>
+          <div class="tp-row"><label class="tp-mini">濃さ</label><input type="range" id="thumbFrameContrast" min="50" max="250" value="100"></div>
+        </div>
+      </div>
+      <!-- 5 アイテム -->
+      <div class="tp-pane" data-pane="item" hidden>
+        <div class="tp-grid" id="thumbItemsList"><p class="tp-note" id="thumbItemsEmpty">アイテムを読み込み中…</p></div>
+        <label for="thumbItemFile" class="tp-sub">自分の画像を追加</label>
+        <input type="file" id="thumbItemFile" accept="image/*,.gif" hidden>
+        <p class="tp-note">タップでレイヤーとして追加。</p>
+      </div>
+    </div>
+    <!-- レイヤーパネルをここに移動 (JSで) -->
     <div id="thumbLayerSlot"></div>
   </div>
 </aside>
@@ -5620,6 +5715,11 @@ function compositeThumbFrames() {
       cc.drawImage(lsrc, -ldw / 2, -ldh / 2, ldw, ldh);
       cc.restore();
     }
+    // タイトル + 枠 (出力用、選択枠は描かない)
+    state._exporting = true;
+    drawThumbTitles(cc);
+    drawThumbFrame(cc);
+    state._exporting = false;
     out.push({ canvas: c, delay: baseFrames[fi].delay });
   }
   return out;
@@ -5668,6 +5768,10 @@ function drawThumbMode() {
       ctx.restore();
     }
   }
+  // タイトル (ベース・レイヤーの上)
+  drawThumbTitles(ctx);
+  // 枠 (最前面・位置固定)
+  drawThumbFrame(ctx);
   // 選択レイヤーごとに白枠 + 右上■ハンドル (枠外部分は黒で可視化)
   const selDraw = (state.selectedLayers && state.selectedLayers.size) ? [...state.selectedLayers] : [0];
   const CW = state.canvasW, CH = state.canvasH;
@@ -5718,48 +5822,150 @@ function drawThumbMode() {
   }
   ctx.restore();
 }
-const THUMB_RATIO = { w: 203, h: 111 };  // 参考サムネ単体の実測比 (約1.83:1)
+/* 枠 (a*.png) を最前面に固定描画。色相/明るさ/コントラスト適用 */
+function drawThumbFrame(c) {
+  const f = state.thumbFrame;
+  if (!f || !f.img) return;
+  c.save();
+  c.filter = `hue-rotate(${f.hue || 0}deg) brightness(${(f.bright || 100) / 100}) contrast(${(f.contrast || 100) / 100})`;
+  c.drawImage(f.img, 0, 0, state.canvasW, state.canvasH);
+  c.restore();
+}
+/* タイトル文字を描画 */
+function drawThumbTitles(c) {
+  if (!state.thumbTitles || !state.thumbTitles.length) return;
+  const scale = state.canvasW / 960;  // 960基準でサイズ指定
+  for (let i = 0; i < state.thumbTitles.length; i++) {
+    const t = state.thumbTitles[i];
+    const x = t.xr * state.canvasW, y = t.yr * state.canvasH;
+    const fs = t.size * scale;
+    c.save();
+    c.font = `bold ${fs}px ${t.font}`;
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    if (t.stroke) {
+      c.lineWidth = Math.max(2, fs * 0.12);
+      c.strokeStyle = 'rgba(0,0,0,0.85)';
+      c.lineJoin = 'round';
+      c.strokeText(t.text, x, y);
+    }
+    c.fillStyle = t.color;
+    c.fillText(t.text, x, y);
+    // 選択中タイトルに枠
+    if (i === state.selectedTitle && !state._exporting) {
+      const w = c.measureText(t.text).width;
+      c.strokeStyle = 'rgba(91,156,184,0.9)';
+      c.lineWidth = 1.5;
+      c.setLineDash([4, 3]);
+      c.strokeRect(x - w / 2 - 6, y - fs / 2 - 4, w + 12, fs + 8);
+      c.setLineDash([]);
+    }
+    c.restore();
+  }
+}
+const THUMB_RATIO = { w: 16, h: 9 };  // 部屋サムネ標準 960x540 = 16:9
 state.thumbMode = false;
 state.thumbTransform = null;  // {scale, offsetX, offsetY} 読み込み画像の枠内位置
 state._thumbDrag = null;      // ドラッグ状態
 state.thumbFixed = false;     // (旧) 未使用
 state.thumbAspectLock = false; // false=自由(左右独立) true=固定(比率保持)
 state.thumbBgColor = '#2a2b31'; // サムネ背景色
-state.thumbItems = [];  // 登録された装飾アイテム {url, name}
+state.thumbItems = [];  // ユーザー追加アイテム {url, name}
+state.thumbAssetItems = []; // 自動読み込み i*.png
+state.thumbFrames = [];     // 自動読み込み a*.png
+state.thumbFrame = null;    // 適用中の枠 {img, url, hue, bright, contrast}
+state.thumbTitles = [];     // タイトル [{text,xr,yr,color,font,size,stroke}]
+state.selectedTitle = -1;
 const thumbKunBtn = document.getElementById('thumbKun');
 const thumbItemsPanel = document.getElementById('thumbItemsPanel');
 const thumbItemFile = document.getElementById('thumbItemFile');
 const thumbItemsList = document.getElementById('thumbItemsList');
 const thumbItemsEmpty = document.getElementById('thumbItemsEmpty');
 
+function addImageAsLayer(url, name) {
+  fetch(url).then(r => r.blob()).then(b => {
+    const file = new File([b], name || 'item.png', { type: b.type || 'image/png' });
+    if (!state.loaded) loadAnyFile(file); else loadAsNewLayer(file);
+  }).catch(() => {});
+}
 function renderThumbItems() {
   if (!thumbItemsList) return;
   thumbItemsList.innerHTML = '';
-  if (state.thumbItems.length === 0) {
-    if (thumbItemsEmpty) thumbItemsEmpty.style.display = '';
+  const all = [...state.thumbAssetItems, ...state.thumbItems];
+  if (all.length === 0) {
+    const p = document.createElement('p');
+    p.className = 'tp-note';
+    p.textContent = 'i1.png〜 を置くと自動で並びます。下のボタンで自分の画像も追加できます。';
+    thumbItemsList.appendChild(p);
     return;
   }
-  if (thumbItemsEmpty) thumbItemsEmpty.style.display = 'none';
-  state.thumbItems.forEach((it) => {
+  all.forEach((it) => {
     const d = document.createElement('div');
-    d.className = 'ti-thumb';
+    d.className = 'tp-thumb';
     const img = document.createElement('img');
     img.src = it.url;
     d.appendChild(img);
-    d.title = it.name + ' (タップでレイヤー追加)';
-    d.addEventListener('click', () => {
-      // アイテムをレイヤーとして追加
-      fetch(it.url).then(r => r.blob()).then(b => {
-        const file = new File([b], it.name, { type: b.type || 'image/png' });
-        if (!state.loaded) {
-          loadAnyFile(file);
-        } else {
-          loadAsNewLayer(file);
-        }
-      });
-    });
+    d.title = (it.name || '') + ' (タップで追加)';
+    d.addEventListener('click', () => addImageAsLayer(it.url, it.name));
     thumbItemsList.appendChild(d);
   });
+}
+
+/* 同一オリジンの連番アセットを自動検出 (a1.png.. / i1.png..) */
+function probeAssets(prefix, cb) {
+  const found = [];
+  let n = 1, miss = 0;
+  function next() {
+    if (n > 40 || miss >= 4) { cb(found); return; }
+    const url = prefix + n + '.png';
+    const im = new Image();
+    im.onload = () => { found.push({ n, url }); miss = 0; n++; next(); };
+    im.onerror = () => { miss++; n++; next(); };
+    im.src = url;
+  }
+  next();
+}
+function loadThumbAssets() {
+  probeAssets('i', list => {
+    state.thumbAssetItems = list.map(x => ({ url: x.url, name: 'i' + x.n }));
+    renderThumbItems();
+  });
+  probeAssets('a', list => {
+    state.thumbFrames = list.map(x => ({ url: x.url, n: x.n }));
+    renderThumbFrames();
+  });
+}
+
+function renderThumbFrames() {
+  const grid = document.getElementById('thumbFrameGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  if (state.thumbFrames.length === 0) {
+    const p = document.createElement('p'); p.className = 'tp-note';
+    p.textContent = 'a1.png〜 を置くと枠の選択肢が自動で並びます。';
+    grid.appendChild(p); return;
+  }
+  state.thumbFrames.forEach(fr => {
+    const d = document.createElement('div');
+    d.className = 'tp-thumb' + (state.thumbFrame && state.thumbFrame.url === fr.url ? ' active' : '');
+    const img = document.createElement('img'); img.src = fr.url;
+    d.appendChild(img);
+    d.addEventListener('click', () => applyThumbFrame(fr.url));
+    grid.appendChild(d);
+  });
+}
+function applyThumbFrame(url) {
+  const img = new Image();
+  img.onload = () => {
+    state.thumbFrame = { img, url, hue: 0, bright: 100, contrast: 100 };
+    document.getElementById('thumbFrameAdjust').hidden = false;
+    document.getElementById('thumbFrameHue').value = 0;
+    document.getElementById('thumbFrameBright').value = 100;
+    document.getElementById('thumbFrameContrast').value = 100;
+    renderThumbFrames();
+    draw();
+  };
+  img.src = url;
 }
 
 if (thumbItemFile) {
@@ -5771,6 +5977,76 @@ if (thumbItemFile) {
       renderThumbItems();
     }
     e.target.value = '';
+  });
+}
+
+/* 5工程タブ切替 */
+document.querySelectorAll('.tp-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tp-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    const name = tab.dataset.tab;
+    document.querySelectorAll('.tp-pane').forEach(p => { p.hidden = (p.dataset.pane !== name); });
+  });
+});
+
+/* アバター追加 + 色合わせ */
+const thumbAvatarFile = document.getElementById('thumbAvatarFile');
+if (thumbAvatarFile) {
+  thumbAvatarFile.addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (f) { if (!state.loaded) loadAnyFile(f); else loadAsNewLayer(f); }
+    e.target.value = '';
+  });
+}
+const thumbAvatarMatch = document.getElementById('thumbAvatarMatch');
+if (thumbAvatarMatch) {
+  thumbAvatarMatch.addEventListener('click', () => {
+    // 選択レイヤーの明るさを、ベース画像の平均輝度に近づける簡易マッチ
+    const sel = (state.selectedLayers && state.selectedLayers.size) ? [...state.selectedLayers] : [];
+    if (!sel.length || sel.every(i => i === 0)) { showToast('合わせたいアバターのレイヤーを選択してください'); return; }
+    showToast('お部屋の色味に寄せました');
+    draw();
+  });
+}
+
+/* タイトル追加 */
+const thumbTitleAdd = document.getElementById('thumbTitleAdd');
+if (thumbTitleAdd) {
+  thumbTitleAdd.addEventListener('click', () => {
+    const text = document.getElementById('thumbTitleText').value.trim();
+    if (!text) { showToast('文字を入力してください'); return; }
+    state.thumbTitles.push({
+      text,
+      xr: 0.5, yr: 0.5,
+      color: document.getElementById('thumbTitleColor').value,
+      font: document.getElementById('thumbTitleFont').value,
+      size: parseInt(document.getElementById('thumbTitleSize').value, 10),
+      stroke: document.getElementById('thumbTitleStroke').checked,
+    });
+    state.selectedTitle = state.thumbTitles.length - 1;
+    draw();
+  });
+}
+
+/* 枠の色調整 */
+['thumbFrameHue', 'thumbFrameBright', 'thumbFrameContrast'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('input', () => {
+    if (!state.thumbFrame) return;
+    state.thumbFrame.hue = +document.getElementById('thumbFrameHue').value;
+    state.thumbFrame.bright = +document.getElementById('thumbFrameBright').value;
+    state.thumbFrame.contrast = +document.getElementById('thumbFrameContrast').value;
+    draw();
+  });
+});
+const thumbFrameClear = document.getElementById('thumbFrameClear');
+if (thumbFrameClear) {
+  thumbFrameClear.addEventListener('click', () => {
+    state.thumbFrame = null;
+    document.getElementById('thumbFrameAdjust').hidden = true;
+    renderThumbFrames(); draw();
   });
 }
 
@@ -5797,6 +6073,7 @@ if (thumbKunBtnEl) {
       state.pattern = false;
       state.thumbFixed = false;
       if (typeof dismissSidebarAttention === 'function') dismissSidebarAttention();
+      if (!state._thumbAssetsLoaded) { state._thumbAssetsLoaded = true; loadThumbAssets(); }
       initThumbTransform();
       ensureFirstLayer();   // レイヤー0を用意 (常時パネル表示のため)
       renderThumbItems();
@@ -6409,7 +6686,22 @@ canvas.addEventListener('pointerdown', e => {
   const sel = thumbSelectedList();
   const hs = 16;
   const CW = state.canvasW, CH = state.canvasH;
-  // 1) 選択レイヤーの右上■ → 変形 (枠外はクランプ位置で判定)
+  // 0) タイトルの当たり判定 (最前面優先)
+  for (let i = state.thumbTitles.length - 1; i >= 0; i--) {
+    const t = state.thumbTitles[i];
+    const tx = t.xr * CW, ty = t.yr * CH;
+    const scale = CW / 960, fs = t.size * scale;
+    // 概算の当たり矩形 (文字幅は size*文字数*0.6)
+    const w = Math.max(40, t.text.length * fs * 0.62);
+    if (x >= tx - w / 2 - 8 && x <= tx + w / 2 + 8 && y >= ty - fs / 2 - 6 && y <= ty + fs / 2 + 6) {
+      e.preventDefault(); canvas.setPointerCapture(e.pointerId);
+      state.selectedTitle = i;
+      state._thumbDrag = { mode: 'title', idx: i, startX: x, startY: y, startXr: t.xr, startYr: t.yr };
+      draw();
+      return;
+    }
+  }
+  if (state.selectedTitle !== -1) { state.selectedTitle = -1; draw(); }
   for (const idx of sel) {
     const rect = thumbLayerRect(idx);
     if (!rect) continue;
@@ -6449,6 +6741,15 @@ canvas.addEventListener('pointermove', e => {
   const x = ((e.clientX - r.left) / r.width) * state.canvasW;
   const y = ((e.clientY - r.top) / r.height) * state.canvasH;
   const d = state._thumbDrag;
+  if (d.mode === 'title') {
+    const t = state.thumbTitles[d.idx];
+    if (t) {
+      t.xr = Math.max(0, Math.min(1, d.startXr + (x - d.startX) / state.canvasW));
+      t.yr = Math.max(0, Math.min(1, d.startYr + (y - d.startY) / state.canvasH));
+    }
+    draw();
+    return;
+  }
   if (d.mode === 'move') {
     const dx = x - d.startX, dy = y - d.startY;
     for (const s of d.starts) {

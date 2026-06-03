@@ -33,6 +33,9 @@
 <!-- ===== Favicon ===== -->
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href='data:application/manifest+json;utf8,{"name":"便利くん","short_name":"便利くん","display":"standalone","start_url":".","background_color":"%23f5f8fa","theme_color":"%235b9cb8","icons":[{"src":"icon.png","sizes":"192x192","type":"image/png"},{"src":"icon.png","sizes":"512x512","type":"image/png"}]}'>
+<!-- X (Twitter) ウィジェット (セットアップカードの動画埋め込み) -->
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 <!-- ===== 構造化データ (JSON-LD): GoogleがWebアプリと認識しやすくする ===== -->
 <script type="application/ld+json">
@@ -131,6 +134,15 @@ body:not(.has-image):not(.thumb-mode) aside { width: 0; min-width: 0; padding: 0
 body:not(.has-image):not(.thumb-mode) { grid-template-columns: 0 1fr; }
 /* アイテム間隔: カテゴリ内は控えめに広めに (検索結果よりは狭め) */
 .item { padding: 9px 14px 9px 22px !important; }
+/* カテゴリ内アイテムの視覚分離 (検索結果より狭め) */
+.items .item {
+  margin: 2px 8px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.6);
+  transition: background 0.15s;
+}
+.items .item:hover { background: rgba(255,255,255,1); }
+.items .item.selected { background: rgba(91,156,184,0.18); }
 aside .tp-note { color: #5a6e79; }
 .sidebar-sticky { background: #e3edf2; }
 aside::-webkit-scrollbar { width: 0; height: 0; display: none; }
@@ -1489,6 +1501,21 @@ canvas.deform-active:active { cursor: grabbing; }
   display: none;
 }
 .quality-info.shown { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
+/* キャンバス上の画質変化オーバーレイ */
+.quality-overlay {
+  position: absolute; left: 0; right: 0; top: 0;
+  display: flex; justify-content: center; align-items: center; gap: 8px;
+  padding: 12px 16px 28px; pointer-events: none; z-index: 4;
+  font-size: 13px; color: #fff; letter-spacing: 0.02em;
+  background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.30) 55%, rgba(0,0,0,0) 100%);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  flex-wrap: wrap;
+}
+.quality-overlay[hidden] { display: none; }
+.quality-overlay .q-before { color: rgba(255,255,255,0.7); }
+.quality-overlay .q-arrow { color: #ffd066; font-weight: 900; font-size: 18px; }
+.quality-overlay .q-after { color: #ffd066; font-weight: 700; }
+.quality-overlay .q-pct { color: rgba(255,255,255,0.85); font-size: 11px; }
 .quality-info .q-before {
   font-family: 'Hiragino Sans', 'Yu Gothic', system-ui, sans-serif;
   color: var(--fg);
@@ -3064,6 +3091,28 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 
 /* ===== Welcome card sizing (3 steps) ===== */
 .welcome-card { max-width: 520px; }
+/* セットアップ用 2カード並び */
+.welcome-pair { display: flex; gap: 18px; align-items: flex-start; max-width: 95vw; flex-wrap: wrap; justify-content: center; }
+.setup-card { max-width: 360px; min-width: 280px; position: relative; }
+.setup-stage { display: flex; flex-direction: column; gap: 12px; }
+.setup-stage[hidden] { display: none; }
+.setup-video {
+  width: 100%; min-height: 180px; max-height: 360px; overflow: hidden;
+  border-radius: 12px; background: #1a1c20;
+  display: flex; align-items: center; justify-content: center;
+}
+.setup-video .twitter-tweet { margin: 0 !important; width: 100% !important; }
+.setup-list { list-style: none; padding: 12px 14px; margin: 0; background: #f5f8fa; border-radius: 10px; font-size: 13px; line-height: 1.9; }
+.welcome-more-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.welcome-more-btn.primary:hover { background: #4a8aa3; }
+.install-btn { display: inline-flex; align-items: center; gap: 10px; justify-content: center; }
+.setup-back { background: transparent; border: none; color: var(--fg-muted); font-size: 12px; cursor: pointer; padding: 4px; }
+.setup-back:hover { color: var(--accent); }
+.setup-notice { display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; padding: 30px 12px; }
+.setup-notice-title { font-size: 16px; color: var(--fg); }
+.setup-notice-body { font-size: 18px; font-weight: 700; color: var(--accent); }
+.setup-notice-body b { color: #d669a0; }
+.setup-notice-hint { font-size: 11px; color: var(--fg-faint); margin-top: 14px; }
 .welcome-card h3 { margin-bottom: 18px; }
 .welcome-more-btn {
   display: block;
@@ -3532,6 +3581,8 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 
   <div class="canvas-wrap" id="canvasWrap">
     <canvas id="canvas"></canvas>
+    <!-- 画質変化の表示 (画像の上に重ねる, フェード付き) -->
+    <div class="quality-overlay" id="qInfoOverlay" hidden></div>
     <div class="thumb-toolbar" id="thumbToolbar" hidden>
       <button class="tt-btn" id="thumbPreviewBtn" type="button" title="プレビュー表示">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -4118,7 +4169,45 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 <div id="toast" class="toast"></div>
 
 <div id="welcomeOverlay" class="guide-overlay" role="dialog" aria-modal="true">
-  <div class="guide-card welcome-card">
+  <div class="welcome-pair">
+    <!-- 左: セットアップ -->
+    <div class="guide-card welcome-card setup-card" id="setupCard">
+      <div class="setup-stage" data-stage="1">
+        <h3>はじめに</h3>
+        <div class="setup-video">
+          <blockquote class="twitter-tweet" data-conversation="none" data-dnt="true">
+            <a href="https://x.com/zzcafe_280/status/2061084908777554126"></a>
+          </blockquote>
+        </div>
+        <button type="button" class="welcome-more-btn primary" id="setupNext">セットアップ</button>
+      </div>
+      <div class="setup-stage" data-stage="2" hidden>
+        <h3>必要な機能</h3>
+        <div class="setup-video">
+          <blockquote class="twitter-tweet" data-conversation="none" data-dnt="true">
+            <a href="https://x.com/zzcafe_280/status/2061084908777554126"></a>
+          </blockquote>
+        </div>
+        <ul class="setup-list">
+          <li>① アプリ化</li>
+          <li>② タスクバーにピン止め</li>
+        </ul>
+        <button type="button" class="welcome-more-btn primary install-btn" id="setupInstallBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M2 20h20M12 16v4M9 11l3 3 3-3M12 8v6"/></svg>
+          <span>デスクトップアプリ化</span>
+        </button>
+        <button type="button" class="setup-back" id="setupBack">← 戻る</button>
+      </div>
+      <div class="setup-stage" data-stage="3" hidden>
+        <div class="setup-notice">
+          <div class="setup-notice-title">手軽に使うために、</div>
+          <div class="setup-notice-body">右下の通知の<b>【はい】</b>を押してください</div>
+          <div class="setup-notice-hint">画面をタップすると戻ります</div>
+        </div>
+      </div>
+    </div>
+    <!-- 右: 既存の「できること」 -->
+    <div class="guide-card welcome-card">
     <button id="welcomeClose" class="guide-close" aria-label="閉じる">×</button>
     <h3>できること</h3>
     <div class="guide-step">
@@ -4277,6 +4366,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         <div class="txt"><b>GIFを短く</b><br>欲しい部分だけ切り出す</div>
       </div>
     </div>
+  </div>
   </div>
 </div>
 
@@ -5678,6 +5768,44 @@ const guideCloseBtn = document.getElementById('guideClose');
 const welcomeOverlay = document.getElementById('welcomeOverlay');
 const welcomeCloseBtn = document.getElementById('welcomeClose');
 const welcomeMoreBtn = document.getElementById('welcomeMoreBtn');
+/* セットアップカードの制御 */
+(function setupCardInit() {
+  const card = document.getElementById('setupCard');
+  if (!card) return;
+  const setStage = (n) => {
+    card.querySelectorAll('.setup-stage').forEach(s => {
+      s.hidden = (Number(s.dataset.stage) !== n);
+    });
+    // Twitter widget 再描画 (動的に出現したblockquoteを処理)
+    if (window.twttr && window.twttr.widgets && typeof window.twttr.widgets.load === 'function') {
+      try { window.twttr.widgets.load(card); } catch (e) {}
+    }
+  };
+  const next = document.getElementById('setupNext');
+  if (next) next.addEventListener('click', () => setStage(2));
+  const back = document.getElementById('setupBack');
+  if (back) back.addEventListener('click', () => setStage(1));
+  /* デスクトップアプリ化: PWAインストールプロンプトを試行 */
+  let _deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); _deferredPrompt = e;
+  });
+  const inst = document.getElementById('setupInstallBtn');
+  if (inst) inst.addEventListener('click', async () => {
+    setStage(3);
+    if (_deferredPrompt) {
+      try { _deferredPrompt.prompt(); await _deferredPrompt.userChoice; } catch (e) {}
+      _deferredPrompt = null;
+    }
+    // ステージ3で画面タップで戻る
+    setTimeout(() => {
+      const onTap = () => { setStage(1); document.removeEventListener('pointerdown', onTap, true); };
+      document.addEventListener('pointerdown', onTap, true);
+    }, 60);
+  });
+  // ウェルカム表示時にステージ1へリセット (overlay shown監視は単純化: 開いた直後)
+  document.addEventListener('DOMContentLoaded', () => setStage(1));
+})();
 const welcomeMore = document.getElementById('welcomeMore');
 if (welcomeMoreBtn) {
   welcomeMoreBtn.addEventListener('click', () => {
@@ -9309,20 +9437,25 @@ function updateQualityGauge() {
   }
 }
 function updateQualityInfo() {
+  const ov = document.getElementById('qInfoOverlay');
   if (!state.loaded || state.quality === 0) {
     qInfoEl.classList.remove('shown');
+    if (ov) ov.hidden = true;
     return;
   }
   // GIFはgifBaseSize、静止画はfileSizeを基準にする
   const base = state.frames.length > 1 ? state.gifBaseSize : state.fileSize;
   if (!base) {
     qInfoEl.classList.remove('shown');
+    if (ov) ov.hidden = true;
     return;
   }
   const reduced = base / Math.pow(QUALITY_FACTOR, state.quality);
   const pct = Math.round((1 - reduced / base) * 100);
-  qInfoEl.innerHTML = `<span class="q-before">${formatBytes(base)}</span><span class="q-arrow">➜</span><span class="q-after">${formatBytes(reduced)}</span><span class="q-pct">(−${pct}%)</span>`;
+  const html = `<span class="q-before">${formatBytes(base)}</span><span class="q-arrow">➜</span><span class="q-after">${formatBytes(reduced)}</span><span class="q-pct">(−${pct}%)</span>`;
+  qInfoEl.innerHTML = html;
   qInfoEl.classList.add('shown');
+  if (ov) { ov.innerHTML = html; ov.hidden = false; }
 }
 /* 元のGIFサイズを推定: 代表フレームを1枚エンコードして全フレーム分に外挿 */
 async function estimateGifBaseSize() {
@@ -9399,6 +9532,7 @@ function updateSimplifyGauge() {
 function invalidateSimplifyCache() { state._simpCache = null; }
 simplifyBtn.addEventListener('click', () => {
   if (simplifyBtn.disabled) return;
+  if (typeof checkExclusiveMode === 'function' && checkExclusiveMode('simplify', simplifyBtn)) return;
   // チューザーを表示 (単純化 or 色加工)
   const ch = document.getElementById('effectChooser');
   if (ch.hidden) {
@@ -9709,6 +9843,7 @@ shrinkBtn.addEventListener('click', () => {
     closeShrinkPanel();
     return;
   }
+  if (typeof checkExclusiveMode === 'function' && checkExclusiveMode('bg', shrinkBtn)) return;
   // チューザーを介さず直接背景拡張モードへ
   if (state.layers.length >= 2 && state.selectedLayers.size > 0 && !state.selectedLayers.has(0)) {
     queueToast('背景拡張はベース画像にのみ適用されます', 2000);
@@ -11623,12 +11758,30 @@ rotateBtn.addEventListener('click', () => {
   else draw();
 });
 brightnessBtn.addEventListener('click', () => {
+  if (checkExclusiveMode('color', brightnessBtn)) return;
   applyToSelectedOrState((tgt) => {
     tgt.brightness = (tgt.brightness + 1) % (BRIGHTNESS_MAX + 1);
   });
   updateBrightnessGauge();
   draw();
 });
+
+/* 色加工 / 単純化 / 背景拡大 は相互排他: 他がアクティブなら吹き出しで決定を促す */
+function checkExclusiveMode(target, anchorEl) {
+  const active = {
+    color: state.brightness > 0,
+    simplify: state.simplify > 0,
+    bg: state.shrinkSubMode === 'bg' && state.shrink > 0,
+  };
+  for (const k of ['color', 'simplify', 'bg']) {
+    if (k !== target && active[k]) {
+      const label = k === 'color' ? '色加工' : k === 'simplify' ? '単純化' : '背景拡大';
+      if (typeof showIconBubble === 'function') showIconBubble(anchorEl, label + 'を決定してください', 'above-row');
+      return true;
+    }
+  }
+  return false;
+}
 
 /* ===== Transform helpers ===== */
 function transformFrameToCanvas(srcCanvas) {
@@ -11907,6 +12060,14 @@ function updateSaveModeUI() {
   const tag = document.getElementById('saveModeTag');
   if (tag) { tag.hidden = false; tag.textContent = state.saveMode === 'light' ? '軽量化(1枚GIF)' : '通常保存'; }
   document.querySelectorAll('#saveMenu button').forEach(b => b.classList.toggle('active', b.dataset.mode === state.saveMode));
+  // 軽量化ラベルにGIF化後の推定容量を併記
+  const lightBtn = document.querySelector('#saveMenu button[data-mode="light"]');
+  if (lightBtn && state.fileSize) {
+    // 簡易推定: JPEG/PNG画像のGIF化はおおむね 0.35〜0.7倍 (色数で揺れる)
+    const est = Math.round(state.fileSize * 0.5 / 1024);
+    const estTxt = est > 1024 ? (est / 1024).toFixed(1) + ' MB' : est + ' KB';
+    lightBtn.innerHTML = `軽量化(画像→1枚GIF) <small style="color:#98a8b2">(約 ${estTxt})</small>`;
+  }
 }
 /* 1枚のRGBAをGIF化して保存 */
 async function saveSingleAsGif(canvas, baseName) {

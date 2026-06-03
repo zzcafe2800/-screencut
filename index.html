@@ -474,6 +474,35 @@ header.info {
 .btn-thumbkun .lk-main { font-size: 12.5px; font-weight: 700; letter-spacing: 0.03em; }
 .btn-thumbkun:hover { background: #fdeff6; border-color: #d669a0; }
 .btn-thumbkun.active { background: #d669a0; color: #fff; border-color: #d669a0; }
+.btn-thumbkun::before {
+  content: ''; position: absolute; left: -10px; right: -10px; top: -10px; bottom: -10px;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.92) 42%, rgba(255,255,255,0) 76%);
+  z-index: -1; border-radius: 999px; pointer-events: none;
+}
+.wip-notice {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  z-index: 80; background: rgba(28,29,34,0.9); color: #fff;
+  padding: 16px 28px; border-radius: 14px; font-size: 16px; font-weight: 700;
+  letter-spacing: 0.06em; box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  opacity: 0; transition: opacity 0.25s; pointer-events: none;
+}
+.wip-notice.show { opacity: 1; }
+.hist-btn {
+  border: 1px solid var(--line); background: #fff; color: var(--fg-muted);
+  width: 26px; height: 24px; border-radius: 6px; cursor: pointer; font-size: 14px; line-height: 1; margin-right: 2px;
+}
+.hist-btn:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+.hist-btn:disabled { opacity: 0.35; cursor: default; }
+.save-wrap { position: relative; display: inline-flex; flex-direction: column; align-items: stretch; }
+.save-mode-tag { font-size: 9.5px; color: var(--fg-faint); text-align: center; margin-bottom: 2px; }
+.save-group { display: inline-flex; }
+.save-menu-btn { padding: 0 7px !important; border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.save-group #save { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.save-menu { position: absolute; top: 100%; right: 0; margin-top: 4px; z-index: 50; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); overflow: hidden; min-width: 180px; }
+.save-menu[hidden] { display: none; }
+.save-menu button { display: block; width: 100%; text-align: left; border: none; background: #fff; padding: 9px 14px; font-size: 12px; cursor: pointer; }
+.save-menu button:hover { background: #f3eef1; }
+.save-menu button.active { color: var(--accent); font-weight: 700; }
 /* thumb-mode: アイテム比サイドバーを隠してアイテムパネルを出す */
 body.thumb-mode #categories,
 body.thumb-mode #sidebarTop3,
@@ -2458,7 +2487,7 @@ body.thumb-mode .lp-bg-row { display: none !important; }
 .lp-row:hover { background: rgba(91,156,184,0.10); }
 .lp-row.selected { border-color: var(--accent); background: rgba(91,156,184,0.15); }
 /* サムネモード: レイヤーカードを全幅に */
-body.thumb-mode .lp-row { width: 100%; box-sizing: border-box; grid-template-columns: 14px 9px 26px 1fr auto auto auto; align-items: center; }
+body.thumb-mode .lp-row { width: 100%; box-sizing: border-box; grid-template-columns: 14px 9px 26px 1fr auto auto auto auto; align-items: center; }
 /* レイヤー一覧の白枠を縦長2:1のカードに固定 (下が空いてもOK・はみ出しはスクロール) */
 body.thumb-mode .lp-list {
   width: 100%; box-sizing: border-box;
@@ -2471,7 +2500,7 @@ body.thumb-mode .lp-list {
   padding: 8px;
 }
 body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
-.lp-row.lp-row-dragging { opacity: 0.5; }
+.lp-row.lp-row-dragging { opacity: 0.85; box-shadow: 0 4px 14px rgba(0,0,0,0.2); position: relative; }
 .lp-row.lp-row-dropping {
   border-top: 2px solid var(--accent);
   background: rgba(91,156,184,0.25);
@@ -3351,6 +3380,8 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <span class="ratio-small" id="ratioText">—<span class="colon">:</span>—</span>
     </div>
     <div class="file-info">
+      <button class="hist-btn" id="undoBtn" type="button" title="元に戻す" disabled>↶</button>
+      <button class="hist-btn" id="redoBtn" type="button" title="やり直す" disabled>↷</button>
       <button class="size-badge" id="fileSize" data-tier="white" title="クリックでサイズと色の関係を表示">—</button>
       <span class="dim" id="dimLine">— × — px</span>
       <span class="frames" id="framesInfo"></span>
@@ -3406,6 +3437,8 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         <button class="guide-close" id="tgClose" type="button" aria-label="閉じる">×</button>
       </div>
     </div>
+    <!-- サムネメイカー: 制作中表示 -->
+    <div class="wip-notice" id="wipNotice">現在 制作中</div>
     <!-- ぼかしツール: レイヤー選択バー -->
     <div class="blur-selbar" id="blurSelBar" hidden>
       <span>ぼかすレイヤーを選択(複数可)</span>
@@ -3731,11 +3764,21 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
     <label for="file" class="btn btn-accent btn-loadkun" id="loadKun">
       <span class="lk-main">読み込み君</span>
     </label>
-    <button id="thumbKun" class="btn btn-thumbkun" type="button" title="部屋サムネくん (自由加工モード)">
-      <span class="lk-main">部屋サムネくん</span>
+    <button id="thumbKun" class="btn btn-thumbkun" type="button" title="サムネメイカー (自由加工モード)">
+      <span class="lk-main">サムネメイカー</span>
     </button>
     <button id="roomMatch" class="btn btn-accent" hidden style="display:none !important;">加工くん</button>
-    <button id="save" class="btn" disabled>保存</button>
+    <div class="save-wrap" id="saveWrap">
+      <div class="save-mode-tag" id="saveModeTag" hidden>通常保存</div>
+      <div class="save-group">
+        <button id="save" class="btn" disabled>保存</button>
+        <button id="saveMenuBtn" class="btn save-menu-btn" type="button" disabled aria-label="保存方法">▾</button>
+      </div>
+      <div class="save-menu" id="saveMenu" hidden>
+        <button type="button" data-mode="normal" class="active">通常</button>
+        <button type="button" data-mode="light">軽量化(画像→1枚GIF)</button>
+      </div>
+    </div>
     <div class="splits" id="splitsContainer">
       <button class="pattern-toggle" id="patternToggle" type="button" title="分割 / パターン切替" aria-pressed="false">
         <svg class="ic-split" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -5390,6 +5433,25 @@ const fileSizeEl = document.getElementById('fileSize');
 const dimLine = document.getElementById('dimLine');
 const framesInfo = document.getElementById('framesInfo');
 const saveBtn = document.getElementById('save');
+/* 保存メニュー (通常/軽量化) */
+(function setupSaveMenu() {
+  const menuBtn = document.getElementById('saveMenuBtn');
+  const menu = document.getElementById('saveMenu');
+  if (!menuBtn || !menu) return;
+  menuBtn.addEventListener('click', e => { e.stopPropagation(); menu.hidden = !menu.hidden; });
+  document.addEventListener('click', () => { menu.hidden = true; });
+  menu.addEventListener('click', e => e.stopPropagation());
+  menu.querySelectorAll('button').forEach(b => {
+    b.addEventListener('click', () => {
+      state.saveMode = b.dataset.mode;
+      if (typeof updateSaveModeUI === 'function') updateSaveModeUI();
+      menu.hidden = true;
+      if (state.saveMode === 'light' && typeof hasAnimatedContent === 'function' && hasAnimatedContent()) {
+        showToast('GIFのためこの保存方法はできません');
+      }
+    });
+  });
+})();
 const fileInput = document.getElementById('file');
 const splitWNum = document.getElementById('splitWNum');
 const splitHNum = document.getElementById('splitHNum');
@@ -6737,6 +6799,7 @@ if (thumbTitleAdd) {
     openDetailCard();
     renderLayerPanel();
     draw();
+    if (typeof pushHistory === 'function') pushHistory();
   });
 }
 const thumbTitleDel = document.getElementById('thumbTitleDel');
@@ -6821,6 +6884,7 @@ if (thumbPatAdd) thumbPatAdd.addEventListener('click', () => {
   openDetailCard();
   renderLayerPanel();
   draw();
+  if (typeof pushHistory === 'function') pushHistory();
 });
 
 /* スポットライト */
@@ -7007,7 +7071,8 @@ if (thumbKunBtnEl) {
       if (typeof recalculateFrame === 'function') recalculateFrame();
       if (typeof updateSaveBtn === 'function') updateSaveBtn();
       draw();
-      showToast('部屋サムネくん: 自由加工モード');
+      showToast('サムネメイカー: 自由加工モード');
+      (function(){ const w = document.getElementById('wipNotice'); if (w) { w.classList.add('show'); setTimeout(()=>w.classList.remove('show'), 1400); } })();
     } else {
       updateLayerPanelVisibility();
       showToast('通常モードに戻りました');
@@ -7281,10 +7346,123 @@ async function loadAsNewLayer(file) {
   // 追加したレイヤーが GIF / 動画ならアニメ開始 (まだ動いてなければ)
   if (frames.length > 1 && !state._rafId) startAnimation();
   updateFileSize();
+  if (typeof pushHistory === 'function') pushHistory();
   showToast(`レイヤー${state.layers.length}を追加しました`);
 }
 
 /* レイヤーを任意の位置へ移動 (HTML5 D&D で使用) */
+/* ===== Undo / Redo (簡易スナップショット) ===== */
+state._history = [];
+state._histIdx = -1;
+state._histLock = false;
+function snapshotState() {
+  // canvas参照は保持しつつ、構成・変形・装飾を控える
+  const layers = state.layers.map(L => ({
+    ref: L,
+    frames: L.frames,
+    offsetX: L.offsetX, offsetY: L.offsetY, scaleX: L.scaleX, scaleY: L.scaleY,
+    rotation: L.rotation, flipH: L.flipH, flipV: L.flipV,
+    visible: L.visible, opacity: L.opacity, brightness: L.brightness, kind: L.kind, name: L.name,
+    border: L.border ? Object.assign({}, L.border) : null,
+    shadow: L.shadow ? Object.assign({}, L.shadow) : null,
+    blur: L.blur ? Object.assign({}, L.blur) : null,
+  }));
+  return {
+    layers,
+    order: state.layers.slice(),
+    titles: JSON.parse(JSON.stringify(state.thumbTitles || [])),
+    pattern: Object.assign({}, state.thumbPattern),
+    spot: Object.assign({}, state.thumbSpot),
+    bgGrad: Object.assign({}, state.thumbBgGrad),
+    bgColor: state.thumbBgColor, bgTransp: state.thumbBgTransparent,
+    frame: state.thumbFrame ? Object.assign({}, state.thumbFrame) : null,
+    thumbTransform: state.thumbTransform ? Object.assign({}, state.thumbTransform) : null,
+  };
+}
+function restoreState(s) {
+  // レイヤー構成を復元 (canvas参照を保持)
+  state.layers = s.order.slice();
+  s.layers.forEach(snap => {
+    const L = snap.ref;
+    L.frames = snap.frames;
+    L.offsetX = snap.offsetX; L.offsetY = snap.offsetY; L.scaleX = snap.scaleX; L.scaleY = snap.scaleY;
+    L.rotation = snap.rotation; L.flipH = snap.flipH; L.flipV = snap.flipV;
+    L.visible = snap.visible; L.opacity = snap.opacity; L.brightness = snap.brightness; L.kind = snap.kind; L.name = snap.name;
+    L.border = snap.border ? Object.assign({}, snap.border) : L.border;
+    L.shadow = snap.shadow ? Object.assign({}, snap.shadow) : L.shadow;
+    L.blur = snap.blur ? Object.assign({}, snap.blur) : L.blur;
+  });
+  state.thumbTitles = JSON.parse(JSON.stringify(s.titles || []));
+  state.thumbPattern = Object.assign({}, s.pattern);
+  state.thumbSpot = Object.assign({}, s.spot);
+  state.thumbBgGrad = Object.assign({}, s.bgGrad);
+  state.thumbBgColor = s.bgColor; state.thumbBgTransparent = s.bgTransp;
+  state.thumbFrame = s.frame ? Object.assign({}, s.frame) : null;
+  if (s.thumbTransform) state.thumbTransform = Object.assign({}, s.thumbTransform);
+  state.selectedLayers = new Set();
+  renderLayerPanel();
+  if (typeof updateDetailPanel === 'function') updateDetailPanel();
+  draw();
+}
+function pushHistory() {
+  if (state._histLock) return;
+  // 現在位置より先(redo分)を破棄
+  state._history = state._history.slice(0, state._histIdx + 1);
+  state._history.push(snapshotState());
+  if (state._history.length > 40) state._history.shift();
+  state._histIdx = state._history.length - 1;
+  updateHistButtons();
+}
+function undo() {
+  if (state._histIdx <= 0) return;
+  state._histIdx--;
+  state._histLock = true;
+  restoreState(state._history[state._histIdx]);
+  state._histLock = false;
+  updateHistButtons();
+}
+function redo() {
+  if (state._histIdx >= state._history.length - 1) return;
+  state._histIdx++;
+  state._histLock = true;
+  restoreState(state._history[state._histIdx]);
+  state._histLock = false;
+  updateHistButtons();
+}
+function updateHistButtons() {
+  const u = document.getElementById('undoBtn'), r = document.getElementById('redoBtn');
+  if (u) u.disabled = state._histIdx <= 0;
+  if (r) r.disabled = state._histIdx >= state._history.length - 1;
+}
+(function bindHist() {
+  const u = document.getElementById('undoBtn'), r = document.getElementById('redoBtn');
+  if (u) u.addEventListener('click', undo);
+  if (r) r.addEventListener('click', redo);
+})();
+
+/* レイヤーを複製 (同じ内容をもう1つ追加) */
+function duplicateLayer(idx) {
+  const L = state.layers[idx];
+  if (!L) return;
+  const copy = Object.assign({}, L);
+  copy.frames = L.frames;                 // フレーム(canvas)は共有でOK
+  copy.name = (L.name || 'レイヤー') + ' のコピー';
+  copy.offsetX = (L.offsetX || 0) + 18;   // 少しずらす
+  copy.offsetY = (L.offsetY || 0) + 18;
+  if (L.border) copy.border = Object.assign({}, L.border);
+  if (L.shadow) copy.shadow = Object.assign({}, L.shadow);
+  if (L.blur) copy.blur = Object.assign({}, L.blur);
+  copy._simpCache = null;
+  // 元レイヤーの1つ上に挿入
+  state.layers.splice(idx + 1, 0, copy);
+  state.selectedLayers = new Set([idx + 1]);
+  pushHistory();
+  renderLayerPanel();
+  updateLayerPanelVisibility();
+  draw();
+  showToast('レイヤーを複製しました');
+}
+
 function moveLayerTo(fromIdx, toIdx) {
   if (fromIdx < 0 || fromIdx >= state.layers.length) return;
   if (toIdx < 0 || toIdx >= state.layers.length) return;
@@ -7405,6 +7583,9 @@ function setupGripDrag(gripEl, rowEl, fromIdx) {
     if (!st || ev.pointerId !== st.pointerId) return;
     ev.preventDefault();
     if (Math.abs(ev.clientY - st.startY) > 4) st.moved = true;
+    // 掴んだ行がポインタに追尾
+    rowEl.style.transform = `translateY(${ev.clientY - st.startY}px)`;
+    rowEl.style.zIndex = '5';
     // y 位置から対象 DOM 行を特定
     const rows = layerList.children;
     let targetDom = -1;
@@ -7422,6 +7603,7 @@ function setupGripDrag(gripEl, rowEl, fromIdx) {
     if (!st) return;
     if (ev && ev.pointerId !== st.pointerId) return;
     rowEl.classList.remove('lp-row-dragging');
+    rowEl.style.transform = ''; rowEl.style.zIndex = '';
     // 対象 DOM 行から layer index を逆算
     let targetDom = -1;
     if (ev) {
@@ -7443,6 +7625,7 @@ function setupGripDrag(gripEl, rowEl, fromIdx) {
   gripEl.addEventListener('pointerup', finish);
   gripEl.addEventListener('pointercancel', () => {
     rowEl.classList.remove('lp-row-dragging');
+    rowEl.style.transform = ''; rowEl.style.zIndex = '';
     document.querySelectorAll('.lp-row-dropping').forEach(el => el.classList.remove('lp-row-dropping'));
     st = null;
   });
@@ -7522,6 +7705,13 @@ function renderLayerPanel() {
         draw();
       });
       row.appendChild(edit);
+      // 複製アイコン
+      const dup = document.createElement('button');
+      dup.className = 'lp-edit lp-dup';
+      dup.title = 'レイヤーを複製';
+      dup.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 012-2h10"/></svg>`;
+      dup.addEventListener('click', ev => { ev.stopPropagation(); duplicateLayer(i); });
+      row.appendChild(dup);
     }
     // 表示/非表示
     const vis = document.createElement('button');
@@ -7908,7 +8098,7 @@ canvas.addEventListener('pointermove', e => {
   }
   draw();
 });
-const _thumbEnd = e => { if (state._thumbDrag) { state._thumbDrag = null; draw(); } };
+const _thumbEnd = e => { if (state._thumbDrag) { state._thumbDrag = null; draw(); if (typeof pushHistory === 'function') pushHistory(); } };
 canvas.addEventListener('pointerup', _thumbEnd);
 canvas.addEventListener('pointercancel', _thumbEnd);
 
@@ -8804,6 +8994,8 @@ function updateEmpty() { emptyMsg.classList.toggle('hidden', state.loaded); }
 function updateSaveBtn() {
   const enabled = state.loaded && (state.ratio || state.thumbMode);
   saveBtn.disabled = !enabled;
+  const smb = document.getElementById('saveMenuBtn'); if (smb) smb.disabled = !enabled;
+  if (typeof updateSaveModeUI === 'function') updateSaveModeUI();
   if (!enabled) { saveBtn.innerHTML = '保存'; return; }
   // 部屋サムネくん: アイテム比なしで全体を1枚保存
   if (state.thumbMode) {
@@ -11400,17 +11592,45 @@ function fastYield() {
 }
 
 /* 部屋サムネくん 専用保存: サムネ枠の中身を直接 PNG/GIF で書き出す */
+state.saveMode = 'normal'; // 'normal' | 'light'
+/* 現在の素材が全て静止画(GIF/動画なし)か */
+function allContentStatic() {
+  if (state.fileType === 'gif' || state.fileType === 'video') return false;
+  if (state.frames && state.frames.length > 1) return false;
+  return state.layers.every(L => !L.frames || L.frames.length <= 1);
+}
+function hasAnimatedContent() { return !allContentStatic(); }
+function updateSaveModeUI() {
+  const tag = document.getElementById('saveModeTag');
+  if (tag) { tag.hidden = false; tag.textContent = state.saveMode === 'light' ? '軽量化(1枚GIF)' : '通常保存'; }
+  document.querySelectorAll('#saveMenu button').forEach(b => b.classList.toggle('active', b.dataset.mode === state.saveMode));
+}
+/* 1枚のRGBAをGIF化して保存 */
+async function saveSingleAsGif(canvas, baseName) {
+  const W = canvas.width, H = canvas.height;
+  const rgba = canvas.getContext('2d').getImageData(0, 0, W, H).data;
+  saveBtn.innerHTML = 'GIF化中…';
+  const buf = await encodeAnimatedGIF(W, H, [{ rgba, delay: 100 }], null, { sampleQuality: 10 });
+  download(new Blob([buf], { type: 'image/gif' }), baseName + '.gif');
+}
 async function saveThumb() {
   saveBtn.disabled = true;
   const orig = saveBtn.innerHTML;
   try {
+    // 軽量化モード: 動くものがあれば不可
+    if (state.saveMode === 'light' && hasAnimatedContent()) {
+      showToast('GIFのためこの保存方法はできません');
+      return;
+    }
     saveBtn.innerHTML = 'サムネ生成中…';
     await fastYield();
     const frames = compositeThumbFrames();
     if (!frames || !frames.length) { showToast('画像がありません'); return; }
     const baseName = buildBaseName();
-    if (frames.length > 1) {
-      // GIF
+    if (state.saveMode === 'light' && frames.length === 1) {
+      // 画像 → 1枚GIFとして軽量保存
+      await saveSingleAsGif(frames[0].canvas, baseName);
+    } else if (frames.length > 1) {
       saveBtn.innerHTML = 'GIFエンコード…';
       const W = frames[0].canvas.width, H = frames[0].canvas.height;
       const framesData = frames.map(fr => ({
@@ -11422,7 +11642,6 @@ async function saveThumb() {
       });
       download(new Blob([buf], { type: 'image/gif' }), baseName + '.gif');
     } else {
-      // PNG
       const blob = await new Promise(res => frames[0].canvas.toBlob(res, 'image/png'));
       download(blob, baseName + '.png');
     }
@@ -11440,6 +11659,18 @@ async function save() {
   // 部屋サムネくん: サムネ枠の中身を直接エクスポート (クロップ機構を通さない)
   if (state.thumbMode) {
     await saveThumb();
+    return;
+  }
+  // 軽量化モード: 動くものがあれば不可、静止画なら1枚GIFで保存
+  if (state.saveMode === 'light') {
+    if (hasAnimatedContent()) { showToast('GIFのためこの保存方法はできません'); return; }
+    if (!state.ratio) return;
+    saveBtn.disabled = true; const o = saveBtn.innerHTML;
+    try {
+      const comp = (state.layers.length >= 2) ? compositeAllLayers() : state.frames;
+      await saveSingleAsGif(comp[0].canvas, buildBaseName());
+    } catch (e) { console.error(e); showToast('保存に失敗しました'); }
+    finally { saveBtn.innerHTML = o; updateSaveBtn(); }
     return;
   }
   if (!state.ratio) return;

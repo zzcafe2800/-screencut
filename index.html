@@ -113,9 +113,15 @@ body.thumb-mode #sidebarResizer::after {
   transform: translateY(-50%); opacity: 0.5;
 }
 
-aside { border-right: 1px solid var(--line); overflow-y: auto; background: var(--bg); }
-aside::-webkit-scrollbar { width: 6px; }
-aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+aside { border-right: 1px solid var(--line); overflow-y: auto; background: var(--bg); scrollbar-width: none; -ms-overflow-style: none; }
+aside::-webkit-scrollbar { width: 0; height: 0; display: none; }
+/* 検索・ピン・TOP3・aspect を上部に常時固定 */
+.sidebar-sticky {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--bg);
+  padding-bottom: 6px;
+  box-shadow: 0 6px 8px -6px rgba(0,0,0,0.12);
+}
 
 .brand {
   font-family: var(--serif);
@@ -313,17 +319,22 @@ header.info {
   gap: 4px;
   align-items: flex-end;
 }
-/* アイテム比未選択時: カテゴリ全体を水色枠で強調 */
+/* アイテム比未選択時: カテゴリ全体を水色枠で強調 (軽くゆっくり明滅) */
 #categories.needs-pick {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
   border-radius: 12px;
-  box-shadow: 0 0 0 4px rgba(91,156,184,0.15);
-  animation: catPulse 1.8s ease-in-out infinite;
+  animation: catPulse 3.4s ease-in-out infinite;
 }
 @keyframes catPulse {
-  0%,100% { box-shadow: 0 0 0 4px rgba(91,156,184,0.12); }
-  50% { box-shadow: 0 0 0 7px rgba(91,156,184,0.22); }
+  0%,100% { box-shadow: 0 0 0 3px rgba(91,156,184,0.10); outline-color: rgba(91,156,184,0.55); }
+  50% { box-shadow: 0 0 0 6px rgba(91,156,184,0.16); outline-color: rgba(91,156,184,0.95); }
+}
+/* 画像未読込のキャンバスに水色の点滅枠 */
+.canvas-wrap.empty-pulse::after {
+  content: ''; position: absolute; inset: 10px; pointer-events: none; z-index: 3;
+  border: 2px solid var(--accent); border-radius: 14px;
+  animation: catPulse 3.4s ease-in-out infinite;
 }
 /* サイズバッジ: 容量に応じて色がフェードする上品なバッジ */
 .size-badge {
@@ -500,6 +511,19 @@ header.info {
   opacity: 0; transition: opacity 0.25s; pointer-events: none;
 }
 .wip-notice.show { opacity: 1; }
+/* 開発中ロック */
+body.devlock main > *:not(.devlock-ov):not(#previewCard):not(#previewToggle),
+body.devlock aside { filter: blur(7px); pointer-events: none; user-select: none; }
+.devlock-ov {
+  position: fixed; inset: 0; z-index: 70;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; background: rgba(245,243,245,0.55); backdrop-filter: blur(2px);
+}
+.devlock-ov[hidden] { display: none; }
+.devlock-title { font-size: 38px; font-weight: 800; letter-spacing: 0.1em; color: #c95a8a; text-shadow: 0 2px 10px rgba(255,255,255,0.8); }
+.devlock-sub { font-size: 13px; color: #5a4a52; background: rgba(255,255,255,0.7); padding: 6px 14px; border-radius: 999px; }
+.devlock-preview { background: #d669a0; color: #fff; border: none; border-radius: 999px; padding: 11px 24px; font-size: 14px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 18px rgba(214,105,160,0.4); }
+.devlock-hidden { position: fixed; right: 0; bottom: 0; width: 64px; height: 64px; background: transparent; border: none; cursor: default; z-index: 71; }
 .hist-btn {
   border: 1px solid var(--accent); background: #fff; color: var(--accent);
   width: 30px; height: 28px; border-radius: 7px; cursor: pointer; font-size: 17px; line-height: 1; font-weight: 700;
@@ -507,6 +531,10 @@ header.info {
 .hist-btn:hover:not(:disabled) { background: var(--accent); color: #fff; }
 .hist-btn:disabled { opacity: 0.4; cursor: default; }
 .hist-row { display: flex; align-items: center; gap: 4px; }
+/* 履歴ボタン(ツールバー内・濃いめ) */
+.hist-tool { font-size: 18px !important; font-weight: 800; color: #3a4a55 !important; }
+.hist-tool:not(:disabled):hover { color: var(--accent) !important; }
+.hist-tool:disabled { opacity: 0.4; }
 /* 履歴と容量表示を横並びに */
 header.info .file-info { flex-direction: column; }
 header.info > .hist-row { align-self: flex-end; margin-right: 4px; order: 90; }
@@ -539,6 +567,17 @@ header.info > .file-info { order: 91; }
 /* ボタン周りに白いぼかし(視認性) */
 #save, .save-menu-btn, .btn-thumbkun, #file.btn, label.btn[for="file"] {
   filter: drop-shadow(0 0 6px rgba(255,255,255,0.9));
+}
+.btn-loadkun-pop {
+  background: var(--accent) !important; color: #fff !important;
+  font-weight: 800; font-size: 14px; padding: 11px 20px !important;
+  box-shadow: 0 4px 16px rgba(91,156,184,0.45);
+  animation: loadkunPop 2.6s ease-in-out infinite;
+}
+.btn-loadkun-pop:hover { background: #4a8aa3 !important; }
+@keyframes loadkunPop {
+  0%,100% { box-shadow: 0 4px 14px rgba(91,156,184,0.4); }
+  50% { box-shadow: 0 4px 20px rgba(91,156,184,0.7); }
 }
 /* thumb-mode: アイテム比サイドバーを隠してアイテムパネルを出す */
 body.thumb-mode #categories,
@@ -3189,6 +3228,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 <body>
 
 <aside>
+  <div class="sidebar-sticky" id="sidebarSticky">
   <div class="brand-row">
     <div class="brand">aspect<span class="dot">.</span></div>
     <button id="shareBtn" class="icon-btn" aria-label="共有" title="共有">
@@ -3217,10 +3257,11 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   <div id="searchResults" class="search-results"></div>
   <div id="sidebarTop3" class="sidebar-top3" hidden>
     <div class="st3-head">
-      <span class="st3-title">オススメ TOP 3</span>
+      <span class="st3-title">おすすめアイテム</span>
       <button class="st3-more" id="sidebarTop3More">もっと見る</button>
     </div>
     <div class="st3-list" id="sidebarTop3List"></div>
+  </div>
   </div>
   <nav id="categories"></nav>
   <div id="thumbItemsPanel" class="thumb-items-panel" hidden>
@@ -3416,10 +3457,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       </div>
       <span class="ratio-small" id="ratioText">—<span class="colon">:</span>—</span>
     </div>
-    <div class="hist-row" id="histRow">
-      <button class="hist-btn" id="undoBtn" type="button" title="元に戻す" disabled>↶</button>
-      <button class="hist-btn" id="redoBtn" type="button" title="やり直す" disabled>↷</button>
-    </div>
     <div class="file-info">
       <button class="size-badge" id="fileSize" data-tier="white" title="クリックでサイズと色の関係を表示">—</button>
       <span class="dim" id="dimLine">— × — px</span>
@@ -3478,6 +3515,13 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
     </div>
     <!-- サムネメイカー: 制作中表示 -->
     <div class="wip-notice" id="wipNotice">現在 制作中</div>
+    <!-- 開発中ロック (全体ぼかし) -->
+    <div class="devlock-ov" id="devLockOv" hidden>
+      <div class="devlock-title">開発中</div>
+      <div class="devlock-sub">この機能は現在開発中です。プレビューのみお試しいただけます。</div>
+      <button class="devlock-preview" id="devLockPreview" type="button">プレビューを見る</button>
+      <button class="devlock-hidden" id="devLockSecret" type="button" aria-label=""></button>
+    </div>
     <!-- ぼかしツール: レイヤー選択バー -->
     <div class="blur-selbar" id="blurSelBar" hidden>
       <span>ぼかすレイヤーを選択(複数可)</span>
@@ -3671,6 +3715,8 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <span class="layer-count-badge" id="layerCountBadge">2</span>
     </button>
     <input type="file" id="addLayerFile" accept="image/*,video/*,.gif,.mp4,.mov,.m4v,.webm,.ogv,.avi,.mkv" hidden>
+    <button class="tool-btn hist-tool" id="undoBtn" type="button" title="元に戻す" disabled>↶</button>
+    <button class="tool-btn hist-tool" id="redoBtn" type="button" title="やり直す" disabled>↷</button>
     <button class="tool-btn" id="flipH" title="左右反転" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 7l4 5-4 5z" fill="currentColor"/>
@@ -3800,8 +3846,8 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 
   <footer class="controls">
     <input type="file" id="file" accept="image/*,video/*,.gif,.mp4,.mov,.m4v,.webm,.ogv,.avi,.mkv" hidden>
-    <label for="file" class="btn btn-accent btn-loadkun" id="loadKun">
-      <span class="lk-main">読み込み君</span>
+    <label for="file" class="btn btn-accent btn-loadkun btn-loadkun-pop" id="loadKun">
+      <span class="lk-main">＋ 画像を読み込む</span>
     </label>
     <button id="thumbKun" class="btn btn-thumbkun" type="button" title="サムネメイカー (自由加工モード)">
       <span class="lk-main">サムネメイカー</span>
@@ -7078,8 +7124,59 @@ function syncWallControls() {
 })();
 
 const thumbKunBtnEl = thumbKunBtn;
+let _devLocked = false;
+function showDevLock() {
+  _devLocked = true;
+  document.body.classList.add('devlock');
+  const ov = document.getElementById('devLockOv'); if (ov) ov.hidden = false;
+  // ボタン表記を「便利くん」に (戻る用)
+  const m = thumbKunBtnEl && thumbKunBtnEl.querySelector('.lk-main'); if (m) m.textContent = '便利くん';
+}
+function hideDevLock() {
+  _devLocked = false;
+  document.body.classList.remove('devlock');
+  const ov = document.getElementById('devLockOv'); if (ov) ov.hidden = true;
+  const m = thumbKunBtnEl && thumbKunBtnEl.querySelector('.lk-main'); if (m) m.textContent = 'サムネメイカー';
+}
+function enterThumbModeReal() {
+  hideDevLock();
+  if (!state.thumbMode) thumbKunEnter();
+}
 if (thumbKunBtnEl) {
   thumbKunBtnEl.addEventListener('click', () => {
+    // 開発中ロック中(=便利くん表示)なら通常へ戻る
+    if (_devLocked) {
+      hideDevLock();
+      if (state.thumbMode) thumbKunEnter(); // トグルで通常へ
+      return;
+    }
+    if (state.thumbMode) { thumbKunEnter(); return; } // サムネ→通常
+    // 通常 → 開発中ロックを表示 (まだサムネには入らない)
+    showDevLock();
+  });
+}
+/* 開発中ロックの操作 */
+(function bindDevLock() {
+  const pv = document.getElementById('devLockPreview');
+  if (pv) pv.addEventListener('click', () => {
+    // プレビューだけお試し: サムネに入りプレビューカードを開く(ロックは維持しない簡易)
+    enterThumbModeReal();
+    const pbtn = document.getElementById('thumbPreviewBtn');
+    if (pbtn) pbtn.click();
+    else { const pc = document.getElementById('previewCard'); if (pc) pc.hidden = false; }
+  });
+  const secret = document.getElementById('devLockSecret');
+  if (secret) {
+    let taps = 0, timer = null;
+    secret.addEventListener('click', () => {
+      taps++;
+      clearTimeout(timer); timer = setTimeout(() => { taps = 0; }, 1200);
+      if (taps >= 2) { taps = 0; enterThumbModeReal(); }
+    });
+  }
+})();
+function thumbKunEnter() {
+  {
     state.thumbMode = !state.thumbMode;
     document.body.classList.toggle('thumb-mode', state.thumbMode);
     thumbKunBtnEl.classList.toggle('active', state.thumbMode);
@@ -7118,7 +7215,7 @@ if (thumbKunBtnEl) {
       if (typeof updateSaveBtn === 'function') updateSaveBtn();
       draw();
     }
-  });
+  }
 }
 
 /* サムネモード: サイドバー幅ドラッグ */
@@ -7590,14 +7687,8 @@ function moveLayer(i, dir) {
 
 /* レイヤーパネルの表示更新 */
 function updateLayerPanelVisibility() {
-  // サムネモードでは常時表示 (画像0個以上)
-  if (state.thumbMode) {
-    layerPanel.hidden = false;
-  } else if (state.layers.length >= 2) {
-    layerPanel.hidden = false;
-  } else {
-    layerPanel.hidden = true;
-  }
+  // 常時表示
+  layerPanel.hidden = false;
   // +ボタンのバッジ
   const badge = document.getElementById('layerCountBadge');
   if (state.layers.length >= 2) {
@@ -8778,8 +8869,8 @@ function draw() {
 
   if (!state.ratio) return;
 
-  // Dark mask outside frame
-  ctx.fillStyle = 'rgba(20,30,40,0.45)';
+  // Dark mask outside frame (水色寄りの影)
+  ctx.fillStyle = 'rgba(70,120,150,0.42)';
   if (state.frameY > 0) ctx.fillRect(0, 0, state.canvasW, state.frameY);
   const fB = state.frameY + state.frameH;
   if (fB < state.canvasH) ctx.fillRect(0, fB, state.canvasW, state.canvasH - fB);
@@ -9029,7 +9120,11 @@ function updateDimLine() {
   const th = Math.round(state.frameH * sy);
   dimLine.textContent = `${tw} × ${th} px`;
 }
-function updateEmpty() { emptyMsg.classList.toggle('hidden', state.loaded); }
+function updateEmpty() {
+  emptyMsg.classList.toggle('hidden', state.loaded);
+  const cw = document.getElementById('canvasWrap');
+  if (cw) cw.classList.toggle('empty-pulse', !state.loaded && !state.thumbMode);
+}
 function updateSaveBtn() {
   const enabled = state.loaded && (state.ratio || state.thumbMode);
   // アイテム比未選択(通常モードで比率なし)ならカテゴリを強調

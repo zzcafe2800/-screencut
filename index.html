@@ -313,6 +313,18 @@ header.info {
   gap: 4px;
   align-items: flex-end;
 }
+/* アイテム比未選択時: カテゴリ全体を水色枠で強調 */
+#categories.needs-pick {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: 12px;
+  box-shadow: 0 0 0 4px rgba(91,156,184,0.15);
+  animation: catPulse 1.8s ease-in-out infinite;
+}
+@keyframes catPulse {
+  0%,100% { box-shadow: 0 0 0 4px rgba(91,156,184,0.12); }
+  50% { box-shadow: 0 0 0 7px rgba(91,156,184,0.22); }
+}
 /* サイズバッジ: 容量に応じて色がフェードする上品なバッジ */
 .size-badge {
   display: inline-flex;
@@ -472,7 +484,8 @@ header.info {
   box-shadow: 0 3px 12px rgba(0,0,0,0.14);
 }
 .btn-thumbkun .lk-main { font-size: 12.5px; font-weight: 700; letter-spacing: 0.03em; }
-.btn-thumbkun:hover { background: #fdeff6; border-color: #d669a0; }
+.btn-thumbkun:hover { background: #fff; border-color: #d669a0; color: #d669a0; box-shadow: 0 4px 16px rgba(214,105,160,0.28); transform: translateY(-1px); }
+.btn-thumbkun { transition: box-shadow 0.15s, transform 0.15s, background 0.15s; }
 .btn-thumbkun.active { background: #d669a0; color: #fff; border-color: #d669a0; }
 .btn-thumbkun::before {
   content: ''; position: absolute; left: -10px; right: -10px; top: -10px; bottom: -10px;
@@ -488,21 +501,45 @@ header.info {
 }
 .wip-notice.show { opacity: 1; }
 .hist-btn {
-  border: 1px solid var(--line); background: #fff; color: var(--fg-muted);
-  width: 26px; height: 24px; border-radius: 6px; cursor: pointer; font-size: 14px; line-height: 1; margin-right: 2px;
+  border: 1px solid var(--accent); background: #fff; color: var(--accent);
+  width: 30px; height: 28px; border-radius: 7px; cursor: pointer; font-size: 17px; line-height: 1; font-weight: 700;
 }
-.hist-btn:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
-.hist-btn:disabled { opacity: 0.35; cursor: default; }
+.hist-btn:hover:not(:disabled) { background: var(--accent); color: #fff; }
+.hist-btn:disabled { opacity: 0.4; cursor: default; }
+.hist-row { display: flex; align-items: center; gap: 4px; }
+/* 履歴と容量表示を横並びに */
+header.info .file-info { flex-direction: column; }
+header.info > .hist-row { align-self: flex-end; margin-right: 4px; order: 90; }
+header.info > .file-info { order: 91; }
 .save-wrap { position: relative; display: inline-flex; flex-direction: column; align-items: stretch; }
-.save-mode-tag { font-size: 9.5px; color: var(--fg-faint); text-align: center; margin-bottom: 2px; }
+.save-mode-tag {
+  position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  margin-bottom: 6px; white-space: nowrap;
+  background: #fff; border: 1px solid var(--line); border-radius: 8px;
+  padding: 3px 9px; font-size: 10px; color: var(--fg-muted);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+}
+.save-mode-tag::after {
+  content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  border: 5px solid transparent; border-top-color: #fff;
+}
 .save-group { display: inline-flex; }
 .save-menu-btn { padding: 0 7px !important; border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .save-group #save { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.save-menu { position: absolute; top: 100%; right: 0; margin-top: 4px; z-index: 50; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.15); overflow: hidden; min-width: 180px; }
+/* メニューは上に開く (下だと画面外に出るため) */
+.save-menu {
+  position: absolute; bottom: 100%; right: 0; margin-bottom: 6px; z-index: 50;
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.18); overflow: hidden; min-width: 190px;
+}
 .save-menu[hidden] { display: none; }
-.save-menu button { display: block; width: 100%; text-align: left; border: none; background: #fff; padding: 9px 14px; font-size: 12px; cursor: pointer; }
+.save-menu button { display: block; width: 100%; text-align: left; border: none; background: #fff; padding: 10px 14px; font-size: 12px; cursor: pointer; }
 .save-menu button:hover { background: #f3eef1; }
 .save-menu button.active { color: var(--accent); font-weight: 700; }
+/* ボタン周りに白いぼかし(視認性) */
+#save, .save-menu-btn, .btn-thumbkun, #file.btn, label.btn[for="file"] {
+  filter: drop-shadow(0 0 6px rgba(255,255,255,0.9));
+}
 /* thumb-mode: アイテム比サイドバーを隠してアイテムパネルを出す */
 body.thumb-mode #categories,
 body.thumb-mode #sidebarTop3,
@@ -3379,9 +3416,11 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       </div>
       <span class="ratio-small" id="ratioText">—<span class="colon">:</span>—</span>
     </div>
-    <div class="file-info">
+    <div class="hist-row" id="histRow">
       <button class="hist-btn" id="undoBtn" type="button" title="元に戻す" disabled>↶</button>
       <button class="hist-btn" id="redoBtn" type="button" title="やり直す" disabled>↷</button>
+    </div>
+    <div class="file-info">
       <button class="size-badge" id="fileSize" data-tier="white" title="クリックでサイズと色の関係を表示">—</button>
       <span class="dim" id="dimLine">— × — px</span>
       <span class="frames" id="framesInfo"></span>
@@ -3625,7 +3664,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   <div class="quality-info" id="qInfo"></div>
 
   <div class="image-tools">
-    <button class="tool-btn add-layer-btn" id="addLayer" title="レイヤーを追加">
+    <button class="tool-btn add-layer-btn" id="addLayer" title="レイヤーを追加" style="display:none !important">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 5v14M5 12h14"/>
       </svg>
@@ -8993,6 +9032,9 @@ function updateDimLine() {
 function updateEmpty() { emptyMsg.classList.toggle('hidden', state.loaded); }
 function updateSaveBtn() {
   const enabled = state.loaded && (state.ratio || state.thumbMode);
+  // アイテム比未選択(通常モードで比率なし)ならカテゴリを強調
+  const cats = document.getElementById('categories');
+  if (cats) cats.classList.toggle('needs-pick', !state.thumbMode && !state.ratio);
   saveBtn.disabled = !enabled;
   const smb = document.getElementById('saveMenuBtn'); if (smb) smb.disabled = !enabled;
   if (typeof updateSaveModeUI === 'function') updateSaveModeUI();

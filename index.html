@@ -115,6 +115,22 @@ body.thumb-mode #sidebarResizer::after {
 
 aside { border-right: 1px solid #b9ccd6; overflow-y: auto; background: #e3edf2; scrollbar-width: none; -ms-overflow-style: none; color: #243641; }
 aside .brand, aside .category-header, aside .tp-tab, aside .lp-name, aside .tp-note { color: #2c3e50; }
+/* 検索入力は右寄せ */
+#searchInput { text-align: right; }
+/* おすすめ もっと見る を薄めに */
+.st3-more { color: #98a8b2 !important; opacity: 0.6; font-size: 11px !important; }
+.st3-more:hover { opacity: 0.85; }
+/* アイテム右側の数字・アイコンは通常非表示、行カーソル接近で表示 */
+.item .item-ratio, .item .item-pin { opacity: 0; transition: opacity 0.18s; }
+.item:hover .item-ratio, .item:hover .item-pin,
+.item:focus-within .item-ratio, .item:focus-within .item-pin { opacity: 1; }
+/* 画面右上 容量表示を大きく (周りサイズはそのまま) */
+.size-badge { font-size: 14px !important; padding: 4px 10px !important; }
+/* サイドバー: 画像未読込時は畳む */
+body:not(.has-image):not(.thumb-mode) aside { width: 0; min-width: 0; padding: 0; overflow: hidden; border-right: none; }
+body:not(.has-image):not(.thumb-mode) { grid-template-columns: 0 1fr; }
+/* アイテム間隔: カテゴリ内は控えめに広めに (検索結果よりは狭め) */
+.item { padding: 9px 14px 9px 22px !important; }
 aside .tp-note { color: #5a6e79; }
 .sidebar-sticky { background: #e3edf2; }
 aside::-webkit-scrollbar { width: 0; height: 0; display: none; }
@@ -140,15 +156,24 @@ aside::-webkit-scrollbar { width: 0; height: 0; display: none; }
 .category { border-top: 1px solid var(--line-soft); }
 .category:last-child { border-bottom: 1px solid var(--line-soft); }
 .category-header {
-  padding: 13px 28px;
+  padding: 19px 28px;  /* 1.5倍広い余白 */
   cursor: pointer;
   display: flex;
   justify-content: space-between;
   align-items: center;
   user-select: none;
   transition: color 0.2s, background 0.2s;
-  font-size: 12.5px;
+  font-size: 11.5px;  /* 少し小さく */
+  gap: 8px;
 }
+.category-header::before {
+  content: '';
+  width: 16px; height: 16px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/><path d='M14 2v6h6'/></svg>");
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+  flex-shrink: 0; opacity: 0.7;
+}
+.category-header > span:first-of-type { flex: 1; }
 .category-header:hover { color: var(--accent); }
 .category-header .arrow {
   font-family: var(--serif);
@@ -208,6 +233,10 @@ aside::-webkit-scrollbar { width: 0; height: 0; display: none; }
   border-radius: 6px;
 }
 .pinned-category > .category-header { color: #b94e85; }
+.pinned-category > .category-header::before {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23d669a0' stroke='%23d669a0' stroke-width='1.5'><path d='M12 21s-7-4.5-9-9.5C1.5 7 5 4 8 5c2 .5 3 2 4 3 1-1 2-2.5 4-3 3-1 6.5 2 5 6.5-2 5-9 9.5-9 9.5z'/></svg>");
+  opacity: 1;
+}
 .pinned-category > .category-header .arrow { color: #d669a0; }
 .pinned-category .item:hover { background: rgba(238, 169, 200, 0.20); }
 .pinned-category .item.active { box-shadow: inset 2px 0 0 #d669a0; }
@@ -530,6 +559,10 @@ body.devlock #thumbKun { filter: none !important; pointer-events: auto !importan
 .devlock-preview:hover { background: #c2568f; }
 .devlock-hint { position: fixed; right: 14px; bottom: 12px; font-size: 10px; color: rgba(74,58,66,0.5); }
 .devlock-hidden { position: fixed; right: 0; bottom: 0; width: 72px; height: 72px; background: transparent; border: none; cursor: pointer; z-index: 73; }
+/* 開発中ロック中: プレビューカードだけ最前面に */
+body.devlock.devlock-preview-on #previewCard {
+  z-index: 74 !important; filter: none !important; pointer-events: auto !important;
+}
 .hist-btn {
   border: 1px solid var(--accent); background: #fff; color: var(--accent);
   width: 30px; height: 28px; border-radius: 7px; cursor: pointer; font-size: 17px; line-height: 1; font-weight: 700;
@@ -570,6 +603,15 @@ header.info > .file-info { order: 91; }
 .save-menu button { display: block; width: 100%; text-align: left; border: none; background: #fff; padding: 10px 14px; font-size: 12px; cursor: pointer; }
 .save-menu button:hover { background: #f3eef1; }
 .save-menu button.active { color: var(--accent); font-weight: 700; }
+.save-overwrite { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-bottom: 1px solid var(--line-soft); font-size: 11px; cursor: pointer; }
+.save-success {
+  position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%);
+  z-index: 90; background: rgba(15,40,70,0.92); color: #fff;
+  padding: 18px 32px; border-radius: 14px; font-size: 18px; font-weight: 700;
+  box-shadow: 0 10px 36px rgba(0,0,0,0.36); opacity: 0; transition: opacity 0.28s;
+  pointer-events: none;
+}
+.save-success.show { opacity: 1; }
 /* ボタン周りに白いぼかし(視認性) */
 #save, .save-menu-btn, .btn-thumbkun, #file.btn, label.btn[for="file"] {
   filter: drop-shadow(0 0 6px rgba(255,255,255,0.9));
@@ -3859,6 +3901,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         <button id="saveMenuBtn" class="btn save-menu-btn" type="button" disabled aria-label="保存方法">▾</button>
       </div>
       <div class="save-menu" id="saveMenu" hidden>
+        <label class="save-overwrite"><input type="checkbox" id="saveOverwrite"><span>元の画像に上書き保存</span></label>
         <button type="button" data-mode="normal" class="active">通常</button>
         <button type="button" data-mode="light">軽量化(画像→1枚GIF)</button>
       </div>
@@ -3917,7 +3960,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   <div class="devlock-title">開発中</div>
   <div class="devlock-sub">この機能は現在開発中です。プレビューのみお試しいただけます。</div>
   <button class="devlock-preview" id="devLockPreview" type="button">プレビューを見る</button>
-  <div class="devlock-hint">右下を2回タップで編集を試す</div>
   <button class="devlock-hidden" id="devLockSecret" type="button" aria-label=""></button>
 </div>
 
@@ -5534,6 +5576,8 @@ const saveBtn = document.getElementById('save');
   menuBtn.addEventListener('click', e => { e.stopPropagation(); menu.hidden = !menu.hidden; });
   document.addEventListener('click', () => { menu.hidden = true; });
   menu.addEventListener('click', e => e.stopPropagation());
+  const ow = document.getElementById('saveOverwrite');
+  if (ow) ow.addEventListener('change', () => { state.saveOverwrite = ow.checked; });
   menu.querySelectorAll('button').forEach(b => {
     b.addEventListener('click', () => {
       state.saveMode = b.dataset.mode;
@@ -5872,7 +5916,7 @@ function renderCategoriesInto(root) {
       w.className = 'category pinned-category open';
       const h = document.createElement('div');
       h.className = 'category-header';
-      h.innerHTML = `<span>📌 ピンアイテム</span><span class="arrow">›</span>`;
+      h.innerHTML = `<span>お気に入り</span><span class="arrow">›</span>`;
       h.addEventListener('click', () => w.classList.toggle('open'));
       const items = document.createElement('div');
       items.className = 'items';
@@ -6058,6 +6102,7 @@ function hideLoading() {
 
 async function loadAnyFile(f) {
   if (!f) return;
+  state._origFileName = f.name || null;
   showLoading(isVideoFile(f) ? '動画を変換中…' : '読み込み中…');
   await new Promise(r => requestAnimationFrame(() => r()));  // オーバーレイを先に描画
   try {
@@ -6640,7 +6685,7 @@ function renderThumbFrames() {
     grid.appendChild(d);
   });
 }
-function applyThumbFrame(url) {
+function applyThumbFrame(url) { setTimeout(()=>{ if (typeof pushHistory==='function') pushHistory(); },0);
   // 2回目クリックで解除
   if (state.thumbFrame && state.thumbFrame.url === url) {
     state.thumbFrame = null;
@@ -7113,7 +7158,7 @@ function syncWallControls() {
 }
 (function bindWall() {
   const wc = document.getElementById('wallColor');
-  if (wc) wc.addEventListener('input', () => { state.thumbBgColor = wc.value; state.thumbBgTransparent = false; const sw = document.getElementById('thumbBgSwatch'); if (sw) sw.style.background = wc.value; draw(); });
+  if (wc) wc.addEventListener('input', () => { state.thumbBgColor = wc.value; state.thumbBgTransparent = false; const sw = document.getElementById('thumbBgSwatch'); if (sw) sw.style.background = wc.value; draw(); if (typeof pushHistory==='function') pushHistory(); });
   const wt = document.getElementById('wallTransp');
   if (wt) wt.addEventListener('click', () => { state.thumbBgTransparent = !state.thumbBgTransparent; wt.classList.toggle('fixed', state.thumbBgTransparent); draw(); });
   ['wallGrad', 'wallGrad1', 'wallGrad2', 'wallGradAngle'].forEach(id => {
@@ -7167,13 +7212,12 @@ if (thumbKunBtnEl) {
 (function bindDevLock() {
   const pv = document.getElementById('devLockPreview');
   if (pv) pv.addEventListener('click', () => {
-    // プレビューだけお試し: サムネに入りプレビューを開く (ロック表示は消す)
-    enterThumbModeReal();
-    setTimeout(() => {
-      const pbtn = document.getElementById('thumbPreviewBtn');
-      if (pbtn) pbtn.click();
-      else { const pc = document.getElementById('previewCard'); if (pc) pc.hidden = false; }
-    }, 30);
+    // ロック維持のまま、プレビューカードだけ最前面に表示
+    document.body.classList.add('devlock-preview-on');
+    const pc = document.getElementById('previewCard');
+    if (pc) { pc.hidden = false; }
+    // 既存のプレビューレンダリングを呼ぶ
+    if (typeof renderPreviewCard === 'function') renderPreviewCard();
   });
   const secret = document.getElementById('devLockSecret');
   if (secret) {
@@ -7555,7 +7599,7 @@ function pushHistory() {
   // 現在位置より先(redo分)を破棄
   state._history = state._history.slice(0, state._histIdx + 1);
   state._history.push(snapshotState());
-  if (state._history.length > 40) state._history.shift();
+  if (state._history.length > 20) state._history.shift();
   state._histIdx = state._history.length - 1;
   updateHistButtons();
 }
@@ -7791,7 +7835,14 @@ function renderLayerPanel() {
     </svg>`;
     grip.dataset.layerIdx = String(i);
     grip.addEventListener('click', ev => ev.stopPropagation());
-    setupGripDrag(grip, row, i);
+    if (i === 0) {
+      grip.innerHTML = `<svg width="11" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>`;
+      grip.title = '最下層レイヤー(移動不可)';
+      grip.style.cursor = 'default';
+      grip.style.opacity = '0.6';
+    } else {
+      setupGripDrag(grip, row, i);
+    }
     row.appendChild(grip);
     // サムネモード: 種別ドット
     if (state.thumbMode) {
@@ -7937,7 +7988,7 @@ function renderLayerPanel() {
       lbl.textContent = 'T ' + (t.text || 'タイトル');
       lbl.style.overflow = 'hidden'; lbl.style.textOverflow = 'ellipsis'; lbl.style.whiteSpace = 'nowrap';
       const del = document.createElement('button'); del.className = 'lp-obj-del'; del.textContent = '×';
-      del.addEventListener('click', ev => { ev.stopPropagation(); state.thumbTitles.splice(ti, 1); if (state.selectedTitle === ti) state.selectedTitle = -1; renderLayerPanel(); updateDetailPanel(); draw(); });
+      del.addEventListener('click', ev => { ev.stopPropagation(); state.thumbTitles.splice(ti, 1); if (state.selectedTitle === ti) state.selectedTitle = -1; renderLayerPanel(); updateDetailPanel(); draw(); if (typeof pushHistory==='function') pushHistory(); });
       r.appendChild(dot); r.appendChild(lbl); r.appendChild(del);
       r.addEventListener('click', () => {
         state.selectedTitle = ti; state._wallpaperSel = false; state._patternSel = false; state.selectedLayers.clear();
@@ -7953,7 +8004,7 @@ function renderLayerPanel() {
       const dot = document.createElement('span'); dot.className = 'lp-kind'; dot.style.background = '#444';
       const lbl = document.createElement('span'); lbl.textContent = '模様'; lbl.style.flex = '1';
       const del = document.createElement('button'); del.className = 'lp-obj-del'; del.textContent = '×';
-      del.addEventListener('click', ev => { ev.stopPropagation(); state.thumbPattern.on = false; state._patternSel = false; renderLayerPanel(); updateDetailPanel(); draw(); });
+      del.addEventListener('click', ev => { ev.stopPropagation(); state.thumbPattern.on = false; state._patternSel = false; renderLayerPanel(); updateDetailPanel(); draw(); if (typeof pushHistory==='function') pushHistory(); });
       r.appendChild(dot); r.appendChild(lbl); r.appendChild(del);
       r.addEventListener('click', () => {
         state._patternSel = true; state._wallpaperSel = false; state.selectedTitle = -1; state.selectedLayers.clear();
@@ -8609,11 +8660,11 @@ async function loadFile(file) {
     if (state.frames.length > 1) startAnimation();
     updateQualityInfo();
     updateSidebarTop3();
-    // 部屋サムネくん: 読み込み後にレイヤー0を用意して枠内配置 + パネル常時表示
+    // レイヤー0を必ず用意 (通常/サムネ両方)
+    ensureFirstLayer();
+    renderLayerPanel();
     if (state.thumbMode) {
-      ensureFirstLayer();
       initThumbTransform();
-      renderLayerPanel();
       relocateLayerPanel();
       updateLayerPanelVisibility();
     }
@@ -8879,8 +8930,8 @@ function draw() {
 
   if (!state.ratio) return;
 
-  // Dark mask outside frame (水色寄りの影)
-  ctx.fillStyle = 'rgba(70,120,150,0.42)';
+  // Dark mask outside frame
+  ctx.fillStyle = 'rgba(20,30,40,0.5)';
   if (state.frameY > 0) ctx.fillRect(0, 0, state.canvasW, state.frameY);
   const fB = state.frameY + state.frameH;
   if (fB < state.canvasH) ctx.fillRect(0, fB, state.canvasW, state.canvasH - fB);
@@ -9132,6 +9183,7 @@ function updateDimLine() {
 }
 function updateEmpty() {
   emptyMsg.classList.toggle('hidden', state.loaded);
+  document.body.classList.toggle('has-image', !!state.loaded);
   const cw = document.getElementById('canvasWrap');
   if (cw) cw.classList.toggle('empty-pulse', !state.loaded && !state.thumbMode);
 }
@@ -11719,9 +11771,8 @@ function download(blob, filename) {
   a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
-  // 実際の保存容量を表示 (推定とのズレを正直に伝える)
   if (blob && blob.size) {
-    queueToast(`保存しました (${formatBytes(blob.size)})`, 2600);
+    if (typeof showSaveSuccess === 'function') showSaveSuccess(blob.size, state.fileSize || null);
   }
 }
 
@@ -11740,6 +11791,32 @@ function fastYield() {
 
 /* 部屋サムネくん 専用保存: サムネ枠の中身を直接 PNG/GIF で書き出す */
 state.saveMode = 'normal'; // 'normal' | 'light'
+state.saveOverwrite = false; // 元画像と同名で保存
+state._origFileName = null;
+function getSaveBaseName(defaultName) {
+  if (state.saveOverwrite && state._origFileName) {
+    return state._origFileName.replace(/\.[^.]+$/, '');
+  }
+  return defaultName;
+}
+function showSaveSuccess(bytes, fromBytes) {
+  const mb = (bytes / 1024 / 1024).toFixed(2);
+  let msg;
+  if (fromBytes) {
+    const from = (fromBytes / 1024 / 1024).toFixed(2);
+    msg = `${from} MB → ${mb} MB で保存しました`;
+  } else {
+    msg = `${mb} MB で保存しました`;
+  }
+  let ov = document.getElementById('saveSuccess');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'saveSuccess'; ov.className = 'save-success';
+    document.body.appendChild(ov);
+  }
+  ov.textContent = msg;
+  ov.classList.add('show');
+  setTimeout(() => ov.classList.remove('show'), 2400);
+}
 /* 現在の素材が全て静止画(GIF/動画なし)か */
 function allContentStatic() {
   if (state.fileType === 'gif' || state.fileType === 'video') return false;

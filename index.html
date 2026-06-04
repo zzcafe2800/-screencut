@@ -35,7 +35,7 @@
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"%E4%BE%BF%E5%88%A9%E3%81%8F%E3%82%93","short_name":"%E4%BE%BF%E5%88%A9%E3%81%8F%E3%82%93","display":"standalone","start_url":".","scope":".","background_color":"%23f5f8fa","theme_color":"%235b9cb8","icons":[{"src":"icon.png","sizes":"192x192","type":"image/png"},{"src":"icon.png","sizes":"512x512","type":"image/png"}],"launch_handler":{"client_mode":["navigate-existing","auto"]},"file_handlers":[{"action":".","accept":{"image/*":[".png",".jpg",".jpeg",".gif",".webp"],"video/*":[".mp4",".webm",".mov",".m4v",".avi",".mkv",".ogv"]}}]}'>
 <!-- X (Twitter) ウィジェット (セットアップカードの動画埋め込み) -->
-<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<script async src="" id="twitterWidgetsScript" data-src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 <!-- ===== 構造化データ (JSON-LD): GoogleがWebアプリと認識しやすくする ===== -->
 <script type="application/ld+json">
@@ -1509,15 +1509,7 @@ canvas.deform-active:active { cursor: grabbing; }
   border: 1.5px solid var(--bg);
 }
 .q-level.shown { display: flex; }
-.quality-info {
-  margin: 4px auto 2px;
-  padding: 4px 14px;
-  font-size: 12px;
-  color: var(--fg);
-  text-align: center;
-  letter-spacing: 0.02em;
-  display: none;
-}
+.quality-info { display: none !important; }
 .quality-info.shown { display: flex; justify-content: center; align-items: center; gap: 6px; flex-wrap: wrap; }
 /* キャンバス上の画質変化オーバーレイ */
 .quality-overlay {
@@ -3115,11 +3107,20 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 .setup-stage { display: flex; flex-direction: column; gap: 12px; }
 .setup-stage[hidden] { display: none; }
 .setup-video {
-  width: 100%; min-height: 180px; max-height: 360px; overflow: hidden;
+  width: 100%; min-height: 160px; max-height: 320px;
   border-radius: 12px; background: #1a1c20;
   display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
 }
-.setup-video .twitter-tweet { margin: 0 !important; width: 100% !important; }
+.setup-video-cta {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  color: #fff; text-decoration: none; padding: 28px;
+  background: linear-gradient(135deg, #1d9bf0, #0c7abf);
+  border-radius: 12px; width: 100%; height: 100%;
+  justify-content: center; transition: transform 0.15s;
+}
+.setup-video-cta:hover { transform: scale(1.02); }
+.setup-video-cta span { font-size: 14px; font-weight: 700; letter-spacing: 0.06em; }
 .setup-list { list-style: none; padding: 12px 14px; margin: 0; background: #f5f8fa; border-radius: 10px; font-size: 13px; line-height: 1.9; }
 .welcome-more-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
 .welcome-more-btn.primary:hover { background: #4a8aa3; }
@@ -4048,18 +4049,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   </footer>
 </main>
 
-<!-- 大容量画像の軽量化提案 -->
-<div class="bigimg-card" id="bigImgCard" hidden>
-  <div class="bic-title">画像が重いみたい</div>
-  <div class="bic-sub" id="bicSub">— MB の画像です。読み込みを軽くする設定を自動で行えます。</div>
-  <div class="bic-row">
-    <button class="bic-btn light" id="bicLight">軽さ重視<small>画質を大きく下げる</small></button>
-    <button class="bic-btn pretty" id="bicPretty">見た目重視<small>少しだけ軽くする</small></button>
-  </div>
-  <div class="bic-pred" id="bicPred"></div>
-  <div class="bic-hint">画面を触ると閉じます</div>
-</div>
-
 <!-- 開発中ロック (body直下・ぼかしの上に表示) -->
 <div class="devlock-ov" id="devLockOv" hidden>
   <div class="devlock-title">開発中</div>
@@ -4198,19 +4187,21 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
     <div class="guide-card welcome-card setup-card" id="setupCard">
       <div class="setup-stage" data-stage="1">
         <h3>はじめに</h3>
-        <div class="setup-video">
-          <blockquote class="twitter-tweet" data-conversation="none" data-dnt="true">
-            <a href="https://x.com/zzcafe_280/status/2061084908777554126"></a>
-          </blockquote>
+        <div class="setup-video" id="setupVid1">
+          <a class="setup-video-cta" href="https://x.com/zzcafe_280/status/2061084908777554126" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="40" height="40"><path d="M8 5v14l11-7z"/></svg>
+            <span>動画を見る (X)</span>
+          </a>
         </div>
         <button type="button" class="welcome-more-btn primary" id="setupNext">セットアップ</button>
       </div>
       <div class="setup-stage" data-stage="2" hidden>
         <h3>必要な機能</h3>
-        <div class="setup-video">
-          <blockquote class="twitter-tweet" data-conversation="none" data-dnt="true">
-            <a href="https://x.com/zzcafe_280/status/2061084908777554126"></a>
-          </blockquote>
+        <div class="setup-video" id="setupVid2">
+          <a class="setup-video-cta" href="https://x.com/zzcafe_280/status/2061084908777554126" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="40" height="40"><path d="M8 5v14l11-7z"/></svg>
+            <span>動画を見る (X)</span>
+          </a>
         </div>
         <ul class="setup-list">
           <li>① アプリ化</li>
@@ -5800,10 +5791,6 @@ const welcomeMoreBtn = document.getElementById('welcomeMoreBtn');
     card.querySelectorAll('.setup-stage').forEach(s => {
       s.hidden = (Number(s.dataset.stage) !== n);
     });
-    // Twitter widget 再描画 (動的に出現したblockquoteを処理)
-    if (window.twttr && window.twttr.widgets && typeof window.twttr.widgets.load === 'function') {
-      try { window.twttr.widgets.load(card); } catch (e) {}
-    }
   };
   const next = document.getElementById('setupNext');
   if (next) next.addEventListener('click', () => setStage(2));
@@ -12111,10 +12098,27 @@ function todayMMDD() {
   return String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
 }
 function buildBaseName() {
+  if (state.saveOverwrite && state._origFileName) {
+    return state._origFileName.replace(/\.[^.]+$/, '');
+  }
   if (state.thumbMode || !state.ratio) return 'thumb' + todayMMDD();
   return sanitize(state.ratio.name) + todayMMDD();
 }
-function download(blob, filename) {
+async function download(blob, filename) {
+  // 上書き保存: 元ファイルの handle があり、対応ブラウザなら本当に上書き
+  if (state.saveOverwrite && state._origFileHandle) {
+    try {
+      const perm = await state._origFileHandle.requestPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        const writable = await state._origFileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        if (typeof showSaveSuccess === 'function') showSaveSuccess(blob.size, state.fileSize || null);
+        return;
+      }
+    } catch (e) { console.warn('overwrite failed, falling back to download:', e); }
+  }
+  // 通常: ダウンロード (上書きチェック時は元と同名)
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename;
@@ -12166,37 +12170,9 @@ function showSaveSuccess(bytes, fromBytes) {
   ov.classList.add('show');
   setTimeout(() => ov.classList.remove('show'), 2400);
 }
-/* 大容量画像の提案カード */
-function showBigImgAdvice() {
-  const sz = state.fileSize || 0;
-  if (sz < 1024 * 1024) return;
-  const card = document.getElementById('bigImgCard'); if (!card) return;
-  const mb = (sz / 1024 / 1024).toFixed(2);
-  document.getElementById('bicSub').textContent = `${mb} MB の画像です。軽くする設定を自動でできます。`;
-  document.getElementById('bicPred').textContent = `予測: ${mb} MB → 軽さ重視で約 ${(sz / 1024 / 1024 * 0.35).toFixed(2)} MB / 見た目重視で約 ${(sz / 1024 / 1024 * 0.65).toFixed(2)} MB`;
-  card.hidden = false;
-  // 画面どこかタップで閉じる (カード内タップ除外)
-  const close = (ev) => {
-    if (!card.contains(ev.target)) { card.hidden = true; document.removeEventListener('pointerdown', close, true); }
-  };
-  setTimeout(() => document.addEventListener('pointerdown', close, true), 30);
-}
-(function bindBigImg() {
-  const apply = (heavy) => {
-    const q = heavy ? 75 : 35;          // 軽さ重視=画質を大きく落とす
-    state.quality = q;
-    const qs = document.getElementById('qualitySlider'); if (qs) { qs.value = String(q); qs.dispatchEvent(new Event('input', { bubbles: true })); }
-    // 画像なら軽量化(1枚GIF)モード
-    if (state.fileType === 'image') {
-      state.saveMode = 'light';
-      if (typeof updateSaveModeUI === 'function') updateSaveModeUI();
-    }
-    const card = document.getElementById('bigImgCard'); if (card) card.hidden = true;
-    showToast(heavy ? '軽さ重視で設定しました' : '見た目重視で設定しました');
-  };
-  const l = document.getElementById('bicLight'); if (l) l.addEventListener('click', () => apply(true));
-  const p = document.getElementById('bicPretty'); if (p) p.addEventListener('click', () => apply(false));
-})();
+/* 大容量画像の提案カード(廃止) */
+function showBigImgAdvice() { /* 無効化済み */ }
+(function bindBigImg() { /* 廃止 */ })();
 /* 現在の素材が全て静止画(GIF/動画なし)か */
 function allContentStatic() {
   if (state.fileType === 'gif' || state.fileType === 'video') return false;
@@ -12774,17 +12750,50 @@ updateSidebarTop3();
 // 読み込み君 (footer)
 makeDroppable(document.getElementById('loadKun'), f => loadAnyFile(f));
 
+/* 読み込みくん: File System Access API が使えれば showOpenFilePicker を優先
+   - クイックアクセス(recent)を初期表示
+   - 開いたファイルの handle を保持し、上書き保存に使う */
+(function setupLoadKunPicker() {
+  const lk = document.getElementById('loadKun');
+  if (!lk || !('showOpenFilePicker' in window)) return; // 非対応はネイティブのfile inputに任せる
+  lk.addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        startIn: 'recent',  // ← クイックアクセス(最近使った項目)を最初に表示
+        multiple: false,
+        types: [
+          { description: '画像 / 動画 / GIF', accept: {
+            'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
+            'video/*': ['.mp4', '.webm', '.mov', '.m4v', '.avi', '.mkv', '.ogv'],
+          }},
+        ],
+        excludeAcceptAllOption: false,
+      });
+      if (!handle) return;
+      const file = await handle.getFile();
+      state._origFileHandle = handle;
+      await loadAnyFile(file);
+    } catch (e) {
+      // ユーザがキャンセルした場合は何もしない
+      if (e.name !== 'AbortError') console.warn('picker err:', e);
+    }
+  });
+})();
+
 /* PWA File Handlers: タスクバーのアプリアイコンにファイルをドロップして起動した時、
    そのファイルを自動で読み込む (Chromium系のみ) */
 if ('launchQueue' in window) {
   try {
     window.launchQueue.setConsumer(async (launchParams) => {
       if (!launchParams || !launchParams.files || !launchParams.files.length) return;
-      // 最初の1ファイルを読み込み
       try {
         const handle = launchParams.files[0];
         const file = await handle.getFile();
-        if (file) await loadAnyFile(file);
+        if (file) {
+          state._origFileHandle = handle;
+          await loadAnyFile(file);
+        }
       } catch (e) { console.warn('launchQueue load failed:', e); }
     });
   } catch (e) {}

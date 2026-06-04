@@ -913,6 +913,13 @@ body.thumb-mode #shrink { display: none !important; }
   color: #e8e8ea;
 }
 .preview-card[hidden] { display: none; }
+.pc-mask-toggle {
+  border: 1px solid var(--line); background: #fff; color: var(--fg-muted);
+  font-size: 10px; padding: 3px 9px; border-radius: 999px; cursor: pointer;
+  margin-left: auto; margin-right: 6px;
+}
+.pc-mask-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.pc-mask-toggle.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 .pc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .pc-title { font-weight: 700; font-size: 15px; color: #fff; }
 .pc-section-label { font-size: 13px; color: #d4d4d8; font-weight: 600; margin-bottom: 10px; }
@@ -3555,6 +3562,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   <div id="previewCard" class="preview-card" hidden>
     <div class="pc-head">
       <span class="pc-title">✦ Multiplayer Room</span>
+      <button id="previewMaskToggle" class="pc-mask-toggle" type="button" title="範囲外を白く隠す">影なし</button>
       <button id="previewClose" class="pc-close" aria-label="閉じる">×</button>
     </div>
     <div class="pc-section-label">New Rooms</div>
@@ -6750,6 +6758,17 @@ state.thumbTransform = null;  // {scale, offsetX, offsetY} 読み込み画像の
 state._thumbDrag = null;      // ドラッグ状態
 state.thumbFixed = false;     // (旧) 未使用
 state.thumbAspectLock = false; // false=自由(左右独立) true=固定(比率保持)
+state.previewMaskWhite = false; // プレビュー範囲外を白不透明にするか
+(function bindPreviewMask() {
+  const btn = document.getElementById('previewMaskToggle');
+  if (!btn) return;
+  btn.addEventListener('click', () => {
+    state.previewMaskWhite = !state.previewMaskWhite;
+    btn.textContent = state.previewMaskWhite ? '解除' : '影なし';
+    btn.classList.toggle('active', state.previewMaskWhite);
+    if (typeof draw === 'function') draw();
+  });
+})();
 state.thumbBgColor = '#2a2b31'; // サムネ背景色
 state.thumbBgTransparent = false; // 背景透明
 state._blurSelecting = false;     // ぼかしレイヤー選択モード
@@ -7392,6 +7411,15 @@ function thumbKunEnter() {
     state.thumbMode = !state.thumbMode;
     document.body.classList.toggle('thumb-mode', state.thumbMode);
     thumbKunBtnEl.classList.toggle('active', state.thumbMode);
+    if (state.thumbMode && !state._aspectBubbleShown) {
+      state._aspectBubbleShown = true;
+      setTimeout(() => {
+        const a = document.getElementById('thumbAspectBtn');
+        const f = document.getElementById('thumbFitBtn');
+        if (a && typeof showIconBubble === 'function') showIconBubble(a, '●を押すと比率固定の切替');
+        setTimeout(() => { if (f && typeof showIconBubble === 'function') showIconBubble(f, '点線■で枠にフィット'); }, 2200);
+      }, 600);
+    }
     if (thumbItemsPanel) thumbItemsPanel.hidden = !state.thumbMode;
     // プレビューボタンはサムネ時のみ
     const pvt = document.getElementById('previewToggle');
@@ -9102,7 +9130,7 @@ function draw() {
   if (!state.ratio) return;
 
   // Dark mask outside frame
-  ctx.fillStyle = 'rgba(20,30,40,0.5)';
+  ctx.fillStyle = state.previewMaskWhite ? '#ffffff' : 'rgba(20,30,40,0.5)';
   if (state.frameY > 0) ctx.fillRect(0, 0, state.canvasW, state.frameY);
   const fB = state.frameY + state.frameH;
   if (fB < state.canvasH) ctx.fillRect(0, fB, state.canvasW, state.canvasH - fB);

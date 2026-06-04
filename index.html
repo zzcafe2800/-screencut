@@ -198,6 +198,7 @@ aside::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
 .items { display: none; padding: 4px 0 14px; }
 .category.open .items { display: block; }
+.category.cat-hidden, .pinned-category.cat-hidden { display: none !important; }
 
 .item {
   display: grid;
@@ -2574,7 +2575,10 @@ canvas.rm-active { cursor: crosshair; }
   transition: max-width 0.25s ease;
 }
 .layer-panel[hidden] { display: none !important; }
-.layer-panel.collapsed { max-width: 30px; }
+.layer-panel.collapsed { max-width: 80px; }
+.layer-panel.collapsed .lp-toggle { width: auto; padding: 8px 10px; font-size: 11px; font-weight: 700; color: var(--accent); }
+.layer-panel.collapsed .lp-toggle::after { content: '< レイヤー'; }
+.layer-panel.collapsed .lp-toggle svg { display: none; }
 /* サムネモード: レイヤーを左サイドバー下部へ移動 */
 .lp-title-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; }
 .lp-title-row .lp-title { flex: 1; }
@@ -3121,6 +3125,18 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 }
 .setup-video-cta:hover { transform: scale(1.02); }
 .setup-video-cta span { font-size: 14px; font-weight: 700; letter-spacing: 0.06em; }
+/* 動画専用プレースホルダー (テキストなし、押すと再生) */
+.setup-video-play {
+  background: transparent; border: none; cursor: pointer;
+  color: rgba(255,255,255,0.95); padding: 0;
+  width: 80px; height: 80px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.18s, background 0.18s;
+  background: rgba(255,255,255,0.08);
+}
+.setup-video-play:hover { transform: scale(1.08); background: rgba(255,255,255,0.16); }
+.setup-video.loaded .setup-video-play { display: none; }
+.setup-video .twitter-tweet { margin: 0 !important; width: 100% !important; }
 .setup-list { list-style: none; padding: 12px 14px; margin: 0; background: #f5f8fa; border-radius: 10px; font-size: 13px; line-height: 1.9; }
 .welcome-more-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
 .welcome-more-btn.primary:hover { background: #4a8aa3; }
@@ -3851,7 +3867,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
     </button>
     <input type="file" id="addLayerFile" accept="image/*,video/*,.gif,.mp4,.mov,.m4v,.webm,.ogv,.avi,.mkv" hidden>
     <button class="tool-btn hist-tool" id="undoBtn" type="button" title="元に戻す" disabled>↶</button>
-    <button class="tool-btn hist-tool" id="redoBtn" type="button" title="やり直す" disabled>↷</button>
     <button class="tool-btn" id="flipH" title="左右反転" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 7l4 5-4 5z" fill="currentColor"/>
@@ -4187,21 +4202,19 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
     <div class="guide-card welcome-card setup-card" id="setupCard">
       <div class="setup-stage" data-stage="1">
         <h3>はじめに</h3>
-        <div class="setup-video" id="setupVid1">
-          <a class="setup-video-cta" href="https://x.com/zzcafe_280/status/2061084908777554126" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="40" height="40"><path d="M8 5v14l11-7z"/></svg>
-            <span>動画を見る (X)</span>
-          </a>
+        <div class="setup-video" id="setupVid1" data-tweet="2061084908777554126">
+          <button class="setup-video-play" type="button" aria-label="動画を再生">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="44" height="44"><path d="M8 5v14l11-7z"/></svg>
+          </button>
         </div>
         <button type="button" class="welcome-more-btn primary" id="setupNext">セットアップ</button>
       </div>
       <div class="setup-stage" data-stage="2" hidden>
         <h3>必要な機能</h3>
-        <div class="setup-video" id="setupVid2">
-          <a class="setup-video-cta" href="https://x.com/zzcafe_280/status/2061084908777554126" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="40" height="40"><path d="M8 5v14l11-7z"/></svg>
-            <span>動画を見る (X)</span>
-          </a>
+        <div class="setup-video" id="setupVid2" data-tweet="2061084908777554126">
+          <button class="setup-video-play" type="button" aria-label="動画を再生">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="44" height="44"><path d="M8 5v14l11-7z"/></svg>
+          </button>
         </div>
         <ul class="setup-list">
           <li>① アプリ化</li>
@@ -5712,11 +5725,15 @@ const saveBtn = document.getElementById('save');
   document.addEventListener('click', () => { menu.hidden = true; });
   menu.addEventListener('click', e => e.stopPropagation());
   const ow = document.getElementById('saveOverwrite');
-  if (ow) ow.addEventListener('change', () => { state.saveOverwrite = ow.checked; });
+  if (ow) {
+    ow.checked = !!state.saveOverwrite;  // 初期化時に復元
+    ow.addEventListener('change', () => { state.saveOverwrite = ow.checked; persistSaveSettings(); });
+  }
   menu.querySelectorAll('button').forEach(b => {
     b.addEventListener('click', () => {
       state.saveMode = b.dataset.mode;
       if (typeof updateSaveModeUI === 'function') updateSaveModeUI();
+      persistSaveSettings();
       menu.hidden = true;
       if (state.saveMode === 'light' && typeof hasAnimatedContent === 'function' && hasAnimatedContent()) {
         showToast('GIFのためこの保存方法はできません');
@@ -5792,6 +5809,31 @@ const welcomeMoreBtn = document.getElementById('welcomeMoreBtn');
       s.hidden = (Number(s.dataset.stage) !== n);
     });
   };
+  /* 動画プレースホルダー(再生ボタン)をクリック → Twitter widget を遅延ロード */
+  function loadTweetInto(vidEl) {
+    if (!vidEl || vidEl.classList.contains('loaded')) return;
+    vidEl.classList.add('loaded');
+    const tweetId = vidEl.dataset.tweet;
+    // blockquote 形式で挿入し、widgets.js を呼ぶ
+    const bq = document.createElement('blockquote');
+    bq.className = 'twitter-tweet';
+    bq.setAttribute('data-conversation', 'none');
+    bq.setAttribute('data-dnt', 'true');
+    bq.innerHTML = `<a href="https://x.com/zzcafe_280/status/${tweetId}"></a>`;
+    vidEl.appendChild(bq);
+    // widgets.js を src 注入(初回のみ)
+    const scr = document.getElementById('twitterWidgetsScript');
+    if (scr && !scr.src && scr.dataset.src) scr.src = scr.dataset.src;
+    const tryRender = () => {
+      if (window.twttr && window.twttr.widgets) {
+        try { window.twttr.widgets.load(vidEl); } catch (e) {}
+      } else setTimeout(tryRender, 200);
+    };
+    tryRender();
+  }
+  card.querySelectorAll('.setup-video-play').forEach(btn => {
+    btn.addEventListener('click', () => loadTweetInto(btn.closest('.setup-video')));
+  });
   const next = document.getElementById('setupNext');
   if (next) next.addEventListener('click', () => setStage(2));
   const back = document.getElementById('setupBack');
@@ -6092,7 +6134,19 @@ function renderCategoriesInto(root) {
       const h = document.createElement('div');
       h.className = 'category-header';
       h.innerHTML = `<span>お気に入り</span><span class="arrow">›</span>`;
-      h.addEventListener('click', () => w.classList.toggle('open'));
+      h.addEventListener('click', () => {
+        const wasOpen = w.classList.contains('open');
+        const nav = document.getElementById('categories');
+        if (!wasOpen) {
+          w.classList.add('open');
+          nav.querySelectorAll(':scope > .category, :scope > .pinned-category').forEach(c => {
+            if (c !== w) c.classList.add('cat-hidden');
+          });
+        } else {
+          w.classList.remove('open');
+          nav.querySelectorAll('.cat-hidden').forEach(c => c.classList.remove('cat-hidden'));
+        }
+      });
       const items = document.createElement('div');
       items.className = 'items';
       pinnedItems.forEach(it => items.appendChild(buildItemRow(it)));
@@ -6106,11 +6160,21 @@ function renderCategoriesInto(root) {
     const h = document.createElement('div');
     h.className = 'category-header';
     h.innerHTML = `<span>${cat.name}</span><span class="arrow">›</span>`;
-    h.addEventListener('click', () => w.classList.toggle('open'));
-    const items = document.createElement('div');
-    items.className = 'items';
-    cat.items.forEach(it => items.appendChild(buildItemRow(it)));
-    w.appendChild(h); w.appendChild(items);
+    h.addEventListener('click', () => {
+      const wasOpen = w.classList.contains('open');
+      const nav = document.getElementById('categories');
+      if (!wasOpen) {
+        // 開く: 他のカテゴリを一時非表示
+        w.classList.add('open');
+        nav.querySelectorAll(':scope > .category, :scope > .pinned-category').forEach(c => {
+          if (c !== w) c.classList.add('cat-hidden');
+        });
+      } else {
+        // 閉じる: 他を再表示
+        w.classList.remove('open');
+        nav.querySelectorAll('.cat-hidden').forEach(c => c.classList.remove('cat-hidden'));
+      }
+    });
     root.appendChild(w);
   });
 }
@@ -7993,7 +8057,7 @@ function moveLayer(i, dir) {
 
 /* レイヤーパネルの表示更新 */
 function updateLayerPanelVisibility() {
-  // 常時表示
+  // 常時表示 (折りたたみ可能)
   layerPanel.hidden = false;
   // +ボタンのバッジ
   const badge = document.getElementById('layerCountBadge');
@@ -8315,8 +8379,14 @@ function showIconBubble(anchorEl, text, variant) {
   b._t = setTimeout(() => b.classList.remove('shown'), 2000);
 }
 
+/* レイヤーパネルの折りたたみ: 初期は折りたたみ、状態を localStorage に保存 */
+try {
+  const lpC = localStorage.getItem('benri.layerCollapsed');
+  if (lpC === null || lpC === '1') layerPanel.classList.add('collapsed');
+} catch (e) { layerPanel.classList.add('collapsed'); }
 layerPanelToggle.addEventListener('click', () => {
   layerPanel.classList.toggle('collapsed');
+  try { localStorage.setItem('benri.layerCollapsed', layerPanel.classList.contains('collapsed') ? '1' : '0'); } catch (e) {}
 });
 lpBgTransparent.addEventListener('click', () => {
   state.bgMode = 'transparent';
@@ -9599,7 +9669,21 @@ function updateQualityInfo() {
   const html = `<span class="q-before">${formatBytes(base)}</span><span class="q-arrow">➜</span><span class="q-after">${formatBytes(reduced)}</span><span class="q-pct">(−${pct}%)</span>`;
   qInfoEl.innerHTML = html;
   qInfoEl.classList.add('shown');
-  if (ov) { ov.innerHTML = html; ov.hidden = false; }
+  if (ov) {
+    ov.innerHTML = html;
+    ov.hidden = false;
+    // フェードの横幅をキャンバスに合わせる
+    const cv = document.getElementById('canvas');
+    const wr = document.getElementById('canvasWrap');
+    if (cv && wr) {
+      const rCv = cv.getBoundingClientRect();
+      const rWr = wr.getBoundingClientRect();
+      const left = rCv.left - rWr.left;
+      ov.style.left = left + 'px';
+      ov.style.right = 'auto';
+      ov.style.width = rCv.width + 'px';
+    }
+  }
 }
 /* 元のGIFサイズを推定: 代表フレームを1枚エンコードして全フレーム分に外挿 */
 async function estimateGifBaseSize() {
@@ -12105,20 +12189,37 @@ function buildBaseName() {
   return sanitize(state.ratio.name) + todayMMDD();
 }
 async function download(blob, filename) {
-  // 上書き保存: 元ファイルの handle があり、対応ブラウザなら本当に上書き
-  if (state.saveOverwrite && state._origFileHandle) {
-    try {
-      const perm = await state._origFileHandle.requestPermission({ mode: 'readwrite' });
-      if (perm === 'granted') {
-        const writable = await state._origFileHandle.createWritable();
+  // 上書き保存:
+  // (a) launchQueue 経由で handle がある場合 → 元ファイル自体を書き換え
+  // (b) handle がない場合 → showSaveFilePicker で場所選択 (元ファイル名で提示)
+  if (state.saveOverwrite) {
+    if (state._origFileHandle) {
+      try {
+        const perm = await state._origFileHandle.requestPermission({ mode: 'readwrite' });
+        if (perm === 'granted') {
+          const writable = await state._origFileHandle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          if (typeof showSaveSuccess === 'function') showSaveSuccess(blob.size, state.fileSize || null);
+          return;
+        }
+      } catch (e) { console.warn('overwrite via handle failed:', e); }
+    }
+    if ('showSaveFilePicker' in window) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: state._origFileName || filename,
+          startIn: 'documents',
+        });
+        const writable = await handle.createWritable();
         await writable.write(blob);
         await writable.close();
         if (typeof showSaveSuccess === 'function') showSaveSuccess(blob.size, state.fileSize || null);
         return;
-      }
-    } catch (e) { console.warn('overwrite failed, falling back to download:', e); }
+      } catch (e) { if (e.name === 'AbortError') return; console.warn('save picker failed:', e); }
+    }
   }
-  // 通常: ダウンロード (上書きチェック時は元と同名)
+  // 通常のダウンロード (上書き時は元と同名)
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = filename;
@@ -12146,6 +12247,19 @@ function fastYield() {
 state.saveMode = 'normal'; // 'normal' | 'light'
 state.saveOverwrite = false; // 元画像と同名で保存
 state._origFileName = null;
+/* 保存設定の永続化 (localStorage) */
+try {
+  const saved = JSON.parse(localStorage.getItem('benri.saveSettings') || '{}');
+  if (saved.saveMode === 'normal' || saved.saveMode === 'light') state.saveMode = saved.saveMode;
+  if (typeof saved.saveOverwrite === 'boolean') state.saveOverwrite = saved.saveOverwrite;
+} catch (e) {}
+function persistSaveSettings() {
+  try {
+    localStorage.setItem('benri.saveSettings', JSON.stringify({
+      saveMode: state.saveMode, saveOverwrite: state.saveOverwrite,
+    }));
+  } catch (e) {}
+}
 function getSaveBaseName(defaultName) {
   if (state.saveOverwrite && state._origFileName) {
     return state._origFileName.replace(/\.[^.]+$/, '');
@@ -12750,37 +12864,6 @@ updateSidebarTop3();
 // 読み込み君 (footer)
 makeDroppable(document.getElementById('loadKun'), f => loadAnyFile(f));
 
-/* 読み込みくん: File System Access API が使えれば showOpenFilePicker を優先
-   - クイックアクセス(recent)を初期表示
-   - 開いたファイルの handle を保持し、上書き保存に使う */
-(function setupLoadKunPicker() {
-  const lk = document.getElementById('loadKun');
-  if (!lk || !('showOpenFilePicker' in window)) return; // 非対応はネイティブのfile inputに任せる
-  lk.addEventListener('click', async (ev) => {
-    ev.preventDefault();
-    try {
-      const [handle] = await window.showOpenFilePicker({
-        startIn: 'recent',  // ← クイックアクセス(最近使った項目)を最初に表示
-        multiple: false,
-        types: [
-          { description: '画像 / 動画 / GIF', accept: {
-            'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
-            'video/*': ['.mp4', '.webm', '.mov', '.m4v', '.avi', '.mkv', '.ogv'],
-          }},
-        ],
-        excludeAcceptAllOption: false,
-      });
-      if (!handle) return;
-      const file = await handle.getFile();
-      state._origFileHandle = handle;
-      await loadAnyFile(file);
-    } catch (e) {
-      // ユーザがキャンセルした場合は何もしない
-      if (e.name !== 'AbortError') console.warn('picker err:', e);
-    }
-  });
-})();
-
 /* PWA File Handlers: タスクバーのアプリアイコンにファイルをドロップして起動した時、
    そのファイルを自動で読み込む (Chromium系のみ) */
 if ('launchQueue' in window) {
@@ -12807,12 +12890,14 @@ makeDroppable(recommendFileLabel, f => {
   recommendFile.dispatchEvent(new Event('change'));
 });
 // 加工くん の 2 つのスロット
-makeDroppable(roomSlotRoom, f => {
-  const dt = new DataTransfer();
-  dt.items.add(f);
-  roomFileRoom.files = dt.files;
-  roomFileRoom.dispatchEvent(new Event('change'));
-});
+if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
+  makeDroppable(roomSlotRoom, f => {
+    const dt = new DataTransfer();
+    dt.items.add(f);
+    roomFileRoom.files = dt.files;
+    roomFileRoom.dispatchEvent(new Event('change'));
+  });
+}
 
 </script>
 </body>

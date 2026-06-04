@@ -70,6 +70,23 @@
 </script>
 
 <style>
+/* 初期ローディング画面 */
+.init-loader {
+  position: fixed; inset: 0; z-index: 200;
+  background: #aeddf0;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.4s;
+}
+.init-loader.hide { opacity: 0; pointer-events: none; }
+.init-loader-inner {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  background: rgba(255,255,255,0.92); padding: 34px 46px; border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+}
+.init-loader-gif { width: 96px; height: 96px; object-fit: contain; }
+.init-loader-text { font-size: 15px; font-weight: 700; color: #4a8aa3; letter-spacing: 0.12em; }
+.init-loader-text::after { content: ''; animation: loadDots 1.2s steps(4) infinite; }
+@keyframes loadDots { 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%{content:'...'} }
 @property --fill { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -119,7 +136,7 @@ body.thumb-mode #sidebarResizer::after {
 aside { border-right: 1px solid #b9ccd6; overflow-y: auto; background: #e3edf2; scrollbar-width: none; -ms-overflow-style: none; color: #243641; }
 aside .brand, aside .category-header, aside .tp-tab, aside .lp-name, aside .tp-note { color: #2c3e50; }
 /* 検索入力は右寄せ */
-#searchInput { text-align: right; }
+#searchInput { text-align: left; }
 /* おすすめ もっと見る を薄めに */
 .st3-more { color: #98a8b2 !important; opacity: 0.6; font-size: 11px !important; }
 .st3-more:hover { opacity: 0.85; }
@@ -664,6 +681,8 @@ header.info > .file-info { order: 91; }
   0%,100% { box-shadow: 0 4px 14px rgba(91,156,184,0.4); }
   50% { box-shadow: 0 4px 20px rgba(91,156,184,0.7); }
 }
+.btn-dropkun { background: #fff !important; color: var(--accent) !important; border: 1.5px solid var(--accent) !important; font-weight: 700; }
+.btn-dropkun:hover { background: var(--accent) !important; color: #fff !important; }
 /* thumb-mode: アイテム比サイドバーを隠してアイテムパネルを出す */
 body.thumb-mode #categories,
 body.thumb-mode #sidebarTop3,
@@ -3112,16 +3131,19 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 .welcome-card { max-width: 520px; }
 /* セットアップ用 2カード並び */
 .welcome-pair { display: flex; gap: 14px; align-items: flex-start; max-width: 96vw; flex-wrap: nowrap; justify-content: center; overflow-x: auto; }
-.welcome-pair > .welcome-card { flex: 1 1 0; min-width: 0; max-width: 340px; }
-.setup-card { min-width: 240px; max-width: 340px; position: relative; }
+.welcome-pair > .welcome-card { flex: 1 1 0; min-width: 0; max-width: 420px; }
+.setup-card { min-width: 300px; max-width: 420px; position: relative; }
+.setup-video {
+  width: 100%; min-height: 320px; max-height: 70vh; overflow-y: auto;
+  border-radius: 12px; background: #15181c;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.setup-video .twitter-tweet { margin: 0 auto !important; width: 100% !important; min-width: 280px; }
+/* 次回から表示しない */
+.setup-noshow { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--fg-muted); justify-content: flex-end; margin-top: 8px; cursor: pointer; }
 .setup-stage { display: flex; flex-direction: column; gap: 12px; }
 .setup-stage[hidden] { display: none; }
-.setup-video {
-  width: 100%; min-height: 160px; max-height: 320px;
-  border-radius: 12px; background: #1a1c20;
-  display: flex; align-items: center; justify-content: center;
-  position: relative; overflow: hidden;
-}
 .setup-video-cta {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
   color: #fff; text-decoration: none; padding: 28px;
@@ -3382,6 +3404,13 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 </style>
 </head>
 <body>
+<!-- 初期ローディング画面 -->
+<div id="initLoader" class="init-loader">
+  <div class="init-loader-inner">
+    <img src="load.gif" alt="" class="init-loader-gif" onerror="this.style.display='none'">
+    <div class="init-loader-text">ロード中</div>
+  </div>
+</div>
 
 <aside>
   <div class="sidebar-sticky" id="sidebarSticky">
@@ -3739,11 +3768,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
           <input type="file" id="thumbLayerAddFile" accept="image/*,.gif,video/*" hidden>
         </div>
         <div class="lp-list" id="layerList"></div>
-        <div class="lp-bg-row">
-          <span class="lp-bg-label">背景</span>
-          <button class="lp-bg-opt" data-bg="transparent" id="lpBgTransparent">透明</button>
-          <button class="lp-bg-opt" data-bg="white" id="lpBgWhite">白</button>
-        </div>
       </div>
     </div>
 
@@ -4005,6 +4029,9 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
     <label for="file" class="btn btn-accent btn-loadkun btn-loadkun-pop" id="loadKun">
       <span class="lk-main">読み込みくん</span>
     </label>
+    <button id="dropKun" class="btn btn-accent btn-dropkun" type="button" title="小窓を浮かせてドロップで読み込み">
+      <span class="lk-main">ドロップくん</span>
+    </button>
     <button id="thumbKun" class="btn btn-thumbkun" type="button" title="サムネメイカー (自由加工モード)">
       <span class="lk-main">サムネメイカー</span>
     </button>
@@ -4218,6 +4245,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
           </blockquote>
         </div>
         <button type="button" class="welcome-more-btn primary" id="setupNext">セットアップ</button>
+        <label class="setup-noshow"><input type="checkbox" id="setupNoShow"> 次回から表示しない</label>
       </div>
       <div class="setup-stage" data-stage="2" hidden>
         <h3>必要な機能</h3>
@@ -5998,10 +6026,18 @@ copyBtn.addEventListener('click', async () => {
   }
 });
 
-/* Show welcome on page load */
+/* Show welcome on page load (「次回から表示しない」が未設定の時のみ) */
 window.addEventListener('load', () => {
-  // delay slightly so the page settles in first
-  setTimeout(() => openOverlay(welcomeOverlay), 200);
+  let skip = false;
+  try { skip = localStorage.getItem('benri.welcomeNoShow') === '1'; } catch (e) {}
+  const ns = document.getElementById('setupNoShow');
+  if (ns) {
+    ns.checked = skip;
+    ns.addEventListener('change', () => {
+      try { localStorage.setItem('benri.welcomeNoShow', ns.checked ? '1' : '0'); } catch (e) {}
+    });
+  }
+  if (!skip) setTimeout(() => openOverlay(welcomeOverlay), 200);
 });
 
 /* ===== Sidebar ===== */
@@ -8366,8 +8402,8 @@ function renderLayerPanel() {
     layerList.appendChild(wr);
   }
   // 背景モードハイライト
-  lpBgTransparent.classList.toggle('active', state.bgMode === 'transparent');
-  lpBgWhite.classList.toggle('active', state.bgMode === 'white');
+  if (lpBgTransparent) lpBgTransparent.classList.toggle('active', state.bgMode === 'transparent');
+  if (lpBgWhite) lpBgWhite.classList.toggle('active', state.bgMode === 'white');
 }
 
 /* 色加工中のレイヤー変更不可 吹き出し */
@@ -8446,12 +8482,12 @@ layerPanelToggle.addEventListener('click', () => {
   titleRow.addEventListener('pointerup', end);
   titleRow.addEventListener('pointercancel', end);
 })();
-lpBgTransparent.addEventListener('click', () => {
+if (lpBgTransparent) lpBgTransparent.addEventListener('click', () => {
   state.bgMode = 'transparent';
   renderLayerPanel();
   draw();
 });
-lpBgWhite.addEventListener('click', () => {
+if (lpBgWhite) lpBgWhite.addEventListener('click', () => {
   state.bgMode = 'white';
   renderLayerPanel();
   draw();
@@ -12930,6 +12966,16 @@ updateSaveBtn();
 renderLayerPanel();
 updateLayerPanelVisibility();
 if (layerPanel) layerPanel.hidden = false;
+/* 初期ローディング画面を閉じる (全リソース読み込み後) */
+(function hideInitLoader() {
+  const il = document.getElementById('initLoader');
+  if (!il) return;
+  const close = () => { il.classList.add('hide'); setTimeout(() => { il.style.display = 'none'; }, 450); };
+  if (document.readyState === 'complete') setTimeout(close, 400);
+  else window.addEventListener('load', () => setTimeout(close, 400));
+  // 保険: 5秒後には必ず閉じる
+  setTimeout(close, 5000);
+})();
 updateToolBtns();
 updateBrightnessGauge();
 updateSimplifyGauge();
@@ -12939,6 +12985,51 @@ updateSidebarTop3();
 /* ===== ファイル入力ラベルへの D&D 適用 ===== */
 // 読み込み君 (footer)
 makeDroppable(document.getElementById('loadKun'), f => loadAnyFile(f));
+
+/* ドロップくん: Document Picture-in-Picture で常に最前面の小窓を出し、
+   ファイルをドロップしてメインに読み込む */
+(function setupDropKun() {
+  const btn = document.getElementById('dropKun');
+  if (!btn) return;
+  let pipWin = null;
+  btn.addEventListener('click', async () => {
+    if (!('documentPictureInPicture' in window)) {
+      showToast('この機能は対応ブラウザ(Chrome/Edge)でのみ使えます');
+      return;
+    }
+    try {
+      pipWin = await window.documentPictureInPicture.requestWindow({ width: 280, height: 200 });
+      const d = pipWin.document;
+      d.body.style.cssText = 'margin:0;font-family:system-ui,sans-serif;background:#eaf4f8;height:100vh;display:flex;align-items:center;justify-content:center;';
+      const zone = d.createElement('div');
+      zone.style.cssText = 'width:90%;height:80%;border:3px dashed #5b9cb8;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#4a8aa3;font-weight:700;text-align:center;cursor:pointer;background:rgba(255,255,255,0.6);';
+      zone.innerHTML = '<div style="font-size:34px">⬇</div><div style="font-size:13px">画像をここに<br>ドロップ</div><div style="font-size:10px;opacity:0.7">クリックで選択も可</div>';
+      d.body.appendChild(zone);
+      const handleFiles = async (files) => {
+        if (!files || !files.length) return;
+        await loadAnyFile(files[0]);
+        // メインを前面化、小窓を閉じる
+        try { window.focus(); } catch (e) {}
+        if (pipWin) { pipWin.close(); pipWin = null; }
+      };
+      ['dragover', 'dragenter'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.style.background = 'rgba(91,156,184,0.25)'; }));
+      ['dragleave', 'dragend'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.style.background = 'rgba(255,255,255,0.6)'; }));
+      zone.addEventListener('drop', e => { e.preventDefault(); handleFiles(e.dataTransfer.files); });
+      // クリックでファイル選択
+      zone.addEventListener('click', () => {
+        const inp = d.createElement('input');
+        inp.type = 'file';
+        inp.accept = 'image/*,video/*,.gif';
+        inp.addEventListener('change', () => handleFiles(inp.files));
+        inp.click();
+      });
+      pipWin.addEventListener('pagehide', () => { pipWin = null; });
+    } catch (e) {
+      console.warn('PiP failed:', e);
+      showToast('小窓を開けませんでした');
+    }
+  });
+})();
 
 /* PWA File Handlers: タスクバーのアプリアイコンにファイルをドロップして起動した時、
    そのファイルを自動で読み込む (Chromium系のみ) */

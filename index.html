@@ -35,7 +35,7 @@
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"%E4%BE%BF%E5%88%A9%E3%81%8F%E3%82%93","short_name":"%E4%BE%BF%E5%88%A9%E3%81%8F%E3%82%93","display":"standalone","start_url":".","scope":".","background_color":"%23f5f8fa","theme_color":"%235b9cb8","icons":[{"src":"icon.png","sizes":"192x192","type":"image/png"},{"src":"icon.png","sizes":"512x512","type":"image/png"}],"launch_handler":{"client_mode":["navigate-existing","auto"]},"file_handlers":[{"action":".","accept":{"image/*":[".png",".jpg",".jpeg",".gif",".webp"],"video/*":[".mp4",".webm",".mov",".m4v",".avi",".mkv",".ogv"]}}]}'>
 <!-- X (Twitter) ウィジェット (セットアップカードの動画埋め込み) -->
-<script async src="" id="twitterWidgetsScript" data-src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<script async src="https://platform.twitter.com/widgets.js" id="twitterWidgetsScript" charset="utf-8"></script>
 
 <!-- ===== 構造化データ (JSON-LD): GoogleがWebアプリと認識しやすくする ===== -->
 <script type="application/ld+json">
@@ -619,6 +619,11 @@ header.info > .file-info { order: 91; }
 .save-menu button:hover { background: #f3eef1; }
 .save-menu button.active { color: var(--accent); font-weight: 700; }
 .save-overwrite { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-bottom: 1px solid var(--line-soft); font-size: 11px; cursor: pointer; }
+.save-dir-row { padding: 8px 14px; border-bottom: 1px solid var(--line-soft); }
+.save-dir-btn { display: block; width: 100%; text-align: left; border: 1px dashed var(--line); border-radius: 8px; background: #fafcfd; padding: 7px 10px; font-size: 11px; color: var(--fg-muted); cursor: pointer; }
+.save-dir-btn:hover { color: var(--accent); border-color: var(--accent); }
+.save-dir-name { margin-top: 5px; font-size: 10px; color: var(--accent); }
+.save-dir-name[hidden] { display: none; }
 .save-success {
   position: fixed; left: 50%; top: 50%; transform: translate(-50%,-50%);
   z-index: 90; background: rgba(15,40,70,0.92); color: #fff;
@@ -3106,8 +3111,9 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 /* ===== Welcome card sizing (3 steps) ===== */
 .welcome-card { max-width: 520px; }
 /* セットアップ用 2カード並び */
-.welcome-pair { display: flex; gap: 18px; align-items: flex-start; max-width: 95vw; flex-wrap: wrap; justify-content: center; }
-.setup-card { max-width: 360px; min-width: 280px; position: relative; }
+.welcome-pair { display: flex; gap: 14px; align-items: flex-start; max-width: 96vw; flex-wrap: nowrap; justify-content: center; overflow-x: auto; }
+.welcome-pair > .welcome-card { flex: 1 1 0; min-width: 0; max-width: 340px; }
+.setup-card { min-width: 240px; max-width: 340px; position: relative; }
 .setup-stage { display: flex; flex-direction: column; gap: 12px; }
 .setup-stage[hidden] { display: none; }
 .setup-video {
@@ -4011,6 +4017,10 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       </div>
       <div class="save-menu" id="saveMenu" hidden>
         <label class="save-overwrite"><input type="checkbox" id="saveOverwrite"><span>元の画像に上書き保存</span></label>
+        <div class="save-dir-row">
+          <button type="button" id="saveDirBtn" class="save-dir-btn">📁 保存先フォルダを選ぶ</button>
+          <div class="save-dir-name" id="saveDirName" hidden></div>
+        </div>
         <button type="button" data-mode="normal" class="active">通常</button>
         <button type="button" data-mode="light">軽量化(画像→1枚GIF)</button>
       </div>
@@ -4203,18 +4213,18 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <div class="setup-stage" data-stage="1">
         <h3>はじめに</h3>
         <div class="setup-video" id="setupVid1" data-tweet="2061084908777554126">
-          <button class="setup-video-play" type="button" aria-label="動画を再生">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="44" height="44"><path d="M8 5v14l11-7z"/></svg>
-          </button>
+          <blockquote class="twitter-tweet" data-conversation="none" data-dnt="true">
+            <a href="https://x.com/zzcafe_280/status/2061084908777554126"></a>
+          </blockquote>
         </div>
         <button type="button" class="welcome-more-btn primary" id="setupNext">セットアップ</button>
       </div>
       <div class="setup-stage" data-stage="2" hidden>
         <h3>必要な機能</h3>
         <div class="setup-video" id="setupVid2" data-tweet="2061084908777554126">
-          <button class="setup-video-play" type="button" aria-label="動画を再生">
-            <svg viewBox="0 0 24 24" fill="currentColor" width="44" height="44"><path d="M8 5v14l11-7z"/></svg>
-          </button>
+          <blockquote class="twitter-tweet" data-conversation="none" data-dnt="true">
+            <a href="https://x.com/zzcafe_280/status/2061084908777554126"></a>
+          </blockquote>
         </div>
         <ul class="setup-list">
           <li>① アプリ化</li>
@@ -5726,9 +5736,31 @@ const saveBtn = document.getElementById('save');
   menu.addEventListener('click', e => e.stopPropagation());
   const ow = document.getElementById('saveOverwrite');
   if (ow) {
-    ow.checked = !!state.saveOverwrite;  // 初期化時に復元
+    ow.checked = !!state.saveOverwrite;
     ow.addEventListener('change', () => { state.saveOverwrite = ow.checked; persistSaveSettings(); });
   }
+  /* 保存先フォルダ選択 */
+  const sdb = document.getElementById('saveDirBtn');
+  const sdn = document.getElementById('saveDirName');
+  function refreshSaveDirUI() {
+    if (sdn) {
+      if (state.saveDirName) { sdn.hidden = false; sdn.textContent = '📂 ' + state.saveDirName + (state.saveDirHandle ? '' : ' (再選択が必要)'); }
+      else { sdn.hidden = true; sdn.textContent = ''; }
+    }
+  }
+  refreshSaveDirUI();
+  if (sdb) sdb.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (!('showDirectoryPicker' in window)) { showToast('このブラウザはフォルダ選択非対応'); return; }
+    try {
+      const handle = await window.showDirectoryPicker({ id: 'benri-save', mode: 'readwrite', startIn: 'documents' });
+      state.saveDirHandle = handle;
+      state.saveDirName = handle.name;
+      persistSaveSettings();
+      refreshSaveDirUI();
+      showToast('保存先: ' + handle.name);
+    } catch (err) { if (err.name !== 'AbortError') console.warn(err); }
+  });
   menu.querySelectorAll('button').forEach(b => {
     b.addEventListener('click', () => {
       state.saveMode = b.dataset.mode;
@@ -5808,32 +5840,11 @@ const welcomeMoreBtn = document.getElementById('welcomeMoreBtn');
     card.querySelectorAll('.setup-stage').forEach(s => {
       s.hidden = (Number(s.dataset.stage) !== n);
     });
+    // Twitter widget の再描画 (stage 切替で再表示時)
+    if (window.twttr && window.twttr.widgets && typeof window.twttr.widgets.load === 'function') {
+      try { window.twttr.widgets.load(card); } catch (e) {}
+    }
   };
-  /* 動画プレースホルダー(再生ボタン)をクリック → Twitter widget を遅延ロード */
-  function loadTweetInto(vidEl) {
-    if (!vidEl || vidEl.classList.contains('loaded')) return;
-    vidEl.classList.add('loaded');
-    const tweetId = vidEl.dataset.tweet;
-    // blockquote 形式で挿入し、widgets.js を呼ぶ
-    const bq = document.createElement('blockquote');
-    bq.className = 'twitter-tweet';
-    bq.setAttribute('data-conversation', 'none');
-    bq.setAttribute('data-dnt', 'true');
-    bq.innerHTML = `<a href="https://x.com/zzcafe_280/status/${tweetId}"></a>`;
-    vidEl.appendChild(bq);
-    // widgets.js を src 注入(初回のみ)
-    const scr = document.getElementById('twitterWidgetsScript');
-    if (scr && !scr.src && scr.dataset.src) scr.src = scr.dataset.src;
-    const tryRender = () => {
-      if (window.twttr && window.twttr.widgets) {
-        try { window.twttr.widgets.load(vidEl); } catch (e) {}
-      } else setTimeout(tryRender, 200);
-    };
-    tryRender();
-  }
-  card.querySelectorAll('.setup-video-play').forEach(btn => {
-    btn.addEventListener('click', () => loadTweetInto(btn.closest('.setup-video')));
-  });
   const next = document.getElementById('setupNext');
   if (next) next.addEventListener('click', () => setStage(2));
   const back = document.getElementById('setupBack');
@@ -6139,8 +6150,8 @@ function renderCategoriesInto(root) {
         const nav = document.getElementById('categories');
         if (!wasOpen) {
           w.classList.add('open');
-          nav.querySelectorAll(':scope > .category, :scope > .pinned-category').forEach(c => {
-            if (c !== w) c.classList.add('cat-hidden');
+          nav.querySelectorAll(':scope > .category').forEach(c => {
+            if (c !== w && !c.classList.contains('pinned-category')) c.classList.add('cat-hidden');
           });
         } else {
           w.classList.remove('open');
@@ -6164,17 +6175,20 @@ function renderCategoriesInto(root) {
       const wasOpen = w.classList.contains('open');
       const nav = document.getElementById('categories');
       if (!wasOpen) {
-        // 開く: 他のカテゴリを一時非表示
         w.classList.add('open');
-        nav.querySelectorAll(':scope > .category, :scope > .pinned-category').forEach(c => {
-          if (c !== w) c.classList.add('cat-hidden');
+        // 他のカテゴリのみ非表示(お気に入りは対象外)
+        nav.querySelectorAll(':scope > .category').forEach(c => {
+          if (c !== w && !c.classList.contains('pinned-category')) c.classList.add('cat-hidden');
         });
       } else {
-        // 閉じる: 他を再表示
         w.classList.remove('open');
         nav.querySelectorAll('.cat-hidden').forEach(c => c.classList.remove('cat-hidden'));
       }
     });
+    const items = document.createElement('div');
+    items.className = 'items';
+    cat.items.forEach(it => items.appendChild(buildItemRow(it)));
+    w.appendChild(h); w.appendChild(items);
     root.appendChild(w);
   });
 }
@@ -8388,6 +8402,50 @@ layerPanelToggle.addEventListener('click', () => {
   layerPanel.classList.toggle('collapsed');
   try { localStorage.setItem('benri.layerCollapsed', layerPanel.classList.contains('collapsed') ? '1' : '0'); } catch (e) {}
 });
+/* レイヤーパネル全体をタイトル行のドラッグで移動 (位置を localStorage に保存) */
+(function makeLayerPanelDraggable() {
+  const titleRow = layerPanel.querySelector('.lp-title-row');
+  if (!titleRow) return;
+  let dx = 0, dy = 0, sx = 0, sy = 0, pid = null;
+  // 復元
+  try {
+    const pos = JSON.parse(localStorage.getItem('benri.layerPanelPos') || 'null');
+    if (pos && typeof pos.x === 'number') {
+      layerPanel.style.position = 'fixed';
+      layerPanel.style.left = pos.x + 'px';
+      layerPanel.style.top = pos.y + 'px';
+      layerPanel.style.right = 'auto'; layerPanel.style.bottom = 'auto';
+    }
+  } catch (e) {}
+  titleRow.style.cursor = 'grab';
+  titleRow.addEventListener('pointerdown', ev => {
+    if (ev.target.closest('.lp-add, .lp-toggle, .lp-vis, .lp-edit, .lp-dup, .lp-grip, .lp-obj-del, button, input, label')) return;
+    pid = ev.pointerId; sx = ev.clientX; sy = ev.clientY;
+    const r = layerPanel.getBoundingClientRect();
+    dx = r.left; dy = r.top;
+    layerPanel.style.position = 'fixed';
+    layerPanel.style.right = 'auto'; layerPanel.style.bottom = 'auto';
+    titleRow.style.cursor = 'grabbing';
+    try { titleRow.setPointerCapture(pid); } catch (e) {}
+    ev.preventDefault();
+  });
+  titleRow.addEventListener('pointermove', ev => {
+    if (pid === null || ev.pointerId !== pid) return;
+    const nx = dx + (ev.clientX - sx);
+    const ny = dy + (ev.clientY - sy);
+    layerPanel.style.left = nx + 'px';
+    layerPanel.style.top = ny + 'px';
+  });
+  const end = ev => {
+    if (pid === null) return;
+    pid = null; titleRow.style.cursor = 'grab';
+    try {
+      localStorage.setItem('benri.layerPanelPos', JSON.stringify({ x: parseInt(layerPanel.style.left), y: parseInt(layerPanel.style.top) }));
+    } catch (e) {}
+  };
+  titleRow.addEventListener('pointerup', end);
+  titleRow.addEventListener('pointercancel', end);
+})();
 lpBgTransparent.addEventListener('click', () => {
   state.bgMode = 'transparent';
   renderLayerPanel();
@@ -12189,7 +12247,22 @@ function buildBaseName() {
   return sanitize(state.ratio.name) + todayMMDD();
 }
 async function download(blob, filename) {
-  // 上書き保存:
+  // (0) 保存先フォルダが選ばれていれば、そのフォルダに直接書き出す (上書き保存と独立)
+  if (state.saveDirHandle) {
+    try {
+      const perm = await state.saveDirHandle.requestPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        const targetName = (state.saveOverwrite && state._origFileName) ? state._origFileName : filename;
+        const fh = await state.saveDirHandle.getFileHandle(targetName, { create: true });
+        const writable = await fh.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        if (typeof showSaveSuccess === 'function') showSaveSuccess(blob.size, state.fileSize || null);
+        return;
+      }
+    } catch (e) { console.warn('saveDir write failed:', e); }
+  }
+  // (1) 上書き保存:
   // (a) launchQueue 経由で handle がある場合 → 元ファイル自体を書き換え
   // (b) handle がない場合 → showSaveFilePicker で場所選択 (元ファイル名で提示)
   if (state.saveOverwrite) {
@@ -12246,17 +12319,20 @@ function fastYield() {
 /* 部屋サムネくん 専用保存: サムネ枠の中身を直接 PNG/GIF で書き出す */
 state.saveMode = 'normal'; // 'normal' | 'light'
 state.saveOverwrite = false; // 元画像と同名で保存
+state.saveDirHandle = null;  // 保存先フォルダ (Chromium) ※ハンドルは再読込でリセット
+state.saveDirName = null;    // 表示用のフォルダ名
 state._origFileName = null;
 /* 保存設定の永続化 (localStorage) */
 try {
   const saved = JSON.parse(localStorage.getItem('benri.saveSettings') || '{}');
   if (saved.saveMode === 'normal' || saved.saveMode === 'light') state.saveMode = saved.saveMode;
   if (typeof saved.saveOverwrite === 'boolean') state.saveOverwrite = saved.saveOverwrite;
+  if (typeof saved.saveDirName === 'string') state.saveDirName = saved.saveDirName;
 } catch (e) {}
 function persistSaveSettings() {
   try {
     localStorage.setItem('benri.saveSettings', JSON.stringify({
-      saveMode: state.saveMode, saveOverwrite: state.saveOverwrite,
+      saveMode: state.saveMode, saveOverwrite: state.saveOverwrite, saveDirName: state.saveDirName,
     }));
   } catch (e) {}
 }

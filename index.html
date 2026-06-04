@@ -920,6 +920,15 @@ body.thumb-mode #shrink { display: none !important; }
 }
 .pc-mask-toggle:hover { border-color: var(--accent); color: var(--accent); }
 .pc-mask-toggle.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+/* 比率固定切替の●: 水色=自由, 白=固定 */
+.aspect-dot {
+  display: inline-block; width: 11px; height: 11px; border-radius: 50%;
+  background: var(--accent); border: 1px solid var(--accent);
+  transition: background 0.15s, box-shadow 0.15s;
+  margin-right: 4px; vertical-align: middle;
+}
+.tt-btn.fixed .aspect-dot { background: #fff; box-shadow: 0 0 0 2px rgba(91,156,184,0.25); }
+.tt-btn.tt-icon { display: inline-flex; align-items: center; gap: 4px; }
 .pc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
 .pc-title { font-weight: 700; font-size: 15px; color: #fff; }
 .pc-section-label { font-size: 13px; color: #d4d4d8; font-weight: 600; margin-bottom: 10px; }
@@ -3562,7 +3571,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   <div id="previewCard" class="preview-card" hidden>
     <div class="pc-head">
       <span class="pc-title">✦ Multiplayer Room</span>
-      <button id="previewMaskToggle" class="pc-mask-toggle" type="button" title="範囲外を白く隠す">影なし</button>
+      <button id="previewMaskToggle" class="pc-mask-toggle" type="button" title="範囲外を白で不透明に">プレビュー</button>
       <button id="previewClose" class="pc-close" aria-label="閉じる">×</button>
     </div>
     <div class="pc-section-label">New Rooms</div>
@@ -3607,10 +3616,15 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         <input type="color" id="thumbBgColor" value="#2a2b31">
       </label>
       <button class="tt-btn" id="thumbGuideBtn" type="button" title="作り方ガイド">ガイド</button>
-      <button class="tt-btn" id="thumbAspectBtn" type="button" title="変形のしかた">
+      <button class="tt-btn tt-icon" id="thumbAspectBtn" type="button" title="比率固定の切替">
+        <span class="aspect-dot" id="thumbAspectDot"></span>
         <span id="thumbAspectLabel">自由</span>
       </button>
-      <button class="tt-btn" id="thumbFitBtn" type="button" title="枠に合わせる">フィット</button>
+      <button class="tt-btn tt-icon" id="thumbFitBtn" type="button" title="枠にフィット (再押下で元に戻る)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="3 2">
+          <rect x="3" y="3" width="18" height="18" rx="1"/>
+        </svg>
+      </button>
     </div>
     <div class="empty-msg" id="emptyMsg">ここに画像・GIFをドロップ</div>
     <div class="loading-overlay" id="loadingOverlay" hidden>
@@ -6446,6 +6460,44 @@ function drawThumbMode() {
       ctx.stroke();
     }
   }
+  // ぼかしの参考円 + 右の■ハンドル (選択中レイヤーにぼかしが効いてる場合)
+  if (state.thumbMode && !state._exporting) {
+    const selArr = state.selectedLayers ? [...state.selectedLayers] : [];
+    for (const si of selArr) {
+      const L = state.layers[si];
+      if (!L || !L.blur || !L.blur.on) continue;
+      const b = L.blur;
+      const cx = b.cxr * state.canvasW;
+      const cy = b.cyr * state.canvasH;
+      const W = state.canvasW, H = state.canvasH;
+      const ratio = (b.ratio || 100) / 100;
+      const rad = (b.r / 100) * Math.max(W, H) * 0.7;
+      const rx = rad, ry = rad * ratio;
+      ctx.save();
+      // 参考円 (点線)
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = 'rgba(91,156,184,0.95)';
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+      // 中心ドット
+      ctx.setLineDash([]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(91,156,184,0.9)';
+      ctx.fill();
+      // 右の■ハンドル (半径調整用)
+      const hx = cx + rx, hy = cy;
+      const hs = 12;
+      ctx.fillStyle = '#fff';
+      ctx.strokeStyle = 'rgba(91,156,184,0.95)';
+      ctx.lineWidth = 1.6;
+      ctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs);
+      ctx.strokeRect(hx - hs / 2, hy - hs / 2, hs, hs);
+      ctx.restore();
+    }
+  }
   ctx.restore();
 }
 /* 画像の不透明部分を指定色で塗ったシルエットを返す (境界線用、キャッシュ) */
@@ -6764,7 +6816,7 @@ state.previewMaskWhite = false; // プレビュー範囲外を白不透明にす
   if (!btn) return;
   btn.addEventListener('click', () => {
     state.previewMaskWhite = !state.previewMaskWhite;
-    btn.textContent = state.previewMaskWhite ? '解除' : '影なし';
+    btn.textContent = state.previewMaskWhite ? '解除' : 'プレビュー';
     btn.classList.toggle('active', state.previewMaskWhite);
     if (typeof draw === 'function') draw();
   });
@@ -7408,6 +7460,8 @@ if (thumbKunBtnEl) {
 })();
 function thumbKunEnter() {
   {
+    const _firstEnter = !state._thumbEnteredOnce;
+    state._thumbEnteredOnce = true;
     state.thumbMode = !state.thumbMode;
     document.body.classList.toggle('thumb-mode', state.thumbMode);
     thumbKunBtnEl.classList.toggle('active', state.thumbMode);
@@ -7449,6 +7503,16 @@ function thumbKunEnter() {
       draw();
       showToast('サムネメイカー: 自由加工モード');
       (function(){ const w = document.getElementById('wipNotice'); if (w) { w.classList.add('show'); setTimeout(()=>w.classList.remove('show'), 1400); } })();
+      if (_firstEnter && typeof showIconBubble === 'function') {
+        setTimeout(() => {
+          const ab = document.getElementById('thumbAspectBtn');
+          if (ab) showIconBubble(ab, '水色●で比率自由 / 白●で比率固定');
+        }, 700);
+        setTimeout(() => {
+          const fb = document.getElementById('thumbFitBtn');
+          if (fb) showIconBubble(fb, '点線の枠タップでフィット / もう一度で元に戻る');
+        }, 2800);
+      }
     } else {
       updateLayerPanelVisibility();
       showToast('通常モードに戻りました');
@@ -8356,6 +8420,32 @@ canvas.addEventListener('pointerdown', e => {
   const hs = 16;
   const CW = state.canvasW, CH = state.canvasH;
   // ぼかし円の中心ドラッグ (ぼかし適用レイヤーがある時)
+  // ぼかし: 各レイヤーの blur の中心/右■ハンドルを当たり判定
+  {
+    const selArr = state.selectedLayers ? [...state.selectedLayers] : [];
+    for (const si of selArr) {
+      const L = state.layers[si];
+      if (!L || !L.blur || !L.blur.on) continue;
+      const b = L.blur;
+      const cx = b.cxr * CW, cy = b.cyr * CH;
+      const ratio = (b.ratio || 100) / 100;
+      const rad = (b.r / 100) * Math.max(CW, CH) * 0.7;
+      const rx = rad;
+      // 右■ハンドル: 半径ドラッグ
+      const hx = cx + rx, hy = cy;
+      if (Math.abs(x - hx) <= 10 && Math.abs(y - hy) <= 10) {
+        e.preventDefault(); canvas.setPointerCapture(e.pointerId);
+        state._thumbDrag = { mode: 'blurR', layerIdx: si, startX: x, startY: y, startR: b.r };
+        return;
+      }
+      // 中心ドラッグ
+      if (Math.hypot(x - cx, y - cy) <= 22) {
+        e.preventDefault(); canvas.setPointerCapture(e.pointerId);
+        state._thumbDrag = { mode: 'blurMove', layerIdx: si, startX: x, startY: y, startCxr: b.cxr, startCyr: b.cyr };
+        return;
+      }
+    }
+  }
   const hasBlur = state.layers.some(L => L.blur && L.blur.on);
   if (hasBlur && !document.getElementById('blurCard').hidden) {
     const bcx = state.thumbBlur.cxr * CW, bcy = state.thumbBlur.cyr * CH;
@@ -8435,6 +8525,30 @@ canvas.addEventListener('pointermove', e => {
   const x = ((e.clientX - r.left) / r.width) * state.canvasW;
   const y = ((e.clientY - r.top) / r.height) * state.canvasH;
   const d = state._thumbDrag;
+  if (d.mode === 'blurMove') {
+    const L = state.layers[d.layerIdx];
+    if (L && L.blur) {
+      L.blur.cxr = Math.max(0, Math.min(1, d.startCxr + (x - d.startX) / state.canvasW));
+      L.blur.cyr = Math.max(0, Math.min(1, d.startCyr + (y - d.startY) / state.canvasH));
+    }
+    draw();
+    return;
+  }
+  if (d.mode === 'blurR') {
+    const L = state.layers[d.layerIdx];
+    if (L && L.blur) {
+      const cx = L.blur.cxr * state.canvasW;
+      const cy = L.blur.cyr * state.canvasH;
+      const dist = Math.hypot(x - cx, y - cy);
+      const newR = (dist / (Math.max(state.canvasW, state.canvasH) * 0.7)) * 100;
+      L.blur.r = Math.max(5, Math.min(200, newR));
+      // UIのスライダーも追従
+      const sl = document.getElementById('blurStrengthR') || document.getElementById('blurR');
+      if (sl) sl.value = String(Math.round(L.blur.r));
+    }
+    draw();
+    return;
+  }
   if (d.mode === 'blur') {
     state.thumbBlur.cxr = Math.max(0, Math.min(1, d.startCxr + (x - d.startX) / state.canvasW));
     state.thumbBlur.cyr = Math.max(0, Math.min(1, d.startCyr + (y - d.startY) / state.canvasH));
@@ -10771,18 +10885,9 @@ const rmBarsPane = document.getElementById('rmBars');
 const rmBarsToggle = document.getElementById('rmBarsToggle');
 const rmBarsReset = document.getElementById('rmBarsReset');
 
-/* お部屋プレビューのクリック: サンプル点取得 */
+/* お部屋プレビューは編集中画像の表示のみ (クリック取得はしない) */
 if (rmSavePreviewCanvas) {
-  rmSavePreviewCanvas.style.cursor = 'crosshair';
-  rmSavePreviewCanvas.addEventListener('click', ev => {
-    if (!rmState.active || rmState.manualMode || !rmState.roomImg) return;
-    const r = rmSavePreviewCanvas.getBoundingClientRect();
-    const cx = (ev.clientX - r.left) / r.width;
-    const cy = (ev.clientY - r.top) / r.height;
-    rmState.sampleX = Math.max(0, Math.min(rmState.roomImg.naturalWidth - 1, Math.round(cx * rmState.roomImg.naturalWidth)));
-    rmState.sampleY = Math.max(0, Math.min(rmState.roomImg.naturalHeight - 1, Math.round(cy * rmState.roomImg.naturalHeight)));
-    rmAutoAdjustFromSample();
-  });
+  rmSavePreviewCanvas.style.cursor = 'default';
 }
 
 const rmState = {

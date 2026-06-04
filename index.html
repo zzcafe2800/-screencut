@@ -33,7 +33,7 @@
 <!-- ===== Favicon ===== -->
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
-<link rel="manifest" href="manifest.webmanifest">
+<link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"%E4%BE%BF%E5%88%A9%E3%81%8F%E3%82%93","short_name":"%E4%BE%BF%E5%88%A9%E3%81%8F%E3%82%93","display":"standalone","start_url":".","scope":".","background_color":"%23f5f8fa","theme_color":"%235b9cb8","icons":[{"src":"icon.png","sizes":"192x192","type":"image/png"},{"src":"icon.png","sizes":"512x512","type":"image/png"}],"launch_handler":{"client_mode":["navigate-existing","auto"]},"file_handlers":[{"action":".","accept":{"image/*":[".png",".jpg",".jpeg",".gif",".webp"],"video/*":[".mp4",".webm",".mov",".m4v",".avi",".mkv",".ogv"]}}]}'>
 <!-- X (Twitter) ウィジェット (セットアップカードの動画埋め込み) -->
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
@@ -542,6 +542,8 @@ header.info {
 .btn-thumbkun:hover { background: #fff; border-color: #d669a0; color: #d669a0; box-shadow: 0 4px 16px rgba(214,105,160,0.28); transform: translateY(-1px); }
 .btn-thumbkun { transition: box-shadow 0.15s, transform 0.15s, background 0.15s; }
 .btn-thumbkun.active { background: #d669a0; color: #fff; border-color: #d669a0; }
+/* サムネメイカーは画像が読み込まれるまで非表示 */
+body:not(.has-image) #thumbKun { display: none !important; }
 .btn-thumbkun::before {
   content: ''; position: absolute; left: -10px; right: -10px; top: -10px; bottom: -10px;
   background: radial-gradient(ellipse at center, rgba(255,255,255,0.92) 42%, rgba(255,255,255,0) 76%);
@@ -5818,6 +5820,12 @@ const welcomeMoreBtn = document.getElementById('welcomeMoreBtn');
     if (_deferredPrompt) {
       try { _deferredPrompt.prompt(); await _deferredPrompt.userChoice; } catch (e) {}
       _deferredPrompt = null;
+    } else {
+      // インストールプロンプトが未取得の場合: 手動手順を案内
+      const noticeBody = card.querySelector('.setup-notice-body');
+      const noticeTitle = card.querySelector('.setup-notice-title');
+      if (noticeTitle) noticeTitle.textContent = '手動でインストール:';
+      if (noticeBody) noticeBody.innerHTML = 'ブラウザの<b>アドレスバー右の「⇩」</b>または<br><b>メニュー → アプリとしてインストール</b><br>を選んでください';
     }
     // ステージ3で画面タップで戻る
     setTimeout(() => {
@@ -7444,7 +7452,14 @@ if (thumbKunBtnEl) {
     // ロック維持のまま、プレビューカードだけ最前面に表示
     document.body.classList.add('devlock-preview-on');
     const pc = document.getElementById('previewCard');
-    if (pc) { pc.hidden = false; }
+    if (pc) {
+      // ぼかしの親(main)から外し、body直下に移して filter の影響を受けないように
+      if (pc.parentNode && pc.parentNode !== document.body) {
+        pc.dataset._origParent = '1';
+        document.body.appendChild(pc);
+      }
+      pc.hidden = false;
+    }
     // 既存のプレビューレンダリングを呼ぶ
     if (typeof renderPreviewCard === 'function') renderPreviewCard();
   });

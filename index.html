@@ -683,6 +683,44 @@ header.info > .file-info { order: 91; }
 }
 .btn-dropkun { background: #fff !important; color: var(--accent) !important; border: 1.5px solid var(--accent) !important; font-weight: 700; }
 .btn-dropkun:hover { background: var(--accent) !important; color: #fff !important; }
+/* 設定パネル */
+.settings-gear {
+  position: fixed; right: 14px; top: 50%; transform: translateY(-50%);
+  z-index: 45; width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--line); background: #fff; color: var(--fg-muted);
+  cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+  display: flex; align-items: center; justify-content: center;
+}
+.settings-gear:hover { color: var(--accent); border-color: var(--accent); }
+.settings-panel {
+  position: fixed; right: 0; top: 0; height: 100%; width: 300px; max-width: 86vw;
+  z-index: 55; background: #fff; box-shadow: -8px 0 30px rgba(0,0,0,0.18);
+  display: flex; flex-direction: column; transform: translateX(0); transition: transform 0.25s;
+}
+.settings-panel[hidden] { display: none; }
+.settings-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--line); font-weight: 700; }
+.settings-head button { border: none; background: transparent; font-size: 22px; cursor: pointer; color: var(--fg-muted); }
+.settings-body { padding: 18px; overflow-y: auto; display: flex; flex-direction: column; gap: 22px; }
+.settings-section { display: flex; flex-direction: column; gap: 8px; }
+.settings-label { font-size: 13px; font-weight: 700; color: var(--fg); }
+.settings-input { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 13px; text-align: center; cursor: pointer; background: #fafcfd; }
+.settings-input:focus { outline: 2px solid var(--accent); }
+.settings-hint { font-size: 11px; color: var(--fg-muted); line-height: 1.5; }
+.settings-check { display: flex; align-items: flex-start; gap: 8px; font-size: 12.5px; cursor: pointer; }
+.auto-drop-switch {
+  position: fixed; inset: 0; z-index: 150; background: rgba(174,221,240,0.35);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  backdrop-filter: blur(1px);
+}
+.auto-drop-switch[hidden] { display: none; }
+.ads-text { background: rgba(255,255,255,0.9); padding: 14px 28px; border-radius: 999px; font-size: 15px; font-weight: 700; color: #4a8aa3; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+.opfs-list { display: flex; flex-direction: column; gap: 6px; margin-top: 4px; }
+.opfs-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #f5f8fa; border-radius: 8px; font-size: 11px; }
+.opfs-item .opfs-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.opfs-item button { border: none; background: transparent; cursor: pointer; font-size: 12px; padding: 2px 6px; border-radius: 6px; }
+.opfs-item .opfs-dl { color: var(--accent); }
+.opfs-item .opfs-del { color: #d24a4a; }
+.opfs-empty { font-size: 11px; color: var(--fg-faint); padding: 6px; }
 /* thumb-mode: アイテム比サイドバーを隠してアイテムパネルを出す */
 body.thumb-mode #categories,
 body.thumb-mode #sidebarTop3,
@@ -3625,7 +3663,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   <div id="previewCard" class="preview-card" hidden>
     <div class="pc-head">
       <span class="pc-title">✦ Multiplayer Room</span>
-      <button id="previewMaskToggle" class="pc-mask-toggle" type="button" title="範囲外を白で不透明に">プレビュー</button>
       <button id="previewClose" class="pc-close" aria-label="閉じる">×</button>
     </div>
     <div class="pc-section-label">New Rooms</div>
@@ -3664,6 +3701,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         </svg>
         <span>プレビュー</span>
       </button>
+      <button class="tt-btn" id="previewMaskToggle" type="button" title="範囲外を白で不透明に">影なし</button>
       <label class="tt-btn tt-color" title="背景色">
         <span class="tt-color-swatch" id="thumbBgSwatch"></span>
         <span>背景</span>
@@ -4100,6 +4138,32 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
     </div>
   </footer>
 </main>
+
+<!-- 設定パネル (右サイド) -->
+<button id="settingsBtn" class="settings-gear" type="button" title="設定" aria-label="設定">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+</button>
+<div id="settingsPanel" class="settings-panel" hidden>
+  <div class="settings-head"><span>設定</span><button id="settingsClose" type="button" aria-label="閉じる">×</button></div>
+  <div class="settings-body">
+    <div class="settings-section">
+      <div class="settings-label">ドロップくんのショートカットキー</div>
+      <input type="text" id="dropShortcutInput" class="settings-input" placeholder="ここをクリックしてキーを押す" readonly>
+      <div class="settings-hint" id="dropShortcutHint"></div>
+    </div>
+    <div class="settings-section">
+      <label class="settings-check"><input type="checkbox" id="autoDropChk"> サイトを開くと同時に自動でドロップを開く</label>
+      <div class="settings-hint">起動直後の画面を1クリックすると小窓が開きます</div>
+    </div>
+    <div class="settings-section">
+      <div class="settings-label">上書き保存したファイル (OPFS)</div>
+      <div class="settings-hint">「元の画像に上書き保存」はブラウザ内のOPFSに保存されます。ここから取り出せます。</div>
+      <div id="opfsList" class="opfs-list"></div>
+    </div>
+  </div>
+</div>
+<!-- 自動ドロップ起動用スイッチ画面 -->
+<div id="autoDropSwitch" class="auto-drop-switch" hidden><div class="ads-text">画面をクリックで開始</div></div>
 
 <!-- 開発中ロック (body直下・ぼかしの上に表示) -->
 <div class="devlock-ov" id="devLockOv" hidden>
@@ -6128,23 +6192,47 @@ function itemKey(it) { return it.name + '|' + it.w + 'x' + it.h; }
 function isPinned(it) {
   return state.pinnedKeys && state.pinnedKeys.has(itemKey(it));
 }
+function persistPins() {
+  const arr = [...state.pinnedKeys];
+  try { localStorage.setItem('pinnedKeys', JSON.stringify(arr)); } catch {}
+  // OPFS にも保存 (永続)
+  try {
+    if (typeof opfsSave === 'function') {
+      opfsSave('favorites.json', new Blob([JSON.stringify(arr)], { type: 'application/json' }));
+    }
+  } catch (e) {}
+}
 function togglePin(it, ev) {
   if (ev) { ev.stopPropagation(); }
   if (!state.pinnedKeys) state.pinnedKeys = new Set();
   const k = itemKey(it);
   if (state.pinnedKeys.has(k)) state.pinnedKeys.delete(k);
   else state.pinnedKeys.add(k);
-  // 永続化
-  try { localStorage.setItem('pinnedKeys', JSON.stringify([...state.pinnedKeys])); } catch {}
+  persistPins();
   // 再レンダ
   const cats = document.getElementById('categories');
   if (cats) { cats.dataset.rendered = ''; renderCategoriesInto(cats); }
 }
-// 起動時にロード
+// 起動時にロード: まず localStorage (即時)、その後 OPFS から上書き (非同期)
 try {
   const saved = JSON.parse(localStorage.getItem('pinnedKeys') || '[]');
   state.pinnedKeys = new Set(saved);
 } catch { state.pinnedKeys = new Set(); }
+(async function loadPinsFromOPFS() {
+  try {
+    if (typeof opfsGetBlob !== 'function') return;
+    const blob = await opfsGetBlob('favorites.json');
+    if (!blob) return;
+    const txt = await blob.text();
+    const arr = JSON.parse(txt);
+    if (Array.isArray(arr)) {
+      state.pinnedKeys = new Set(arr);
+      try { localStorage.setItem('pinnedKeys', JSON.stringify(arr)); } catch {}
+      const cats = document.getElementById('categories');
+      if (cats) { cats.dataset.rendered = ''; renderCategoriesInto(cats); }
+    }
+  } catch (e) {}
+})();
 
 function buildItemRow(it) {
   const el = document.createElement('div');
@@ -9667,7 +9755,7 @@ function updateEmpty() {
   if (cw) cw.classList.toggle('empty-pulse', !state.loaded && !state.thumbMode);
 }
 function updateSaveBtn() {
-  const enabled = state.loaded && (state.ratio || state.thumbMode);
+  const enabled = state.loaded; // 比率未選択でも保存可(現状のまま1枚保存)
   // アイテム比未選択(通常モードで比率なし)ならカテゴリを強調
   const cats = document.getElementById('categories');
   if (cats) cats.classList.toggle('needs-pick', !state.thumbMode && !state.ratio);
@@ -12282,8 +12370,72 @@ function buildBaseName() {
   if (state.thumbMode || !state.ratio) return 'thumb' + todayMMDD();
   return sanitize(state.ratio.name) + todayMMDD();
 }
+/* ===== OPFS (Origin Private File System) ヘルパー ===== */
+async function opfsRoot() {
+  if (!navigator.storage || !navigator.storage.getDirectory) return null;
+  try { return await navigator.storage.getDirectory(); } catch (e) { return null; }
+}
+async function opfsSave(name, blob) {
+  const root = await opfsRoot(); if (!root) return false;
+  try {
+    const fh = await root.getFileHandle(name, { create: true });
+    const w = await fh.createWritable();
+    await w.write(blob); await w.close();
+    return true;
+  } catch (e) { console.warn('opfsSave failed:', e); return false; }
+}
+async function opfsList() {
+  const root = await opfsRoot(); if (!root) return [];
+  const out = [];
+  try { for await (const [name, h] of root.entries()) { if (h.kind === 'file') out.push(name); } } catch (e) {}
+  return out;
+}
+async function opfsGetBlob(name) {
+  const root = await opfsRoot(); if (!root) return null;
+  try { const fh = await root.getFileHandle(name); return await fh.getFile(); } catch (e) { return null; }
+}
+async function opfsDelete(name) {
+  const root = await opfsRoot(); if (!root) return;
+  try { await root.removeEntry(name); } catch (e) {}
+}
+/* 設定パネルの OPFS 一覧を更新 */
+async function refreshOpfsList() {
+  const el = document.getElementById('opfsList');
+  if (!el) return;
+  const names = await opfsList();
+  el.innerHTML = '';
+  if (!names.length) { el.innerHTML = '<div class="opfs-empty">保存されたファイルはありません</div>'; return; }
+  names.forEach(name => {
+    const row = document.createElement('div'); row.className = 'opfs-item';
+    const nm = document.createElement('span'); nm.className = 'opfs-name'; nm.textContent = name;
+    const dl = document.createElement('button'); dl.className = 'opfs-dl'; dl.textContent = '⬇'; dl.title = '取り出す';
+    dl.addEventListener('click', async () => {
+      const blob = await opfsGetBlob(name); if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = name;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+    const del = document.createElement('button'); del.className = 'opfs-del'; del.textContent = '×'; del.title = '削除';
+    del.addEventListener('click', async () => { await opfsDelete(name); refreshOpfsList(); });
+    row.appendChild(nm); row.appendChild(dl); row.appendChild(del);
+    el.appendChild(row);
+  });
+}
+
 async function download(blob, filename) {
-  // (0) 保存先フォルダが選ばれていれば、そのフォルダに直接書き出す (上書き保存と独立)
+  // (0) 上書き保存 ON → OPFS に元ファイル名で保存・更新 (パソコン内へは直接書かない)
+  if (state.saveOverwrite) {
+    const name = (state._origFileName) ? state._origFileName : filename;
+    const ok = await opfsSave(name, blob);
+    if (ok) {
+      if (typeof showSaveSuccess === 'function') showSaveSuccess(blob.size, state.fileSize || null);
+      if (typeof refreshOpfsList === 'function') refreshOpfsList();
+      showToast('OPFSに上書き保存しました: ' + name);
+      return;
+    }
+    // OPFS 非対応ならフォールバック(同名でダウンロード)
+  }
+  // (1) 保存先フォルダが選ばれていれば、そのフォルダに直接書き出す
   if (state.saveDirHandle) {
     try {
       const perm = await state.saveDirHandle.requestPermission({ mode: 'readwrite' });
@@ -12298,9 +12450,7 @@ async function download(blob, filename) {
       }
     } catch (e) { console.warn('saveDir write failed:', e); }
   }
-  // (1) 上書き保存:
-  // (a) launchQueue 経由で handle がある場合 → 元ファイル自体を書き換え
-  // (b) handle がない場合 → showSaveFilePicker で場所選択 (元ファイル名で提示)
+  // (2) 旧: handle / showSaveFilePicker (上書きON & OPFS失敗時の保険)
   if (state.saveOverwrite) {
     if (state._origFileHandle) {
       try {
@@ -12478,7 +12628,6 @@ async function save() {
   // 軽量化モード: 動くものがあれば不可、静止画なら1枚GIFで保存
   if (state.saveMode === 'light') {
     if (hasAnimatedContent()) { showToast('GIFのためこの保存方法はできません'); return; }
-    if (!state.ratio) return;
     saveBtn.disabled = true; const o = saveBtn.innerHTML;
     try {
       const comp = (state.layers.length >= 2) ? compositeAllLayers() : state.frames;
@@ -12487,7 +12636,25 @@ async function save() {
     finally { saveBtn.innerHTML = o; updateSaveBtn(); }
     return;
   }
-  if (!state.ratio) return;
+  // 比率(アイテム比)未選択 → 現在の状態(位置・サイズ)のまま全体を1枚保存
+  if (!state.ratio) {
+    saveBtn.disabled = true; const o = saveBtn.innerHTML;
+    try {
+      const comp = (state.layers.length >= 2) ? compositeAllLayers() : state.frames;
+      if (comp && comp.length > 1) {
+        // GIF
+        const W = comp[0].canvas.width, H = comp[0].canvas.height;
+        const framesData = comp.map(fr => ({ rgba: fr.canvas.getContext('2d').getImageData(0, 0, W, H).data, delay: fr.delay }));
+        const buf = await encodeAnimatedGIF(W, H, framesData, (c, t) => { saveBtn.innerHTML = `GIF ${c}/${t}`; });
+        await download(new Blob([buf], { type: 'image/gif' }), buildBaseName() + '.gif');
+      } else {
+        const blob = await new Promise(res => comp[0].canvas.toBlob(res, 'image/png'));
+        await download(blob, buildBaseName() + '.png');
+      }
+    } catch (e) { console.error(e); showToast('保存に失敗しました'); }
+    finally { saveBtn.innerHTML = o; updateSaveBtn(); }
+    return;
+  }
   const total = state.splitW * state.splitH;
   const baseName = buildBaseName();
   saveBtn.disabled = true;
@@ -13029,6 +13196,69 @@ makeDroppable(document.getElementById('loadKun'), f => loadAnyFile(f));
       showToast('小窓を開けませんでした');
     }
   });
+
+  /* 設定パネル: ショートカット & 自動起動 */
+  const sBtn = document.getElementById('settingsBtn');
+  const sPanel = document.getElementById('settingsPanel');
+  const sClose = document.getElementById('settingsClose');
+  const scInput = document.getElementById('dropShortcutInput');
+  const scHint = document.getElementById('dropShortcutHint');
+  const autoChk = document.getElementById('autoDropChk');
+  let dropShortcut = null;       // 例 {key:'d', ctrl:true, shift:false, alt:false}
+  let autoDrop = false;
+  // 復元
+  try {
+    const cfg = JSON.parse(localStorage.getItem('benri.dropSettings') || '{}');
+    if (cfg.shortcut) dropShortcut = cfg.shortcut;
+    if (typeof cfg.autoDrop === 'boolean') autoDrop = cfg.autoDrop;
+  } catch (e) {}
+  function shortcutLabel(s) {
+    if (!s) return '';
+    return [s.ctrl && 'Ctrl', s.shift && 'Shift', s.alt && 'Alt', s.key.toUpperCase()].filter(Boolean).join(' + ');
+  }
+  function refreshShortcutUI() {
+    if (scInput) scInput.value = dropShortcut ? shortcutLabel(dropShortcut) : '';
+    if (autoChk) autoChk.checked = autoDrop;
+  }
+  refreshShortcutUI();
+  function persistDrop() {
+    try { localStorage.setItem('benri.dropSettings', JSON.stringify({ shortcut: dropShortcut, autoDrop })); } catch (e) {}
+  }
+  if (sBtn) sBtn.addEventListener('click', () => { if (sPanel) sPanel.hidden = false; if (typeof refreshOpfsList === 'function') refreshOpfsList(); });
+  if (sClose) sClose.addEventListener('click', () => { if (sPanel) sPanel.hidden = true; });
+  if (scInput) {
+    scInput.addEventListener('keydown', (e) => {
+      e.preventDefault();
+      if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
+      dropShortcut = { key: e.key.length === 1 ? e.key.toLowerCase() : e.key, ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey };
+      refreshShortcutUI();
+      persistDrop();
+      const lbl = shortcutLabel(dropShortcut);
+      if (scHint) scHint.textContent = '';
+      if (typeof showIconBubble === 'function') showIconBubble(scInput, lbl + ' でドロップくんが開きます');
+      scInput.blur();
+    });
+  }
+  if (autoChk) autoChk.addEventListener('change', () => { autoDrop = autoChk.checked; persistDrop(); });
+  // グローバル ショートカット
+  document.addEventListener('keydown', (e) => {
+    if (!dropShortcut) return;
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (k === dropShortcut.key && e.ctrlKey === !!dropShortcut.ctrl && e.shiftKey === !!dropShortcut.shift && e.altKey === !!dropShortcut.alt) {
+      e.preventDefault();
+      btn.click();
+    }
+  });
+  // 自動起動: 起動直後にスイッチ画面 → 1クリックで小窓
+  if (autoDrop) {
+    const sw = document.getElementById('autoDropSwitch');
+    if (sw) {
+      sw.hidden = false;
+      sw.addEventListener('click', () => { sw.hidden = true; btn.click(); }, { once: true });
+    }
+  }
 })();
 
 /* PWA File Handlers: タスクバーのアプリアイコンにファイルをドロップして起動した時、

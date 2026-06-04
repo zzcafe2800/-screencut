@@ -33,7 +33,7 @@
 <!-- ===== Favicon ===== -->
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
-<link rel="manifest" href='data:application/manifest+json;utf8,{"name":"便利くん","short_name":"便利くん","display":"standalone","start_url":".","background_color":"%23f5f8fa","theme_color":"%235b9cb8","icons":[{"src":"icon.png","sizes":"192x192","type":"image/png"},{"src":"icon.png","sizes":"512x512","type":"image/png"}]}'>
+<link rel="manifest" href="manifest.webmanifest">
 <!-- X (Twitter) ウィジェット (セットアップカードの動画埋め込み) -->
 <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
@@ -12758,6 +12758,22 @@ updateSidebarTop3();
 /* ===== ファイル入力ラベルへの D&D 適用 ===== */
 // 読み込み君 (footer)
 makeDroppable(document.getElementById('loadKun'), f => loadAnyFile(f));
+
+/* PWA File Handlers: タスクバーのアプリアイコンにファイルをドロップして起動した時、
+   そのファイルを自動で読み込む (Chromium系のみ) */
+if ('launchQueue' in window) {
+  try {
+    window.launchQueue.setConsumer(async (launchParams) => {
+      if (!launchParams || !launchParams.files || !launchParams.files.length) return;
+      // 最初の1ファイルを読み込み
+      try {
+        const handle = launchParams.files[0];
+        const file = await handle.getFile();
+        if (file) await loadAnyFile(file);
+      } catch (e) { console.warn('launchQueue load failed:', e); }
+    });
+  } catch (e) {}
+}
 // オススメ君 の "読み込む" ラベル
 const recommendFileLabel = document.querySelector('label[for="recommendFile"]');
 makeDroppable(recommendFileLabel, f => {

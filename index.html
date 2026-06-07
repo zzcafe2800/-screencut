@@ -5,28 +5,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <!-- ===== SEO ===== -->
-<title>便利くん - アイテムサイズ画像加工&動画GIF変換ツール</title>
+<title>アシスタントくん - アイテムサイズ画像加工&動画GIF変換ツール</title>
 <meta name="description" content="動画からのGIF変換、画像編集、複数分割などの多様な機能を備えた便利なサイト。アイテムのサイズに合わせる自動調節や、お部屋に色合いを合わせる「加工くん」も搭載。">
-<meta name="keywords" content="便利くん,GIF変換,動画GIF,画像加工,アスペクト比,切り抜き,分割,パターン,部屋にマッチ,色合わせ,オンラインツール,無料">
-<meta name="author" content="便利くん">
+<meta name="keywords" content="アシスタントくん,GIF変換,動画GIF,画像加工,アスペクト比,切り抜き,分割,パターン,部屋にマッチ,色合わせ,オンラインツール,無料">
+<meta name="author" content="アシスタントくん">
 <link rel="canonical" href="https://zzcafe2800.github.io/-screencut/">
 <meta name="theme-color" content="#5b9cb8">
 
 <!-- ===== OGP (X/LINE/Facebookシェア用) ===== -->
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="便利くん">
-<meta property="og:title" content="便利くん - アイテムサイズ画像加工&動画GIF変換ツール">
+<meta property="og:site_name" content="アシスタントくん">
+<meta property="og:title" content="アシスタントくん - アイテムサイズ画像加工&動画GIF変換ツール">
 <meta property="og:description" content="動画からのGIF変換、画像編集、複数分割などの多様な機能を備えた便利なサイト。アイテムのサイズに合わせる自動調節や、お部屋に色合いを合わせる「加工くん」も搭載。">
 <meta property="og:url" content="https://zzcafe2800.github.io/-screencut/">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:image" content="https://zzcafe2800.github.io/-screencut/ogp.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="便利くん ロゴ">
+<meta property="og:image:alt" content="アシスタントくん ロゴ">
 
 <!-- ===== Twitter (X) Card ===== -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="便利くん - アイテムサイズ画像加工&動画GIF変換ツール">
+<meta name="twitter:title" content="アシスタントくん - アイテムサイズ画像加工&動画GIF変換ツール">
 <meta name="twitter:description" content="動画からのGIF変換、画像編集、複数分割などの多様な機能を備えた便利なサイト。">
 <meta name="twitter:image" content="https://zzcafe2800.github.io/-screencut/ogp.png">
 
@@ -42,8 +42,8 @@
 {
   "@context": "https://schema.org",
   "@type": "WebApplication",
-  "name": "便利くん",
-  "alternateName": "便利くん",
+  "name": "アシスタントくん",
+  "alternateName": "アシスタントくん",
   "url": "https://zzcafe2800.github.io/-screencut/",
   "description": "動画からのGIF変換、画像編集、複数分割などの多様な機能を備えた便利なサイト。アイテムのサイズに合わせる自動調節や、お部屋に色合いを合わせる「加工くん」も搭載。",
   "applicationCategory": "MultimediaApplication",
@@ -575,7 +575,7 @@ body:not(.has-image) #thumbKun { display: none !important; }
   opacity: 0; transition: opacity 0.25s; pointer-events: none;
 }
 .wip-notice.show { opacity: 1; }
-/* 開発中ロック: 本体をぼかし、オーバーレイと便利くんボタンは上に */
+/* 開発中ロック: 本体をぼかし、オーバーレイとアシスタントくんボタンは上に */
 body.devlock aside,
 body.devlock main { filter: blur(7px); pointer-events: none; user-select: none; }
 body.devlock #thumbKun { filter: none !important; pointer-events: auto !important; z-index: 75; }
@@ -7608,8 +7608,8 @@ function showDevLock() {
   _devLocked = true;
   document.body.classList.add('devlock');
   const ov = document.getElementById('devLockOv'); if (ov) ov.hidden = false;
-  // ボタン表記を「便利くん」に (戻る用)
-  const m = thumbKunBtnEl && thumbKunBtnEl.querySelector('.lk-main'); if (m) m.textContent = '便利くん';
+  // ボタン表記を「アシスタントくん」に (戻る用)
+  const m = thumbKunBtnEl && thumbKunBtnEl.querySelector('.lk-main'); if (m) m.textContent = 'アシスタントくん';
 }
 function hideDevLock() {
   _devLocked = false;
@@ -7623,7 +7623,7 @@ function enterThumbModeReal() {
 }
 if (thumbKunBtnEl) {
   thumbKunBtnEl.addEventListener('click', () => {
-    // 開発中ロック中(=便利くん表示)なら通常へ戻る
+    // 開発中ロック中(=アシスタントくん表示)なら通常へ戻る
     if (_devLocked) {
       hideDevLock();
       if (state.thumbMode) thumbKunEnter(); // トグルで通常へ
@@ -13155,6 +13155,479 @@ makeDroppable(document.getElementById('loadKun'), f => loadAnyFile(f));
 
 /* ドロップくん: Document Picture-in-Picture で常に最前面の小窓を出し、
    ファイルをドロップしてメインに読み込む */
+/* ===== ドロップくん: PiP ミニ編集画面 ===== */
+function buildPipEditor(pip, onClose) {
+  const d = pip.document;
+  d.head.innerHTML = ''; d.body.innerHTML = '';
+  const style = d.createElement('style');
+  style.textContent = `
+    *{box-sizing:border-box;-webkit-user-select:none;user-select:none;}
+    body{margin:0;font-family:'Hiragino Sans','Yu Gothic',system-ui,sans-serif;background:#fff;height:100vh;overflow:hidden;color:#5a7d8c;}
+    body{background:#f4f8fb;}
+    .pe-grid{display:grid;grid-template-columns:1fr 176px;grid-template-rows:1fr auto 72px;height:100vh;gap:10px;padding:10px;}
+    .pe-save-wrap{position:relative;flex:1;display:flex;}
+    .pe-save-wrap .save{flex:1;border-radius:14px 0 0 14px;}
+    .pe-saveset{border:none;border-radius:0 14px 14px 0;background:#5b9cb8;color:#fff;font-weight:800;width:26px;cursor:pointer;border-left:1px solid rgba(255,255,255,.4);}
+    .pe-savepop{position:absolute;bottom:50px;right:0;width:172px;background:#fff;border:2px solid #8fd3ed;border-radius:14px;padding:10px;box-shadow:0 8px 22px rgba(0,0,0,.18);z-index:30;display:none;}
+    .pe-savepop.show{display:block;}
+    .pe-savepop::after{content:'';position:absolute;right:14px;bottom:-8px;border:8px solid transparent;border-top-color:#8fd3ed;}
+    .pe-savepop-title{font-size:10px;font-weight:800;color:#5b9cb8;margin-bottom:7px;text-align:center;}
+    .pe-ow{display:block;font-size:10.5px;color:#5a7d8c;cursor:pointer;line-height:1.5;}
+    .pe-ow small{color:#9fbccb;font-size:8.5px;}
+    .pe-pickdir{width:100%;margin-top:8px;border:1px dashed #b8ddee;background:#f3f9fc;border-radius:9px;padding:6px;font-size:10px;color:#5b9cb8;cursor:pointer;}
+    .pe-pickdir:hover{border-color:#5b9cb8;}
+    .pe-dirname{margin-top:5px;font-size:9px;color:#5b9cb8;}
+    /* 中央プレビュー(角丸カード) */
+    .pe-center{grid-column:1;grid-row:1 / 3;position:relative;background:#fff;border:2px solid #cfe6f1;border-radius:22px;box-shadow:0 6px 18px rgba(91,156,184,.12);overflow:visible;}
+    .pe-stage{position:absolute;inset:10px;display:flex;align-items:center;justify-content:center;border-radius:16px;overflow:hidden;background:#eef5f9;}
+    .pe-canvas{touch-action:none;cursor:grab;border-radius:6px;}
+    .pe-drop{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#9fc4d6;cursor:pointer;font-weight:700;}
+    .pe-centerdrag{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#6cb6d4,#5b9cb8);color:#fff;font-size:11px;font-weight:800;padding:6px 14px;border-radius:999px;cursor:grab;box-shadow:0 4px 12px rgba(91,156,184,.45);display:none;z-index:9;white-space:nowrap;}
+    .pe-centerdrag.show{display:block;}
+    .pe-centerdrag:active{cursor:grabbing;}
+    /* 左上ツール */
+    .pe-topicons{position:absolute;left:12px;top:12px;display:flex;gap:6px;z-index:7;}
+    .pe-ti{width:30px;height:30px;border:none;border-radius:50%;background:#fff;box-shadow:0 2px 7px rgba(91,156,184,.28);color:#5b9cb8;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .pe-ti.active{background:#5b9cb8;color:#fff;}
+    .pe-ti svg{width:16px;height:16px;}
+    /* サイズ吹き出し */
+    .pe-size{position:absolute;top:8px;right:14px;background:#fff;border:2px solid #8fd3ed;border-radius:16px;padding:4px 14px;font-size:13px;font-weight:800;color:#5b9cb8;z-index:7;white-space:nowrap;box-shadow:0 3px 9px rgba(91,156,184,.2);}
+    .pe-size::after{content:'';position:absolute;left:24px;bottom:-7px;border:7px solid transparent;border-top-color:#8fd3ed;}
+    /* 色調整(プレビュー左上に重ねて浮かせる) */
+    .pe-color{position:absolute;left:14px;top:54px;width:160px;background:rgba(255,255,255,0.96);border:2px solid #8fd3ed;border-radius:16px;padding:9px 11px 11px;box-shadow:0 6px 16px rgba(91,156,184,.22);z-index:8;transition:.2s;}
+    .pe-color h4{margin:0 0 7px;font-size:10.5px;text-align:center;color:#5b9cb8;letter-spacing:.08em;}
+    .pe-crow{display:grid;grid-template-columns:46px 1fr;align-items:center;gap:6px;margin-bottom:5px;font-size:8.5px;}
+    .pe-crow label{color:#8aaebd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .pe-crow input[type=range]{width:100%;min-width:0;-webkit-appearance:none;height:5px;border-radius:9px;background:linear-gradient(90deg,#dbeef7,#b8ddee);}
+    .pe-crow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:#5b9cb8;border:2px solid #fff;box-shadow:0 1px 3px rgba(91,156,184,.5);cursor:pointer;}
+    .pe-reset{width:100%;margin-top:6px;border:none;background:linear-gradient(135deg,#e8f4fa,#d3eaf5);border-radius:9px;padding:6px;font-size:10px;color:#5b9cb8;font-weight:700;cursor:pointer;}
+    .pe-coltoggle{position:absolute;left:14px;top:54px;writing-mode:vertical-lr;background:#8fd3ed;color:#fff;border:none;border-radius:10px;padding:9px 4px;font-size:9px;cursor:pointer;display:none;z-index:8;box-shadow:0 3px 8px rgba(91,156,184,.3);}
+    .pe-color.collapsed{display:none;}
+    .pe-color.collapsed + .pe-coltoggle{display:block;}
+    /* 右カラム */
+    .pe-right{grid-column:2;grid-row:1 / 3;display:flex;flex-direction:column;gap:8px;min-height:0;}
+    .pe-items{height:46%;background:#fff;border:2px solid #6b7785;border-radius:16px;overflow-y:auto;min-height:0;box-shadow:0 4px 12px rgba(0,0,0,.08);}
+    .pe-items::-webkit-scrollbar{width:5px;} .pe-items::-webkit-scrollbar-thumb{background:#cfd8df;border-radius:9px;}
+    .pe-item{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;font-size:10.5px;border-bottom:1px solid #f0f0f0;cursor:pointer;color:#5a6570;}
+    .pe-item:first-child{background:#f6f9fb;}
+    .pe-item:hover{background:#eef6fb;}
+    .pe-item.active{background:#e3f1f9;color:#5b9cb8;font-weight:700;}
+    .pe-item .ri{color:#c2ccd4;font-size:9px;}
+    .pe-cat-wrap{position:relative;flex:1;min-height:60px;}
+    .pe-cat{position:absolute;right:4px;bottom:4px;width:42px;height:42px;transition:transform .4s cubic-bezier(.34,1.56,.64,1);filter:drop-shadow(0 3px 5px rgba(91,156,184,.3));}
+    .pe-bubble{position:absolute;left:0;top:6px;background:#fff;border:1.5px solid #d6ebf3;border-radius:12px;padding:5px 9px;font-size:9px;color:#5b9cb8;max-width:120px;box-shadow:0 3px 8px rgba(91,156,184,.15);}
+    .pe-bubble::after{content:'';position:absolute;right:18px;bottom:-6px;border:6px solid transparent;border-top-color:#fff;}
+    .pe-rbtns{display:flex;gap:8px;}
+    .pe-rbtn{flex:1;border:none;border-radius:14px;padding:11px;font-size:13px;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(135deg,#9ccbe0,#86bdd6);box-shadow:0 4px 10px rgba(91,156,184,.35);transition:.12s;}
+    .pe-rbtn:active{transform:translateY(1px);}
+    .pe-rbtn.save{background:linear-gradient(135deg,#6cb6d4,#5b9cb8);}
+    /* 下部 */
+    .pe-bottom{grid-column:1;grid-row:3;display:flex;align-items:center;gap:10px;}
+    .pe-search{flex:1;border:2px solid #c3ced6;border-radius:999px;padding:9px 16px;font-size:12px;color:#5a7d8c;background:#fff;}
+    .pe-search:focus{outline:none;border-color:#8fd3ed;}
+    .pe-tools{display:flex;gap:8px;}
+    .pe-tool{width:36px;height:36px;border:2px solid #cdd6dd;border-radius:50%;background:#fff;cursor:pointer;color:#7a8893;display:flex;align-items:center;justify-content:center;transition:.12s;}
+    .pe-tool:active{transform:translateY(1px);}
+    .pe-tool.active{background:#5b9cb8;color:#fff;border-color:#5b9cb8;}
+    .pe-tool svg{width:17px;height:17px;}
+    /* 右下 ドラッグ用ミニ */
+    .pe-minibox{grid-column:2;grid-row:3;position:relative;display:flex;align-items:center;justify-content:center;border:2px solid #8fd3ed;border-radius:16px;background:linear-gradient(160deg,#e3f2fa,#cfe9f5);cursor:grab;overflow:hidden;box-shadow:0 4px 12px rgba(91,156,184,.2);}
+    .pe-minibox:active{cursor:grabbing;}
+    .pe-mini{max-width:88%;max-height:88%;border-radius:6px;display:none;box-shadow:0 2px 6px rgba(0,0,0,.2);}
+    .pe-mini.show{display:block;}
+    .pe-minilabel{position:absolute;left:8px;bottom:3px;font-size:11px;font-weight:800;color:#5b9cb8;}
+    .pe-suf{position:absolute;right:8px;bottom:3px;font-size:8px;color:#8bb6c9;}
+    .pe-sug{position:absolute;bottom:46px;left:0;width:240px;background:#fff;border-radius:12px;box-shadow:0 8px 22px rgba(0,0,0,.18);max-height:160px;overflow-y:auto;z-index:20;display:none;}
+    .pe-sug.show{display:block;}
+    .pe-sugi{padding:7px 11px;font-size:11px;cursor:pointer;display:flex;justify-content:space-between;}
+    .pe-sugi:hover{background:#eef6fb;}
+    .pe-sugi .r{color:#9fbccb;font-style:italic;}
+  `;
+  d.head.appendChild(style);
+
+  const st={img:null,quality:0,brightness:0,contrast:0,hue:0,saturate:0,temp:0,tint:0,flipH:false,flipV:false,rot:0,
+    ratio:null,offX:0,offY:0,scale:1,frameRect:null,dragMode:null,sx:0,sy:0,fr0:null};
+
+  const wrap=d.createElement('div'); wrap.className='pe-grid';
+  wrap.innerHTML=`
+    <div class="pe-center" id="peCenter">
+      <div class="pe-topicons" id="peTopIcons"></div>
+      <div class="pe-size" id="peSize" style="display:none">0.00 MB</div>
+      <div class="pe-color" id="peColor">
+        <h4>色調整</h4>
+        <div class="pe-crow"><label>明るさ</label><input type="range" id="cBright" min="-5" max="5" value="0"></div>
+        <div class="pe-crow"><label>コントラスト</label><input type="range" id="cContrast" min="-5" max="5" value="0"></div>
+        <div class="pe-crow"><label>色相</label><input type="range" id="cHue" min="-5" max="5" value="0"></div>
+        <div class="pe-crow"><label>彩度</label><input type="range" id="cSat" min="-5" max="5" value="0"></div>
+        <div class="pe-crow"><label>色温度</label><input type="range" id="cTemp" min="-5" max="5" value="0"></div>
+        <div class="pe-crow"><label>色合い</label><input type="range" id="cTint" min="-5" max="5" value="0"></div>
+        <button class="pe-reset" id="cReset">リセット</button>
+      </div>
+      <button class="pe-coltoggle" id="peColToggle">色調整</button>
+      <div class="pe-stage" id="peStage">
+        <canvas class="pe-canvas" id="peCanvas"></canvas>
+        <div class="pe-drop" id="peDrop"><div style="font-size:36px">⬇</div><div style="font-size:11px">画像をドロップ / クリック</div></div>
+        <div class="pe-centerdrag" id="peCenterDrag" draggable="true" title="ここをゲームにドラッグ">↗ ゲームへドラッグ</div>
+      </div>
+    </div>
+    <div class="pe-right">
+      <div class="pe-items" id="peItems"></div>
+      <div class="pe-cat-wrap">
+        <div class="pe-bubble" id="peBubble">画像をいれてね</div>
+        <svg class="pe-cat" id="peCat" viewBox="0 0 64 64" fill="none">
+          <ellipse cx="32" cy="40" rx="20" ry="18" fill="#fff" stroke="#5b9cb8" stroke-width="2"/>
+          <path d="M16 28 L12 16 L24 24 Z M48 28 L52 16 L40 24 Z" fill="#fff" stroke="#5b9cb8" stroke-width="2" stroke-linejoin="round"/>
+          <circle cx="25" cy="38" r="3" fill="#3a5560"/><circle cx="39" cy="38" r="3" fill="#3a5560"/>
+          <path d="M28 46 Q32 49 36 46" stroke="#3a5560" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="20" cy="44" r="3" fill="#f7b8cd" opacity="0.7"/><circle cx="44" cy="44" r="3" fill="#f7b8cd" opacity="0.7"/>
+        </svg>
+      </div>
+      <div class="pe-rbtns">
+        <button class="pe-rbtn" id="peBack">戻る</button>
+        <div class="pe-save-wrap">
+          <button class="pe-rbtn save" id="peSave">保存</button>
+          <button class="pe-saveset" id="peSaveSet" title="保存先の設定">＞</button>
+          <div class="pe-savepop" id="peSavePop">
+            <div class="pe-savepop-title">保存先 (OPFS)</div>
+            <label class="pe-ow"><input type="checkbox" id="peOwChk"> 同じ名前で上書き保存<br><small>ONで4秒静止オートセーブ</small></label>
+            <button class="pe-pickdir" id="pePickDir">📁 フォルダを選ぶ</button>
+            <div class="pe-dirname" id="peDirName"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pe-bottom">
+      <input class="pe-search" id="peSearch" placeholder="アイテムをけんさく">
+      <div class="pe-sug" id="peSug"></div>
+      <div class="pe-tools" id="peTools"></div>
+    </div>
+    <div class="pe-minibox" id="peMiniBox">
+      <img class="pe-mini" id="peMini" draggable="true" alt="">
+      <span class="pe-minilabel">ドラッグ</span><span class="pe-suf">してね</span>
+    </div>
+  `;
+  d.body.appendChild(wrap);
+
+  const cv=d.getElementById('peCanvas'), ctx=cv.getContext('2d');
+  const stage=d.getElementById('peStage'), dropEl=d.getElementById('peDrop');
+  const bubble=d.getElementById('peBubble'), cat=d.getElementById('peCat');
+  function setBubble(t){ bubble.textContent=t; }
+
+  // 色調整リセット
+  function bindRange(id, key){ const el=d.getElementById(id); el.addEventListener('input',e=>{ st[key]=+e.target.value; render(); }); return el; }
+  const rBright=bindRange('cBright','brightness'), rContrast=bindRange('cContrast','contrast'),
+        rHue=bindRange('cHue','hue'), rSat=bindRange('cSat','saturate'),
+        rTemp=bindRange('cTemp','temp'), rTint=bindRange('cTint','tint');
+  d.getElementById('cReset').addEventListener('click', ()=>{
+    ['brightness','contrast','hue','saturate','temp','tint'].forEach(k=>st[k]=0);
+    [rBright,rContrast,rHue,rSat,rTemp,rTint].forEach(el=>el.value=0); render();
+  });
+  // 色パネル折りたたみ
+  const peColorEl=d.getElementById('peColor');
+  d.getElementById('peColToggle').addEventListener('click',()=>peColorEl.classList.remove('collapsed'));
+  peColorEl.querySelector('h4').addEventListener('click',()=>peColorEl.classList.add('collapsed'));
+
+  // 左上ツール(回転/反転)
+  const topIcons=[
+    {id:'rot',t:'回転',svg:'<path d="M21 12a9 9 0 11-3-6.7M21 3v5h-5"/>'},
+    {id:'flipH',t:'左右反転',svg:'<path d="M12 3v18M7 8l-4 4 4 4M17 8l4 4-4 4"/>'},
+    {id:'flipV',t:'上下反転',svg:'<path d="M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4"/>'},
+  ];
+  const tiEl=d.getElementById('peTopIcons');
+  topIcons.forEach(t=>{
+    const b=d.createElement('button'); b.className='pe-ti'; b.title=t.t;
+    b.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${t.svg}</svg>`;
+    b.addEventListener('click',()=>{
+      if(t.id==='rot'){ st.rot=(st.rot+90)%360; }
+      if(t.id==='flipH'){ st.flipH=!st.flipH; b.classList.toggle('active',st.flipH); }
+      if(t.id==='flipV'){ st.flipV=!st.flipV; b.classList.toggle('active',st.flipV); }
+      render();
+    });
+    tiEl.appendChild(b);
+  });
+
+  // 下部ツール(単純化など)
+  const tools=[
+    {id:'simplify',t:'単純化',svg:'<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>'},
+    {id:'grid',t:'分割',svg:'<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>'},
+    {id:'blur',t:'ぼかし',svg:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/>'},
+    {id:'spot',t:'スポット',svg:'<circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="9" opacity="0.4"/>'},
+  ];
+  const toolsEl=d.getElementById('peTools');
+  tools.forEach(t=>{
+    const b=d.createElement('button'); b.className='pe-tool'; b.title=t.t;
+    b.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${t.svg}</svg>`;
+    b.addEventListener('click',()=>{
+      if(t.id==='simplify'){ st.contrast = st.contrast?0:2; rContrast.value=st.contrast; b.classList.toggle('active',!!st.contrast); render(); }
+      else { setBubble('この機能は本サイトでどうぞ'); }
+    });
+    toolsEl.appendChild(b);
+  });
+
+  // 右: アイテム一覧 (CATEGORIES から)
+  const allItems=[];
+  try{ (typeof CATEGORIES!=='undefined'?CATEGORIES:[]).forEach(c=>(c.items||[]).forEach(it=>allItems.push(it))); }catch(e){}
+  function gcd2(a,b){a=Math.abs(a);b=Math.abs(b);while(b){[a,b]=[b,a%b];}return a||1;}
+  const itemsEl=d.getElementById('peItems');
+  function renderItems(filter){
+    itemsEl.innerHTML='';
+    let list=allItems; const q=(filter||'').trim();
+    if(q) list=allItems.filter(it=>it.name&&it.name.includes(q));
+    list.slice(0,60).forEach(it=>{
+      const g=gcd2(it.w,it.h);
+      const row=d.createElement('div'); row.className='pe-item';
+      row.innerHTML=`<span>${it.name}</span><span class="ri">${Math.round(it.w/g)}:${Math.round(it.h/g)}</span>`;
+      row.addEventListener('click',()=>{
+        itemsEl.querySelectorAll('.pe-item').forEach(r=>r.classList.remove('active'));
+        row.classList.add('active');
+        st.ratio={w:it.w,h:it.h}; if(st.img){ initFrame(); render(); } setBubble(it.name);
+      });
+      itemsEl.appendChild(row);
+    });
+  }
+  renderItems('');
+
+  // 検索 (下のサーチ → アイテム一覧をフィルタ + サジェスト)
+  const searchEl=d.getElementById('peSearch'); const sugEl=d.getElementById('peSug');
+  searchEl.addEventListener('input',()=>{ renderItems(searchEl.value); });
+
+  let catTimer=setInterval(()=>{ if(!pip||pip.closed){clearInterval(catTimer);return;} cat.style.transform='translateY(-6px) rotate(-6deg)'; setTimeout(()=>{cat.style.transform='';},400); },4000);
+
+  function filterStr(){
+    const p=[];
+    if(st.brightness)p.push(`brightness(${1+st.brightness*0.08})`);
+    if(st.contrast)p.push(`contrast(${1+st.contrast*0.12})`);
+    if(st.saturate)p.push(`saturate(${1+st.saturate*0.18})`);
+    if(st.hue)p.push(`hue-rotate(${st.hue*18}deg)`);
+    if(st.temp)p.push(`sepia(${Math.abs(st.temp)*0.1}) hue-rotate(${st.temp<0?180:0}deg)`);
+    if(st.tint)p.push(`saturate(${1+Math.abs(st.tint)*0.05}) hue-rotate(${st.tint*8}deg)`);
+    return p.length?p.join(' '):'none';
+  }
+  function initFrame(){
+    const cw=cv.width,ch=cv.height; let fw,fh;
+    if(st.ratio){const ar=st.ratio.w/st.ratio.h; fw=cw*0.7; fh=fw/ar; if(fh>ch*0.8){fh=ch*0.8;fw=fh*ar;}}
+    else {const s=Math.min(cw,ch)*0.7; fw=s;fh=s;}
+    st.frameRect={x:(cw-fw)/2,y:(ch-fh)/2,w:fw,h:fh};
+  }
+  function layoutCanvas(){
+    cv.width=stage.clientWidth; cv.height=stage.clientHeight;
+    cv.style.width=cv.width+'px'; cv.style.height=cv.height+'px';
+    if(st.img){ fitImage(); if(!st.frameRect) initFrame(); }
+  }
+  function fitImage(){
+    const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
+    st.scale=Math.min(cv.width/iw,cv.height/ih);
+    st.offX=(cv.width-iw*st.scale)/2; st.offY=(cv.height-ih*st.scale)/2;
+  }
+  function drawImageOnly(c){
+    const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
+    const dw=iw*st.scale, dh=ih*st.scale;
+    c.save(); c.filter=filterStr();
+    c.translate(st.offX+dw/2, st.offY+dh/2);
+    c.rotate(st.rot*Math.PI/180);
+    c.scale(st.flipH?-1:1, st.flipV?-1:1);
+    c.drawImage(st.img,-dw/2,-dh/2,dw,dh);
+    c.restore(); c.filter='none';
+  }
+  function render(){
+    if(!st.img)return;
+    ctx.clearRect(0,0,cv.width,cv.height);
+    drawImageOnly(ctx);
+    const fr=st.frameRect;
+    if(fr){
+      ctx.save(); ctx.fillStyle='rgba(20,30,40,0.4)';
+      ctx.beginPath(); ctx.rect(0,0,cv.width,cv.height); ctx.rect(fr.x,fr.y,fr.w,fr.h); ctx.fill('evenodd'); ctx.restore();
+      ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.strokeRect(fr.x,fr.y,fr.w,fr.h);
+      ctx.fillStyle='#fff'; ctx.strokeStyle='#5b9cb8'; ctx.lineWidth=2;
+      const hx=fr.x+fr.w,hy=fr.y+fr.h; ctx.beginPath(); ctx.arc(hx,hy,7,0,Math.PI*2); ctx.fill(); ctx.stroke();
+    }
+    updateMini();
+  }
+
+  // 枠移動/リサイズ
+  cv.addEventListener('pointerdown',e=>{
+    if(!st.img||!st.frameRect)return;
+    const r=cv.getBoundingClientRect(),sc=cv.width/r.width;
+    const x=(e.clientX-r.left)*sc,y=(e.clientY-r.top)*sc,fr=st.frameRect,hx=fr.x+fr.w,hy=fr.y+fr.h;
+    if(Math.hypot(x-hx,y-hy)<16)st.dragMode='resize';
+    else if(x>=fr.x&&x<=hx&&y>=fr.y&&y<=hy)st.dragMode='move'; else return;
+    st.sx=x;st.sy=y;st.fr0={...fr};cv.setPointerCapture(e.pointerId);
+  });
+  cv.addEventListener('pointermove',e=>{
+    if(!st.dragMode)return;
+    const r=cv.getBoundingClientRect(),sc=cv.width/r.width;
+    const x=(e.clientX-r.left)*sc,y=(e.clientY-r.top)*sc,dx=x-st.sx,dy=y-st.sy,fr=st.frameRect;
+    if(st.dragMode==='move'){ fr.x=Math.max(0,Math.min(cv.width-fr.w,st.fr0.x+dx)); fr.y=Math.max(0,Math.min(cv.height-fr.h,st.fr0.y+dy)); }
+    else { let nw=Math.max(24,st.fr0.w+dx),nh; if(st.ratio)nh=nw*st.ratio.h/st.ratio.w; else nh=Math.max(24,st.fr0.h+dy); nw=Math.min(nw,cv.width-fr.x); nh=Math.min(nh,cv.height-fr.y); fr.w=nw; fr.h=nh; }
+    render();
+  });
+  cv.addEventListener('pointerup',()=>{ if(st.dragMode){ st.dragMode=null; scheduleAutoSave(); } });
+
+  function makeCropCanvas(){
+    const fr=st.frameRect; if(!fr)return null;
+    // ★ 親(本サイト)のオリジンで canvas を作る → 生成する blob/URL が blob:null にならない
+    const pdoc = (window.document) ? window.document : d;
+    const out=pdoc.createElement('canvas');
+    out.width=Math.max(1,Math.round(fr.w)); out.height=Math.max(1,Math.round(fr.h));
+    const octx=out.getContext('2d');
+    octx.filter=filterStr();
+    const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
+    const dw=iw*st.scale, dh=ih*st.scale;
+    octx.save(); octx.translate(-fr.x,-fr.y);
+    octx.translate(st.offX+dw/2, st.offY+dh/2);
+    octx.rotate(st.rot*Math.PI/180);
+    octx.scale(st.flipH?-1:1, st.flipV?-1:1);
+    octx.drawImage(st.img,-dw/2,-dh/2,dw,dh);
+    octx.restore();
+    return out;
+  }
+
+  // サイズ表示 + ライブで「本物のFileオブジェクト」を先に用意 (ドラッグで直接ゲームへ)
+  const mini=d.getElementById('peMini'); const sizeEl=d.getElementById('peSize');
+  const centerDrag=d.getElementById('peCenterDrag');
+  let lastSavedBlobURL=null;
+  let currentFile=null, currentFileURL=null, currentDataURL=null;     // ドラッグ用の実File/URL/dataURL
+  let fileGenTimer=null;
+  function updateMini(){
+    if(!st.img||!st.frameRect)return;
+    // サイズ表示
+    try{ const out=makeCropCanvas(); if(out){ const u=out.toDataURL('image/png'); sizeEl.style.display='block'; const ap=Math.round(u.length*0.75/1024); sizeEl.textContent=(ap>1024?(ap/1024).toFixed(2)+' MB':ap+' KB'); } }catch(e){}
+    // 実Fileを先に生成(デバウンス) → ミニ/中央チップに反映
+    if(fileGenTimer) clearTimeout(fileGenTimer);
+    fileGenTimer=setTimeout(genDragFile, 220);
+  }
+  function genDragFile(){
+    const out=makeCropCanvas(); if(!out)return;
+    // data URL は同期で取得 (オリジン非依存・どこでも読める)
+    try{ currentDataURL = out.toDataURL('image/png'); }catch(e){ currentDataURL=null; }
+    // 表示用 & ドラッグ表示は data URL を使う (blob:null を作らない)
+    if(currentDataURL){ mini.src=currentDataURL; mini.classList.add('show'); if(centerDrag) centerDrag.classList.add('show'); }
+    // 本物の File も用意 (dataTransfer.files 用)
+    out.toBlob((blob)=>{
+      if(!blob)return;
+      const W = window;
+      try{ currentFile=new (W.File||File)([blob], 'game_item.png', { type:'image/png' }); }catch(e){ currentFile=null; }
+    },'image/png');
+  }
+  let savedFileName='game_item.png';
+  function setMiniFromBlob(blob, name){
+    if(name) savedFileName=name;
+    const W = window;
+    try{ currentFile=new (W.File||File)([blob], 'game_item.png', { type:'image/png' }); }catch(e){}
+    // data URL を作って表示&ドラッグに使う
+    try{ const fr=new FileReader(); fr.onload=()=>{ currentDataURL=fr.result; mini.src=currentDataURL; mini.classList.add('show'); if(centerDrag) centerDrag.classList.add('show'); }; fr.readAsDataURL(blob); }catch(e){}
+  }
+  // ドラッグ: ①本物File を items.add (files として受理) ②data URL を uri-list 等に (origin非依存)
+  function dragData(e){
+    // dragstart 時点で data URL が無ければ即席で作る (同期)
+    if(!currentDataURL){ try{ const o=makeCropCanvas(); if(o) currentDataURL=o.toDataURL('image/png'); }catch(err){} }
+    if(!currentFile && !currentDataURL){ e.preventDefault(); setBubble('画像をいれてね'); return false; }
+    try{
+      if(currentFile && e.dataTransfer.items){
+        e.dataTransfer.items.add(currentFile);        // ← ゲームが dataTransfer.files で受け取る
+      }
+    }catch(err){}
+    try{
+      if(currentDataURL){
+        // blob URL は使わない。data URL は自己完結でどのオリジンからも読める
+        e.dataTransfer.setData('DownloadURL','image/png:game_item.png:'+currentDataURL);
+        e.dataTransfer.setData('text/uri-list', currentDataURL);
+        e.dataTransfer.setData('text/plain', currentDataURL);
+      }
+    }catch(err){}
+    e.dataTransfer.effectAllowed='copyMove';
+    setBubble('そのままゲームにドロップ！');
+    return true;
+  }
+  mini.addEventListener('dragstart',(e)=>{ dragData(e); });
+  if(centerDrag) centerDrag.addEventListener('dragstart',(e)=>{ dragData(e); });
+
+  function loadIntoPip(file){
+    const url=URL.createObjectURL(file); const img=new Image();
+    img.onload=()=>{ st.img=img; dropEl.style.display='none'; layoutCanvas(); initFrame(); render(); setBubble('枠を動かして調整してね'); scheduleAutoSave(); };
+    img.onerror=()=>setBubble('読み込めませんでした'); img.src=url;
+  }
+  dropEl.addEventListener('click',()=>{ const inp=d.createElement('input'); inp.type='file'; inp.accept='image/*,.gif'; inp.addEventListener('change',()=>{if(inp.files[0])loadIntoPip(inp.files[0]);}); inp.click(); });
+  ['dragover','dragenter'].forEach(ev=>stage.addEventListener(ev,e=>e.preventDefault()));
+  stage.addEventListener('drop',e=>{e.preventDefault(); if(e.dataTransfer.files[0])loadIntoPip(e.dataTransfer.files[0]);});
+
+  // 実際の保存処理: 設定があればOPFS/フォルダ、なければダウンロード。常にミニへ反映
+  let pipDirHandle = null;
+  async function doSave(isAuto){
+    if(!st.img){ if(!isAuto) setBubble('先に画像をいれてね'); return; }
+    const out=makeCropCanvas(); if(!out)return;
+    const blob=await new Promise(res=>out.toBlob(res,'image/png'));
+    if(!blob){ if(!isAuto) setBubble('保存に失敗'); return; }
+    const name = (state._origFileName||('dropkun'+'.png')).replace(/\.[^.]+$/,'')+'.png';
+    try{
+      let savedBlob = blob;
+      if(state.saveOverwrite && typeof opfsSave==='function'){
+        // 同じ名前で上書き (OPFS, ファイルが増えない)
+        await opfsSave(state._origFileName || 'dropkun.png', blob);
+        if(typeof refreshOpfsList==='function') refreshOpfsList();
+        // 本物の保存ファイルを読み戻して実URL化
+        try{ if(typeof opfsGetBlob==='function'){ const b=await opfsGetBlob(state._origFileName||'dropkun.png'); if(b) savedBlob=b; } }catch(e){}
+        setBubble(isAuto ? '自動保存しました' : 'OPFSに保存しました');
+      } else if(pipDirHandle){
+        // 選んだフォルダへ保存
+        const fh = await pipDirHandle.getFileHandle(name, { create:true });
+        const w = await fh.createWritable(); await w.write(blob); await w.close();
+        try{ const b=await fh.getFile(); if(b) savedBlob=b; }catch(e){}
+        setBubble('フォルダに保存しました');
+      } else {
+        // 何も設定なし → ダウンロード
+        if(!isAuto){
+          const url=URL.createObjectURL(blob); const a=d.createElement('a'); a.href=url; a.download=name;
+          d.body.appendChild(a); a.click(); a.remove();
+          setBubble('ダウンロードしました');
+        }
+      }
+      // どの場合もミニ+中央プレビューに「本物の保存ファイルURL」を反映(ドラッグで直接ゲームへ)
+      setMiniFromBlob(savedBlob, name);
+    }catch(e){ if(!isAuto) setBubble('保存に失敗'); }
+  }
+  d.getElementById('peSave').addEventListener('click',()=>doSave(false));
+
+  // 保存先設定の「＞」ボタン + 吹き出し
+  const setBtn=d.getElementById('peSaveSet'); const setPop=d.getElementById('peSavePop');
+  if(setBtn) setBtn.addEventListener('click',(e)=>{ e.stopPropagation(); setPop.classList.toggle('show'); });
+  const owChk=d.getElementById('peOwChk');
+  if(owChk){
+    owChk.checked = !!state.saveOverwrite;
+    owChk.addEventListener('change',()=>{
+      state.saveOverwrite=owChk.checked;
+      if(typeof persistSaveSettings==='function') persistSaveSettings();
+      if(owChk.checked){
+        setBubble('OPFSに同名で上書き保存します');
+        setPop.classList.remove('show');
+        if(st.img) doSave(false); // ONにしたら即1回保存してミニに反映
+      } else { setBubble('保存先オフ'); }
+    });
+  }
+  // フォルダを選ぶ
+  const pickDirBtn=d.getElementById('pePickDir'); const dirNameEl=d.getElementById('peDirName');
+  if(pickDirBtn) pickDirBtn.addEventListener('click', async (e)=>{
+    e.stopPropagation();
+    if(!('showDirectoryPicker' in window)){ setBubble('このブラウザはフォルダ選択非対応'); return; }
+    try{
+      pipDirHandle = await window.showDirectoryPicker({ id:'dropkun-save', mode:'readwrite', startIn:'documents' });
+      if(dirNameEl) dirNameEl.textContent = '📂 '+pipDirHandle.name;
+      setBubble('保存先: '+pipDirHandle.name);
+    }catch(err){ if(err.name!=='AbortError') console.warn(err); }
+  });
+
+  // 枠を動かして4秒静止 → 自動保存 (上書きONの時だけ)
+  let autoTimer=null;
+  function scheduleAutoSave(){
+    if(!state.saveOverwrite) return;
+    if(autoTimer) clearTimeout(autoTimer);
+    autoTimer=setTimeout(()=>doSave(true), 4000);
+  }
+
+  d.getElementById('peBack').addEventListener('click',()=>{ try{window.focus();}catch(e){} clearInterval(catTimer); if(onClose)onClose(); pip.close(); });
+  pip.addEventListener('resize',()=>{ layoutCanvas(); render(); });
+  setTimeout(()=>{ layoutCanvas(); },50);
+}
 (function setupDropKun() {
   const btn = document.getElementById('dropKun');
   if (!btn) return;
@@ -13165,31 +13638,8 @@ makeDroppable(document.getElementById('loadKun'), f => loadAnyFile(f));
       return;
     }
     try {
-      pipWin = await window.documentPictureInPicture.requestWindow({ width: 280, height: 200 });
-      const d = pipWin.document;
-      d.body.style.cssText = 'margin:0;font-family:system-ui,sans-serif;background:#eaf4f8;height:100vh;display:flex;align-items:center;justify-content:center;';
-      const zone = d.createElement('div');
-      zone.style.cssText = 'width:90%;height:80%;border:3px dashed #5b9cb8;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#4a8aa3;font-weight:700;text-align:center;cursor:pointer;background:rgba(255,255,255,0.6);';
-      zone.innerHTML = '<div style="font-size:34px">⬇</div><div style="font-size:13px">画像をここに<br>ドロップ</div><div style="font-size:10px;opacity:0.7">クリックで選択も可</div>';
-      d.body.appendChild(zone);
-      const handleFiles = async (files) => {
-        if (!files || !files.length) return;
-        await loadAnyFile(files[0]);
-        // メインを前面化、小窓を閉じる
-        try { window.focus(); } catch (e) {}
-        if (pipWin) { pipWin.close(); pipWin = null; }
-      };
-      ['dragover', 'dragenter'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.style.background = 'rgba(91,156,184,0.25)'; }));
-      ['dragleave', 'dragend'].forEach(ev => zone.addEventListener(ev, e => { e.preventDefault(); zone.style.background = 'rgba(255,255,255,0.6)'; }));
-      zone.addEventListener('drop', e => { e.preventDefault(); handleFiles(e.dataTransfer.files); });
-      // クリックでファイル選択
-      zone.addEventListener('click', () => {
-        const inp = d.createElement('input');
-        inp.type = 'file';
-        inp.accept = 'image/*,video/*,.gif';
-        inp.addEventListener('change', () => handleFiles(inp.files));
-        inp.click();
-      });
+      pipWin = await window.documentPictureInPicture.requestWindow({ width: 760, height: 500 });
+      buildPipEditor(pipWin, () => { pipWin = null; });
       pipWin.addEventListener('pagehide', () => { pipWin = null; });
     } catch (e) {
       console.warn('PiP failed:', e);

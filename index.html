@@ -34,9 +34,6 @@
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
 <link rel="manifest" href='data:application/manifest+json;charset=utf-8,{"name":"%E4%BE%BF%E5%88%A9%E3%81%8F%E3%82%93","short_name":"%E4%BE%BF%E5%88%A9%E3%81%8F%E3%82%93","display":"standalone","start_url":".","scope":".","background_color":"%23f5f8fa","theme_color":"%235b9cb8","icons":[{"src":"icon.png","sizes":"192x192","type":"image/png"},{"src":"icon.png","sizes":"512x512","type":"image/png"}],"launch_handler":{"client_mode":["navigate-existing","auto"]},"file_handlers":[{"action":".","accept":{"image/*":[".png",".jpg",".jpeg",".gif",".webp"],"video/*":[".mp4",".webm",".mov",".m4v",".avi",".mkv",".ogv"]}}]}'>
-<!-- X (Twitter) ウィジェット (セットアップカードの動画埋め込み) -->
-<script async src="https://platform.twitter.com/widgets.js" id="twitterWidgetsScript" charset="utf-8"></script>
-
 <!-- ===== 構造化データ (JSON-LD): GoogleがWebアプリと認識しやすくする ===== -->
 <script type="application/ld+json">
 {
@@ -4258,44 +4255,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 
 <div id="welcomeOverlay" class="guide-overlay" role="dialog" aria-modal="true">
   <div class="welcome-pair">
-    <!-- 左: セットアップ -->
-    <div class="guide-card welcome-card setup-card" id="setupCard">
-      <div class="setup-stage" data-stage="1">
-        <h3>はじめに</h3>
-        <div class="setup-video" id="setupVid1" data-tweet="2061084908777554126">
-          <blockquote class="twitter-tweet" data-conversation="none" data-dnt="true">
-            <a href="https://x.com/zzcafe_280/status/2061084908777554126"></a>
-          </blockquote>
-        </div>
-        <button type="button" class="welcome-more-btn primary" id="setupNext">セットアップ</button>
-        <label class="setup-noshow"><input type="checkbox" id="setupNoShow"> 次回から表示しない</label>
-      </div>
-      <div class="setup-stage" data-stage="2" hidden>
-        <h3>必要な機能</h3>
-        <div class="setup-video" id="setupVid2" data-tweet="2061084908777554126">
-          <blockquote class="twitter-tweet" data-conversation="none" data-dnt="true">
-            <a href="https://x.com/zzcafe_280/status/2061084908777554126"></a>
-          </blockquote>
-        </div>
-        <ul class="setup-list">
-          <li>① アプリ化</li>
-          <li>② タスクバーにピン止め</li>
-        </ul>
-        <button type="button" class="welcome-more-btn primary install-btn" id="setupInstallBtn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M2 20h20M12 16v4M9 11l3 3 3-3M12 8v6"/></svg>
-          <span>デスクトップアプリ化</span>
-        </button>
-        <button type="button" class="setup-back" id="setupBack">← 戻る</button>
-      </div>
-      <div class="setup-stage" data-stage="3" hidden>
-        <div class="setup-notice">
-          <div class="setup-notice-title">手軽に使うために、</div>
-          <div class="setup-notice-body">右下の通知の<b>【はい】</b>を押してください</div>
-          <div class="setup-notice-hint">画面をタップすると戻ります</div>
-        </div>
-      </div>
-    </div>
-    <!-- 右: 既存の「できること」 -->
+    <!-- 「できること」機能一覧のみ -->
     <div class="guide-card welcome-card">
     <button id="welcomeClose" class="guide-close" aria-label="閉じる">×</button>
     <h3>できること</h3>
@@ -6380,6 +6340,10 @@ async function loadAnyFile(f) {
     } else {
       // 画像 / GIF は通常読み込み
       await loadFile(f);
+    }
+    // ドロップくん(PiP)が開いていれば、本体に入れた画像をそちらにも反映(共有)
+    if (!window.__pipImgSync && typeof window.__pipLoadFile === 'function') {
+      try { window.__pipLoadFile(f); } catch (e) {}
     }
   } finally {
     hideLoading();
@@ -12914,6 +12878,42 @@ updateSimplifyGauge();
 updateShrinkGauge();
 updateSidebarTop3();
 
+/* ===== ドロップくん(PiP) ↔ 本体サイト 画像/比率/編集の共有フック ===== */
+window.__mainLoadFile = (f) => loadAnyFile(f);
+window.__mainSelectItem = (it) => { try { selectItem(it, null); } catch (e) {} };
+window.__mainToggleSplit = () => {
+  try {
+    const on = !(state.splitW > 1 || state.splitH > 1);
+    state.splitW = on ? 2 : 1; state.splitH = on ? 2 : 1;
+    if (typeof splitWNum !== 'undefined' && splitWNum) splitWNum.textContent = state.splitW;
+    if (typeof splitHNum !== 'undefined' && splitHNum) splitHNum.textContent = state.splitH;
+    recalculateFrame(); draw(); updateDimLine(); updateSaveBtn();
+    return on;
+  } catch (e) { return false; }
+};
+/* PiPで編集した「いまの見た目」を本体サイトの画像として反映 (色・反転・回転・効果を共有) */
+window.__mainSetImageCanvas = (srcCanvas) => {
+  try {
+    if (!srcCanvas || !srcCanvas.width) return;
+    const c = document.createElement('canvas');
+    c.width = srcCanvas.width; c.height = srcCanvas.height;
+    c.getContext('2d').drawImage(srcCanvas, 0, 0);
+    state.fileType = 'image';
+    state.naturalW = c.width; state.naturalH = c.height;
+    state.frames = [{ canvas: c, delay: 0 }];
+    state.currentFrame = 0;
+    if (state.layers && state.layers.length) {
+      state.layers[0].frames = [{ canvas: c, delay: 0 }];
+      state.layers[0].naturalW = c.width; state.layers[0].naturalH = c.height;
+    }
+    state.loaded = true;
+    stopAnimation();
+    recomputeLayout();
+    updateFileSize(); updateFramesInfo(); updateEmpty(); updateToolBtns(); updateSaveBtn();
+    draw();
+  } catch (e) {}
+};
+
 /* ===== ファイル入力ラベルへの D&D 適用 ===== */
 // 読み込み君 (footer)
 makeDroppable(document.getElementById('loadKun'), f => loadAnyFile(f));
@@ -12969,9 +12969,9 @@ function buildPipEditor(pip, onClose) {
     .pe-coltoggle{position:absolute;left:14px;top:54px;writing-mode:vertical-lr;background:#8fd3ed;color:#fff;border:none;border-radius:10px;padding:9px 4px;font-size:9px;cursor:pointer;display:none;z-index:8;box-shadow:0 3px 8px rgba(91,156,184,.3);}
     .pe-color.collapsed{display:none;}
     .pe-color.collapsed + .pe-coltoggle{display:block;}
-    /* 右カラム */
-    .pe-right{grid-column:2;grid-row:1 / 3;display:flex;flex-direction:column;gap:8px;min-height:0;}
-    .pe-items{height:46%;background:#fff;border:2px solid #6b7785;border-radius:16px;overflow-y:auto;min-height:0;box-shadow:0 4px 12px rgba(0,0,0,.08);}
+    /* 右カラム (全行に拡張: アイテム比を縦いっぱい + 下に保存/戻る) */
+    .pe-right{grid-column:2;grid-row:1 / 4;display:flex;flex-direction:column;gap:8px;min-height:0;}
+    .pe-items{flex:1;background:#fff;border:2px solid #6b7785;border-radius:16px;overflow-y:auto;min-height:0;box-shadow:0 4px 12px rgba(0,0,0,.08);}
     .pe-items::-webkit-scrollbar{width:5px;} .pe-items::-webkit-scrollbar-thumb{background:#cfd8df;border-radius:9px;}
     .pe-item{display:flex;align-items:center;justify-content:space-between;padding:8px 11px;font-size:10.5px;border-bottom:1px solid #f0f0f0;cursor:pointer;color:#5a6570;}
     .pe-item:first-child{background:#f6f9fb;}
@@ -13011,7 +13011,31 @@ function buildPipEditor(pip, onClose) {
   d.head.appendChild(style);
 
   const st={img:null,quality:0,brightness:0,contrast:0,hue:0,saturate:0,temp:0,tint:0,flipH:false,flipV:false,rot:0,
-    ratio:null,offX:0,offY:0,scale:1,frameRect:null,dragMode:null,sx:0,sy:0,fr0:null};
+    ratio:null,offX:0,offY:0,scale:1,frameRect:null,dragMode:null,sx:0,sy:0,fr0:null,
+    simplify:false,blur:false,spot:false};
+  let _fxCache=null,_fxKey='';
+  function processedSource(){
+    if(!st.img) return null;
+    if(!st.simplify && !st.spot) return st.img;
+    const key=(st.simplify?'s':'')+(st.spot?'p':'');
+    if(_fxCache && _fxKey===key) return _fxCache;
+    const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
+    const pdoc=(window.document)?window.document:d;
+    const c=pdoc.createElement('canvas'); c.width=Math.max(1,iw); c.height=Math.max(1,ih);
+    const cx=c.getContext('2d'); cx.drawImage(st.img,0,0,iw,ih);
+    if(st.simplify){
+      try{ const im=cx.getImageData(0,0,iw,ih),dt=im.data,lv=6,sp=255/(lv-1);
+        for(let i=0;i<dt.length;i+=4){ dt[i]=Math.round(dt[i]/sp)*sp; dt[i+1]=Math.round(dt[i+1]/sp)*sp; dt[i+2]=Math.round(dt[i+2]/sp)*sp; }
+        cx.putImageData(im,0,0); }catch(e){}
+    }
+    if(st.spot){
+      const g=cx.createRadialGradient(iw/2,ih/2,Math.min(iw,ih)*0.2,iw/2,ih/2,Math.max(iw,ih)*0.62);
+      g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,0.55)');
+      cx.fillStyle=g; cx.fillRect(0,0,iw,ih);
+    }
+    _fxCache=c; _fxKey=key; return c;
+  }
+  function invalidateFx(){ _fxCache=null; _fxKey=''; }
 
   const wrap=d.createElement('div'); wrap.className='pe-grid';
   wrap.innerHTML=`
@@ -13032,21 +13056,10 @@ function buildPipEditor(pip, onClose) {
       <div class="pe-stage" id="peStage">
         <canvas class="pe-canvas" id="peCanvas"></canvas>
         <div class="pe-drop" id="peDrop"><div style="font-size:36px">⬇</div><div style="font-size:11px">画像をドロップ / クリック</div></div>
-        <div class="pe-centerdrag" id="peCenterDrag" draggable="true" title="ここをゲームにドラッグ">↗ ゲームへドラッグ</div>
       </div>
     </div>
     <div class="pe-right">
       <div class="pe-items" id="peItems"></div>
-      <div class="pe-cat-wrap">
-        <div class="pe-bubble" id="peBubble">画像をいれてね</div>
-        <svg class="pe-cat" id="peCat" viewBox="0 0 64 64" fill="none">
-          <ellipse cx="32" cy="40" rx="20" ry="18" fill="#fff" stroke="#5b9cb8" stroke-width="2"/>
-          <path d="M16 28 L12 16 L24 24 Z M48 28 L52 16 L40 24 Z" fill="#fff" stroke="#5b9cb8" stroke-width="2" stroke-linejoin="round"/>
-          <circle cx="25" cy="38" r="3" fill="#3a5560"/><circle cx="39" cy="38" r="3" fill="#3a5560"/>
-          <path d="M28 46 Q32 49 36 46" stroke="#3a5560" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="20" cy="44" r="3" fill="#f7b8cd" opacity="0.7"/><circle cx="44" cy="44" r="3" fill="#f7b8cd" opacity="0.7"/>
-        </svg>
-      </div>
       <div class="pe-rbtns">
         <button class="pe-rbtn" id="peBack">戻る</button>
         <button class="pe-rbtn save" id="peSave">保存</button>
@@ -13057,17 +13070,13 @@ function buildPipEditor(pip, onClose) {
       <div class="pe-sug" id="peSug"></div>
       <div class="pe-tools" id="peTools"></div>
     </div>
-    <div class="pe-minibox" id="peMiniBox">
-      <img class="pe-mini" id="peMini" draggable="true" alt="">
-      <span class="pe-minilabel">ドラッグ</span><span class="pe-suf">してね</span>
-    </div>
   `;
   d.body.appendChild(wrap);
 
   const cv=d.getElementById('peCanvas'), ctx=cv.getContext('2d');
   const stage=d.getElementById('peStage'), dropEl=d.getElementById('peDrop');
-  const bubble=d.getElementById('peBubble'), cat=d.getElementById('peCat');
-  function setBubble(t){ bubble.textContent=t; }
+  const bubble=null, cat=null;
+  function setBubble(t){ /* コメント欄は削除済み */ }
 
   // 色調整リセット
   function bindRange(id, key){ const el=d.getElementById(id); el.addEventListener('input',e=>{ st[key]=+e.target.value; render(); }); return el; }
@@ -13111,11 +13120,16 @@ function buildPipEditor(pip, onClose) {
   ];
   const toolsEl=d.getElementById('peTools');
   tools.forEach(t=>{
-    const b=d.createElement('button'); b.className='pe-tool'; b.title=t.t;
+    const b=d.createElement('button'); b.className='pe-tool'; b.title=t.t; b.dataset.fx=t.id;
     b.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${t.svg}</svg>`;
     b.addEventListener('click',()=>{
-      if(t.id==='simplify'){ st.contrast = st.contrast?0:2; rContrast.value=st.contrast; b.classList.toggle('active',!!st.contrast); render(); }
-      else { setBubble('この機能は本サイトでどうぞ'); }
+      if(t.id==='simplify'){ st.simplify=!st.simplify; invalidateFx(); b.classList.toggle('active',st.simplify); render(); }
+      else if(t.id==='blur'){ st.blur=!st.blur; b.classList.toggle('active',st.blur); render(); }
+      else if(t.id==='spot'){ st.spot=!st.spot; invalidateFx(); b.classList.toggle('active',st.spot); render(); }
+      else if(t.id==='grid'){
+        // 分割: 本体サイトの分割を切替 (本体側で保存するとタイルになる)
+        try{ if(typeof window.__mainToggleSplit==='function'){ const on=window.__mainToggleSplit(); b.classList.toggle('active',!!on); } }catch(e){}
+      }
     });
     toolsEl.appendChild(b);
   });
@@ -13137,6 +13151,8 @@ function buildPipEditor(pip, onClose) {
         itemsEl.querySelectorAll('.pe-item').forEach(r=>r.classList.remove('active'));
         row.classList.add('active');
         st.ratio={w:it.w,h:it.h}; if(st.img){ initFrame(); render(); } setBubble(it.name);
+        // 本体サイトのアイテム比も合わせる(共有)
+        try{ if(typeof window.__mainSelectItem==='function') window.__mainSelectItem(it); }catch(e){}
       });
       itemsEl.appendChild(row);
     });
@@ -13147,7 +13163,7 @@ function buildPipEditor(pip, onClose) {
   const searchEl=d.getElementById('peSearch'); const sugEl=d.getElementById('peSug');
   searchEl.addEventListener('input',()=>{ renderItems(searchEl.value); });
 
-  let catTimer=setInterval(()=>{ if(!pip||pip.closed){clearInterval(catTimer);return;} cat.style.transform='translateY(-6px) rotate(-6deg)'; setTimeout(()=>{cat.style.transform='';},400); },4000);
+  let catTimer=null;
 
   function filterStr(){
     const p=[];
@@ -13157,6 +13173,7 @@ function buildPipEditor(pip, onClose) {
     if(st.hue)p.push(`hue-rotate(${st.hue*18}deg)`);
     if(st.temp)p.push(`sepia(${Math.abs(st.temp)*0.1}) hue-rotate(${st.temp<0?180:0}deg)`);
     if(st.tint)p.push(`saturate(${1+Math.abs(st.tint)*0.05}) hue-rotate(${st.tint*8}deg)`);
+    if(st.blur)p.push('blur(2px)');
     return p.length?p.join(' '):'none';
   }
   function initFrame(){
@@ -13176,13 +13193,14 @@ function buildPipEditor(pip, onClose) {
     st.offX=(cv.width-iw*st.scale)/2; st.offY=(cv.height-ih*st.scale)/2;
   }
   function drawImageOnly(c){
+    const src=processedSource(); if(!src) return;
     const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
     const dw=iw*st.scale, dh=ih*st.scale;
     c.save(); c.filter=filterStr();
     c.translate(st.offX+dw/2, st.offY+dh/2);
     c.rotate(st.rot*Math.PI/180);
     c.scale(st.flipH?-1:1, st.flipV?-1:1);
-    c.drawImage(st.img,-dw/2,-dh/2,dw,dh);
+    c.drawImage(src,-dw/2,-dh/2,dw,dh);
     c.restore(); c.filter='none';
   }
   function render(){
@@ -13221,6 +13239,7 @@ function buildPipEditor(pip, onClose) {
 
   function makeCropCanvas(){
     const fr=st.frameRect; if(!fr)return null;
+    const src=processedSource(); if(!src) return null;
     // ★ 親(本サイト)のオリジンで canvas を作る → 生成する blob/URL が blob:null にならない
     const pdoc = (window.document) ? window.document : d;
     const out=pdoc.createElement('canvas');
@@ -13233,76 +13252,68 @@ function buildPipEditor(pip, onClose) {
     octx.translate(st.offX+dw/2, st.offY+dh/2);
     octx.rotate(st.rot*Math.PI/180);
     octx.scale(st.flipH?-1:1, st.flipV?-1:1);
-    octx.drawImage(st.img,-dw/2,-dh/2,dw,dh);
+    octx.drawImage(src,-dw/2,-dh/2,dw,dh);
     octx.restore();
     return out;
   }
+  // 全体(クロップ前)を編集適用して canvas 化 → 本体サイトに渡して共有
+  function makeFullProcessed(){
+    const src=processedSource(); if(!src) return null;
+    const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
+    const isR90=(st.rot===90||st.rot===270);
+    const ow=isR90?ih:iw, oh=isR90?iw:ih;
+    const pdoc=(window.document)?window.document:d;
+    const c=pdoc.createElement('canvas'); c.width=Math.max(1,ow); c.height=Math.max(1,oh);
+    const cx=c.getContext('2d');
+    cx.filter=filterStr();
+    cx.translate(ow/2,oh/2);
+    cx.rotate(st.rot*Math.PI/180);
+    cx.scale(st.flipH?-1:1, st.flipV?-1:1);
+    cx.drawImage(src,-iw/2,-ih/2,iw,ih);
+    cx.filter='none';
+    return c;
+  }
+  // 本体サイトへ「いまの見た目(色・反転・回転・効果)」を反映
+  function pushEditsToMain(){
+    if(!st.img) return;
+    if(window.__pipImgSync) return;            // ループ防止
+    try{
+      const c=makeFullProcessed(); if(!c) return;
+      if(typeof window.__mainSetImageCanvas==='function'){
+        window.__pipImgSync=true;
+        window.__mainSetImageCanvas(c);
+      }
+    }catch(e){}finally{ window.__pipImgSync=false; }
+  }
 
-  // サイズ表示 + ライブで「本物のFileオブジェクト」を先に用意 (ドラッグで直接ゲームへ)
-  const mini=d.getElementById('peMini'); const sizeEl=d.getElementById('peSize');
-  const centerDrag=d.getElementById('peCenterDrag');
-  let lastSavedBlobURL=null;
-  let currentFile=null, currentFileURL=null, currentDataURL=null;     // ドラッグ用の実File/URL/dataURL
-  let fileGenTimer=null;
+  // サイズ表示 (PiP独自ドラッグは廃止 → 本体サイトと共有してそちらからドラッグ)
+  const sizeEl=d.getElementById('peSize');
+  let pushTimer=null;
   function updateMini(){
     if(!st.img||!st.frameRect)return;
     // サイズ表示
     try{ const out=makeCropCanvas(); if(out){ const u=out.toDataURL('image/png'); sizeEl.style.display='block'; const ap=Math.round(u.length*0.75/1024); sizeEl.textContent=(ap>1024?(ap/1024).toFixed(2)+' MB':ap+' KB'); } }catch(e){}
-    // 実Fileを先に生成(デバウンス) → ミニ/中央チップに反映
-    if(fileGenTimer) clearTimeout(fileGenTimer);
-    fileGenTimer=setTimeout(genDragFile, 220);
+    // 本体サイトへ編集(色・反転・回転・効果)を反映 (デバウンス)
+    if(pushTimer) clearTimeout(pushTimer);
+    pushTimer=setTimeout(pushEditsToMain, 240);
   }
-  function genDragFile(){
-    const out=makeCropCanvas(); if(!out)return;
-    // data URL は同期で取得 (オリジン非依存・どこでも読める)
-    try{ currentDataURL = out.toDataURL('image/png'); }catch(e){ currentDataURL=null; }
-    // 表示用 & ドラッグ表示は data URL を使う (blob:null を作らない)
-    if(currentDataURL){ mini.src=currentDataURL; mini.classList.add('show'); if(centerDrag) centerDrag.classList.add('show'); }
-    // 本物の File も用意 (dataTransfer.files 用)
-    out.toBlob((blob)=>{
-      if(!blob)return;
-      const W = window;
-      try{ currentFile=new (W.File||File)([blob], 'game_item.png', { type:'image/png' }); }catch(e){ currentFile=null; }
-    },'image/png');
-  }
-  let savedFileName='game_item.png';
-  function setMiniFromBlob(blob, name){
-    if(name) savedFileName=name;
-    const W = window;
-    try{ currentFile=new (W.File||File)([blob], 'game_item.png', { type:'image/png' }); }catch(e){}
-    // data URL を作って表示&ドラッグに使う
-    try{ const fr=new FileReader(); fr.onload=()=>{ currentDataURL=fr.result; mini.src=currentDataURL; mini.classList.add('show'); if(centerDrag) centerDrag.classList.add('show'); }; fr.readAsDataURL(blob); }catch(e){}
-  }
-  // ドラッグ: ①本物File を items.add (files として受理) ②data URL を uri-list 等に (origin非依存)
-  function dragData(e){
-    // dragstart 時点で data URL が無ければ即席で作る (同期)
-    if(!currentDataURL){ try{ const o=makeCropCanvas(); if(o) currentDataURL=o.toDataURL('image/png'); }catch(err){} }
-    if(!currentFile && !currentDataURL){ e.preventDefault(); setBubble('画像をいれてね'); return false; }
-    try{
-      if(currentFile && e.dataTransfer.items){
-        e.dataTransfer.items.add(currentFile);        // ← ゲームが dataTransfer.files で受け取る
-      }
-    }catch(err){}
-    try{
-      if(currentDataURL){
-        // blob URL は使わない。data URL は自己完結でどのオリジンからも読める
-        e.dataTransfer.setData('DownloadURL','image/png:game_item.png:'+currentDataURL);
-        e.dataTransfer.setData('text/uri-list', currentDataURL);
-        e.dataTransfer.setData('text/plain', currentDataURL);
-      }
-    }catch(err){}
-    e.dataTransfer.effectAllowed='copyMove';
-    setBubble('そのままゲームにドロップ！');
-    return true;
-  }
-  mini.addEventListener('dragstart',(e)=>{ dragData(e); });
-  if(centerDrag) centerDrag.addEventListener('dragstart',(e)=>{ dragData(e); });
+  function setMiniFromBlob(blob, name){ /* ドラッグ用ミニは廃止 */ }
 
-  function loadIntoPip(file){
+  function loadIntoPip(file, fromMain){
+    invalidateFx();
+    st.simplify=false; st.blur=false; st.spot=false;
+    try{ d.querySelectorAll('.pe-tool.active').forEach(b=>b.classList.remove('active')); }catch(e){}
     const url=URL.createObjectURL(file); const img=new Image();
-    img.onload=()=>{ st.img=img; dropEl.style.display='none'; layoutCanvas(); initFrame(); render(); setBubble('枠を動かして調整してね'); scheduleAutoSave(); };
+    img.onload=()=>{ st.img=img; dropEl.style.display='none'; layoutCanvas(); initFrame(); render(); setBubble('枠を動かして調整してね');
+      // 本体サイトにも同じ画像を読み込む(共有)。fromMain の時は逆流させない
+      if(!fromMain && !window.__pipImgSync){
+        try{ if(typeof window.__mainLoadFile==='function'){ window.__pipImgSync=true; Promise.resolve(window.__mainLoadFile(file)).finally(()=>{window.__pipImgSync=false;}); } }catch(e){ window.__pipImgSync=false; }
+      }
+    };
     img.onerror=()=>setBubble('読み込めませんでした'); img.src=url;
   }
+  // 本体サイトで画像を入れたら PiP にも反映するフック
+  window.__pipLoadFile = (file)=>{ try{ loadIntoPip(file, true); }catch(e){} };
   dropEl.addEventListener('click',()=>{ const inp=d.createElement('input'); inp.type='file'; inp.accept='image/*,.gif'; inp.addEventListener('change',()=>{if(inp.files[0])loadIntoPip(inp.files[0]);}); inp.click(); });
   ['dragover','dragenter'].forEach(ev=>stage.addEventListener(ev,e=>e.preventDefault()));
   stage.addEventListener('drop',e=>{e.preventDefault(); if(e.dataTransfer.files[0])loadIntoPip(e.dataTransfer.files[0]);});
@@ -13332,7 +13343,7 @@ function buildPipEditor(pip, onClose) {
   // 枠を動かしても自動保存はしない (保存ボタンでダウンロード)
   function scheduleAutoSave(){ /* 自動保存は廃止 */ }
 
-  d.getElementById('peBack').addEventListener('click',()=>{ try{window.focus();}catch(e){} clearInterval(catTimer); if(onClose)onClose(); pip.close(); });
+  d.getElementById('peBack').addEventListener('click',()=>{ try{window.focus();}catch(e){} clearInterval(catTimer); try{ window.__pipLoadFile=null; }catch(e){} if(onClose)onClose(); pip.close(); });
   pip.addEventListener('resize',()=>{ layoutCanvas(); render(); });
   setTimeout(()=>{ layoutCanvas(); },50);
 }
@@ -13347,8 +13358,8 @@ function buildPipEditor(pip, onClose) {
     }
     try {
       pipWin = await window.documentPictureInPicture.requestWindow({ width: 760, height: 500 });
-      buildPipEditor(pipWin, () => { pipWin = null; });
-      pipWin.addEventListener('pagehide', () => { pipWin = null; });
+      buildPipEditor(pipWin, () => { pipWin = null; try { window.__pipLoadFile = null; } catch (e) {} });
+      pipWin.addEventListener('pagehide', () => { pipWin = null; try { window.__pipLoadFile = null; } catch (e) {} });
     } catch (e) {
       console.warn('PiP failed:', e);
       showToast('小窓を開けませんでした');

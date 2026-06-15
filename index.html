@@ -13088,8 +13088,12 @@ function buildPipEditor(pip, onClose) {
     .pe-crow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:#5b9cb8;border:2px solid #fff;box-shadow:0 1px 3px rgba(91,156,184,.5);cursor:pointer;}
     .pe-reset{width:100%;margin-top:6px;border:none;background:linear-gradient(135deg,#e8f4fa,#d3eaf5);border-radius:9px;padding:6px;font-size:10px;color:#5b9cb8;font-weight:700;cursor:pointer;}
     .pe-coltoggle{position:absolute;left:14px;top:54px;writing-mode:vertical-lr;background:#8fd3ed;color:#fff;border:none;border-radius:10px;padding:9px 4px;font-size:9px;cursor:pointer;display:none;z-index:8;box-shadow:0 3px 8px rgba(91,156,184,.3);}
+    .pe-coltoggle{position:absolute;left:10px;bottom:10px;top:auto;writing-mode:horizontal-tb;background:#8fd3ed;color:#fff;border:none;border-radius:12px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;display:block;z-index:11;box-shadow:0 3px 8px rgba(91,156,184,.3);}
     .pe-color.collapsed{display:none;}
-    .pe-color.collapsed + .pe-coltoggle{display:block;}
+    .pe-fxcard{position:absolute;left:10px;bottom:50px;width:min(172px,48vw);background:rgba(255,255,255,0.97);border:2px solid #8fd3ed;border-radius:16px;padding:10px 12px;box-shadow:0 6px 16px rgba(91,156,184,.25);z-index:12;}
+    .pe-fxcard[hidden]{display:none;}
+    .pe-fxcard h4{margin:0 0 8px;font-size:11px;text-align:center;color:#5b9cb8;letter-spacing:.06em;}
+    .pe-chk{display:flex;align-items:center;gap:6px;font-size:11px;color:#7a8893;margin-top:7px;cursor:pointer;}
     /* 小さい窓に自動対応 */
     @media (max-height:520px){
       .pe-color{top:46px;padding:6px 8px 8px;max-height:calc(100vh - 104px);}
@@ -13146,26 +13150,36 @@ function buildPipEditor(pip, onClose) {
 
   const st={img:null,quality:0,brightness:0,contrast:0,hue:0,saturate:0,temp:0,tint:0,flipH:false,flipV:false,rot:0,
     ratio:null,offX:0,offY:0,scale:1,frameRect:null,dragMode:null,sx:0,sy:0,fr0:null,
-    simplify:false,blur:false,spot:false};
+    simplify:false,blur:false,spot:false,
+    simpLevels:16,simpEdge:0,bgMargin:0,bgTransp:false};
   let _fxCache=null,_fxKey='';
+  function peSampleBg(){
+    try{ const t=(window.document?window.document:d).createElement('canvas'); t.width=1;t.height=1;
+      const tx=t.getContext('2d'); tx.drawImage(st.img,0,0,1,1);
+      const p=tx.getImageData(0,0,1,1).data; return `rgb(${p[0]},${p[1]},${p[2]})`;
+    }catch(e){ return '#ffffff'; }
+  }
   function processedSource(){
     if(!st.img) return null;
-    if(!st.simplify && !st.spot) return st.img;
-    const key=(st.simplify?'s':'')+(st.spot?'p':'');
+    const simp=st.simpLevels<16, bg=st.bgMargin>0;
+    if(!simp && !bg) return st.img;
+    const key='L'+st.simpLevels+'M'+st.bgMargin+(st.bgTransp?'T':'C');
     if(_fxCache && _fxKey===key) return _fxCache;
     const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
     const pdoc=(window.document)?window.document:d;
     const c=pdoc.createElement('canvas'); c.width=Math.max(1,iw); c.height=Math.max(1,ih);
-    const cx=c.getContext('2d'); cx.drawImage(st.img,0,0,iw,ih);
-    if(st.simplify){
-      try{ const im=cx.getImageData(0,0,iw,ih),dt=im.data,lv=6,sp=255/(lv-1);
+    const cx=c.getContext('2d');
+    if(bg){
+      if(!st.bgTransp){ cx.fillStyle=peSampleBg(); cx.fillRect(0,0,iw,ih); }
+      const m=st.bgMargin, sw=iw*(1-m), sh=ih*(1-m);
+      cx.drawImage(st.img,(iw-sw)/2,(ih-sh)/2,sw,sh);
+    } else {
+      cx.drawImage(st.img,0,0,iw,ih);
+    }
+    if(simp){
+      try{ const im=cx.getImageData(0,0,iw,ih),dt=im.data,lv=Math.max(2,st.simpLevels),sp=255/(lv-1);
         for(let i=0;i<dt.length;i+=4){ dt[i]=Math.round(dt[i]/sp)*sp; dt[i+1]=Math.round(dt[i+1]/sp)*sp; dt[i+2]=Math.round(dt[i+2]/sp)*sp; }
         cx.putImageData(im,0,0); }catch(e){}
-    }
-    if(st.spot){
-      const g=cx.createRadialGradient(iw/2,ih/2,Math.min(iw,ih)*0.2,iw/2,ih/2,Math.max(iw,ih)*0.62);
-      g.addColorStop(0,'rgba(0,0,0,0)'); g.addColorStop(1,'rgba(0,0,0,0.55)');
-      cx.fillStyle=g; cx.fillRect(0,0,iw,ih);
     }
     _fxCache=c; _fxKey=key; return c;
   }
@@ -13187,6 +13201,23 @@ function buildPipEditor(pip, onClose) {
         <button class="pe-reset" id="cReset">リセット</button>
       </div>
       <button class="pe-coltoggle" id="peColToggle">色調整</button>
+      <div class="pe-fxcard" id="peCardBright" hidden>
+        <h4>明るさ</h4>
+        <div class="pe-crow"><label>明るさ <span id="peBrightVal">0</span></label><input type="range" id="peBright" min="-5" max="5" value="0"></div>
+      </div>
+      <div class="pe-fxcard" id="peCardQual" hidden>
+        <h4>画質低下</h4>
+        <div class="pe-crow"><label>段階 <span id="peQualVal">0</span></label><input type="range" id="peQual" min="0" max="7" step="1" value="0"></div>
+      </div>
+      <div class="pe-fxcard" id="peCardBg" hidden>
+        <h4>背景拡張</h4>
+        <div class="pe-crow"><label>余白 <span id="peBgVal">0</span></label><input type="range" id="peBgMargin" min="0" max="60" step="2" value="0"></div>
+        <label class="pe-chk"><input type="checkbox" id="peBgTransp"> 透明にする</label>
+      </div>
+      <div class="pe-fxcard" id="peCardSimp" hidden>
+        <h4>単純化</h4>
+        <div class="pe-crow"><label>色数 <span id="peSimpVal">16</span></label><input type="range" id="peSimpLevels" min="2" max="16" step="1" value="16"></div>
+      </div>
       <div class="pe-stage" id="peStage">
         <canvas class="pe-canvas" id="peCanvas"></canvas>
         <div class="pe-drop" id="peDrop"><div style="font-size:36px">⬇</div><div style="font-size:11px">画像をドロップ / クリック</div></div>
@@ -13200,7 +13231,7 @@ function buildPipEditor(pip, onClose) {
       </div>
     </div>
     <div class="pe-bottom">
-      <input class="pe-search" id="peSearch" placeholder="アイテムをけんさく">
+      <input class="pe-search" id="peSearch" placeholder="アイテム検索">
       <div class="pe-sug" id="peSug"></div>
       <div class="pe-tools" id="peTools"></div>
     </div>
@@ -13221,9 +13252,9 @@ function buildPipEditor(pip, onClose) {
     ['brightness','contrast','hue','saturate','temp','tint'].forEach(k=>st[k]=0);
     [rBright,rContrast,rHue,rSat,rTemp,rTint].forEach(el=>el.value=0); render();
   });
-  // 色パネル折りたたみ
+  // 色パネル: ワンクリックで表示/非表示トグル
   const peColorEl=d.getElementById('peColor');
-  d.getElementById('peColToggle').addEventListener('click',()=>peColorEl.classList.remove('collapsed'));
+  d.getElementById('peColToggle').addEventListener('click',()=>peColorEl.classList.toggle('collapsed'));
   peColorEl.querySelector('h4').addEventListener('click',()=>peColorEl.classList.add('collapsed'));
 
   // 左上ツール(回転/反転)
@@ -13245,28 +13276,34 @@ function buildPipEditor(pip, onClose) {
     tiEl.appendChild(b);
   });
 
-  // 下部ツール(単純化など)
+  // 下部ツール: サイトと同じ 明るさ / 画質低下 / 背景拡張 / 単純化 (各カードで設定)
   const tools=[
-    {id:'simplify',t:'単純化',svg:'<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>'},
-    {id:'grid',t:'分割',svg:'<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>'},
-    {id:'blur',t:'ぼかし',svg:'<circle cx="12" cy="12" r="9"/><path d="M12 3v18"/>'},
-    {id:'spot',t:'スポット',svg:'<circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="9" opacity="0.4"/>'},
+    {id:'bright',t:'明るさ',card:'peCardBright',svg:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.4 1.4M17.6 17.6L19 19M19 5l-1.4 1.4M6.4 17.6L5 19"/>'},
+    {id:'qual',t:'画質低下',card:'peCardQual',svg:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>'},
+    {id:'bg',t:'背景拡張',card:'peCardBg',svg:'<rect x="3" y="3" width="18" height="18" rx="1.5"/><rect x="8" y="8" width="8" height="8" rx="1"/>'},
+    {id:'simp',t:'単純化',card:'peCardSimp',svg:'<path d="M5 7c1-3 6-3 8-1s5 0 6 2-1 5-2 7-5 4-8 3-5-3-5-6 0-3 1-5z"/><circle cx="9" cy="11" r="1.2" fill="currentColor" stroke="none"/>'},
   ];
   const toolsEl=d.getElementById('peTools');
+  const allCards=['peCardBright','peCardQual','peCardBg','peCardSimp'];
   tools.forEach(t=>{
-    const b=d.createElement('button'); b.className='pe-tool'; b.title=t.t; b.dataset.fx=t.id;
+    const b=d.createElement('button'); b.className='pe-tool'; b.title=t.t; b.dataset.card=t.card;
     b.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${t.svg}</svg>`;
     b.addEventListener('click',()=>{
-      if(t.id==='simplify'){ st.simplify=!st.simplify; invalidateFx(); b.classList.toggle('active',st.simplify); render(); }
-      else if(t.id==='blur'){ st.blur=!st.blur; b.classList.toggle('active',st.blur); render(); }
-      else if(t.id==='spot'){ st.spot=!st.spot; invalidateFx(); b.classList.toggle('active',st.spot); render(); }
-      else if(t.id==='grid'){
-        // 分割: 本体サイトの分割を切替 (本体側で保存するとタイルになる)
-        try{ if(typeof window.__mainToggleSplit==='function'){ const on=window.__mainToggleSplit(); b.classList.toggle('active',!!on); } }catch(e){}
-      }
+      const card=d.getElementById(t.card); if(!card)return;
+      const willShow=card.hidden;
+      allCards.forEach(id=>{ const c=d.getElementById(id); if(c) c.hidden=true; });
+      toolsEl.querySelectorAll('.pe-tool').forEach(x=>x.classList.remove('active'));
+      if(willShow){ card.hidden=false; b.classList.add('active'); }
     });
     toolsEl.appendChild(b);
   });
+  // カードのスライダー → st に反映
+  function bindFx(id, fn){ const el=d.getElementById(id); if(el) el.addEventListener('input',()=>{ fn(el); render(); }); }
+  bindFx('peBright', el=>{ st.brightness=parseInt(el.value,10)||0; const v=d.getElementById('peBrightVal'); if(v)v.textContent=st.brightness; });
+  bindFx('peQual', el=>{ st.quality=parseInt(el.value,10)||0; const v=d.getElementById('peQualVal'); if(v)v.textContent=st.quality; });
+  bindFx('peSimpLevels', el=>{ st.simpLevels=parseInt(el.value,10)||16; invalidateFx(); const v=d.getElementById('peSimpVal'); if(v)v.textContent=st.simpLevels; });
+  bindFx('peBgMargin', el=>{ st.bgMargin=(parseInt(el.value,10)||0)/100; invalidateFx(); const v=d.getElementById('peBgVal'); if(v)v.textContent=el.value; });
+  const _bgTr=d.getElementById('peBgTransp'); if(_bgTr) _bgTr.addEventListener('change',()=>{ st.bgTransp=_bgTr.checked; invalidateFx(); render(); });
 
   // 右: アイテム一覧 (CATEGORIES から)
   const allItems=[];
@@ -13310,6 +13347,20 @@ function buildPipEditor(pip, onClose) {
     if(st.blur)p.push('blur(2px)');
     return p.length?p.join(' '):'none';
   }
+  function qScale(){ return st.quality>0 ? (1/Math.sqrt(Math.pow(1.5,st.quality))) : 1; }
+  function srcForDraw(){
+    const s=processedSource(); if(!s||st.quality<=0) return s;
+    const sc=qScale(); const iw=s.width||s.naturalWidth, ih=s.height||s.naturalHeight;
+    const pdoc=(window.document)?window.document:d;
+    const sm=pdoc.createElement('canvas'); sm.width=Math.max(1,Math.round(iw*sc)); sm.height=Math.max(1,Math.round(ih*sc));
+    sm.getContext('2d').drawImage(s,0,0,sm.width,sm.height); return sm;
+  }
+  function qShrink(canvas){
+    if(!canvas||st.quality<=0) return canvas;
+    const sc=qScale(); const pdoc=(window.document)?window.document:d;
+    const o=pdoc.createElement('canvas'); o.width=Math.max(1,Math.round(canvas.width*sc)); o.height=Math.max(1,Math.round(canvas.height*sc));
+    o.getContext('2d').drawImage(canvas,0,0,o.width,o.height); return o;
+  }
   function initFrame(){
     const cw=cv.width,ch=cv.height; let fw,fh;
     if(st.ratio){const ar=st.ratio.w/st.ratio.h; fw=cw*0.7; fh=fw/ar; if(fh>ch*0.8){fh=ch*0.8;fw=fh*ar;}}
@@ -13327,15 +13378,16 @@ function buildPipEditor(pip, onClose) {
     st.offX=(cv.width-iw*st.scale)/2; st.offY=(cv.height-ih*st.scale)/2;
   }
   function drawImageOnly(c){
-    const src=processedSource(); if(!src) return;
+    const src=srcForDraw(); if(!src) return;
     const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
     const dw=iw*st.scale, dh=ih*st.scale;
     c.save(); c.filter=filterStr();
+    if(st.quality>0) c.imageSmoothingEnabled=false;
     c.translate(st.offX+dw/2, st.offY+dh/2);
     c.rotate(st.rot*Math.PI/180);
     c.scale(st.flipH?-1:1, st.flipV?-1:1);
     c.drawImage(src,-dw/2,-dh/2,dw,dh);
-    c.restore(); c.filter='none';
+    c.restore(); c.filter='none'; c.imageSmoothingEnabled=true;
   }
   function render(){
     if(!st.img)return;
@@ -13388,7 +13440,7 @@ function buildPipEditor(pip, onClose) {
     octx.scale(st.flipH?-1:1, st.flipV?-1:1);
     octx.drawImage(src,-dw/2,-dh/2,dw,dh);
     octx.restore();
-    return out;
+    return qShrink(out);
   }
   // 全体(クロップ前)を編集適用して canvas 化 → 本体サイトに渡して共有
   function makeFullProcessed(){
@@ -13405,7 +13457,7 @@ function buildPipEditor(pip, onClose) {
     cx.scale(st.flipH?-1:1, st.flipV?-1:1);
     cx.drawImage(src,-iw/2,-ih/2,iw,ih);
     cx.filter='none';
-    return c;
+    return qShrink(c);
   }
   // 本体サイトへ「いまの見た目(色・反転・回転・効果)」を反映
   function pushEditsToMain(){
@@ -13435,8 +13487,22 @@ function buildPipEditor(pip, onClose) {
 
   function loadIntoPip(file, fromMain){
     invalidateFx();
+    // 効果をリセット
     st.simplify=false; st.blur=false; st.spot=false;
-    try{ d.querySelectorAll('.pe-tool.active').forEach(b=>b.classList.remove('active')); }catch(e){}
+    st.quality=0; st.simpLevels=16; st.bgMargin=0; st.bgTransp=false;
+    st.brightness=0; st.contrast=0; st.hue=0; st.saturate=0; st.temp=0; st.tint=0;
+    try{
+      d.querySelectorAll('.pe-tool.active').forEach(b=>b.classList.remove('active'));
+      ['peCardBright','peCardQual','peCardBg','peCardSimp'].forEach(id=>{const c=d.getElementById(id); if(c)c.hidden=true;});
+      const setV=(id,v)=>{const e=d.getElementById(id); if(e)e.value=v;};
+      const setT=(id,v)=>{const e=d.getElementById(id); if(e)e.textContent=v;};
+      setV('peBright',0); setT('peBrightVal',0);
+      setV('peQual',0); setT('peQualVal',0);
+      setV('peSimpLevels',16); setT('peSimpVal',16);
+      setV('peBgMargin',0); setT('peBgVal',0);
+      const bt=d.getElementById('peBgTransp'); if(bt)bt.checked=false;
+      [rBright,rContrast,rHue,rSat,rTemp,rTint].forEach(el=>{if(el)el.value=0;});
+    }catch(e){}
     const url=URL.createObjectURL(file); const img=new Image();
     img.onload=()=>{ st.img=img; dropEl.style.display='none'; layoutCanvas(); initFrame(); render(); setBubble('枠を動かして調整してね');
       // 本体サイトにも同じ画像を読み込む(共有)。fromMain の時は逆流させない
@@ -13454,25 +13520,46 @@ function buildPipEditor(pip, onClose) {
 
   // 実際の保存処理: 設定があればOPFS/フォルダ、なければダウンロード。常にミニへ反映
   let pipDirHandle = null;
-  async function doSave(isAuto){
+  async function doSave(isAuto, fmt){
     if(!st.img){ if(!isAuto) setBubble('先に画像をいれてね'); return; }
     const out=makeCropCanvas(); if(!out)return;
-    const blob=await new Promise(res=>out.toBlob(res,'image/png'));
+    fmt=fmt||'png';
+    let blob, name=(state._origFileName||'dropkun').replace(/\.[^.]+$/,'');
+    if(fmt==='gif'){
+      try{
+        const W=out.width,H=out.height;
+        const rgba=out.getContext('2d').getImageData(0,0,W,H).data;
+        const buf=await encodeAnimatedGIF(W,H,[{rgba,delay:100}],null);
+        blob=new Blob([buf],{type:'image/gif'}); name+='.gif';
+      }catch(e){ if(!isAuto) setBubble('GIF保存に失敗'); return; }
+    } else {
+      blob=await new Promise(res=>out.toBlob(res,'image/png')); name+='.png';
+    }
     if(!blob){ if(!isAuto) setBubble('保存に失敗'); return; }
-    const name = (state._origFileName||'dropkun.png').replace(/\.[^.]+$/,'')+'.png';
     try{
-      // 通常ダウンロード
       if(!isAuto){
         const url=(window.URL||URL).createObjectURL(blob);
         const a=d.createElement('a'); a.href=url; a.download=name;
         d.body.appendChild(a); a.click(); a.remove();
         setBubble('ダウンロードしました');
       }
-      // ミニ+中央プレビューにも反映(ドラッグ用)
       setMiniFromBlob(blob, name);
     }catch(e){ if(!isAuto) setBubble('保存に失敗'); }
   }
-  d.getElementById('peSave').addEventListener('click',()=>doSave(false));
+  // 保存フォーマット選択(PNG / 軽量GIF) — サイトと同じ
+  const peSaveOv=d.createElement('div'); peSaveOv.id='peSaveOv';
+  peSaveOv.style.cssText='position:fixed;inset:0;background:rgba(44,62,80,.42);display:none;align-items:center;justify-content:center;z-index:50;';
+  peSaveOv.innerHTML='<div style="background:#fff;border-radius:16px;padding:18px 20px;text-align:center;box-shadow:0 16px 40px rgba(0,0,0,.25);">'+
+    '<div style="font-size:13px;font-weight:800;color:#5b9cb8;margin-bottom:12px;letter-spacing:.05em;">保存のしかた</div>'+
+    '<div style="display:flex;gap:12px;">'+
+    '<button id="peSavePng" style="flex:1;border:2px solid #d7dee4;border-radius:14px;background:#fff;padding:14px 18px;cursor:pointer;color:#4a5560;font-weight:800;line-height:1.5;">PNG<br><span style="font-size:10px;font-weight:400;opacity:.7;">きれい</span></button>'+
+    '<button id="peSaveGif" style="flex:1;border:2px solid #f0c36b;border-radius:14px;background:#fffaf0;padding:14px 18px;cursor:pointer;color:#b9852a;font-weight:800;line-height:1.5;">GIF<br><span style="font-size:10px;font-weight:400;opacity:.7;">軽い</span></button>'+
+    '</div></div>';
+  d.body.appendChild(peSaveOv);
+  peSaveOv.addEventListener('click',e=>{ if(e.target===peSaveOv) peSaveOv.style.display='none'; });
+  d.getElementById('peSavePng').addEventListener('click',()=>{ peSaveOv.style.display='none'; doSave(false,'png'); });
+  d.getElementById('peSaveGif').addEventListener('click',()=>{ peSaveOv.style.display='none'; doSave(false,'gif'); });
+  d.getElementById('peSave').addEventListener('click',()=>{ if(!st.img){ setBubble('先に画像をいれてね'); return; } peSaveOv.style.display='flex'; });
 
   // 枠を動かしても自動保存はしない (保存ボタンでダウンロード)
   function scheduleAutoSave(){ /* 自動保存は廃止 */ }

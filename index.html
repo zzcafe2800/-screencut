@@ -3900,6 +3900,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
           <span>背景色</span>
           <span class="shrink-swatch" id="shrinkSwatch" style="background:#fff"></span>
           <button class="shrink-pick-btn" id="shrinkPickBtn" type="button">スポイト</button>
+          <button class="shrink-pick-btn" id="shrinkTranspBtn" type="button">透明</button>
         </div>
         <div class="shrink-level-row">
           <span class="shrink-level-label">余白の大きさ</span>
@@ -3944,7 +3945,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <span class="layer-count-badge" id="layerCountBadge">2</span>
     </button>
     <input type="file" id="addLayerFile" accept="image/*,video/*,.gif,.mp4,.mov,.m4v,.webm,.ogv,.avi,.mkv" hidden>
-    <button class="tool-btn hist-tool" id="undoBtn" type="button" title="元に戻す" disabled>↶</button>
     <button class="tool-btn" id="flipH" title="左右反転" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 7l4 5-4 5z" fill="currentColor"/>
@@ -3990,37 +3990,23 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       </svg>
       <span class="q-level" id="qLevel"></span>
     </button>
-    <div class="effect-wrap">
-      <button class="brightness-btn" id="simplify" title="単純化 / 色加工" disabled>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M5 7c1-3 6-3 8-1s5 0 6 2-1 5-2 7-5 4-8 3-5-3-5-6 0-3 1-5z"/>
-          <circle cx="9" cy="11" r="1.2" fill="currentColor" stroke="none"/>
-          <circle cx="15" cy="13" r="1.2" fill="currentColor" stroke="none"/>
-        </svg>
-        <span class="q-level" id="sLevel"></span>
-      </button>
-      <div class="effect-chooser" id="effectChooser" hidden>
-        <button class="ec-btn" id="ecSimplify" type="button">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M5 7c1-3 6-3 8-1s5 0 6 2-1 5-2 7-5 4-8 3-5-3-5-6 0-3 1-5z"/>
-            <circle cx="9" cy="11" r="1.2" fill="currentColor" stroke="none"/>
-            <circle cx="15" cy="13" r="1.2" fill="currentColor" stroke="none"/>
-          </svg>
-          <span>単純化</span>
-        </button>
-        <button class="ec-btn" id="ecColorAdjust" type="button">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
-            <!-- パレット風アイコン -->
-            <path d="M12 2C6.5 2 2 6.3 2 11.5c0 3.6 2.4 5.5 5 5.5h1.5a2 2 0 012 2v.5c0 1.4 1.1 2.5 2.5 2.5C18 22 22 17.5 22 12c0-5.5-4.5-10-10-10z"/>
-            <circle cx="7.5" cy="10.5" r="1.2" fill="currentColor" stroke="none"/>
-            <circle cx="11" cy="7" r="1.2" fill="currentColor" stroke="none"/>
-            <circle cx="16" cy="8.5" r="1.2" fill="currentColor" stroke="none"/>
-            <circle cx="17.5" cy="13" r="1.2" fill="currentColor" stroke="none"/>
-          </svg>
-          <span>色加工</span>
-        </button>
-      </div>
-    </div>
+    <button class="brightness-btn" id="colorAdjustBtn" title="色加工 (お部屋に合わせる)" disabled>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2C6.5 2 2 6.3 2 11.5c0 3.6 2.4 5.5 5 5.5h1.5a2 2 0 012 2v.5c0 1.4 1.1 2.5 2.5 2.5C18 22 22 17.5 22 12c0-5.5-4.5-10-10-10z"/>
+        <circle cx="7.5" cy="10.5" r="1.2" fill="currentColor" stroke="none"/>
+        <circle cx="11" cy="7" r="1.2" fill="currentColor" stroke="none"/>
+        <circle cx="16" cy="8.5" r="1.2" fill="currentColor" stroke="none"/>
+        <circle cx="17.5" cy="13" r="1.2" fill="currentColor" stroke="none"/>
+      </svg>
+    </button>
+    <button class="brightness-btn" id="simplify" title="単純化" disabled>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 7c1-3 6-3 8-1s5 0 6 2-1 5-2 7-5 4-8 3-5-3-5-6 0-3 1-5z"/>
+        <circle cx="9" cy="11" r="1.2" fill="currentColor" stroke="none"/>
+        <circle cx="15" cy="13" r="1.2" fill="currentColor" stroke="none"/>
+      </svg>
+      <span class="q-level" id="sLevel"></span>
+    </button>
     <button class="brightness-btn" id="thumbBlurBtn" title="ぼかし(円の外側)" style="display:none">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="5"/>
@@ -4080,9 +4066,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
     <button id="dropKun" class="btn btn-accent btn-dropkun" type="button" title="小窓を浮かせてドロップで読み込み">
       <span class="lk-main">ドロップくん</span>
     </button>
-    <button id="thumbKun" class="btn btn-thumbkun" type="button" title="サムネメイカー (自由加工モード)">
-      <span class="lk-main">サムネメイカー</span>
-    </button>
     <button id="roomMatch" class="btn btn-accent" hidden style="display:none !important;">加工くん</button>
     <button id="save" class="btn" disabled>保存</button>
     <div class="splits collapsed" id="splitsContainer">
@@ -4135,7 +4118,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 </main>
 
 <!-- 保存フォーマット選択 (静止画のとき: PNG か 軽量GIF か) -->
-<div id="saveFmtOverlay" class="guide-overlay" role="dialog" aria-modal="true" hidden>
+<div id="saveFmtOverlay" class="guide-overlay" role="dialog" aria-modal="true">
   <div class="guide-card savefmt-card">
     <button id="saveFmtClose" class="guide-close" aria-label="閉じる">×</button>
     <h3>保存のしかた</h3>
@@ -9688,6 +9671,9 @@ function updateToolBtns() {
   qualityBtn.disabled = !en;
   // 単純化: 画像でもGIFでも有効
   simplifyBtn.disabled = !en;
+  // 色加工: 画像でもGIFでも有効
+  const _caBtn = document.getElementById('colorAdjustBtn');
+  if (_caBtn) _caBtn.disabled = !en;
   // 縮小: 画像でもGIFでも有効
   shrinkBtn.disabled = !en;
   // 加工くん: 画像/GIFが読み込まれてる時だけ表示
@@ -9870,29 +9856,8 @@ function invalidateSimplifyCache() { state._simpCache = null; state._qRatioCache
 simplifyBtn.addEventListener('click', () => {
   if (simplifyBtn.disabled) return;
   if (typeof checkExclusiveMode === 'function' && checkExclusiveMode('simplify', simplifyBtn)) return;
-  // チューザーを表示 (単純化 or 色加工)
-  const ch = document.getElementById('effectChooser');
-  if (ch.hidden) {
-    ch.hidden = false;
-    // クリック外で閉じる
-    setTimeout(() => {
-      const onAway = (ev) => {
-        if (!ch.contains(ev.target) && ev.target !== simplifyBtn) {
-          ch.hidden = true;
-          document.removeEventListener('pointerdown', onAway, true);
-        }
-      };
-      document.addEventListener('pointerdown', onAway, true);
-    }, 0);
-  } else {
-    ch.hidden = true;
-  }
-});
-/* 単純化を選択 → スライダーパネル直行 (循環は廃止、レベル1で開始) */
-document.getElementById('ecSimplify').addEventListener('click', () => {
-  document.getElementById('effectChooser').hidden = true;
+  // 単純化パネルを直接開く (チューザー廃止)
   applyToSelectedOrState((tgt, isLegacy) => {
-    // 既に有効なら何もしない (パネル表示中の意図しないリセットを防ぐ)
     if (tgt.simplify === 0) {
       tgt.simplify = 1;
       const preset = SIMPLIFY_PRESETS[1];
@@ -9914,9 +9879,11 @@ document.getElementById('ecSimplify').addEventListener('click', () => {
   updateSimplifyGauge();
   draw();
 });
-/* 色加工を選択 → 加工くんモーダル */
-document.getElementById('ecColorAdjust').addEventListener('click', () => {
-  document.getElementById('effectChooser').hidden = true;
+/* 色加工ボタン → 加工くんモーダルを直接開く */
+const colorAdjustBtn = document.getElementById('colorAdjustBtn');
+if (colorAdjustBtn) colorAdjustBtn.addEventListener('click', () => {
+  if (colorAdjustBtn.disabled) return;
+  if (typeof checkExclusiveMode === 'function' && checkExclusiveMode('coloradjust', colorAdjustBtn)) return;
   openRoomMatch();
 });
 [spLevels, spSmooth, spEdge].forEach(el => {
@@ -10137,7 +10104,13 @@ function updateShrinkGauge() {
       shLevelEl.classList.remove('shown');
     }
     shrinkPanel.classList.add('shown');
-    shrinkSwatch.style.background = state.shrinkBgColor;
+    if (state.shrinkBgTransparent) {
+      shrinkSwatch.style.background = 'repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0/10px 10px';
+    } else {
+      shrinkSwatch.style.background = state.shrinkBgColor;
+    }
+    const _tb = document.getElementById('shrinkTranspBtn');
+    if (_tb) _tb.classList.toggle('active', state.shrinkBgTransparent);
   } else {
     shLevelEl.classList.remove('shown');
     shrinkPanel.classList.remove('shown');
@@ -10362,6 +10335,22 @@ shrinkPickBtn.addEventListener('click', () => {
   shrinkPickBtn.classList.toggle('active', state.eyedropperActive);
   canvas.classList.toggle('eyedropper-active', state.eyedropperActive);
 });
+/* 透明ボタン: 背景を透明に切り替え */
+const shrinkTranspBtn = document.getElementById('shrinkTranspBtn');
+if (shrinkTranspBtn) shrinkTranspBtn.addEventListener('click', () => {
+  state.shrinkBgTransparent = !state.shrinkBgTransparent;
+  shrinkTranspBtn.classList.toggle('active', state.shrinkBgTransparent);
+  if (state.shrinkBgTransparent) {
+    shrinkSwatch.style.background = 'repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0/10px 10px';
+    // スポイトモード解除
+    state.eyedropperActive = false;
+    shrinkPickBtn.classList.remove('active');
+    canvas.classList.remove('eyedropper-active');
+  } else {
+    shrinkSwatch.style.background = state.shrinkBgColor;
+  }
+  draw();
+});
 // 背景拡張の余白サイズ調整スライダー
 const shrinkLevelSlider = document.getElementById('shrinkLevelSlider');
 const shrinkLevelValue = document.getElementById('shrinkLevelValue');
@@ -10438,6 +10427,7 @@ canvas.addEventListener('pointerdown', e => {
     state.eyedropperActive = false;
     shrinkPickBtn.classList.remove('active');
     canvas.classList.remove('eyedropper-active');
+    if (shrinkTranspBtn) shrinkTranspBtn.classList.toggle('active', state.shrinkBgTransparent);
     draw();
   } catch {}
 }, true);  // capture phase で他のハンドラより先に
@@ -11187,13 +11177,9 @@ function rmComputeCanvasSize() {
   const maxW = rect.width - 16;
   const maxH = rect.height - 16;
   let baseW, baseH;
-  if (rmState.manualMode) {
-    baseW = rmState.objW;
-    baseH = rmState.objH;
-  } else {
-    baseW = rmState.roomImg.naturalWidth;
-    baseH = rmState.roomImg.naturalHeight;
-  }
+  // 中央プレビューは常に「色を変える画像(オブジェクト)」基準
+  baseW = rmState.objW;
+  baseH = rmState.objH;
   const imgAR = baseW / baseH;
   let cw, ch;
   if (imgAR > maxW / maxH) { cw = maxW; ch = maxW / imgAR; }
@@ -11236,8 +11222,7 @@ function rmStartObjAnim() {
     if (now - rmState._objLastTick >= delay) {
       rmState._objCurFrame = (rmState._objCurFrame + 1) % rmState.objFrames.length;
       rmState._objLastTick = now;
-      if (rmState.manualMode) rmDrawMain();
-      else renderRmSavePreview();
+      rmDrawMain();
     }
     rmState._objAnimId = requestAnimationFrame(tick);
   };
@@ -11393,48 +11378,32 @@ function rmRecompute() {
 function rmDrawMain() {
   if (!rmState.active || !state.canvasW) return;
   ctx.clearRect(0, 0, state.canvasW, state.canvasH);
-  if (rmState.manualMode) {
-    // 手動モード: 調整後画像 (or 元) を中央プレビューに表示
-    const frames = rmState.adjustedFrames || rmState.objFrames;
-    if (frames && frames.length) {
-      ctx.drawImage(frames[rmState._objCurFrame].canvas, 0, 0, state.canvasW, state.canvasH);
-    }
-    return;
-  }
-  // 部屋画像モード: 部屋画像を背景に描画 + サンプル点マーカー
-  ctx.drawImage(rmState.roomImg, 0, 0, state.canvasW, state.canvasH);
-  if (rmState.sampleX !== null) {
-    const dispScale = state.canvasW / rmState.roomImg.naturalWidth;
-    const cx = rmState.sampleX * dispScale;
-    const cy = rmState.sampleY * dispScale;
-    const cr = rmState.sampleR * dispScale;
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 4]);
-    ctx.beginPath(); ctx.arc(cx, cy, cr, 0, Math.PI * 2); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(91,156,184,0.7)';
-    ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath(); ctx.arc(cx, cy, 4, 0, Math.PI * 2); ctx.stroke();
-    ctx.restore();
+  // 中央プレビュー: 色を変える画像(オブジェクト)の調整後を表示
+  const frames = rmState.adjustedFrames || rmState.objFrames;
+  if (frames && frames.length) {
+    const fi = rmState._objCurFrame % frames.length;
+    ctx.drawImage(frames[fi].canvas, 0, 0, state.canvasW, state.canvasH);
   }
 }
 
-// クリックでサンプル点更新 (部屋画像モードのみ)
+// 中央プレビューはオブジェクト表示になったので、ここでのサンプリングは無効
 function rmCanvasClick(e) {
-  if (!rmState.active || rmState.manualMode) return;
-  e.preventDefault();
-  e.stopPropagation();
-  const r = canvas.getBoundingClientRect();
-  const cx = ((e.clientX - r.left) / r.width) * state.canvasW;
-  const cy = ((e.clientY - r.top) / r.height) * state.canvasH;
-  const dispScale = state.canvasW / rmState.roomImg.naturalWidth;
-  rmState.sampleX = cx / dispScale;
-  rmState.sampleY = cy / dispScale;
-  rmAutoAdjustFromSample();
+  return;
+}
+// 合わせる場所の選択は右下の小さなお部屋画像をクリックで行う
+if (rmSavePreviewCanvas) {
+  rmSavePreviewCanvas.style.cursor = 'crosshair';
+  rmSavePreviewCanvas.addEventListener('pointerdown', e => {
+    if (!rmState.active || rmState.manualMode || !rmState.roomImg) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const r = rmSavePreviewCanvas.getBoundingClientRect();
+    const cx = ((e.clientX - r.left) / r.width) * rmState.roomImg.naturalWidth;
+    const cy = ((e.clientY - r.top) / r.height) * rmState.roomImg.naturalHeight;
+    rmState.sampleX = Math.max(0, Math.min(rmState.roomImg.naturalWidth - 1, cx));
+    rmState.sampleY = Math.max(0, Math.min(rmState.roomImg.naturalHeight - 1, cy));
+    rmAutoAdjustFromSample();
+  });
 }
 canvas.addEventListener('pointerdown', e => {
   if (rmState.active && !rmState.manualMode) rmCanvasClick(e);
@@ -12777,7 +12746,7 @@ function onSaveBtnClick() {
   if (state.thumbMode || hasAnimatedContent()) { state._saveFormat = null; save(); return; }
   const ov = document.getElementById('saveFmtOverlay');
   if (!ov) { state._saveFormat = null; save(); return; }
-  ov.hidden = false;
+  openOverlay(ov);
 }
 saveBtn.addEventListener('click', onSaveBtnClick);
 (function bindSaveFmt() {
@@ -12785,11 +12754,11 @@ saveBtn.addEventListener('click', onSaveBtnClick);
   const png = document.getElementById('saveFmtPng');
   const gif = document.getElementById('saveFmtGif');
   const cl = document.getElementById('saveFmtClose');
-  const pick = (fmt) => { if (ov) ov.hidden = true; state._saveFormat = fmt; save(); };
+  const pick = (fmt) => { if (ov) closeOverlay(ov); state._saveFormat = fmt; save(); };
   if (png) png.addEventListener('click', () => pick('png'));
   if (gif) gif.addEventListener('click', () => pick('gif'));
-  if (cl) cl.addEventListener('click', () => { if (ov) ov.hidden = true; });
-  if (ov) ov.addEventListener('click', (e) => { if (e.target === ov) ov.hidden = true; });
+  if (cl) cl.addEventListener('click', () => { if (ov) closeOverlay(ov); });
+  if (ov) ov.addEventListener('click', (e) => { if (e.target === ov) closeOverlay(ov); });
 })();
 
 /* レイヤーをすべて合成して 1枚の連続フレームを作る (natural 解像度) */
@@ -13110,7 +13079,8 @@ function buildPipEditor(pip, onClose) {
     .pe-size{position:absolute;top:8px;right:14px;background:#fff;border:2px solid #8fd3ed;border-radius:16px;padding:4px 14px;font-size:13px;font-weight:800;color:#5b9cb8;z-index:7;white-space:nowrap;box-shadow:0 3px 9px rgba(91,156,184,.2);}
     .pe-size::after{content:'';position:absolute;left:24px;bottom:-7px;border:7px solid transparent;border-top-color:#8fd3ed;}
     /* 色調整(プレビュー左上に重ねて浮かせる) */
-    .pe-color{position:absolute;left:14px;top:54px;width:160px;background:rgba(255,255,255,0.96);border:2px solid #8fd3ed;border-radius:16px;padding:9px 11px 11px;box-shadow:0 6px 16px rgba(91,156,184,.22);z-index:8;transition:.2s;}
+    .pe-color{position:absolute;left:14px;top:54px;width:min(160px,44vw);max-height:calc(100vh - 140px);overflow-y:auto;background:rgba(255,255,255,0.96);border:2px solid #8fd3ed;border-radius:16px;padding:9px 11px 11px;box-shadow:0 6px 16px rgba(91,156,184,.22);z-index:8;transition:.2s;}
+    .pe-color::-webkit-scrollbar{width:4px;} .pe-color::-webkit-scrollbar-thumb{background:#bfe0ee;border-radius:9px;}
     .pe-color h4{margin:0 0 7px;font-size:10.5px;text-align:center;color:#5b9cb8;letter-spacing:.08em;}
     .pe-crow{display:grid;grid-template-columns:46px 1fr;align-items:center;gap:6px;margin-bottom:5px;font-size:8.5px;}
     .pe-crow label{color:#8aaebd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -13120,6 +13090,19 @@ function buildPipEditor(pip, onClose) {
     .pe-coltoggle{position:absolute;left:14px;top:54px;writing-mode:vertical-lr;background:#8fd3ed;color:#fff;border:none;border-radius:10px;padding:9px 4px;font-size:9px;cursor:pointer;display:none;z-index:8;box-shadow:0 3px 8px rgba(91,156,184,.3);}
     .pe-color.collapsed{display:none;}
     .pe-color.collapsed + .pe-coltoggle{display:block;}
+    /* 小さい窓に自動対応 */
+    @media (max-height:520px){
+      .pe-color{top:46px;padding:6px 8px 8px;max-height:calc(100vh - 104px);}
+      .pe-color h4{margin:0 0 4px;font-size:9px;}
+      .pe-crow{font-size:7.5px;margin-bottom:3px;}
+      .pe-crow input[type=range]{height:4px;}
+      .pe-reset{padding:4px;font-size:9px;margin-top:4px;}
+    }
+    @media (max-width:360px){
+      .pe-color{width:min(132px,46vw);left:8px;}
+      .pe-crow{grid-template-columns:36px 1fr;gap:4px;}
+      .pe-coltoggle{left:8px;}
+    }
     /* 右カラム (全行に拡張: アイテム比を縦いっぱい + 下に保存/戻る) */
     .pe-right{grid-column:2;grid-row:1 / 4;display:flex;flex-direction:column;gap:8px;min-height:0;}
     .pe-items{flex:1;background:#fff;border:2px solid #6b7785;border-radius:16px;overflow-y:auto;min-height:0;box-shadow:0 4px 12px rgba(0,0,0,.08);}

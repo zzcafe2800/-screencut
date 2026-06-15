@@ -588,10 +588,27 @@ body.devlock #thumbKun { filter: none !important; pointer-events: auto !importan
 .devlock-preview:hover { background: #c2568f; }
 .devlock-hint { position: fixed; right: 14px; bottom: 12px; font-size: 10px; color: rgba(74,58,66,0.5); }
 .devlock-hidden { position: fixed; right: 0; bottom: 0; width: 72px; height: 72px; background: transparent; border: none; cursor: pointer; z-index: 73; }
-/* 開発中ロック中: プレビューカードだけ最前面に */
+/* 開発中ロック中: プレビューカードを下部中央に固定して最前面に */
 body.devlock.devlock-preview-on #previewCard {
   z-index: 74 !important; filter: none !important; pointer-events: auto !important;
+  position: fixed !important; left: 50% !important; right: auto !important;
+  top: auto !important; bottom: 16px !important; transform: translateX(-50%) !important;
+  margin: 0 !important;
 }
+/* 保存フォーマット選択 (PNG / 軽量GIF) */
+.savefmt-card { max-width: 340px; text-align: center; }
+.savefmt-row { display: flex; gap: 14px; justify-content: center; margin-top: 6px; }
+.savefmt-opt {
+  flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 18px 10px 14px; border: 2px solid #d7dee4; border-radius: 16px;
+  background: #fff; color: #4a5560; cursor: pointer; transition: all .15s;
+}
+.savefmt-opt:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(91,156,184,.22); }
+.savefmt-opt svg { width: 42px; height: 42px; }
+.savefmt-opt .savefmt-name { font-size: 16px; font-weight: 800; letter-spacing: .04em; }
+.savefmt-opt .savefmt-desc { font-size: 11px; opacity: .7; }
+.savefmt-opt.accent { border-color: #f0c36b; color: #b9852a; background: #fffaf0; }
+.savefmt-opt.accent:hover { border-color: #e0a93f; color: #9c6f1f; box-shadow: 0 6px 16px rgba(224,169,63,.28); }
 .hist-btn {
   border: 1px solid var(--accent); background: #fff; color: var(--accent);
   width: 30px; height: 28px; border-radius: 7px; cursor: pointer; font-size: 17px; line-height: 1; font-weight: 700;
@@ -3664,10 +3681,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
     </div>
     <div class="pc-section-label">New Rooms</div>
     <div class="pc-grid" id="previewGrid"></div>
-    <div class="pc-size-row">
-      <span>大きさ</span>
-      <input type="range" id="previewSize" min="300" max="760" step="10" value="600">
-    </div>
   </div>
   <header class="info">
     <div class="ratio-label">
@@ -4121,11 +4134,38 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   </footer>
 </main>
 
+<!-- 保存フォーマット選択 (静止画のとき: PNG か 軽量GIF か) -->
+<div id="saveFmtOverlay" class="guide-overlay" role="dialog" aria-modal="true" hidden>
+  <div class="guide-card savefmt-card">
+    <button id="saveFmtClose" class="guide-close" aria-label="閉じる">×</button>
+    <h3>保存のしかた</h3>
+    <div class="savefmt-row">
+      <button type="button" class="savefmt-opt" id="saveFmtPng">
+        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="10" y="12" width="44" height="40" rx="4"/>
+          <circle cx="24" cy="26" r="4"/>
+          <path d="M14 46l12-12 8 7 9-10 7 8"/>
+        </svg>
+        <span class="savefmt-name">PNG</span>
+        <span class="savefmt-desc">きれい</span>
+      </button>
+      <button type="button" class="savefmt-opt accent" id="saveFmtGif">
+        <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M40 8l4 10 10 4-10 4-4 10-4-10-10-4 10-4z" stroke-width="2"/>
+          <rect x="12" y="30" width="40" height="24" rx="4"/>
+          <path d="M22 42h8M40 38v8"/>
+        </svg>
+        <span class="savefmt-name">GIF</span>
+        <span class="savefmt-desc">軽い</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- 開発中ロック (body直下・ぼかしの上に表示) -->
 <div class="devlock-ov" id="devLockOv" hidden>
-  <div class="devlock-title">開発中</div>
-  <div class="devlock-sub">この機能は現在開発中です。プレビューのみお試しいただけます。</div>
-  <button class="devlock-preview" id="devLockPreview" type="button">プレビューを見る</button>
+  <div class="devlock-title">構想中</div>
+  <div class="devlock-sub">この機能は構想だけで、開発の予定は未定です。今はプレビューだけお試しいただけます。</div>
   <button class="devlock-hidden" id="devLockSecret" type="button" aria-label=""></button>
 </div>
 
@@ -5688,6 +5728,7 @@ const state = {
   _simpCache: null,
   shrink: 0,             // 0=オフ, 0.1..5.0 連続。背景比率
   shrinkBgColor: '#ffffff', // 背景色 (スポイト)
+  shrinkBgTransparent: false, // 透明部分をスポイト → 背景も透明にする
   shrinkOffsetX: 0,         // 画像位置オフセット (-1..1)
   shrinkOffsetY: 0,
   eyedropperActive: false,
@@ -7456,11 +7497,25 @@ function showDevLock() {
   const ov = document.getElementById('devLockOv'); if (ov) ov.hidden = false;
   // ボタン表記を「アシスタントくん」に (戻る用)
   const m = thumbKunBtnEl && thumbKunBtnEl.querySelector('.lk-main'); if (m) m.textContent = 'アシスタントくん';
+  // プレビューカードを常に下部に表示 (ボタンを押さなくても出す)
+  document.body.classList.add('devlock-preview-on');
+  const pc = document.getElementById('previewCard');
+  if (pc) {
+    // ぼかしの親(main)から外し body直下へ移して filter の影響を受けないように
+    if (pc.parentNode && pc.parentNode !== document.body) {
+      pc.dataset._origParent = '1';
+      document.body.appendChild(pc);
+    }
+    pc.hidden = false;
+  }
+  if (typeof renderPreviewCard === 'function') renderPreviewCard();
 }
 function hideDevLock() {
   _devLocked = false;
   document.body.classList.remove('devlock');
+  document.body.classList.remove('devlock-preview-on');
   const ov = document.getElementById('devLockOv'); if (ov) ov.hidden = true;
+  if (!state.thumbMode) { const pc = document.getElementById('previewCard'); if (pc) pc.hidden = true; }
   const m = thumbKunBtnEl && thumbKunBtnEl.querySelector('.lk-main'); if (m) m.textContent = 'サムネメイカー';
 }
 function enterThumbModeReal() {
@@ -9001,7 +9056,9 @@ async function loadFile(file) {
   state.gifBaseSize = 0;
   state.simplify = 0;
   state._simpCache = null;
+  state._qRatioCache = null;
   state.shrink = 0;
+  state.shrinkBgTransparent = false;
   state.eyedropperActive = false;
   state.shrinkSubMode = null;
   state.deformActive = false; state.deformOffsetX = 0; state.deformOffsetY = 0; state.deformScaleX = 1; state.deformScaleY = 1;
@@ -9666,6 +9723,30 @@ function formatBytes(n) {
   if (n >= 1024 * 1024) return (n / 1024 / 1024).toFixed(2) + ' MB';
   return (n / 1024).toFixed(1) + ' KB';
 }
+/* 実測: 代表フレームを元解像度と画質低下後解像度で実際にPNG化してサイズ比を求める */
+function measureQualityRatio() {
+  if (!state.loaded || state.quality === 0 || !state.frames.length) return 1;
+  if (!state._qRatioCache) state._qRatioCache = {};
+  if (state._qRatioCache[state.quality] != null) return state._qRatioCache[state.quality];
+  try {
+    const idx = Math.min(state.currentFrame || 0, state.frames.length - 1);
+    const src = (state.simplify > 0 ? getEffectFrame(idx) : state.frames[idx].canvas);
+    const W = src.width, H = src.height;
+    if (!W || !H) return 1;
+    const sc = getQualityScale();
+    const fullLen = src.toDataURL('image/png').length;
+    const sm = document.createElement('canvas');
+    sm.width = Math.max(1, Math.round(W * sc));
+    sm.height = Math.max(1, Math.round(H * sc));
+    sm.getContext('2d').drawImage(src, 0, 0, sm.width, sm.height);
+    const redLen = sm.toDataURL('image/png').length;
+    let ratio = redLen / fullLen;
+    if (!isFinite(ratio) || ratio <= 0) ratio = 1;
+    ratio = Math.min(1, ratio);
+    state._qRatioCache[state.quality] = ratio;
+    return ratio;
+  } catch (e) { return 1; }
+}
 function updateQualityGauge() {
   const fill = (state.quality / QUALITY_MAX) * 360;
   qualityBtn.style.setProperty('--fill', fill + 'deg');
@@ -9690,8 +9771,10 @@ function updateQualityInfo() {
     if (ov) ov.hidden = true;
     return;
   }
-  const reduced = base / Math.pow(QUALITY_FACTOR, state.quality);
-  const pct = Math.round((1 - reduced / base) * 100);
+  // 実測: 代表フレームを「元の解像度」と「画質低下後の解像度」で実際にPNGエンコードし、サイズ比を測る
+  const ratio = measureQualityRatio();
+  const reduced = Math.round(base * ratio);
+  const pct = Math.round((1 - ratio) * 100);
   const html = `<span class="q-before">${formatBytes(base)}</span><span class="q-arrow">➜</span><span class="q-after">${formatBytes(reduced)}</span><span class="q-pct">(−${pct}%)</span>`;
   qInfoEl.innerHTML = html;
   qInfoEl.classList.add('shown');
@@ -9783,7 +9866,7 @@ function updateSimplifyGauge() {
     simplifyPanel.classList.remove('shown');
   }
 }
-function invalidateSimplifyCache() { state._simpCache = null; }
+function invalidateSimplifyCache() { state._simpCache = null; state._qRatioCache = null; }
 simplifyBtn.addEventListener('click', () => {
   if (simplifyBtn.disabled) return;
   if (typeof checkExclusiveMode === 'function' && checkExclusiveMode('simplify', simplifyBtn)) return;
@@ -10005,8 +10088,11 @@ function applyShrinkToCanvas(srcCanvas) {
   const out = document.createElement('canvas');
   out.width = W; out.height = H;
   const octx = out.getContext('2d');
-  octx.fillStyle = state.shrinkBgColor;
-  octx.fillRect(0, 0, W, H);
+  if (!state.shrinkBgTransparent) {
+    octx.fillStyle = state.shrinkBgColor;
+    octx.fillRect(0, 0, W, H);
+  }
+  // 透明背景の場合は塗りつぶさず、クリアのまま (= 余白が透明)
   const sc = getShrinkScale();
   const sw = W * sc, sh = H * sc;
   // 位置オフセット (state.shrinkOffsetX/Y, -1〜1 の正規化値 → 余白範囲内)
@@ -10166,6 +10252,7 @@ function closeShrinkPanel() {
   // 全リセット
   state.shrink = 0;
   state.shrinkSubMode = null;
+  state.shrinkBgTransparent = false;
   state.deformActive = false;
   state.deformOffsetX = 0; state.deformOffsetY = 0;
   state.deformScaleX = 1; state.deformScaleY = 1;
@@ -10339,8 +10426,15 @@ canvas.addEventListener('pointerdown', e => {
   try {
     const d = ctx.getImageData(Math.max(0, Math.min(state.canvasW - 1, cx)),
                                Math.max(0, Math.min(state.canvasH - 1, cy)), 1, 1).data;
-    state.shrinkBgColor = `rgb(${d[0]},${d[1]},${d[2]})`;
-    shrinkSwatch.style.background = state.shrinkBgColor;
+    if (d[3] < 30) {
+      // 透明な部分をスポイト → 背景も透明にする
+      state.shrinkBgTransparent = true;
+      shrinkSwatch.style.background = 'repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0/10px 10px';
+    } else {
+      state.shrinkBgTransparent = false;
+      state.shrinkBgColor = `rgb(${d[0]},${d[1]},${d[2]})`;
+      shrinkSwatch.style.background = state.shrinkBgColor;
+    }
     state.eyedropperActive = false;
     shrinkPickBtn.classList.remove('active');
     canvas.classList.remove('eyedropper-active');
@@ -12136,7 +12230,8 @@ async function processCell(cell, transformedFrames, brightness, qualityLevel, on
   }
 
   if (cellFrames.length === 1) {
-    // 静止画 → PNG (画質低下も適用)
+    // 静止画 → 出力キャンバスを用意 (画質低下も適用)
+    let outC = cellFrames[0].canvas;
     if (qualityLevel > 0) {
       const sc = 1 / Math.sqrt(Math.pow(QUALITY_FACTOR, qualityLevel));
       let outW = Math.max(1, Math.round(w * sc));
@@ -12147,9 +12242,17 @@ async function processCell(cell, transformedFrames, brightness, qualityLevel, on
       const small = document.createElement('canvas');
       small.width = outW; small.height = outH;
       small.getContext('2d').drawImage(cellFrames[0].canvas, 0, 0, outW, outH);
-      return await new Promise(res => small.toBlob(res, 'image/png'));
+      outC = small;
     }
-    return await new Promise(res => cellFrames[0].canvas.toBlob(res, 'image/png'));
+    // 軽量化のため1枚GIFで保存 (選択時)
+    if (state._saveFormat === 'gif') {
+      const W2 = outC.width, H2 = outC.height;
+      const rgba = outC.getContext('2d').getImageData(0, 0, W2, H2).data;
+      const sq = qualityLevel > 0 ? Math.min(30, 10 + qualityLevel * 3) : 10;
+      const buf = await encodeAnimatedGIF(W2, H2, [{ rgba, delay: 100 }], onProgress, { sampleQuality: sq });
+      return new Blob([buf], { type: 'image/gif' });
+    }
+    return await new Promise(res => outC.toBlob(res, 'image/png'));
   }
 
   // 画質低下が指定されていれば動くGIFはこの解像度で出力
@@ -12389,7 +12492,7 @@ async function save() {
         const buf = await encodeAnimatedGIF(W, H, framesData, (c, t) => { saveBtn.innerHTML = `GIF ${c}/${t}`; }, { sampleQuality });
         await download(new Blob([buf], { type: 'image/gif' }), buildBaseName() + '.gif');
       } else {
-        // 静止画 (画質低下: 解像度を下げてからPNG出力)
+        // 静止画 (画質低下: 解像度を下げてから出力)
         let outCanvas = comp[0].canvas;
         if (q > 0) {
           const W = Math.max(1, Math.round(outCanvas.width * sc)), H = Math.max(1, Math.round(outCanvas.height * sc));
@@ -12397,8 +12500,17 @@ async function save() {
           sm.getContext('2d').drawImage(outCanvas, 0, 0, W, H);
           outCanvas = sm;
         }
-        const blob = await new Promise(res => outCanvas.toBlob(res, 'image/png'));
-        await download(blob, buildBaseName() + '.png');
+        if (state._saveFormat === 'gif') {
+          // 軽量化のため1枚GIFで保存
+          const W2 = outCanvas.width, H2 = outCanvas.height;
+          const rgba = outCanvas.getContext('2d').getImageData(0, 0, W2, H2).data;
+          const sq = q > 0 ? Math.min(30, 10 + q * 3) : 10;
+          const gbuf = await encodeAnimatedGIF(W2, H2, [{ rgba, delay: 100 }], null, { sampleQuality: sq });
+          await download(new Blob([gbuf], { type: 'image/gif' }), buildBaseName() + '.gif');
+        } else {
+          const blob = await new Promise(res => outCanvas.toBlob(res, 'image/png'));
+          await download(blob, buildBaseName() + '.png');
+        }
       }
     } catch (e) { console.error(e); showToast('保存に失敗しました'); }
     finally { saveBtn.innerHTML = o; updateSaveBtn(); }
@@ -12454,7 +12566,7 @@ async function save() {
     }
     // トリミング後のフレーム数で出力フォーマットを判定
     const isGif = sourceFrames.length > 1;
-    const ext = isGif ? '.gif' : '.png';
+    const ext = (isGif || state._saveFormat === 'gif') ? '.gif' : '.png';
     const transformed = sourceFrames.map(fr => ({
       canvas: transformFrameToCanvas(fr.canvas),
       delay: fr.delay,
@@ -12659,7 +12771,26 @@ async function save() {
     updateSaveBtn();
   }
 }
-saveBtn.addEventListener('click', save);
+function onSaveBtnClick() {
+  if (!state.loaded) return;
+  // サムネモード or 動くGIF はそのまま保存 (PNG/GIF選択は静止画のときだけ)
+  if (state.thumbMode || hasAnimatedContent()) { state._saveFormat = null; save(); return; }
+  const ov = document.getElementById('saveFmtOverlay');
+  if (!ov) { state._saveFormat = null; save(); return; }
+  ov.hidden = false;
+}
+saveBtn.addEventListener('click', onSaveBtnClick);
+(function bindSaveFmt() {
+  const ov = document.getElementById('saveFmtOverlay');
+  const png = document.getElementById('saveFmtPng');
+  const gif = document.getElementById('saveFmtGif');
+  const cl = document.getElementById('saveFmtClose');
+  const pick = (fmt) => { if (ov) ov.hidden = true; state._saveFormat = fmt; save(); };
+  if (png) png.addEventListener('click', () => pick('png'));
+  if (gif) gif.addEventListener('click', () => pick('gif'));
+  if (cl) cl.addEventListener('click', () => { if (ov) ov.hidden = true; });
+  if (ov) ov.addEventListener('click', (e) => { if (e.target === ov) ov.hidden = true; });
+})();
 
 /* レイヤーをすべて合成して 1枚の連続フレームを作る (natural 解像度) */
 /* レイヤーをすべて合成して 1枚の連続フレームを作る (canvas寸法、全 transform ベイク) */
@@ -12672,18 +12803,18 @@ const previewSize = document.getElementById('previewSize');
 
 // 参考UI風のダミールーム (自分のサムネを混ぜる)
 const PREVIEW_ROOMS = [
-  { name: '不活動室', stat: '1 / 6 players ・ 8.0MB', hue: 20 },
+  { name: 'のんびり工房', stat: '1 / 6 players ・ 8.0MB', hue: 20 },
   { name: 'あなたのお部屋', stat: '3 / 8 players ・ —', mine: true },
-  { name: '気ままに作業部屋', stat: '3 / 10 players ・ 443.0KB', hue: 210 },
-  { name: 'シーサイドカフェ', stat: '3 / 16 players ・ 19.0MB', hue: 195 },
-  { name: '学校の教室', stat: '9 / 15 players ・ 15.0MB', hue: 150 },
-  { name: 'Chill cafe', stat: '14 / 15 players ・ 7.0MB', hue: 280 },
+  { name: 'まったり作業ラウンジ', stat: '3 / 10 players ・ 443.0KB', hue: 210 },
+  { name: '星空テラス', stat: '3 / 16 players ・ 19.0MB', hue: 195 },
+  { name: 'ひだまり書斎', stat: '9 / 15 players ・ 15.0MB', hue: 150 },
+  { name: '夜更かしカフェ', stat: '14 / 15 players ・ 7.0MB', hue: 280 },
 ];
 
 function renderPreviewGrid() {
   if (!previewGrid) return;
   previewGrid.innerHTML = '';
-  const cardW = parseInt(previewSize.value, 10);
+  const cardW = 600;
   previewCard.style.width = cardW + 'px';
   let mineCanvas = null;
   try { mineCanvas = buildThumbPreviewCanvas(); } catch (e) { mineCanvas = null; }
@@ -12800,7 +12931,7 @@ if (previewToggle) {
   });
 }
 if (previewClose) previewClose.addEventListener('click', closePreview);
-if (previewSize) previewSize.addEventListener('input', renderPreviewGrid);
+/* プレビューサイズ変更機能は廃止 (固定幅) */
 
 function compositeAllLayers() {
   if (state.layers.length === 0) return state.frames;

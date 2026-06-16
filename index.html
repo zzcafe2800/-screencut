@@ -3093,14 +3093,27 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 .welcome-tutorial-btn:hover{ filter:brightness(1.05); }
 #tutorialSpot{ position:fixed; display:none; border-radius:14px; z-index:9000; pointer-events:none; border:3px solid #8fd3ed; animation:tutBlink 0.85s ease-in-out infinite; }
 @keyframes tutBlink{ 0%,100%{ border-color:rgba(143,211,237,1); box-shadow:0 0 0 9999px rgba(20,30,45,0.58), 0 0 18px 5px rgba(143,211,237,.85);} 50%{ border-color:rgba(143,211,237,0.3); box-shadow:0 0 0 9999px rgba(20,30,45,0.58), 0 0 8px 2px rgba(143,211,237,.3);} }
-.tut-card{ max-width:560px; }
-.tut-steps{ display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; justify-content:center; }
-.tut-step{ flex:1 1 92px; min-width:92px; max-width:104px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; }
-.tut-num{ width:22px; height:22px; border-radius:50%; background:#5b9cb8; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; }
-.tut-step svg{ width:48px; height:40px; color:#5b9cb8; }
-.tut-step .txt{ font-size:10.5px; color:#5a6b75; line-height:1.4; }
-.tut-step .txt b{ color:#3a5560; }
-@media (max-width:560px){ .tut-step{ flex:1 1 40%; max-width:none; } }
+.tut-card{ max-width:600px; padding:34px 34px 30px; }
+.tut-progress{ display:flex; align-items:center; justify-content:center; margin:14px 0 4px; }
+.tut-pstep{ display:flex; align-items:center; }
+.tut-pdot{ width:30px; height:30px; border-radius:50%; background:#e0e8ee; color:#8aa0ad; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center; transition:.25s; flex:none; }
+.tut-pstep.done .tut-pdot, .tut-pstep.current .tut-pdot{ background:#5b9cb8; color:#fff; }
+.tut-pstep.current .tut-pdot{ box-shadow:0 0 0 4px rgba(91,156,184,.25); }
+.tut-pstep:not(:last-child)::after{ content:''; width:34px; height:4px; background:#e0e8ee; transition:.25s; border-radius:2px; }
+.tut-pstep.done::after{ background:#5b9cb8; }
+.tut-main{ position:relative; min-height:210px; display:flex; align-items:center; justify-content:center; margin-top:10px; }
+.tut-panel{ display:none; flex-direction:column; align-items:center; text-align:center; gap:18px; }
+.tut-panel.active{ display:flex; animation:tutFade .25s ease; }
+@keyframes tutFade{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:none;} }
+.tut-panel svg{ width:150px; height:112px; color:#5b9cb8; }
+.tut-text{ font-size:17px; color:#3a5560; line-height:1.6; }
+.tut-text b{ color:#2f7d9b; }
+.tut-nav{ display:flex; align-items:center; justify-content:space-between; margin-top:18px; }
+.tut-arrow{ width:48px; height:48px; border-radius:50%; border:2px solid #cdd6dd; background:#fff; color:#5b9cb8; font-size:24px; line-height:1; cursor:pointer; transition:.15s; }
+.tut-arrow:hover:not(:disabled){ background:#eef7fb; border-color:#8fd3ed; }
+.tut-arrow:disabled{ opacity:.3; cursor:default; }
+.tut-count{ font-size:14px; color:#8aa0ad; font-weight:700; }
+@media (max-width:560px){ .tut-card{ padding:28px 20px 24px; } .tut-panel svg{ width:120px; height:90px; } .tut-text{ font-size:15px; } .tut-pstep:not(:last-child)::after{ width:20px; } .tut-pdot{ width:26px; height:26px; font-size:12px; } }
 .guide-card {
   position: relative;
   background: var(--bg);
@@ -4451,42 +4464,69 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   <div class="guide-card tut-card">
     <button id="tutorialExplainClose" class="guide-close" aria-label="閉じる">×</button>
     <h3>つかいかた</h3>
-    <div class="tut-steps">
-      <div class="tut-step">
-        <div class="tut-num">1</div>
-        <svg viewBox="0 0 64 52" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="6" y="6" width="52" height="34" rx="3"/><path d="M22 46h20M32 40v6"/><path d="M26 23l10 0M31 18v10" opacity="0.5"/><circle cx="44" cy="16" r="2.5" fill="currentColor" stroke="none"/>
+    <div class="tut-progress" id="tutProgress">
+      <div class="tut-pstep" data-i="1"><span class="tut-pdot">1</span></div>
+      <div class="tut-pstep" data-i="2"><span class="tut-pdot">2</span></div>
+      <div class="tut-pstep" data-i="3"><span class="tut-pdot">3</span></div>
+      <div class="tut-pstep" data-i="4"><span class="tut-pdot">4</span></div>
+      <div class="tut-pstep" data-i="5"><span class="tut-pdot">5</span></div>
+    </div>
+    <div class="tut-main" id="tutMain">
+      <div class="tut-panel" data-step="1">
+        <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="18" y="34" width="84" height="34" rx="17"/>
+          <circle cx="42" cy="51" r="10" opacity="0.2"/>
+          <path d="M36 51h12M42 45v12"/>
+          <circle cx="82" cy="45" r="3.6" fill="currentColor" stroke="none"/>
+          <circle cx="92" cy="54" r="3.6" fill="currentColor" stroke="none"/>
+          <circle cx="82" cy="58" r="3.6" fill="currentColor" stroke="none"/>
+          <circle cx="72" cy="51" r="3.6" fill="currentColor" stroke="none"/>
         </svg>
-        <div class="txt">画像を入れたい<br><b>ゲームを開く</b></div>
+        <div class="tut-text">画像を入れたい<br><b>ゲームを開く</b></div>
       </div>
-      <div class="tut-step">
-        <div class="tut-num">2</div>
-        <svg viewBox="0 0 64 52" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="6" y="8" width="22" height="18" rx="2"/><path d="M11 14h12M11 19h8" opacity="0.5"/><path d="M32 30v12M27 37l5 5 5-5"/><rect x="20" y="40" width="34" height="8" rx="2"/>
+      <div class="tut-panel" data-step="2">
+        <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="16" y="10" width="34" height="26" rx="3"/>
+          <circle cx="26" cy="20" r="3" fill="currentColor" stroke="none"/>
+          <path d="M16 36l9-8 7 5 5-4 13 7"/>
+          <path d="M62 58v-12a3 3 0 016 0v9m0-6a3 3 0 016 0v6m0-4a3 3 0 016 0v12a13 13 0 01-13 13h-3a11 11 0 01-8-4l-7-8a3 3 0 014.6-4l4 3.6" stroke-width="2.6"/>
+          <rect x="12" y="78" width="52" height="8" rx="3" opacity="0.4"/>
         </svg>
-        <div class="txt">ファイルから画像を<br><b>このサイトにドロップ</b></div>
+        <div class="tut-text">ファイルから画像を<br><b>このサイトにドロップ</b></div>
       </div>
-      <div class="tut-step">
-        <div class="tut-num">3</div>
-        <svg viewBox="0 0 64 52" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="24" cy="22" r="11"/><path d="M32 30l9 9"/><rect x="34" y="6" width="22" height="20" rx="2" opacity="0.5"/>
+      <div class="tut-panel" data-step="3">
+        <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="54" y="14" width="48" height="40" rx="3" opacity="0.35"/>
+          <rect x="64" y="24" width="28" height="20" rx="2"/>
+          <circle cx="42" cy="44" r="21"/>
+          <path d="M58 60l16 16"/>
         </svg>
-        <div class="txt"><b>アイテムを検索</b>して<br>大きさを調節</div>
+        <div class="tut-text"><b>アイテムを検索</b>して<br>大きさを調節</div>
       </div>
-      <div class="tut-step">
-        <div class="tut-num">4</div>
-        <svg viewBox="0 0 64 52" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M32 8v26M23 26l9 9 9-9"/><rect x="14" y="40" width="36" height="8" rx="2"/>
+      <div class="tut-panel" data-step="4">
+        <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M60 14v42M43 41l17 16 17-16"/>
+          <rect x="28" y="66" width="64" height="10" rx="3"/>
         </svg>
-        <div class="txt"><b>保存</b>する</div>
+        <div class="tut-text"><b>保存</b>する</div>
       </div>
-      <div class="tut-step">
-        <div class="tut-num">5</div>
-        <svg viewBox="0 0 64 52" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="6" y="14" width="20" height="16" rx="2"/><circle cx="13" cy="21" r="2" fill="currentColor" stroke="none"/><path d="M30 24h14M40 20l5 4-5 4"/><rect x="44" y="8" width="14" height="36" rx="3"/>
+      <div class="tut-panel" data-step="5">
+        <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="66" width="50" height="14" rx="3" opacity="0.5"/>
+          <rect x="11" y="69" width="12" height="8" rx="1.5"/>
+          <rect x="20" y="10" width="28" height="22" rx="3"/>
+          <circle cx="29" cy="19" r="2.6" fill="currentColor" stroke="none"/>
+          <path d="M44 56v-12a3 3 0 016 0v9m0-6a3 3 0 016 0v6m0-4a3 3 0 016 0v12a13 13 0 01-13 13h-3a11 11 0 01-8-4l-6-7a3 3 0 014.6-4l3.6 3.4" stroke-width="2.6"/>
+          <rect x="86" y="14" width="28" height="58" rx="5"/>
+          <path d="M72 42h20M84 35l8 7-8 7"/>
         </svg>
-        <div class="txt">その画像をつかんで<br><b>ゲームにドロップ</b></div>
+        <div class="tut-text">ファイルかダウンロード一覧から<br>画像をつかんで<b>アイテムにドロップ</b></div>
       </div>
+    </div>
+    <div class="tut-nav">
+      <button class="tut-arrow" id="tutPrev" type="button" aria-label="前へ">‹</button>
+      <span class="tut-count" id="tutCount">1 / 5</span>
+      <button class="tut-arrow" id="tutNext" type="button" aria-label="次へ">›</button>
     </div>
   </div>
 </div>
@@ -6028,13 +6068,33 @@ const _dkForTut = document.getElementById('dropKun');
 if (_dkForTut) _dkForTut.addEventListener('click', () => {
   if (document.body.classList.contains('tutorial-on')) {
     endTutorialSpot();
-    setTimeout(() => openOverlay(document.getElementById('tutorialExplain')), 200);
+    setTimeout(() => { showTutStep(1); openOverlay(document.getElementById('tutorialExplain')); }, 200);
   }
 });
 const tutorialExplain = document.getElementById('tutorialExplain');
 const tutorialExplainClose = document.getElementById('tutorialExplainClose');
 if (tutorialExplainClose) tutorialExplainClose.addEventListener('click', () => closeOverlay(tutorialExplain));
-if (tutorialExplain) tutorialExplain.addEventListener('click', e => { if (e.target === tutorialExplain) closeOverlay(tutorialExplain); });
+// × を押さないと閉じない (背景クリックでは閉じない)
+// カルーセル制御
+const TUT_TOTAL = 5;
+let _tutStep = 1;
+function showTutStep(n) {
+  _tutStep = Math.max(1, Math.min(TUT_TOTAL, n));
+  document.querySelectorAll('#tutMain .tut-panel').forEach(p => p.classList.toggle('active', +p.dataset.step === _tutStep));
+  document.querySelectorAll('#tutProgress .tut-pstep').forEach(s => {
+    const i = +s.dataset.i;
+    s.classList.toggle('done', i < _tutStep);
+    s.classList.toggle('current', i === _tutStep);
+  });
+  const cnt = document.getElementById('tutCount'); if (cnt) cnt.textContent = _tutStep + ' / ' + TUT_TOTAL;
+  const pv = document.getElementById('tutPrev'), nx = document.getElementById('tutNext');
+  if (pv) pv.disabled = _tutStep === 1;
+  if (nx) nx.disabled = _tutStep === TUT_TOTAL;
+}
+const _tutPrev = document.getElementById('tutPrev'), _tutNext = document.getElementById('tutNext');
+if (_tutPrev) _tutPrev.addEventListener('click', () => showTutStep(_tutStep - 1));
+if (_tutNext) _tutNext.addEventListener('click', () => showTutStep(_tutStep + 1));
+showTutStep(1);
 
 /* ===== Share overlay ===== */
 shareBtn.addEventListener('click', () => openOverlay(shareOverlay));
@@ -13193,6 +13253,9 @@ function buildPipEditor(pip, onClose) {
     .pe-reset{width:100%;margin-top:6px;border:none;background:linear-gradient(135deg,#e8f4fa,#d3eaf5);border-radius:9px;padding:6px;font-size:10px;color:#5b9cb8;font-weight:700;cursor:pointer;}
     .pe-coltoggle{position:absolute;left:14px;top:54px;writing-mode:vertical-lr;background:#8fd3ed;color:#fff;border:none;border-radius:10px;padding:9px 4px;font-size:9px;cursor:pointer;display:none;z-index:8;box-shadow:0 3px 8px rgba(91,156,184,.3);}
     .pe-coltoggle{position:absolute;left:10px;bottom:10px;top:auto;writing-mode:horizontal-tb;background:#8fd3ed;color:#fff;border:none;border-radius:12px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;display:block;z-index:11;box-shadow:0 3px 8px rgba(91,156,184,.3);}
+    .pe-filebtn{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:5px;background:#fff;border:2px solid #8fd3ed;color:#5b9cb8;border-radius:12px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;z-index:11;box-shadow:0 3px 8px rgba(91,156,184,.22);}
+    .pe-filebtn svg{width:16px;height:16px;}
+    .pe-filebtn:hover{background:#eef7fb;}
     .pe-color.collapsed{display:none;}
     .pe-fxcard{position:absolute;left:10px;bottom:50px;width:min(172px,48vw);background:rgba(255,255,255,0.97);border:2px solid #8fd3ed;border-radius:16px;padding:10px 12px;box-shadow:0 6px 16px rgba(91,156,184,.25);z-index:12;}
     .pe-fxcard[hidden]{display:none;}
@@ -13313,6 +13376,10 @@ function buildPipEditor(pip, onClose) {
   wrap.innerHTML=`
     <div class="pe-center" id="peCenter">
       <div class="pe-topicons" id="peTopIcons"></div>
+      <button class="pe-filebtn" id="peFileBtn" type="button" title="ファイルを開く">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        <span>ファイル</span>
+      </button>
       <div class="pe-size" id="peSize" style="display:none">0.00 MB</div>
       <div class="pe-color" id="peColor">
         <h4>色調整</h4>
@@ -13741,7 +13808,9 @@ function buildPipEditor(pip, onClose) {
   }
   // 本体サイトで画像を入れたら PiP にも反映するフック
   window.__pipLoadFile = (file)=>{ try{ loadIntoPip(file, true); }catch(e){} };
-  dropEl.addEventListener('click',()=>{ const inp=d.createElement('input'); inp.type='file'; inp.accept='image/*,.gif'; inp.addEventListener('change',()=>{if(inp.files[0])loadIntoPip(inp.files[0]);}); inp.click(); });
+  function peOpenFilePicker(){ const inp=d.createElement('input'); inp.type='file'; inp.accept='image/*,.gif'; inp.addEventListener('change',()=>{if(inp.files[0])loadIntoPip(inp.files[0]);}); inp.click(); }
+  dropEl.addEventListener('click', peOpenFilePicker);
+  const peFileBtn=d.getElementById('peFileBtn'); if(peFileBtn) peFileBtn.addEventListener('click', peOpenFilePicker);
   ['dragover','dragenter'].forEach(ev=>stage.addEventListener(ev,e=>e.preventDefault()));
   stage.addEventListener('drop',e=>{e.preventDefault(); if(e.dataTransfer.files[0])loadIntoPip(e.dataTransfer.files[0]);});
 

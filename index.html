@@ -508,6 +508,7 @@ header.info {
 .img-lock-btn.mode-orig { color: #8a99a3; }
 .img-lock-btn.mode-lock { color: #5b9cb8; }
 .img-lock-btn.mode-free { color: #e0a341; }
+.img-lock-btn.mode-fit { color: #e0699b; }
 .img-lock-btn:hover { transform: scale(1.1); }
 .img-mode-btn svg { width: 19px; height: 19px; }
 .img-mode-btn.mode-orig { color: #8a99a3; }
@@ -4019,7 +4020,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         <line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2 2"/>
       </svg>
     </button>
-    <button class="tool-btn img-mode-btn mode-orig" id="imgTransformBtn" title="画像のサイズ変形 (元 / 比率ロック / 自由変形)" disabled></button>
     <button class="tool-btn" id="rotate" title="90°回転" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 12a9 9 0 1 1-3.5-7.1"/>
@@ -9652,7 +9652,7 @@ function draw() {
   // 画像変形モード: 画像の表示矩形を白い枠で囲む + 左上に■ハンドル
   if (state.deformActive) {
     const dr = deformDisplayRect();
-    const _col = state.imgRatioLock ? '#5b9cb8' : '#e0a341';  // ロック=青 / 解除=オレンジ
+    const _col = state.imgLockMode === 'lock' ? '#5b9cb8' : state.imgLockMode === 'fit' ? '#e0699b' : '#e0a341';  // ロック=青 / フィット=ピンク / 解除=オレンジ
     ctx.save();
     // 枠 (モード色, 点線) — 端で切れないよう内側にわずかに寄せて白枠の上に出す
     const inset = 1.5;
@@ -10776,6 +10776,7 @@ const IMG_LOCK_ICONS = {
   orig: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="11" width="12" height="9" rx="2"/><path d="M9 11V8a3 3 0 016 0v3"/><circle cx="12" cy="15.5" r="1.3" fill="currentColor" stroke="none"/></svg>',
   lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="11.5" width="11" height="8.5" rx="1.8"/><path d="M5 11.5V9.2a3 3 0 016 0v2.3"/><path d="M16.5 16.5l4.5 4.5M21 16.8v4.2h-4.2"/></svg>',
   free: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="11.5" width="11" height="8.5" rx="1.8"/><path d="M5 11.5V9.2a3 3 0 015.2-2.1"/><path d="M16.5 16.5l4.5 4.5M21 16.8v4.2h-4.2"/></svg>',
+  fit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="12" width="9" height="7.5" rx="1.6"/><path d="M4.5 12V9.8a2.5 2.5 0 015 0V12"/><path d="M14.5 5.5h4v4M18.5 5.5l-5 5M21 20.5h-4v-4M17 20.5l4-4"/></svg>',
 };
 const imgLockBtn = document.getElementById('imgLockBtn');
 function syncImgLockBtn() {
@@ -10813,21 +10814,18 @@ function setImgLockMode(mode) {
       state._deformHintVisible = true;
     }
     state.imgRatioLock = (mode === 'lock');
+    if (mode === 'fit') {
+      // アイテム枠に画像を無理やり合わせる (白枠ぴったりに変形)
+      if (typeof deformAutoFit === 'function') deformAutoFit();
+    }
   }
   syncImgLockBtn();
   draw();
 }
 if (imgLockBtn) imgLockBtn.addEventListener('click', () => {
-  const order = ['orig', 'lock', 'free'];
+  const order = ['orig', 'lock', 'free', 'fit'];
   const cur = state.imgLockMode || 'orig';
-  setImgLockMode(order[(order.indexOf(cur) + 1) % 3]);
-});
-const imgTransformBtn = document.getElementById('imgTransformBtn');
-if (imgTransformBtn) imgTransformBtn.addEventListener('click', () => {
-  if (imgTransformBtn.disabled) return;
-  const order = ['orig', 'lock', 'free'];
-  const cur = state.imgLockMode || 'orig';
-  setImgLockMode(order[(order.indexOf(cur) + 1) % 3]);
+  setImgLockMode(order[(order.indexOf(cur) + 1) % order.length]);
 });
 
 /* ===== パターン手動範囲: 長押し→2点クリックで矩形定義 ===== */

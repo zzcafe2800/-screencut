@@ -2672,13 +2672,13 @@ canvas.rm-active { cursor: crosshair; }
 .layer-panel {
   position: absolute;
   top: 50%;
-  right: 12px;
+  left: 12px;
   transform: translateY(-50%);
   background: rgba(255,255,255,0.97);
   border: 1px solid var(--line);
   border-radius: 10px;
   box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-  z-index: 11;
+  z-index: 13;
   display: flex;
   align-items: stretch;
   max-width: 200px;
@@ -2692,10 +2692,20 @@ canvas.rm-active { cursor: crosshair; }
 /* サムネモード: レイヤーを左サイドバー下部へ移動 */
 .lp-title-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; }
 .lp-title-row .lp-title { flex: 1; }
+.lp-dup {
+  width: 22px; height: 22px;
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #fff; color: var(--accent);
+  border: 1.5px solid var(--accent);
+  border-radius: 6px;
+  cursor: pointer; line-height: 1; padding: 0;
+}
+.lp-dup:hover { background: rgba(91,156,184,0.12); }
+.lp-dup:disabled { opacity: 0.4; cursor: default; }
 .lp-add {
   width: 22px; height: 22px;
   flex: 0 0 auto;
-  margin-left: auto;
   display: inline-flex; align-items: center; justify-content: center;
   background: var(--accent); color: #fff;
   border-radius: 6px; font-size: 16px; font-weight: 700;
@@ -3873,6 +3883,12 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <div class="lp-body">
         <div class="lp-title-row">
           <span class="lp-title">レイヤー</span>
+          <button type="button" class="lp-dup" id="lpDupBtn" title="選択レイヤーを複製">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="8" y="8" width="12" height="12" rx="2"/>
+              <path d="M16 8V6a2 2 0 00-2-2H6a2 2 0 00-2 2v8a2 2 0 002 2h2"/>
+            </svg>
+          </button>
           <label for="thumbLayerAddFile" class="lp-add" title="画像を追加">＋</label>
           <input type="file" id="thumbLayerAddFile" accept="image/*,.gif,video/*" hidden>
         </div>
@@ -7936,6 +7952,17 @@ if (thumbLayerAddFile) {
     e.target.value = '';
   });
 }
+
+/* レイヤーパネルの「複製」ボタン: 選択レイヤーを必ず1つ複製 */
+const lpDupBtn = document.getElementById('lpDupBtn');
+if (lpDupBtn) lpDupBtn.addEventListener('click', () => {
+  if (!state.layers.length) return;
+  // 選択中(複数選択時は最前面の1つ)を複製。未選択なら最上位を複製
+  let idx;
+  if (state.selectedLayers && state.selectedLayers.size) idx = Math.max(...state.selectedLayers);
+  else idx = state.layers.length - 1;
+  duplicateLayer(idx);
+});
 
 /* レイヤーパネルをサムネ時はサイドバーへ、通常時はcanvas-wrapへ移動 */
 function relocateLayerPanel() {

@@ -146,6 +146,18 @@ aside .brand, aside .category-header, aside .tp-tab, aside .lp-name, aside .tp-n
 /* サイドバー: 画像未読込時は畳む */
 body:not(.has-image):not(.thumb-mode) aside { width: 0; min-width: 0; padding: 0; overflow: hidden; border-right: none; }
 body:not(.has-image):not(.thumb-mode) { grid-template-columns: 0 1fr; }
+/* メニューを手動で表示 (一度表示したら戻らない) */
+body.sidebar-forced:not(.has-image):not(.thumb-mode) { grid-template-columns: var(--sidebar-w, 280px) 1fr; }
+body.sidebar-forced:not(.has-image):not(.thumb-mode) aside { width: var(--sidebar-w, 280px); min-width: 0; padding: 0; overflow-y: auto; border-right: 1px solid #b9ccd6; }
+#sidebarReveal {
+  position: fixed; left: 0; top: 50%; transform: translateY(-50%);
+  z-index: 60; width: 22px; height: 56px;
+  border: none; border-radius: 0 13px 13px 0;
+  background: #5b9cb8; color: #fff; font-size: 17px; font-weight: 800;
+  cursor: pointer; box-shadow: 2px 0 8px rgba(44,62,80,0.22);
+  display: none; align-items: center; justify-content: center;
+}
+body:not(.has-image):not(.thumb-mode):not(.sidebar-forced) #sidebarReveal { display: flex; }
 /* アイテム間隔: カテゴリ内は控えめに広めに (検索結果よりは狭め) */
 .item { padding: 9px 14px 9px 22px !important; }
 /* カテゴリ内アイテムの視覚分離 (検索結果より狭め) */
@@ -497,6 +509,10 @@ header.info {
 .img-lock-btn.mode-lock { color: #5b9cb8; }
 .img-lock-btn.mode-free { color: #e0a341; }
 .img-lock-btn:hover { transform: scale(1.1); }
+.img-mode-btn svg { width: 19px; height: 19px; }
+.img-mode-btn.mode-orig { color: #8a99a3; }
+.img-mode-btn.mode-lock { color: #5b9cb8; }
+.img-mode-btn.mode-free { color: #e0a341; }
 .empty-msg {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
@@ -3506,6 +3522,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   </div>
 </div>
 
+<button id="sidebarReveal" type="button" aria-label="メニューを表示" title="メニューを表示">›</button>
 <aside>
   <div class="sidebar-sticky" id="sidebarSticky">
   <div class="brand-row">
@@ -4002,6 +4019,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         <line x1="3" y1="12" x2="21" y2="12" stroke-dasharray="2 2"/>
       </svg>
     </button>
+    <button class="tool-btn img-mode-btn mode-orig" id="imgTransformBtn" title="画像のサイズ変形 (元 / 比率ロック / 自由変形)" disabled></button>
     <button class="tool-btn" id="rotate" title="90°回転" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 12a9 9 0 1 1-3.5-7.1"/>
@@ -6049,6 +6067,12 @@ guideOverlay.addEventListener('click', e => { if (e.target === guideOverlay) hid
 welcomeCloseBtn.addEventListener('click', () => closeOverlay(welcomeOverlay));
 welcomeOverlay.addEventListener('click', e => { if (e.target === welcomeOverlay) closeOverlay(welcomeOverlay); });
 helpBtn.addEventListener('click', () => openOverlay(welcomeOverlay));
+
+/* メニュー(左バー)を手動で表示: 一度押したら戻せない */
+const sidebarReveal = document.getElementById('sidebarReveal');
+if (sidebarReveal) sidebarReveal.addEventListener('click', () => {
+  document.body.classList.add('sidebar-forced');
+});
 
 /* ===== チュートリアル: ドロップくんボタンをスポットライト点滅 → 押すと説明表示 ===== */
 let _tutSpotEl = null, _tutCleanup = null;
@@ -9884,6 +9908,8 @@ function updateToolBtns() {
     _ilb.hidden = !en;
     if (typeof syncImgLockBtn === 'function') syncImgLockBtn();
   }
+  const _itb = document.getElementById('imgTransformBtn');
+  if (_itb) _itb.disabled = !en;
 }
 function updateBrightnessGauge() {
   // 選択中レイヤーがあればその値、なければ state.brightness
@@ -10490,6 +10516,11 @@ document.addEventListener('pointerdown', e => {
   if (state.shrink === 0 && !state.deformActive) return;  // パネルが開いていないなら無視
   // パネル内 or 縮小ボタン自体なら閉じない
   if (shrinkPanel.contains(e.target) || shrinkBtn.contains(e.target)) return;
+  // 南京錠(画像サイズ変更)ボタンなら閉じない (これで解除モードに進める)
+  const _ilb = document.getElementById('imgLockBtn');
+  if (_ilb && _ilb.contains(e.target)) return;
+  const _itb = document.getElementById('imgTransformBtn');
+  if (_itb && _itb.contains(e.target)) return;
   // 変形モードでキャンバスを操作中なら閉じない
   if (state.deformActive && canvas.contains(e.target)) return;
   // スポイトモード中にキャンバスをクリックしてる場合は閉じない
@@ -10748,11 +10779,13 @@ const IMG_LOCK_ICONS = {
 };
 const imgLockBtn = document.getElementById('imgLockBtn');
 function syncImgLockBtn() {
-  if (!imgLockBtn) return;
   const mode = state.imgLockMode || 'orig';
-  imgLockBtn.classList.remove('mode-orig', 'mode-lock', 'mode-free');
-  imgLockBtn.classList.add('mode-' + mode);
-  imgLockBtn.innerHTML = IMG_LOCK_ICONS[mode];
+  [document.getElementById('imgLockBtn'), document.getElementById('imgTransformBtn')].forEach(b => {
+    if (!b) return;
+    b.classList.remove('mode-orig', 'mode-lock', 'mode-free');
+    b.classList.add('mode-' + mode);
+    b.innerHTML = IMG_LOCK_ICONS[mode];
+  });
 }
 function setImgLockMode(mode) {
   if (mode !== 'orig') {
@@ -10785,6 +10818,13 @@ function setImgLockMode(mode) {
   draw();
 }
 if (imgLockBtn) imgLockBtn.addEventListener('click', () => {
+  const order = ['orig', 'lock', 'free'];
+  const cur = state.imgLockMode || 'orig';
+  setImgLockMode(order[(order.indexOf(cur) + 1) % 3]);
+});
+const imgTransformBtn = document.getElementById('imgTransformBtn');
+if (imgTransformBtn) imgTransformBtn.addEventListener('click', () => {
+  if (imgTransformBtn.disabled) return;
   const order = ['orig', 'lock', 'free'];
   const cur = state.imgLockMode || 'orig';
   setImgLockMode(order[(order.indexOf(cur) + 1) % 3]);
@@ -13356,7 +13396,7 @@ function buildPipEditor(pip, onClose) {
     .pe-reset{width:100%;margin-top:6px;border:none;background:linear-gradient(135deg,#e8f4fa,#d3eaf5);border-radius:9px;padding:6px;font-size:10px;color:#5b9cb8;font-weight:700;cursor:pointer;}
     .pe-coltoggle{position:absolute;left:14px;top:54px;writing-mode:vertical-lr;background:#8fd3ed;color:#fff;border:none;border-radius:10px;padding:9px 4px;font-size:9px;cursor:pointer;display:none;z-index:8;box-shadow:0 3px 8px rgba(91,156,184,.3);}
     .pe-coltoggle{position:absolute;left:10px;bottom:10px;top:auto;writing-mode:horizontal-tb;background:#8fd3ed;color:#fff;border:none;border-radius:12px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;display:block;z-index:11;box-shadow:0 3px 8px rgba(91,156,184,.3);}
-    .pe-filebtn{position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:5px;background:#fff;border:2px solid #8fd3ed;color:#5b9cb8;border-radius:12px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;z-index:11;box-shadow:0 3px 8px rgba(91,156,184,.22);}
+    .pe-filebtn{position:absolute;bottom:14px;right:14px;display:flex;align-items:center;gap:5px;background:#fff;border:2px solid #8fd3ed;color:#5b9cb8;border-radius:12px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;z-index:11;box-shadow:0 3px 8px rgba(91,156,184,.22);}
     .pe-filebtn svg{width:16px;height:16px;}
     .pe-filebtn:hover{background:#eef7fb;}
     .pe-color.collapsed{display:none;}

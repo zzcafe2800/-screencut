@@ -10032,13 +10032,16 @@ simplifyBtn.addEventListener('click', () => {
     if (isLegacy) state._simpCache = null;
     else tgt._simpCache = null;
   });
+  // レイヤー0と state を同期 (方向はモードで変える)
   if (state.layers[0] && (state.selectedLayers.size === 0 || state.selectedLayers.has(0))) {
     const L0 = state.layers[0];
-    state.simplify = L0.simplify;
-    state.simpLevels = L0.simpLevels;
-    state.simpSmooth = L0.simpSmooth;
-    state.simpEdge = L0.simpEdge;
-    state._simpCache = null;
+    if (state.layers.length < 2) {
+      // 単一画像: applyToSelectedOrState が state を更新済み → layer0 へ反映
+      L0.simplify = state.simplify; L0.simpLevels = state.simpLevels; L0.simpSmooth = state.simpSmooth; L0.simpEdge = state.simpEdge; L0._simpCache = null;
+    } else {
+      // 複数レイヤー: layer0 → state
+      state.simplify = L0.simplify; state.simpLevels = L0.simpLevels; state.simpSmooth = L0.simpSmooth; state.simpEdge = L0.simpEdge; state._simpCache = null;
+    }
   }
   updateSimplifyGauge();
   draw();
@@ -13705,8 +13708,46 @@ function buildPipEditor(pip, onClose) {
     if(!st.dragMode)return;
     const r=cv.getBoundingClientRect(),sc=cv.width/r.width;
     const x=(e.clientX-r.left)*sc,y=(e.clientY-r.top)*sc,dx=x-st.sx,dy=y-st.sy,fr=st.frameRect;
-    if(st.dragMode==='move'){ fr.x=Math.max(0,Math.min(cv.width-fr.w,st.fr0.x+dx)); fr.y=Math.max(0,Math.min(cv.height-fr.h,st.fr0.y+dy)); }
-    else { let nw=Math.max(24,st.fr0.w+dx),nh; if(st.ratio)nh=nw*st.ratio.h/st.ratio.w; else nh=Math.max(24,st.fr0.h+dy); nw=Math.min(nw,cv.width-fr.x); nh=Math.min(nh,cv.height-fr.y); fr.w=nw; fr.h=nh; }
+    // 画像の表示矩形 (スナップ対象)
+    const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
+    const dw=iw*st.scale, dh=ih*st.scale;
+    const imgL=st.offX, imgR=st.offX+dw, imgT=st.offY, imgB=st.offY+dh;
+    const S=Math.max(7, cv.width*0.022); // 吸着のしきい値
+    const vlines=[0, cv.width, cv.width/2, imgL, imgR, (imgL+imgR)/2];
+    const hlines=[0, cv.height, cv.height/2, imgT, imgB, (imgT+imgB)/2];
+    if(st.dragMode==='move'){
+      let nx=Math.max(0,Math.min(cv.width-fr.w,st.fr0.x+dx));
+      let ny=Math.max(0,Math.min(cv.height-fr.h,st.fr0.y+dy));
+      // x: 左/右/中央のいずれかが縦ラインに近づいたら吸着
+      let bestX=null,bX=S;
+      for(const v of vlines){
+        const cands=[[nx,0],[nx+fr.w,fr.w],[nx+fr.w/2,fr.w/2]];
+        for(const [edge,off] of cands){ const dd=Math.abs(edge-v); if(dd<bX){ bX=dd; bestX=v-off; } }
+      }
+      if(bestX!==null) nx=Math.max(0,Math.min(cv.width-fr.w,bestX));
+      let bestY=null,bY=S;
+      for(const v of hlines){
+        const cands=[[ny,0],[ny+fr.h,fr.h],[ny+fr.h/2,fr.h/2]];
+        for(const [edge,off] of cands){ const dd=Math.abs(edge-v); if(dd<bY){ bY=dd; bestY=v-off; } }
+      }
+      if(bestY!==null) ny=Math.max(0,Math.min(cv.height-fr.h,bestY));
+      fr.x=nx; fr.y=ny;
+    } else {
+      let nw=Math.max(24,st.fr0.w+dx),nh;
+      // 右端を縦ラインへ吸着
+      let bestW=null,bW=S;
+      for(const v of [cv.width, cv.width/2, imgR, (imgL+imgR)/2]){ const dd=Math.abs((fr.x+nw)-v); if(dd<bW){ bW=dd; bestW=v-fr.x; } }
+      if(bestW!==null && bestW>=24) nw=bestW;
+      if(st.ratio){ nh=nw*st.ratio.h/st.ratio.w; }
+      else {
+        nh=Math.max(24,st.fr0.h+dy);
+        let bestH=null,bH=S;
+        for(const v of [cv.height, cv.height/2, imgB, (imgT+imgB)/2]){ const dd=Math.abs((fr.y+nh)-v); if(dd<bH){ bH=dd; bestH=v-fr.y; } }
+        if(bestH!==null && bestH>=24) nh=bestH;
+      }
+      nw=Math.min(nw,cv.width-fr.x); nh=Math.min(nh,cv.height-fr.y);
+      fr.w=nw; fr.h=nh;
+    }
     render();
   });
   cv.addEventListener('pointerup',()=>{ if(st.dragMode){ st.dragMode=null; scheduleAutoSave(); } });

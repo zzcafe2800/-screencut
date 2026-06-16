@@ -3089,6 +3089,18 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   z-index: 150;
 }
 .guide-overlay.shown { opacity: 1; pointer-events: auto; }
+.welcome-tutorial-btn{ display:block; width:100%; margin-top:10px; padding:11px; border:none; border-radius:12px; background:linear-gradient(120deg,#5b9cb8,#7bb8d0); color:#fff; font-size:14px; font-weight:800; cursor:pointer; box-shadow:0 4px 12px rgba(91,156,184,.3); }
+.welcome-tutorial-btn:hover{ filter:brightness(1.05); }
+#tutorialSpot{ position:fixed; display:none; border-radius:14px; z-index:9000; pointer-events:none; border:3px solid #8fd3ed; animation:tutBlink 0.85s ease-in-out infinite; }
+@keyframes tutBlink{ 0%,100%{ border-color:rgba(143,211,237,1); box-shadow:0 0 0 9999px rgba(20,30,45,0.58), 0 0 18px 5px rgba(143,211,237,.85);} 50%{ border-color:rgba(143,211,237,0.3); box-shadow:0 0 0 9999px rgba(20,30,45,0.58), 0 0 8px 2px rgba(143,211,237,.3);} }
+.tut-card{ max-width:560px; }
+.tut-steps{ display:flex; gap:10px; margin-top:8px; flex-wrap:wrap; justify-content:center; }
+.tut-step{ flex:1 1 92px; min-width:92px; max-width:104px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px; }
+.tut-num{ width:22px; height:22px; border-radius:50%; background:#5b9cb8; color:#fff; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; }
+.tut-step svg{ width:48px; height:40px; color:#5b9cb8; }
+.tut-step .txt{ font-size:10.5px; color:#5a6b75; line-height:1.4; }
+.tut-step .txt b{ color:#3a5560; }
+@media (max-width:560px){ .tut-step{ flex:1 1 40%; max-width:none; } }
 .guide-card {
   position: relative;
   background: var(--bg);
@@ -4429,7 +4441,53 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         <div class="txt"><b>GIFを短く</b><br>欲しい部分だけ切り出す</div>
       </div>
     </div>
+    <button type="button" class="welcome-tutorial-btn" id="tutorialBtn">▶ つかいかたを見る</button>
   </div>
+  </div>
+</div>
+
+<!-- チュートリアル説明 (ドロップくん起動時に表示) -->
+<div id="tutorialExplain" class="guide-overlay" role="dialog" aria-modal="true">
+  <div class="guide-card tut-card">
+    <button id="tutorialExplainClose" class="guide-close" aria-label="閉じる">×</button>
+    <h3>つかいかた</h3>
+    <div class="tut-steps">
+      <div class="tut-step">
+        <div class="tut-num">1</div>
+        <svg viewBox="0 0 64 52" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="6" width="52" height="34" rx="3"/><path d="M22 46h20M32 40v6"/><path d="M26 23l10 0M31 18v10" opacity="0.5"/><circle cx="44" cy="16" r="2.5" fill="currentColor" stroke="none"/>
+        </svg>
+        <div class="txt">画像を入れたい<br><b>ゲームを開く</b></div>
+      </div>
+      <div class="tut-step">
+        <div class="tut-num">2</div>
+        <svg viewBox="0 0 64 52" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="8" width="22" height="18" rx="2"/><path d="M11 14h12M11 19h8" opacity="0.5"/><path d="M32 30v12M27 37l5 5 5-5"/><rect x="20" y="40" width="34" height="8" rx="2"/>
+        </svg>
+        <div class="txt">ファイルから画像を<br><b>このサイトにドロップ</b></div>
+      </div>
+      <div class="tut-step">
+        <div class="tut-num">3</div>
+        <svg viewBox="0 0 64 52" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="24" cy="22" r="11"/><path d="M32 30l9 9"/><rect x="34" y="6" width="22" height="20" rx="2" opacity="0.5"/>
+        </svg>
+        <div class="txt"><b>アイテムを検索</b>して<br>大きさを調節</div>
+      </div>
+      <div class="tut-step">
+        <div class="tut-num">4</div>
+        <svg viewBox="0 0 64 52" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M32 8v26M23 26l9 9 9-9"/><rect x="14" y="40" width="36" height="8" rx="2"/>
+        </svg>
+        <div class="txt"><b>保存</b>する</div>
+      </div>
+      <div class="tut-step">
+        <div class="tut-num">5</div>
+        <svg viewBox="0 0 64 52" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="6" y="14" width="20" height="16" rx="2"/><circle cx="13" cy="21" r="2" fill="currentColor" stroke="none"/><path d="M30 24h14M40 20l5 4-5 4"/><rect x="44" y="8" width="14" height="36" rx="3"/>
+        </svg>
+        <div class="txt">その画像をつかんで<br><b>ゲームにドロップ</b></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -5931,6 +5989,52 @@ guideOverlay.addEventListener('click', e => { if (e.target === guideOverlay) hid
 welcomeCloseBtn.addEventListener('click', () => closeOverlay(welcomeOverlay));
 welcomeOverlay.addEventListener('click', e => { if (e.target === welcomeOverlay) closeOverlay(welcomeOverlay); });
 helpBtn.addEventListener('click', () => openOverlay(welcomeOverlay));
+
+/* ===== チュートリアル: ドロップくんボタンをスポットライト点滅 → 押すと説明表示 ===== */
+let _tutSpotEl = null, _tutCleanup = null;
+function startTutorialSpot() {
+  const dk = document.getElementById('dropKun');
+  if (!dk) return;
+  document.body.classList.add('tutorial-on');
+  if (!_tutSpotEl) { _tutSpotEl = document.createElement('div'); _tutSpotEl.id = 'tutorialSpot'; document.body.appendChild(_tutSpotEl); }
+  _tutSpotEl.style.display = 'block';
+  const pos = () => {
+    const r = dk.getBoundingClientRect(), pad = 7;
+    _tutSpotEl.style.left = (r.left - pad) + 'px';
+    _tutSpotEl.style.top = (r.top - pad) + 'px';
+    _tutSpotEl.style.width = (r.width + pad * 2) + 'px';
+    _tutSpotEl.style.height = (r.height + pad * 2) + 'px';
+  };
+  pos();
+  const onMove = () => { if (document.body.classList.contains('tutorial-on')) pos(); };
+  window.addEventListener('resize', onMove);
+  window.addEventListener('scroll', onMove, true);
+  _tutCleanup = () => { window.removeEventListener('resize', onMove); window.removeEventListener('scroll', onMove, true); };
+  // 念のため、視界に入るようボタンへスクロール
+  try { dk.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(pos, 350); } catch (e) {}
+}
+function endTutorialSpot() {
+  document.body.classList.remove('tutorial-on');
+  if (_tutSpotEl) _tutSpotEl.style.display = 'none';
+  if (_tutCleanup) { _tutCleanup(); _tutCleanup = null; }
+}
+const tutorialBtn = document.getElementById('tutorialBtn');
+if (tutorialBtn) tutorialBtn.addEventListener('click', () => {
+  closeOverlay(welcomeOverlay);
+  setTimeout(startTutorialSpot, 240);
+});
+// ドロップくんボタンをチュートリアル中に押したら: スポット解除 + 説明表示 (起動は既存ハンドラ)
+const _dkForTut = document.getElementById('dropKun');
+if (_dkForTut) _dkForTut.addEventListener('click', () => {
+  if (document.body.classList.contains('tutorial-on')) {
+    endTutorialSpot();
+    setTimeout(() => openOverlay(document.getElementById('tutorialExplain')), 200);
+  }
+});
+const tutorialExplain = document.getElementById('tutorialExplain');
+const tutorialExplainClose = document.getElementById('tutorialExplainClose');
+if (tutorialExplainClose) tutorialExplainClose.addEventListener('click', () => closeOverlay(tutorialExplain));
+if (tutorialExplain) tutorialExplain.addEventListener('click', e => { if (e.target === tutorialExplain) closeOverlay(tutorialExplain); });
 
 /* ===== Share overlay ===== */
 shareBtn.addEventListener('click', () => openOverlay(shareOverlay));
@@ -13094,6 +13198,23 @@ function buildPipEditor(pip, onClose) {
     .pe-fxcard[hidden]{display:none;}
     .pe-fxcard h4{margin:0 0 8px;font-size:11px;text-align:center;color:#5b9cb8;letter-spacing:.06em;}
     .pe-chk{display:flex;align-items:center;gap:6px;font-size:11px;color:#7a8893;margin-top:7px;cursor:pointer;}
+    .pe-bgrow{display:flex;align-items:center;gap:7px;margin-top:8px;}
+    .pe-bgswatch{width:20px;height:20px;border-radius:6px;border:2px solid #cdd6dd;background:#fff;flex:none;}
+    .pe-bgpick{border:2px solid #8fd3ed;background:#eef7fb;color:#5b9cb8;border-radius:9px;padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer;flex:none;}
+    .pe-bgpick.active{background:#e67e62;color:#fff;border-color:#e67e62;}
+    .pe-posrow{display:flex;align-items:center;gap:8px;margin-top:9px;}
+    .pe-poslabel{font-size:10px;color:#8aaebd;}
+    .pe-pospad{position:relative;width:48px;height:48px;border:2px solid #cdd6dd;border-radius:8px;background:#f4f9fc;cursor:crosshair;flex:none;touch-action:none;}
+    .pe-posdot{position:absolute;width:11px;height:11px;border-radius:50%;background:#5b9cb8;border:2px solid #fff;left:50%;top:50%;transform:translate(-50%,-50%);box-shadow:0 1px 3px rgba(91,156,184,.5);pointer-events:none;}
+    .pe-posreset{border:none;background:#e8f4fa;color:#5b9cb8;border-radius:8px;width:28px;height:28px;cursor:pointer;font-size:14px;flex:none;}
+    .pe-splittabs{display:flex;gap:6px;margin-bottom:9px;}
+    .pe-splittab{flex:1;border:2px solid #cdd6dd;background:#fff;color:#7a8893;border-radius:10px;padding:5px;font-size:11px;font-weight:700;cursor:pointer;}
+    .pe-splittab.active{background:#5b9cb8;color:#fff;border-color:#5b9cb8;}
+    .pe-steprow{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:11px;color:#7a8893;}
+    .pe-stplbl{width:18px;}
+    .pe-step{border:2px solid #cdd6dd;background:#fff;color:#5b9cb8;border-radius:7px;width:24px;height:24px;cursor:pointer;font-size:9px;line-height:1;}
+    .pe-stpnum{min-width:18px;text-align:center;font-weight:800;color:#5b9cb8;font-size:13px;}
+    .pe-stpu{font-size:9px;color:#9fbccb;}
     /* 小さい窓に自動対応 */
     @media (max-height:520px){
       .pe-color{top:46px;padding:6px 8px 8px;max-height:calc(100vh - 104px);}
@@ -13151,7 +13272,8 @@ function buildPipEditor(pip, onClose) {
   const st={img:null,quality:0,brightness:0,contrast:0,hue:0,saturate:0,temp:0,tint:0,flipH:false,flipV:false,rot:0,
     ratio:null,offX:0,offY:0,scale:1,frameRect:null,dragMode:null,sx:0,sy:0,fr0:null,
     simplify:false,blur:false,spot:false,
-    simpLevels:16,simpEdge:0,bgMargin:0,bgTransp:false};
+    simpLevels:16,simpEdge:0,bgMargin:0,bgTransp:false,bgColor:null,bgPosX:0,bgPosY:0,bgEyedrop:false,
+    splitW:1,splitH:1,pattern:false};
   let _fxCache=null,_fxKey='';
   function peSampleBg(){
     try{ const t=(window.document?window.document:d).createElement('canvas'); t.width=1;t.height=1;
@@ -13163,16 +13285,18 @@ function buildPipEditor(pip, onClose) {
     if(!st.img) return null;
     const simp=st.simpLevels<16, bg=st.bgMargin>0;
     if(!simp && !bg) return st.img;
-    const key='L'+st.simpLevels+'M'+st.bgMargin+(st.bgTransp?'T':'C');
+    const key='L'+st.simpLevels+'M'+st.bgMargin+(st.bgTransp?'T':'C')+(st.bgColor||'')+'P'+st.bgPosX.toFixed(2)+','+st.bgPosY.toFixed(2);
     if(_fxCache && _fxKey===key) return _fxCache;
     const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
     const pdoc=(window.document)?window.document:d;
     const c=pdoc.createElement('canvas'); c.width=Math.max(1,iw); c.height=Math.max(1,ih);
     const cx=c.getContext('2d');
     if(bg){
-      if(!st.bgTransp){ cx.fillStyle=peSampleBg(); cx.fillRect(0,0,iw,ih); }
+      if(!st.bgTransp){ cx.fillStyle=st.bgColor||peSampleBg(); cx.fillRect(0,0,iw,ih); }
       const m=st.bgMargin, sw=iw*(1-m), sh=ih*(1-m);
-      cx.drawImage(st.img,(iw-sw)/2,(ih-sh)/2,sw,sh);
+      const px=(iw-sw)/2 + st.bgPosX*(iw-sw)/2;
+      const py=(ih-sh)/2 + st.bgPosY*(ih-sh)/2;
+      cx.drawImage(st.img,px,py,sw,sh);
     } else {
       cx.drawImage(st.img,0,0,iw,ih);
     }
@@ -13212,11 +13336,29 @@ function buildPipEditor(pip, onClose) {
       <div class="pe-fxcard" id="peCardBg" hidden>
         <h4>背景拡張</h4>
         <div class="pe-crow"><label>余白 <span id="peBgVal">0</span></label><input type="range" id="peBgMargin" min="0" max="60" step="2" value="0"></div>
-        <label class="pe-chk"><input type="checkbox" id="peBgTransp"> 透明にする</label>
+        <div class="pe-bgrow">
+          <span class="pe-bgswatch" id="peBgSwatch"></span>
+          <button class="pe-bgpick" id="peBgPick" type="button">スポイト</button>
+          <label class="pe-chk"><input type="checkbox" id="peBgTransp"> 透明</label>
+        </div>
+        <div class="pe-posrow">
+          <span class="pe-poslabel">位置</span>
+          <div class="pe-pospad" id="peBgPad"><span class="pe-posdot" id="peBgDot"></span></div>
+          <button class="pe-posreset" id="peBgPosReset" type="button" title="中央に戻す">⊕</button>
+        </div>
       </div>
       <div class="pe-fxcard" id="peCardSimp" hidden>
         <h4>単純化</h4>
         <div class="pe-crow"><label>色数 <span id="peSimpVal">16</span></label><input type="range" id="peSimpLevels" min="2" max="16" step="1" value="16"></div>
+      </div>
+      <div class="pe-fxcard" id="peCardSplit" hidden>
+        <div class="pe-splittabs">
+          <button class="pe-splittab active" id="peTabSplit" type="button">分割</button>
+          <button class="pe-splittab" id="peTabPattern" type="button">パターン</button>
+        </div>
+        <div class="pe-steprow"><span class="pe-stplbl">横</span><button class="pe-step" data-axis="W" data-d="-1">▼</button><span class="pe-stpnum" id="peSplitW">1</span><button class="pe-step" data-axis="W" data-d="1">▲</button><span class="pe-stpu">枚</span></div>
+        <div class="pe-steprow"><span class="pe-stplbl">縦</span><button class="pe-step" data-axis="H" data-d="-1">▼</button><span class="pe-stpnum" id="peSplitH">1</span><button class="pe-step" data-axis="H" data-d="1">▲</button><span class="pe-stpu">枚</span></div>
+        <button class="pe-reset" id="peSplitReset">1×1に戻す</button>
       </div>
       <div class="pe-stage" id="peStage">
         <canvas class="pe-canvas" id="peCanvas"></canvas>
@@ -13282,9 +13424,10 @@ function buildPipEditor(pip, onClose) {
     {id:'qual',t:'画質低下',card:'peCardQual',svg:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>'},
     {id:'bg',t:'背景拡張',card:'peCardBg',svg:'<rect x="3" y="3" width="18" height="18" rx="1.5"/><rect x="8" y="8" width="8" height="8" rx="1"/>'},
     {id:'simp',t:'単純化',card:'peCardSimp',svg:'<path d="M5 7c1-3 6-3 8-1s5 0 6 2-1 5-2 7-5 4-8 3-5-3-5-6 0-3 1-5z"/><circle cx="9" cy="11" r="1.2" fill="currentColor" stroke="none"/>'},
+    {id:'split',t:'分割 / パターン',card:'peCardSplit',svg:'<rect x="3" y="3" width="18" height="18" rx="1.5"/><path d="M12 3v18M3 12h18"/>'},
   ];
   const toolsEl=d.getElementById('peTools');
-  const allCards=['peCardBright','peCardQual','peCardBg','peCardSimp'];
+  const allCards=['peCardBright','peCardQual','peCardBg','peCardSimp','peCardSplit'];
   tools.forEach(t=>{
     const b=d.createElement('button'); b.className='pe-tool'; b.title=t.t; b.dataset.card=t.card;
     b.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${t.svg}</svg>`;
@@ -13293,7 +13436,7 @@ function buildPipEditor(pip, onClose) {
       const willShow=card.hidden;
       allCards.forEach(id=>{ const c=d.getElementById(id); if(c) c.hidden=true; });
       toolsEl.querySelectorAll('.pe-tool').forEach(x=>x.classList.remove('active'));
-      if(willShow){ card.hidden=false; b.classList.add('active'); }
+      if(willShow){ card.hidden=false; b.classList.add('active'); if(t.card==='peCardBg'){ try{updateBgSwatch();}catch(_){} } }
     });
     toolsEl.appendChild(b);
   });
@@ -13303,7 +13446,67 @@ function buildPipEditor(pip, onClose) {
   bindFx('peQual', el=>{ st.quality=parseInt(el.value,10)||0; const v=d.getElementById('peQualVal'); if(v)v.textContent=st.quality; });
   bindFx('peSimpLevels', el=>{ st.simpLevels=parseInt(el.value,10)||16; invalidateFx(); const v=d.getElementById('peSimpVal'); if(v)v.textContent=st.simpLevels; });
   bindFx('peBgMargin', el=>{ st.bgMargin=(parseInt(el.value,10)||0)/100; invalidateFx(); const v=d.getElementById('peBgVal'); if(v)v.textContent=el.value; });
-  const _bgTr=d.getElementById('peBgTransp'); if(_bgTr) _bgTr.addEventListener('change',()=>{ st.bgTransp=_bgTr.checked; invalidateFx(); render(); });
+  const _bgTr=d.getElementById('peBgTransp'); if(_bgTr) _bgTr.addEventListener('change',()=>{ st.bgTransp=_bgTr.checked; if(st.bgTransp){st.bgColor=null;} updateBgSwatch(); invalidateFx(); render(); });
+  // 背景色スウォッチ表示
+  const bgSwatchEl=d.getElementById('peBgSwatch');
+  function updateBgSwatch(){
+    if(!bgSwatchEl)return;
+    if(st.bgTransp){ bgSwatchEl.style.background='repeating-conic-gradient(#ccc 0% 25%, #fff 0% 50%) 0/8px 8px'; }
+    else { bgSwatchEl.style.background = st.bgColor || (st.img?peSampleBg():'#fff'); }
+  }
+  // 背景色スポイト
+  const bgPickBtn=d.getElementById('peBgPick');
+  if(bgPickBtn) bgPickBtn.addEventListener('click',()=>{ st.bgEyedrop=!st.bgEyedrop; bgPickBtn.classList.toggle('active',st.bgEyedrop); cv.style.cursor=st.bgEyedrop?'crosshair':''; });
+  function pickBgColorAt(clientX,clientY){
+    if(!st.img)return;
+    const r=cv.getBoundingClientRect(), sc=cv.width/r.width;
+    const x=Math.round((clientX-r.left)*sc), y=Math.round((clientY-r.top)*sc);
+    const pdoc=(window.document)?window.document:d;
+    const tmp=pdoc.createElement('canvas'); tmp.width=cv.width; tmp.height=cv.height;
+    const tctx=tmp.getContext('2d');
+    try{ drawImageOnly(tctx);
+      const p=tctx.getImageData(Math.max(0,Math.min(cv.width-1,x)),Math.max(0,Math.min(cv.height-1,y)),1,1).data;
+      if(p[3]<30){ st.bgTransp=true; st.bgColor=null; if(_bgTr)_bgTr.checked=true; }
+      else { st.bgTransp=false; st.bgColor=`rgb(${p[0]},${p[1]},${p[2]})`; if(_bgTr)_bgTr.checked=false; }
+    }catch(e){}
+    st.bgEyedrop=false; if(bgPickBtn)bgPickBtn.classList.remove('active'); cv.style.cursor='';
+    updateBgSwatch(); invalidateFx(); render();
+  }
+  // 位置調節パッド
+  const bgPadEl=d.getElementById('peBgPad'), bgDotEl=d.getElementById('peBgDot');
+  function bgPadSet(clientX,clientY){
+    const r=bgPadEl.getBoundingClientRect();
+    let nx=((clientX-r.left)/r.width)*2-1, ny=((clientY-r.top)/r.height)*2-1;
+    nx=Math.max(-1,Math.min(1,nx)); ny=Math.max(-1,Math.min(1,ny));
+    st.bgPosX=nx; st.bgPosY=ny;
+    if(bgDotEl){ bgDotEl.style.left=((nx+1)/2*100)+'%'; bgDotEl.style.top=((ny+1)/2*100)+'%'; }
+    invalidateFx(); render();
+  }
+  let bgPadDrag=false;
+  if(bgPadEl){
+    bgPadEl.addEventListener('pointerdown',e=>{ bgPadDrag=true; try{bgPadEl.setPointerCapture(e.pointerId);}catch(_){} bgPadSet(e.clientX,e.clientY); });
+    bgPadEl.addEventListener('pointermove',e=>{ if(bgPadDrag)bgPadSet(e.clientX,e.clientY); });
+    bgPadEl.addEventListener('pointerup',()=>{ bgPadDrag=false; });
+  }
+  const bgPosReset=d.getElementById('peBgPosReset');
+  if(bgPosReset) bgPosReset.addEventListener('click',()=>{ st.bgPosX=0; st.bgPosY=0; if(bgDotEl){bgDotEl.style.left='50%';bgDotEl.style.top='50%';} invalidateFx(); render(); });
+  // 分割 / パターン
+  const peSplitWEl=d.getElementById('peSplitW'), peSplitHEl=d.getElementById('peSplitH');
+  const peTabSplit=d.getElementById('peTabSplit'), peTabPattern=d.getElementById('peTabPattern');
+  function updateSplitTabs(){ if(peTabSplit)peTabSplit.classList.toggle('active',!st.pattern); if(peTabPattern)peTabPattern.classList.toggle('active',st.pattern); }
+  if(peTabSplit) peTabSplit.addEventListener('click',()=>{ st.pattern=false; updateSplitTabs(); render(); });
+  if(peTabPattern) peTabPattern.addEventListener('click',()=>{ st.pattern=true; updateSplitTabs(); render(); });
+  d.querySelectorAll('#peCardSplit .pe-step').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const axis=b.dataset.axis, dd=parseInt(b.dataset.d,10);
+      if(axis==='W') st.splitW=Math.max(1,Math.min(8,st.splitW+dd));
+      else st.splitH=Math.max(1,Math.min(8,st.splitH+dd));
+      if(peSplitWEl)peSplitWEl.textContent=st.splitW; if(peSplitHEl)peSplitHEl.textContent=st.splitH;
+      render();
+    });
+  });
+  const peSplitReset=d.getElementById('peSplitReset');
+  if(peSplitReset) peSplitReset.addEventListener('click',()=>{ st.splitW=1; st.splitH=1; if(peSplitWEl)peSplitWEl.textContent=1; if(peSplitHEl)peSplitHEl.textContent=1; render(); });
 
   // 右: アイテム一覧 (CATEGORIES から)
   const allItems=[];
@@ -13312,8 +13515,10 @@ function buildPipEditor(pip, onClose) {
   const itemsEl=d.getElementById('peItems');
   function renderItems(filter){
     itemsEl.innerHTML='';
-    let list=allItems; const q=(filter||'').trim();
-    if(q) list=allItems.filter(it=>it.name&&it.name.includes(q));
+    // ひらがな⇄カタカナを区別せず検索 (あ で ア もヒット)
+    const kanaNorm=(s)=>(s||'').replace(/[\u3041-\u3096]/g,c=>String.fromCharCode(c.charCodeAt(0)+0x60)).toLowerCase();
+    let list=allItems; const q=kanaNorm((filter||'').trim());
+    if(q) list=allItems.filter(it=>it.name&&kanaNorm(it.name).includes(q));
     list.slice(0,60).forEach(it=>{
       const g=gcd2(it.w,it.h);
       const row=d.createElement('div'); row.className='pe-item';
@@ -13397,7 +13602,22 @@ function buildPipEditor(pip, onClose) {
     if(fr){
       ctx.save(); ctx.fillStyle='rgba(20,30,40,0.4)';
       ctx.beginPath(); ctx.rect(0,0,cv.width,cv.height); ctx.rect(fr.x,fr.y,fr.w,fr.h); ctx.fill('evenodd'); ctx.restore();
+      // パターン: 枠内に画像をタイル表示
+      if(st.pattern && (st.splitW>1||st.splitH>1)){
+        const src=srcForDraw(); const tw=fr.w/st.splitW, th=fr.h/st.splitH;
+        ctx.save(); ctx.beginPath(); ctx.rect(fr.x,fr.y,fr.w,fr.h); ctx.clip(); ctx.filter=filterStr();
+        if(st.quality>0) ctx.imageSmoothingEnabled=false;
+        for(let r=0;r<st.splitH;r++)for(let c=0;c<st.splitW;c++){ ctx.drawImage(src, fr.x+c*tw, fr.y+r*th, tw, th); }
+        ctx.restore(); ctx.filter='none'; ctx.imageSmoothingEnabled=true;
+      }
       ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.strokeRect(fr.x,fr.y,fr.w,fr.h);
+      // 分割/パターンのグリッド線
+      if(st.splitW>1||st.splitH>1){
+        ctx.save(); ctx.strokeStyle=st.pattern?'rgba(230,126,98,0.95)':'rgba(255,255,255,0.95)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+        for(let i=1;i<st.splitW;i++){ const x=fr.x+fr.w*i/st.splitW; ctx.beginPath(); ctx.moveTo(x,fr.y); ctx.lineTo(x,fr.y+fr.h); ctx.stroke(); }
+        for(let j=1;j<st.splitH;j++){ const y=fr.y+fr.h*j/st.splitH; ctx.beginPath(); ctx.moveTo(fr.x,y); ctx.lineTo(fr.x+fr.w,y); ctx.stroke(); }
+        ctx.restore(); ctx.setLineDash([]);
+      }
       ctx.fillStyle='#fff'; ctx.strokeStyle='#5b9cb8'; ctx.lineWidth=2;
       const hx=fr.x+fr.w,hy=fr.y+fr.h; ctx.beginPath(); ctx.arc(hx,hy,7,0,Math.PI*2); ctx.fill(); ctx.stroke();
     }
@@ -13406,6 +13626,7 @@ function buildPipEditor(pip, onClose) {
 
   // 枠移動/リサイズ
   cv.addEventListener('pointerdown',e=>{
+    if(st.bgEyedrop){ e.preventDefault(); pickBgColorAt(e.clientX,e.clientY); return; }
     if(!st.img||!st.frameRect)return;
     const r=cv.getBoundingClientRect(),sc=cv.width/r.width;
     const x=(e.clientX-r.left)*sc,y=(e.clientY-r.top)*sc,fr=st.frameRect,hx=fr.x+fr.w,hy=fr.y+fr.h;
@@ -13489,18 +13710,24 @@ function buildPipEditor(pip, onClose) {
     invalidateFx();
     // 効果をリセット
     st.simplify=false; st.blur=false; st.spot=false;
-    st.quality=0; st.simpLevels=16; st.bgMargin=0; st.bgTransp=false;
+    st.quality=0; st.simpLevels=16; st.bgMargin=0; st.bgTransp=false; st.bgColor=null; st.bgPosX=0; st.bgPosY=0; st.bgEyedrop=false;
+    st.splitW=1; st.splitH=1; st.pattern=false;
     st.brightness=0; st.contrast=0; st.hue=0; st.saturate=0; st.temp=0; st.tint=0;
     try{
       d.querySelectorAll('.pe-tool.active').forEach(b=>b.classList.remove('active'));
-      ['peCardBright','peCardQual','peCardBg','peCardSimp'].forEach(id=>{const c=d.getElementById(id); if(c)c.hidden=true;});
+      ['peCardBright','peCardQual','peCardBg','peCardSimp','peCardSplit'].forEach(id=>{const c=d.getElementById(id); if(c)c.hidden=true;});
       const setV=(id,v)=>{const e=d.getElementById(id); if(e)e.value=v;};
       const setT=(id,v)=>{const e=d.getElementById(id); if(e)e.textContent=v;};
       setV('peBright',0); setT('peBrightVal',0);
       setV('peQual',0); setT('peQualVal',0);
       setV('peSimpLevels',16); setT('peSimpVal',16);
       setV('peBgMargin',0); setT('peBgVal',0);
+      setT('peSplitW',1); setT('peSplitH',1);
+      const ts=d.getElementById('peTabSplit'),tp=d.getElementById('peTabPattern'); if(ts)ts.classList.add('active'); if(tp)tp.classList.remove('active');
       const bt=d.getElementById('peBgTransp'); if(bt)bt.checked=false;
+      const bp=d.getElementById('peBgPick'); if(bp)bp.classList.remove('active');
+      const bd=d.getElementById('peBgDot'); if(bd){bd.style.left='50%';bd.style.top='50%';}
+      cv.style.cursor='';
       [rBright,rContrast,rHue,rSat,rTemp,rTint].forEach(el=>{if(el)el.value=0;});
     }catch(e){}
     const url=URL.createObjectURL(file); const img=new Image();
@@ -13520,30 +13747,67 @@ function buildPipEditor(pip, onClose) {
 
   // 実際の保存処理: 設定があればOPFS/フォルダ、なければダウンロード。常にミニへ反映
   let pipDirHandle = null;
+  // 出力ヘルパー
+  async function canvasToBlob(cnv, fmt){
+    if(fmt==='gif'){
+      const W=cnv.width,H=cnv.height;
+      const rgba=cnv.getContext('2d').getImageData(0,0,W,H).data;
+      const buf=await encodeAnimatedGIF(W,H,[{rgba,delay:100}],null);
+      return new Blob([buf],{type:'image/gif'});
+    }
+    return await new Promise(res=>cnv.toBlob(res,'image/png'));
+  }
+  function dlBlob(blob,name){ const url=(window.URL||URL).createObjectURL(blob); const a=d.createElement('a'); a.href=url; a.download=name; d.body.appendChild(a); a.click(); a.remove(); }
+  // パターン: 枠サイズに画像をタイル敷き詰めた1枚
+  function makePatternCanvas(){
+    const fr=st.frameRect; if(!fr)return null;
+    const src=processedSource(); if(!src)return null;
+    const pdoc=(window.document)?window.document:d;
+    const out=pdoc.createElement('canvas'); out.width=Math.max(1,Math.round(fr.w)); out.height=Math.max(1,Math.round(fr.h));
+    const octx=out.getContext('2d'); octx.filter=filterStr();
+    const tw=out.width/st.splitW, th=out.height/st.splitH;
+    for(let r=0;r<st.splitH;r++)for(let c=0;c<st.splitW;c++){ octx.drawImage(src, c*tw, r*th, tw, th); }
+    octx.filter='none';
+    return qShrink(out);
+  }
+  // 分割: クロップ結果を splitW×splitH に切り分けたタイル配列
+  function makeSplitTiles(){
+    const full=makeCropCanvas(); if(!full)return null;
+    const tw=Math.max(1,Math.floor(full.width/st.splitW)), th=Math.max(1,Math.floor(full.height/st.splitH));
+    const pdoc=(window.document)?window.document:d; const tiles=[];
+    for(let r=0;r<st.splitH;r++)for(let c=0;c<st.splitW;c++){
+      const t=pdoc.createElement('canvas'); t.width=tw; t.height=th;
+      t.getContext('2d').drawImage(full, c*tw, r*th, tw, th, 0, 0, tw, th);
+      tiles.push(t);
+    }
+    return tiles;
+  }
   async function doSave(isAuto, fmt){
     if(!st.img){ if(!isAuto) setBubble('先に画像をいれてね'); return; }
-    const out=makeCropCanvas(); if(!out)return;
     fmt=fmt||'png';
-    let blob, name=(state._origFileName||'dropkun').replace(/\.[^.]+$/,'');
-    if(fmt==='gif'){
-      try{
-        const W=out.width,H=out.height;
-        const rgba=out.getContext('2d').getImageData(0,0,W,H).data;
-        const buf=await encodeAnimatedGIF(W,H,[{rgba,delay:100}],null);
-        blob=new Blob([buf],{type:'image/gif'}); name+='.gif';
-      }catch(e){ if(!isAuto) setBubble('GIF保存に失敗'); return; }
-    } else {
-      blob=await new Promise(res=>out.toBlob(res,'image/png')); name+='.png';
-    }
-    if(!blob){ if(!isAuto) setBubble('保存に失敗'); return; }
+    const base=(state._origFileName||'dropkun').replace(/\.[^.]+$/,'');
+    const ext=fmt==='gif'?'gif':'png';
     try{
-      if(!isAuto){
-        const url=(window.URL||URL).createObjectURL(blob);
-        const a=d.createElement('a'); a.href=url; a.download=name;
-        d.body.appendChild(a); a.click(); a.remove();
-        setBubble('ダウンロードしました');
+      // 分割: 複数タイル → zip
+      if(!st.pattern && (st.splitW>1||st.splitH>1)){
+        const tiles=makeSplitTiles(); if(!tiles||!tiles.length){ if(!isAuto)setBubble('保存に失敗'); return; }
+        const files=[];
+        for(let i=0;i<tiles.length;i++){
+          const b=await canvasToBlob(tiles[i],fmt);
+          files.push({name:base+'_'+(i+1)+'.'+ext, data:new Uint8Array(await b.arrayBuffer())});
+        }
+        const zip=makeZip(files);
+        if(!isAuto) dlBlob(new Blob([zip],{type:'application/zip'}), base+'_分割.zip');
+        setBubble(tiles.length+'枚を保存しました');
+        return;
       }
-      setMiniFromBlob(blob, name);
+      // パターン or 通常: 1枚
+      const out = (st.pattern && (st.splitW>1||st.splitH>1)) ? makePatternCanvas() : makeCropCanvas();
+      if(!out){ if(!isAuto)setBubble('保存に失敗'); return; }
+      const blob=await canvasToBlob(out,fmt);
+      if(!blob){ if(!isAuto) setBubble('保存に失敗'); return; }
+      if(!isAuto){ dlBlob(blob, base+'.'+ext); setBubble('ダウンロードしました'); }
+      setMiniFromBlob(blob, base+'.'+ext);
     }catch(e){ if(!isAuto) setBubble('保存に失敗'); }
   }
   // 保存フォーマット選択(PNG / 軽量GIF) — サイトと同じ

@@ -33,14 +33,14 @@
 <!-- ===== Favicon ===== -->
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
-<link rel="manifest" href="manifest.json">
-<!-- アプリインストール用: Service Worker登録 + 公式インストールプロンプトを早期に捕捉 -->
+<link rel="manifest" href='data:application/manifest+json;charset=utf-8,%7B%22name%22%3A%22%E4%BE%BF%E5%88%A9%E3%81%8F%E3%82%93zz%22%2C%22short_name%22%3A%22%E4%BE%BF%E5%88%A9%E3%81%8F%E3%82%93zz%22%2C%22description%22%3A%22%E3%82%A2%E3%82%A4%E3%83%86%E3%83%A0%E3%82%B5%E3%82%A4%E3%82%BA%E3%81%AB%E5%90%88%E3%82%8F%E3%81%9B%E3%82%8B%E7%94%BB%E5%83%8F%E5%8A%A0%E5%B7%A5%20%26%20%E5%8B%95%E7%94%BBGIF%E5%A4%89%E6%8F%9B%E3%83%84%E3%83%BC%E3%83%AB%22%2C%22display%22%3A%22standalone%22%2C%22start_url%22%3A%22https%3A%2F%2Fzzcafe2800.github.io%2F-screencut%2F%22%2C%22scope%22%3A%22https%3A%2F%2Fzzcafe2800.github.io%2F-screencut%2F%22%2C%22background_color%22%3A%22%23f5f8fa%22%2C%22theme_color%22%3A%22%235b9cb8%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fzzcafe2800.github.io%2F-screencut%2Ficon.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fzzcafe2800.github.io%2F-screencut%2Ficon.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22any%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fzzcafe2800.github.io%2F-screencut%2Ficon.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%2C%22purpose%22%3A%22maskable%22%7D%5D%2C%22launch_handler%22%3A%7B%22client_mode%22%3A%5B%22navigate-existing%22%2C%22auto%22%5D%7D%2C%22file_handlers%22%3A%5B%7B%22action%22%3A%22https%3A%2F%2Fzzcafe2800.github.io%2F-screencut%2F%22%2C%22accept%22%3A%7B%22image%2F%2A%22%3A%5B%22.png%22%2C%22.jpg%22%2C%22.jpeg%22%2C%22.gif%22%2C%22.webp%22%5D%2C%22video%2F%2A%22%3A%5B%22.mp4%22%2C%22.webm%22%2C%22.mov%22%2C%22.m4v%22%2C%22.avi%22%2C%22.mkv%22%2C%22.ogv%22%5D%7D%7D%5D%7D'>
+<!-- アプリインストール用: 公式インストールプロンプトを早期に捕捉 (manifestはこのHTMLに内蔵) -->
 <script>
 window.__deferredInstallPrompt=null;window.__appInstalled=false;
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__deferredInstallPrompt=e;
   try{var b=document.getElementById('tutDInstall'); if(b){b.classList.add('ready');}}catch(_){}});
 window.addEventListener('appinstalled',function(){window.__appInstalled=true;window.__deferredInstallPrompt=null;});
-if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+/* 単一HTMLのためService Workerは無し (manifestのみでインストール可能) */
 </script>
 <!-- ===== 構造化データ (JSON-LD): GoogleがWebアプリと認識しやすくする ===== -->
 <script type="application/ld+json">

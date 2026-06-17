@@ -3166,9 +3166,10 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 .tut-choice-note{ font-size:12px; color:#9aa7b0; text-align:center; margin:14px 0 0; }
 .tut-opendrop{ display:block; margin:14px auto 0; background:#5b9cb8; color:#fff; border:none; border-radius:999px; padding:9px 22px; font-size:13px; font-weight:800; cursor:pointer; }
 .tut-opendrop:hover{ background:#4a8aa3; }
-.tut-install-btn{ display:block; margin:4px auto 12px; background:#5b9cb8; color:#fff; border:none; border-radius:999px; padding:12px 28px; font-size:15px; font-weight:800; cursor:pointer; box-shadow:0 4px 12px rgba(91,156,184,.32); }
+#tutorialDesktop{ flex-direction:column; }
+.tut-install-btn{ display:block; margin:16px auto 0; background:#5b9cb8; color:#fff; border:none; border-radius:999px; padding:12px 34px; font-size:16px; font-weight:800; cursor:pointer; box-shadow:0 5px 16px rgba(91,156,184,.4); }
 .tut-install-btn:hover{ background:#4a8aa3; transform:translateY(-1px); }
-.tut-install-hint{ font-size:12px; color:#7c8b94; text-align:center; margin:-6px 0 12px; line-height:1.5; }
+.tut-install-hint{ font-size:12px; color:#fff; text-align:center; margin:10px auto 0; max-width:300px; line-height:1.5; text-shadow:0 1px 2px rgba(0,0,0,.3); }
 @keyframes tutFade{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:none;} }
 .tut-panel svg{ width:150px; height:112px; color:#5b9cb8; }
 .tut-text{ font-size:17px; color:#3a5560; line-height:1.6; }
@@ -4644,8 +4645,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   <div class="guide-card tut-card">
     <button id="tutorialDesktopClose" class="guide-close" aria-label="閉じる">×</button>
     <h3>デスクトップでつかう</h3>
-    <button type="button" class="tut-install-btn" id="tutDInstall">⬇ アプリをインストール</button>
-    <div class="tut-install-hint" id="tutDInstallHint" hidden></div>
     <div class="tut-progress" id="tutDProgress">
       <div class="tut-pstep" data-i="1"><span class="tut-pdot">1</span></div>
       <div class="tut-pstep" data-i="2"><span class="tut-pdot">2</span></div>
@@ -4659,7 +4658,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
           <path d="M60 28v18M50 38l10 10 10-10"/>
           <rect x="44" y="70" width="32" height="7" rx="3" opacity="0.4"/>
         </svg>
-        <div class="tut-text">上の<b>「アプリをインストール」</b>を押す<br><small>(出ない時は ⋮メニュー →「アプリをインストール」)</small></div>
+        <div class="tut-text">下の<b>「インストール」</b>を押す<br><small>(出ない時は ⋮メニュー →「アプリをインストール」)</small></div>
       </div>
       <div class="tut-panel" data-step="2">
         <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -4701,6 +4700,8 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <button class="tut-arrow" id="tutDNext" type="button" aria-label="次へ">›</button>
     </div>
   </div>
+  <button type="button" class="tut-install-btn" id="tutDInstall">⬇ インストール</button>
+  <div class="tut-install-hint" id="tutDInstallHint" hidden></div>
 </div>
 
 <div id="guideOverlay" class="guide-overlay" role="dialog" aria-modal="true">

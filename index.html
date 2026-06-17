@@ -6336,7 +6336,7 @@ function triggerAppInstall() {
     if (window.__appInstalled || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)) {
       hint.textContent = 'もうインストール済みです。次はピン留めへ';
     } else {
-      hint.textContent = 'このボタンが効かない時は、ブラウザの ⋮メニュー →「アプリをインストール」から入れてね';
+      hint.innerHTML = 'まだ準備中かもしれません。<b>一度ページを再読み込み</b>して、もう一度押してみてください。<br>それでも出ない時は ⋮メニュー →「アプリをインストール」から入れてね';
     }
   }
 }

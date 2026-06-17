@@ -4658,18 +4658,17 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
           <path d="M60 28v18M50 38l10 10 10-10"/>
           <rect x="44" y="70" width="32" height="7" rx="3" opacity="0.4"/>
         </svg>
-        <div class="tut-text">下の<b>「インストール」</b>を押す<br><small>(出ない時は ⋮メニュー →「アプリをインストール」)</small></div>
+        <div class="tut-text">下の<b>「インストール」</b>を押すだけ</div>
       </div>
       <div class="tut-panel" data-step="2">
         <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="14" y="62" width="92" height="18" rx="4" opacity="0.35"/>
-          <rect x="24" y="65" width="12" height="12" rx="2"/>
-          <rect x="60" y="65" width="12" height="12" rx="2"/>
-          <rect x="42" y="65" width="12" height="12" rx="2" fill="currentColor" stroke="none"/>
-          <path d="M48 60V34"/>
-          <path d="M40 30a8 8 0 1116 0c0 6-8 8-8 8" stroke-width="2.6"/>
+          <rect x="62" y="54" width="48" height="30" rx="5"/>
+          <path d="M70 64h26M70 72h14"/>
+          <rect x="70" y="58" width="3" height="3" rx="1" fill="currentColor" stroke="none"/>
+          <path d="M44 26a8 8 0 1116 0c0 6-8 9-8 9M52 47v-6" stroke-width="2.6"/>
+          <path d="M30 40l-6 6 6 6" opacity="0.5"/>
         </svg>
-        <div class="tut-text">アプリのアイコンを<br><b>サイドバー / タスクバーにピン留め</b></div>
+        <div class="tut-text">インストールできたら<br>右下に出るバーの<b>「はい」を選んでピン留め</b></div>
       </div>
       <div class="tut-panel" data-step="3">
         <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
@@ -6326,23 +6325,33 @@ function triggerAppInstall() {
     try {
       dp.prompt();
       dp.userChoice.then((c) => {
-        if (hint) { hint.hidden = false; hint.textContent = (c && c.outcome === 'accepted') ? 'インストールしました！次はピン留めへ' : 'インストールは見送られました'; }
+        if (c && c.outcome === 'accepted') {
+          if (hint) hint.hidden = true;
+          showTutDStep(2);   // インストールOK → 自動でピン留めの案内へ
+        } else {
+          if (hint) { hint.hidden = false; hint.textContent = 'インストールは見送られました'; }
+        }
       }).finally(() => { window.__deferredInstallPrompt = null; });
     } catch (e) {}
     return;
   }
-  // プロンプトが使えない場合の案内
   if (hint) {
     hint.hidden = false;
     if (window.__appInstalled || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)) {
-      hint.textContent = 'もうインストール済みです。次はピン留めへ';
+      hint.textContent = 'もうインストール済みです';
+      showTutDStep(2);
     } else {
-      hint.innerHTML = 'まだ準備中かもしれません。<b>一度ページを再読み込み</b>して、もう一度押してみてください。<br>それでも出ない時は ⋮メニュー →「アプリをインストール」から入れてね';
+      hint.innerHTML = 'まだ準備中かも。<b>再読み込み</b>してもう一度、または ⋮メニュー →「アプリをインストール」';
     }
   }
 }
 const _tutDInstall = document.getElementById('tutDInstall');
 if (_tutDInstall) _tutDInstall.addEventListener('click', triggerAppInstall);
+// インストール完了を検知したら、案内を自動で②(ピン留め)へ進める
+window.addEventListener('appinstalled', () => {
+  const ov = document.getElementById('tutorialDesktop');
+  if (ov && ov.classList.contains('shown')) showTutDStep(2);
+});
 showTutDStep(1);
 
 /* ===== Share overlay ===== */

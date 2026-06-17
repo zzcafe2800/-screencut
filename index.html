@@ -13724,6 +13724,27 @@ function buildPipEditor(pip, onClose) {
     .pe-guide-btn{display:block;margin:20px auto 0;background:#5b9cb8;color:#fff;border:none;border-radius:999px;padding:11px 36px;font-size:16px;font-weight:800;cursor:pointer;}
     .pe-guide-btn:active{transform:translateY(1px);}
     .pe-guide-open{position:absolute;left:10px;top:10px;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #8fd3ed;color:#5b9cb8;font-weight:800;font-size:15px;cursor:pointer;z-index:12;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(91,156,184,.25);}
+    /* 段階式チュートリアル */
+    .pe-tutbar{position:fixed;top:0;left:0;right:0;display:none;align-items:center;justify-content:center;gap:4px;padding:7px 6px;background:rgba(91,156,184,.97);z-index:100000;}
+    .pe-tutbar.show{display:flex;}
+    .pe-tutstep{display:flex;align-items:center;gap:5px;color:#fff;opacity:.45;font-size:10px;font-weight:700;white-space:nowrap;}
+    .pe-tutstep .n{width:19px;height:19px;border-radius:50%;background:#fff;color:#5b9cb8;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;}
+    .pe-tutstep.cur{opacity:1;}
+    .pe-tutstep.cur .n{box-shadow:0 0 0 3px rgba(255,255,255,.45);}
+    .pe-tutsep{width:10px;height:2px;background:rgba(255,255,255,.45);border-radius:2px;}
+    .pe-tutcard{position:fixed;inset:0;display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;background:rgba(91,156,184,.96);z-index:99990;padding:24px;text-align:center;}
+    .pe-tutcard.show{display:flex;}
+    .pe-tutcard .t{font-size:18px;font-weight:800;color:#fff;line-height:1.6;}
+    .pe-tutcard .btn{background:#fff;color:#5b9cb8;border:none;border-radius:999px;padding:11px 36px;font-size:16px;font-weight:800;cursor:pointer;}
+    .pe-tutbubble{position:fixed;top:48px;left:50%;transform:translateX(-50%);display:none;background:#fff;color:#2c3e50;border:2px solid #5b9cb8;border-radius:14px;padding:9px 30px 9px 16px;font-size:13px;font-weight:700;z-index:100002;box-shadow:0 6px 18px rgba(0,0,0,.28);max-width:86%;text-align:center;}
+    .pe-tutbubble.show{display:block;}
+    .pe-tutbubble::before{content:'';position:absolute;top:-9px;left:50%;transform:translateX(-50%);border:8px solid transparent;border-bottom-color:#5b9cb8;}
+    .pe-tutbubble .x{position:absolute;right:7px;top:5px;font-size:14px;color:#9aa7b0;cursor:pointer;font-weight:800;}
+    .pe-tutdrop{position:absolute;inset:0;display:none;z-index:50;pointer-events:none;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);-webkit-mask-image:radial-gradient(circle at 50% 50%, transparent 0 30%, #000 58%);mask-image:radial-gradient(circle at 50% 50%, transparent 0 30%, #000 58%);background:rgba(91,156,184,.28);animation:peTutBlink 1.1s ease-in-out infinite;}
+    .pe-tutdrop.show{display:block;}
+    @keyframes peTutBlink{0%,100%{opacity:.3}50%{opacity:.92}}
+    .pe-tutspot{position:fixed;display:none;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,.62);z-index:99986;pointer-events:none;}
+    .pe-tutspot.show{display:block;}
   `;
   d.head.appendChild(style);
 
@@ -13842,31 +13863,80 @@ function buildPipEditor(pip, onClose) {
   `;
   d.body.appendChild(wrap);
 
-  // つかいかた案内 (PiPの中に大きく表示) — サイトを上に出さなくてもここで完結
-  const peGuide = d.createElement('div');
-  peGuide.className = 'pe-guide';
-  peGuide.innerHTML = `
-    <div class="pe-guide-card">
-      <div class="pe-guide-title">つかいかた</div>
-      <ol class="pe-guide-steps">
-        <li><span class="pe-gnum">1</span><div>画像ファイルをこの小窓に<b>ドロップ</b><br>(下のファイルボタンからでもOK)</div></li>
-        <li><span class="pe-gnum">2</span><div><b>アイテムを検索</b>して、枠を動かして大きさを調整</div></li>
-        <li><span class="pe-gnum">3</span><div><b>保存</b>、またはできた画像をゲームのアイテムへ<b>ドロップ</b></div></li>
-      </ol>
-      <div class="pe-guide-note">この小窓はゲームの上に浮くので、サイトに戻らなくてOK</div>
-      <button class="pe-guide-btn" id="peGuideClose">はじめる</button>
-    </div>`;
-  d.body.appendChild(peGuide);
-  const _pgClose = d.getElementById('peGuideClose');
-  if (_pgClose) _pgClose.addEventListener('click', () => peGuide.classList.remove('show'));
-  // 再表示用の「？」ボタン (ステージ左上)
+  // ===== 段階式チュートリアル (ドロップを押したとき上にバーで案内) =====
+  const peTut = d.createElement('div');
+  peTut.innerHTML = `
+    <div class="pe-tutbar" id="peTutBar">
+      <div class="pe-tutstep" data-s="1"><span class="n">1</span>ゲーム起動</div>
+      <span class="pe-tutsep"></span>
+      <div class="pe-tutstep" data-s="2"><span class="n">2</span>画像をドロップ</div>
+      <span class="pe-tutsep"></span>
+      <div class="pe-tutstep" data-s="3"><span class="n">3</span>検索</div>
+      <span class="pe-tutsep"></span>
+      <div class="pe-tutstep" data-s="4"><span class="n">4</span>選ぶ</div>
+    </div>
+    <div class="pe-tutcard" id="peTutCard"><div class="t" id="peTutCardText"></div><button class="btn" id="peTutNext">次へ</button></div>
+    <div class="pe-tutbubble" id="peTutBubble"><span id="peTutBubbleText"></span><span class="x" id="peTutBubbleX">×</span></div>
+    <div class="pe-tutspot" id="peTutSpot"></div>`;
+  d.body.appendChild(peTut);
+  // ドロップ用の点滅ぼかし(中央以外)はステージ上に重ねる
+  const peTutDrop = d.createElement('div');
+  peTutDrop.className = 'pe-tutdrop'; peTutDrop.id = 'peTutDrop';
+
+  let _peTutStage = 0;
+  function _peTutClear() {
+    ['peTutCard','peTutBubble','peTutSpot'].forEach(id=>{ const e=d.getElementById(id); if(e) e.classList.remove('show'); });
+    peTutDrop.classList.remove('show');
+  }
+  function _peTutBarSet(n) {
+    const bar=d.getElementById('peTutBar'); if(!bar) return;
+    bar.classList.toggle('show', n===1||n===2);
+    bar.querySelectorAll('.pe-tutstep').forEach(s=>s.classList.toggle('cur', +s.dataset.s===n));
+  }
+  function _peTutSpotOn(targetId, pad) {
+    const t=d.getElementById(targetId), spot=d.getElementById('peTutSpot'); if(!t||!spot) return;
+    const r=t.getBoundingClientRect(); pad=pad||8;
+    spot.style.left=(r.left-pad)+'px'; spot.style.top=(r.top-pad)+'px';
+    spot.style.width=(r.width+pad*2)+'px'; spot.style.height=(r.height+pad*2)+'px';
+    spot.classList.add('show');
+  }
+  function _peTutBubble(text, withX) {
+    const b=d.getElementById('peTutBubble'), tx=d.getElementById('peTutBubbleText'), x=d.getElementById('peTutBubbleX');
+    if(!b) return; tx.textContent=text; x.style.display=withX?'block':'none'; b.classList.add('show');
+  }
+  function peTutGoStage(n) {
+    _peTutStage=n; _peTutClear(); _peTutBarSet(n);
+    if(n===1){
+      d.getElementById('peTutCardText').innerHTML='まずは<b>ゲームを起動（表示）</b>してね<br><small style="opacity:.85;font-weight:600">この小窓はゲームの上に浮きます</small>';
+      d.getElementById('peTutCard').classList.add('show');
+    } else if(n===2){
+      _peTutBubble('ファイルから画像をつかんで、ここにドロップ', false);
+      // ステージに点滅ぼかしを重ねる (中央以外がぼやける)
+      const stg=d.getElementById('peStage'); if(stg && peTutDrop.parentNode!==stg){ stg.appendChild(peTutDrop); }
+      peTutDrop.classList.add('show');
+    } else if(n===3){
+      // カードは消えて通常のPiPへ。検索欄以外を暗くして検索を誘導
+      _peTutSpotOn('peSearch', 6);
+      _peTutBubble('画像を入れるアイテム名を検索', true);
+    } else if(n===4){
+      _peTutSpotOn('peItems', 6);
+      _peTutBubble('この中から選ぶ', true);
+    }
+  }
+  function peTutEnd(){ _peTutStage=0; _peTutClear(); const bar=d.getElementById('peTutBar'); if(bar) bar.classList.remove('show'); }
+  d.getElementById('peTutNext').addEventListener('click', ()=>{ if(_peTutStage===1) peTutGoStage(2); });
+  d.getElementById('peTutBubbleX').addEventListener('click', peTutEnd);
+  // フック: 画像が入ったら 2→3、検索したら 3→4
+  peTut._onImageLoaded = ()=>{ if(_peTutStage===2) peTutGoStage(3); };
+  peTut._onSearched = ()=>{ if(_peTutStage===3) peTutGoStage(4); };
+  // 再表示用「？」ボタン → 最初から
   const peGuideOpen = d.createElement('button');
   peGuideOpen.className = 'pe-guide-open'; peGuideOpen.type = 'button'; peGuideOpen.textContent = '？'; peGuideOpen.title = 'つかいかた';
-  peGuideOpen.addEventListener('click', () => peGuide.classList.add('show'));
+  peGuideOpen.addEventListener('click', () => peTutGoStage(1));
   const _peStageForGuide = d.getElementById('peStage');
   if (_peStageForGuide) _peStageForGuide.appendChild(peGuideOpen);
-  // チュートリアルから起動された場合は自動で大きく表示
-  try { if (window.__pipShowGuide) { peGuide.classList.add('show'); window.__pipShowGuide = false; } } catch (e) {}
+  // ドロップ(チュートリアル)から起動された場合は stage1 から開始
+  try { if (window.__pipShowGuide) { peTutGoStage(1); window.__pipShowGuide = false; } } catch (e) {}
 
   const cv=d.getElementById('peCanvas'), ctx=cv.getContext('2d');
   const stage=d.getElementById('peStage'), dropEl=d.getElementById('peDrop');
@@ -14025,7 +14095,7 @@ function buildPipEditor(pip, onClose) {
 
   // 検索 (下のサーチ → アイテム一覧をフィルタ + サジェスト)
   const searchEl=d.getElementById('peSearch'); const sugEl=d.getElementById('peSug');
-  searchEl.addEventListener('input',()=>{ renderItems(searchEl.value); });
+  searchEl.addEventListener('input',()=>{ renderItems(searchEl.value); if(searchEl.value.trim()){ try{ if(peTut && peTut._onSearched) peTut._onSearched(); }catch(e){} } });
 
   let catTimer=null;
 
@@ -14258,6 +14328,7 @@ function buildPipEditor(pip, onClose) {
     }catch(e){}
     const url=URL.createObjectURL(file); const img=new Image();
     img.onload=()=>{ st.img=img; dropEl.style.display='none'; layoutCanvas(); initFrame(); render(); setBubble('枠を動かして調整してね');
+      try{ if(peTut && peTut._onImageLoaded) peTut._onImageLoaded(); }catch(e){}
       // 本体サイトにも同じ画像を読み込む(共有)。fromMain の時は逆流させない
       if(!fromMain && !window.__pipImgSync){
         try{ if(typeof window.__mainLoadFile==='function'){ window.__pipImgSync=true; Promise.resolve(window.__mainLoadFile(file)).finally(()=>{window.__pipImgSync=false;}); } }catch(e){ window.__pipImgSync=false; }

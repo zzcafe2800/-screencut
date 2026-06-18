@@ -166,6 +166,20 @@ body.sidebar-forced:not(.has-image):not(.thumb-mode) aside { width: var(--sideba
   display: none; align-items: center; justify-content: center;
 }
 body:not(.has-image):not(.thumb-mode):not(.sidebar-forced) #sidebarReveal { display: flex; }
+/* 左バーを隠す/再表示 */
+body.sidebar-hidden:not(.thumb-mode) { grid-template-columns: 0 1fr !important; }
+body.sidebar-hidden:not(.thumb-mode) aside { width: 0 !important; min-width: 0 !important; padding: 0 !important; overflow: hidden !important; border-right: none !important; }
+body.sidebar-hidden:not(.thumb-mode) #sidebarReveal { display: flex; }
+#sidebarHide {
+  position: fixed; left: calc(var(--sidebar-w, 280px) - 30px); top: 10px;
+  z-index: 61; width: 24px; height: 32px;
+  border: none; border-radius: 9px;
+  background: rgba(91,156,184,0.9); color: #fff; font-size: 16px; font-weight: 800;
+  cursor: pointer; box-shadow: 0 2px 7px rgba(44,62,80,0.25);
+  display: none; align-items: center; justify-content: center;
+}
+body.has-image:not(.sidebar-hidden):not(.thumb-mode) #sidebarHide,
+body.sidebar-forced:not(.sidebar-hidden):not(.thumb-mode) #sidebarHide { display: flex; }
 /* アイテム間隔: カテゴリ内は控えめに広めに (検索結果よりは狭め) */
 .item { padding: 9px 14px 9px 22px !important; }
 /* カテゴリ内アイテムの視覚分離 (検索結果より狭め) */
@@ -229,6 +243,9 @@ aside::-webkit-scrollbar { width: 0; height: 0; display: none; }
   transition: transform 0.25s ease;
 }
 .category.open .arrow { transform: rotate(90deg); color: var(--accent); }
+/* 開いている(選択中)カテゴリーをはっきり色付け・閉じたら元に戻る */
+.category.open > .category-header { color: var(--accent); font-weight: 700; background: rgba(91,156,184,0.10); }
+.category.open > .category-header::before { opacity: 1; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235b9cb8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/><path d='M14 2v6h6'/></svg>"); }
 
 .items { display: none; padding: 4px 0 14px; }
 .category.open .items { display: block; }
@@ -245,13 +262,14 @@ aside::-webkit-scrollbar { width: 0; height: 0; display: none; }
   transition: background 0.15s, box-shadow 0.15s;
 }
 .item:hover { background: var(--bg-soft); }
-.item.active { box-shadow: inset 2px 0 0 var(--accent); }
+.item.active { box-shadow: inset 3px 0 0 var(--accent); background: rgba(91,156,184,0.12); }
 
 .item-icon-slot { grid-area: icon; width: 24px; height: 16px; display: flex; align-items: center; overflow: hidden; }
 .item-icon { height: 14px; width: auto; max-width: 24px; object-fit: contain; display: block; opacity: 0.85; }
 .item-label { grid-area: label; font-size: 12px; line-height: 1.35; }
 .item-ratio { grid-area: ratio; font-family: var(--serif); font-style: italic; color: var(--fg-faint); font-size: 13px; white-space: nowrap; }
-.item.active .item-ratio { color: var(--accent); }
+.item.active .item-ratio { color: #fff; background: var(--accent); border-radius: 7px; padding: 1px 8px; font-style: normal; font-weight: 700; }
+.item.active .item-label { color: var(--accent); font-weight: 700; }
 .item-note { grid-area: note; font-size: 9.5px; color: var(--fg-faint); margin-top: 2px; line-height: 1.3; }
 
 /* ピンボタン */
@@ -286,7 +304,9 @@ aside::-webkit-scrollbar { width: 0; height: 0; display: none; }
 }
 .pinned-category > .category-header .arrow { color: #d669a0; }
 .pinned-category .item:hover { background: rgba(238, 169, 200, 0.20); }
-.pinned-category .item.active { box-shadow: inset 2px 0 0 #d669a0; }
+.pinned-category .item.active { box-shadow: inset 3px 0 0 #d669a0; background: rgba(214,105,160,0.12); }
+.pinned-category .item.active .item-ratio { background: #d669a0; }
+.pinned-category .item.active .item-label { color: #b94e85; }
 
 /* 画像読み込み後 アイテム未選択時のサイドバー強調 */
 @keyframes sidebar-pulse {
@@ -501,18 +521,11 @@ header.info {
 }
 #canvas.shown { display: block; }
 .img-lock-btn {
-  position: absolute;
-  top: 3px; right: 3px;
   display: flex; align-items: center; justify-content: center;
-  background: transparent;
-  border: none;
-  padding: 3px;
   cursor: pointer;
-  z-index: 14;
-  filter: drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 1px 3px rgba(44,62,80,0.4));
   transition: transform .12s;
 }
-.img-lock-btn svg { width: 30px; height: 30px; display: block; }
+.img-lock-btn svg { width: 22px; height: 22px; display: block; }
 .img-lock-btn.mode-orig { color: #8a99a3; }
 .img-lock-btn.mode-lock { color: #5b9cb8; }
 .img-lock-btn.mode-free { color: #e0a341; }
@@ -2380,14 +2393,14 @@ footer.controls {
 .pattern-toggle {
   background: rgba(91,156,184,0.10);
   border: 1px solid var(--accent);
-  border-radius: 6px;
-  height: 26px;
-  padding: 0 8px;
-  display: flex; align-items: center; gap: 5px;
+  border-radius: 8px;
+  height: 34px;
+  padding: 0 13px;
+  display: flex; align-items: center; gap: 6px;
   cursor: pointer;
   color: var(--accent);
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   transition: all 0.15s;
   flex-shrink: 0;
 }
@@ -2407,7 +2420,7 @@ footer.controls {
 }
 .pattern-toggle .pt-label::before { content: '分割'; }
 .pattern-toggle .pt-label { font-size: 0; line-height: 0; }
-.pattern-toggle .pt-label::before { font-size: 11px; line-height: 1; }
+.pattern-toggle .pt-label::before { font-size: 13px; line-height: 1; }
 
 /* 手動範囲トグル (パターンモード時のみ、下中央) */
 .splits {
@@ -3556,6 +3569,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 </div>
 
 <button id="sidebarReveal" type="button" aria-label="メニューを表示" title="メニューを表示">›</button>
+<button id="sidebarHide" type="button" aria-label="メニューを隠す" title="メニューを隠す">‹</button>
 <aside>
   <div class="sidebar-sticky" id="sidebarSticky">
   <div class="brand-row">
@@ -3797,7 +3811,6 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 
   <div class="canvas-wrap" id="canvasWrap">
     <canvas id="canvas"></canvas>
-    <button class="img-lock-btn mode-orig" id="imgLockBtn" type="button" title="画像のサイズ変更" hidden></button>
     <!-- 画質変化の表示 (画像の上に重ねる, フェード付き) -->
     <div class="quality-overlay" id="qInfoOverlay" hidden></div>
     <div class="thumb-toolbar" id="thumbToolbar" hidden>
@@ -3827,7 +3840,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         </svg>
       </button>
     </div>
-    <div class="empty-msg" id="emptyMsg">ここに画像・GIFをドロップ</div>
+    <div class="empty-msg" id="emptyMsg">ここに画像・GIF・動画をドロップ<br><span style="font-size:.82em;opacity:.7">タップでファイルを選ぶ</span></div>
     <div class="loading-overlay" id="loadingOverlay" hidden>
       <div class="loading-spinner"></div>
       <div class="loading-text" id="loadingText">読み込み中…</div>
@@ -3935,7 +3948,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <div class="spp-body">
         <div class="spp-title">合わせる場所をタップ</div>
         <canvas id="rmSavePreviewCanvas"></canvas>
-        <div class="spp-dim" id="rmSavePreviewDim">お部屋の画像を読み込んでね</div>
+        <div class="spp-dim" id="rmSavePreviewDim"></div>
       </div>
     </div>
 
@@ -4145,6 +4158,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         </button>
       </div>
     </div>
+    <button class="brightness-btn img-lock-btn mode-orig" id="imgLockBtn" type="button" title="画像のサイズ変更" hidden></button>
     <button class="brightness-btn trim-btn" id="trimToggle" title="長さ調節" hidden>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <!-- timeline with two markers icon -->
@@ -6024,6 +6038,13 @@ const dimLine = document.getElementById('dimLine');
 const framesInfo = document.getElementById('framesInfo');
 const saveBtn = document.getElementById('save');
 const fileInput = document.getElementById('file');
+// 空のプレビュー(ここにドロップ)をタップでファイル選択
+(function(){
+  const em = document.getElementById('emptyMsg'), cw = document.getElementById('canvasWrap');
+  const openPick = () => { if (!state.loaded && !state.thumbMode) fileInput.click(); };
+  if (em) { em.style.cursor='pointer'; em.style.pointerEvents='auto'; em.addEventListener('click', openPick); }
+  if (cw) cw.addEventListener('click', (e)=>{ if(e.target===cw && !state.loaded && !state.thumbMode) openPick(); });
+})();
 const splitWNum = document.getElementById('splitWNum');
 const splitHNum = document.getElementById('splitHNum');
 const flipHBtn = document.getElementById('flipH');
@@ -6207,6 +6228,12 @@ helpBtn.addEventListener('click', () => openOverlay(welcomeOverlay));
 const sidebarReveal = document.getElementById('sidebarReveal');
 if (sidebarReveal) sidebarReveal.addEventListener('click', () => {
   document.body.classList.add('sidebar-forced');
+  document.body.classList.remove('sidebar-hidden');
+});
+const sidebarHide = document.getElementById('sidebarHide');
+if (sidebarHide) sidebarHide.addEventListener('click', () => {
+  document.body.classList.add('sidebar-hidden');
+  document.body.classList.remove('sidebar-forced');
 });
 
 /* ===== チュートリアル: ドロップくんボタンをスポットライト点滅 → 押すと説明表示 ===== */
@@ -9283,8 +9310,9 @@ canvas.addEventListener('pointermove', e => {
       const oldH = d.bbox.bottom - d.bbox.top;
       const newW = Math.max(20, d.anchorX - x);
       const newH = Math.max(20, d.anchorY - y);
-      const fx = newW / oldW;
-      const fy = newH / oldH;
+      let fx = newW / oldW;
+      let fy = newH / oldH;
+      if (state.imgLockMode === 'lock') { const f = Math.max(fx, fy); fx = f; fy = f; } // 比率固定
       for (const idx of d.indices) {
         const L = state.layers[idx];
         const bScale = d.baseScales.get(idx);
@@ -9315,8 +9343,18 @@ canvas.addEventListener('pointermove', e => {
     // 右下を anchor 固定で 左上ハンドルがポインタに追従
     const nw = Math.max(20, d.anchorX - x);
     const nh = Math.max(20, d.anchorY - y);
-    L.scaleX = Math.max(0.05, Math.min(5, nw / (L.naturalW * baseScale)));
-    L.scaleY = Math.max(0.05, Math.min(5, nh / (L.naturalH * baseScale)));
+    if (state.imgLockMode === 'lock') {
+      // 比率固定(ロック): 既存の縦横比を保ったまま均等スケール
+      const oldW = L.naturalW * baseScale * d.baseScaleX || 1;
+      const oldH = L.naturalH * baseScale * d.baseScaleY || 1;
+      const f = Math.max(nw / oldW, nh / oldH);
+      L.scaleX = Math.max(0.05, Math.min(5, d.baseScaleX * f));
+      L.scaleY = Math.max(0.05, Math.min(5, d.baseScaleY * f));
+    } else {
+      // 自由(解除など): 縦横を別々に
+      L.scaleX = Math.max(0.05, Math.min(5, nw / (L.naturalW * baseScale)));
+      L.scaleY = Math.max(0.05, Math.min(5, nh / (L.naturalH * baseScale)));
+    }
     // offset を逆算 (anchor を固定するため)
     const newDrawW = L.naturalW * L.scaleX * baseScale;
     const newDrawH = L.naturalH * L.scaleY * baseScale;
@@ -11392,7 +11430,6 @@ function updateSidebarTop3() {
     row.innerHTML = `
       <div class="st3-icon">${ic}</div>
       <div class="st3-name">${rec.item.name}</div>
-      <div class="st3-ratio">${rec.item.w}<span class="colon">:</span>${rec.item.h}</div>
       <div class="st3-match">${rec.match.toFixed(0)}%</div>`;
     row.addEventListener('click', () => selectItem(rec.item, null));
     sidebarTop3List.appendChild(row);
@@ -13624,7 +13661,9 @@ function buildPipEditor(pip, onClose) {
     .pe-size{position:absolute;top:8px;right:14px;background:#fff;border:2px solid #8fd3ed;border-radius:16px;padding:4px 14px;font-size:13px;font-weight:800;color:#5b9cb8;z-index:7;white-space:nowrap;box-shadow:0 3px 9px rgba(91,156,184,.2);}
     .pe-size::after{content:'';position:absolute;left:24px;bottom:-7px;border:7px solid transparent;border-top-color:#8fd3ed;}
     /* 色調整(プレビュー左上に重ねて浮かせる) */
-    .pe-color{position:absolute;left:14px;top:54px;width:min(160px,44vw);max-height:calc(100vh - 140px);overflow-y:auto;background:rgba(255,255,255,0.96);border:2px solid #8fd3ed;border-radius:16px;padding:9px 11px 11px;box-shadow:0 6px 16px rgba(91,156,184,.22);z-index:8;transition:.2s;}
+    .pe-color{position:absolute;left:14px;top:54px;width:min(160px,44vw);max-height:calc(100vh - 140px);overflow-y:auto;background:rgba(255,255,255,0.96);border:2px solid #8fd3ed;border-radius:16px;padding:9px 11px 11px;box-shadow:0 6px 16px rgba(91,156,184,.22);z-index:8;transition:.2s;font-size:clamp(9px,2.6vw,12px);}
+    .pe-color h4{font-size:clamp(11px,3vw,14px);}
+    .pe-color label{font-size:1em;}
     .pe-color::-webkit-scrollbar{width:4px;} .pe-color::-webkit-scrollbar-thumb{background:#bfe0ee;border-radius:9px;}
     .pe-color h4{margin:0 0 7px;font-size:10.5px;text-align:center;color:#5b9cb8;letter-spacing:.08em;}
     .pe-crow{display:grid;grid-template-columns:46px 1fr;align-items:center;gap:6px;margin-bottom:5px;font-size:8.5px;}
@@ -13737,6 +13776,7 @@ function buildPipEditor(pip, onClose) {
     .pe-tutcard .btn{background:#fff;color:#5b9cb8;border:none;border-radius:999px;padding:11px 36px;font-size:16px;font-weight:800;cursor:pointer;}
     .pe-tutbubble{position:fixed;top:48px;left:50%;transform:translateX(-50%);display:none;background:#fff;color:#2c3e50;border:2px solid #5b9cb8;border-radius:14px;padding:9px 30px 9px 16px;font-size:13px;font-weight:700;z-index:100002;box-shadow:0 6px 18px rgba(0,0,0,.28);max-width:86%;text-align:center;}
     .pe-tutbubble.show{display:block;}
+    .pe-tutbubble.no-arrow::before{display:none;}
     .pe-tutbubble::before{content:'';position:absolute;top:-9px;left:50%;transform:translateX(-50%);border:8px solid transparent;border-bottom-color:#5b9cb8;}
     .pe-tutbubble .x{position:absolute;right:7px;top:5px;font-size:14px;color:#9aa7b0;cursor:pointer;font-weight:800;}
     .pe-tutdrop{position:absolute;inset:0;display:none;z-index:50;pointer-events:none;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);-webkit-mask-image:radial-gradient(circle at 50% 50%, transparent 0 30%, #000 58%);mask-image:radial-gradient(circle at 50% 50%, transparent 0 30%, #000 58%);background:rgba(91,156,184,.28);animation:peTutBlink 1.1s ease-in-out infinite;}
@@ -13887,6 +13927,7 @@ function buildPipEditor(pip, onClose) {
     ['peTutCard','peTutBubble','peTutSpot'].forEach(id=>{ const e=d.getElementById(id); if(e) e.classList.remove('show'); });
     peTutDrop.classList.remove('show');
     if(typeof _peTutDimControls==='function') _peTutDimControls(false);
+    if(typeof _peTut7==='function') _peTut7(false);
   }
   function _peTutBarSet(n) {
     const bar=d.getElementById('peTutBar'); if(!bar) return;
@@ -13900,9 +13941,28 @@ function buildPipEditor(pip, onClose) {
     spot.style.width=(r.width+pad*2)+'px'; spot.style.height=(r.height+pad*2)+'px';
     spot.classList.add('show');
   }
-  function _peTutBubble(text, withX) {
+  function _peTutBubble(text, withX, targetId, side) {
     const b=d.getElementById('peTutBubble'), tx=d.getElementById('peTutBubbleText'), x=d.getElementById('peTutBubbleX');
-    if(!b) return; tx.textContent=text; x.style.display=withX?'block':'none'; b.classList.add('show');
+    if(!b) return; tx.innerHTML=text; x.style.display=withX?'block':'none';
+    b.classList.add('show'); b.classList.remove('no-arrow');
+    b.style.left=''; b.style.top=''; b.style.right=''; b.style.transform='';
+    if(targetId){
+      const t=d.getElementById(targetId);
+      if(t){
+        const r=t.getBoundingClientRect();
+        const bw=b.offsetWidth||220, bh=b.offsetHeight||46;
+        side=side||'top'; let L,T;
+        if(side==='bottom'){ L=r.left+r.width/2-bw/2; T=r.bottom+12; }
+        else if(side==='left'){ L=r.left-bw-12; T=r.top+r.height/2-bh/2; }
+        else if(side==='right'){ L=r.right+12; T=r.top+r.height/2-bh/2; }
+        else { L=r.left+r.width/2-bw/2; T=r.top-bh-12; } // top
+        const vw=d.documentElement.clientWidth||400, vh=d.documentElement.clientHeight||400;
+        L=Math.max(8,Math.min(vw-bw-8,L)); T=Math.max(8,Math.min(vh-bh-8,T));
+        b.style.left=L+'px'; b.style.top=T+'px'; b.style.transform='none'; b.classList.add('no-arrow');
+      }
+    } else {
+      b.style.left='50%'; b.style.top='48px'; b.style.transform='translateX(-50%)';
+    }
   }
   let _peDim=null, _peRaised=[];
   function _peTutDimControls(on){
@@ -13916,37 +13976,65 @@ function buildPipEditor(pip, onClose) {
       _peRaised.forEach(([e,pos,z])=>{ e.style.position=pos; e.style.zIndex=z; }); _peRaised=[];
     }
   }
+  // 保存ステージ専用: 小さめカード + 暗幕 + 保存ボタンは前面で見える
+  let _peT7Back=null, _peT7Card=null, _peT7SaveRaise=null;
+  function _peTut7(on){
+    if(on){
+      if(!_peT7Back){
+        _peT7Back=d.createElement('div'); _peT7Back.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:99980;';
+        _peT7Back.addEventListener('click',()=>{ if(_peTutStage===7) peTutGoStage(6); });
+        d.body.appendChild(_peT7Back);
+        _peT7Card=d.createElement('div');
+        _peT7Card.style.cssText='position:fixed;top:14%;left:50%;transform:translateX(-50%);z-index:99982;background:#fff;border:2px solid #5b9cb8;border-radius:16px;padding:16px 18px;max-width:84%;text-align:center;font-size:13px;font-weight:700;color:#2c3e50;line-height:1.7;box-shadow:0 10px 30px rgba(0,0,0,.35);';
+        d.body.appendChild(_peT7Card);
+      }
+      _peT7Card.innerHTML='<b>保存</b>したら、ダウンロード一覧から<br>「〇〇.png」をつかんで<br><b>ゲーム内のアイテムにドロップ</b>で自動読み込み！<br><span style="font-size:11px;font-weight:600;opacity:.6">（周りをタップで戻る）</span>';
+      _peT7Back.style.display='block'; _peT7Card.style.display='block';
+      const sv=d.getElementById('peSave');
+      if(sv){ _peT7SaveRaise=[sv,sv.style.position,sv.style.zIndex,sv.style.boxShadow]; if(getComputedStyle(sv).position==='static') sv.style.position='relative'; sv.style.zIndex='99983'; sv.style.boxShadow='0 0 0 4px rgba(255,255,255,.6)'; }
+    } else {
+      if(_peT7Back) _peT7Back.style.display='none';
+      if(_peT7Card) _peT7Card.style.display='none';
+      if(_peT7SaveRaise){ const [sv,p,z,b]=_peT7SaveRaise; sv.style.position=p; sv.style.zIndex=z; sv.style.boxShadow=b; _peT7SaveRaise=null; }
+    }
+  }
   function peTutGoStage(n) {
     _peTutStage=n; _peTutClear(); _peTutBarSet(n);
+    const back=d.getElementById('peTutBack'); if(back) back.style.display=(n>=2&&n<=7)?'flex':'none';
     if(n===1){
       d.getElementById('peTutCardText').innerHTML='まずは<b>ゲームを起動（表示）</b>してね<br><small style="opacity:.85;font-weight:600">この小窓はゲームの上に浮きます</small>';
       d.getElementById('peTutNext').textContent='次へ';
       d.getElementById('peTutCard').classList.add('show');
     } else if(n===2){
-      _peTutBubble('ファイルから画像をつかんで、ここにドロップ', false);
+      _peTutSpotOn('peStage', 0);   // プレビュー以外を暗く
+      _peTutBubble('画像を読み込む時は<br>ファイルから画像をつかんでここにドロップ', false, 'peStage', 'bottom');
       const stg=d.getElementById('peStage'); if(stg && peTutDrop.parentNode!==stg){ stg.appendChild(peTutDrop); }
       peTutDrop.classList.add('show');
     } else if(n===3){
       _peTutSpotOn('peSearch', 6);
-      _peTutBubble('画像を入れるアイテム名を検索', true);
+      _peTutBubble('画像を入れるアイテム名を検索', true, 'peSearch', 'top');
     } else if(n===4){
       _peTutSpotOn('peItems', 6);
-      _peTutBubble('この中から選ぶ', true);
+      _peTutBubble('この中から選ぶ', true, 'peItems', 'left');
     } else if(n===5){
-      _peTutSpotOn('peStage', 0);   // プレビュー以外を暗く → 枠移動を誘導
-      _peTutBubble('枠をつかんで画像が入るように編集', true);
+      _peTutSpotOn('peStage', 0);
+      _peTutBubble('枠をつかんで画像が入るように編集', true, 'peStage', 'bottom');
     } else if(n===6){
-      _peTutDimControls(true);      // ボタン群以外を暗く → ボタン強調
-      _peTutBubble('自由にカスタマイズ（タップで次へ）', true);
+      _peTutDimControls(true);
+      _peTutBubble('自由にカスタマイズ（タップで次へ）', true, 'peColToggle', 'top');
     } else if(n===7){
-      d.getElementById('peTutCardText').innerHTML='<b>保存</b>したら、ダウンロード一覧から<br>「〇〇.png」をつかんで<br><b>ゲーム内のアイテムにドロップ</b>すると<br>自動で読み込みされます！';
-      const nb=d.getElementById('peTutNext'); nb.textContent='おしまい';
-      d.getElementById('peTutCard').classList.add('show');
+      _peTut7(true);
     }
   }
-  function peTutEnd(){ _peTutStage=0; _peTutClear(); const bar=d.getElementById('peTutBar'); if(bar) bar.classList.remove('show'); }
-  d.getElementById('peTutNext').addEventListener('click', ()=>{ if(_peTutStage===1) peTutGoStage(2); else if(_peTutStage===7) peTutEnd(); });
+  function peTutEnd(){ _peTutStage=0; _peTutClear(); const bar=d.getElementById('peTutBar'); if(bar) bar.classList.remove('show'); const back=d.getElementById('peTutBack'); if(back) back.style.display='none'; }
+  d.getElementById('peTutNext').addEventListener('click', ()=>{ if(_peTutStage===1) peTutGoStage(2); });
   d.getElementById('peTutBubbleX').addEventListener('click', peTutEnd);
+  // 一つ戻るボタン (チュートリアル中のみ・誤タップ対策)
+  const peTutBack=d.createElement('button');
+  peTutBack.id='peTutBack'; peTutBack.type='button'; peTutBack.textContent='← 戻る'; peTutBack.title='一つ戻る';
+  peTutBack.style.cssText='position:fixed;left:10px;top:7px;z-index:100003;display:none;align-items:center;background:#fff;color:#5b9cb8;border:2px solid #5b9cb8;border-radius:999px;padding:5px 13px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.22);';
+  peTutBack.addEventListener('click',()=>{ if(_peTutStage>1) peTutGoStage(_peTutStage-1); });
+  d.body.appendChild(peTutBack);
   // フック: 画像→2→3、検索→3→4、選択→4→5、枠移動→5→6
   peTut._onImageLoaded = ()=>{ if(_peTutStage===2) peTutGoStage(3); };
   peTut._onSearched = ()=>{ if(_peTutStage===3) peTutGoStage(4); };
@@ -13955,7 +14043,7 @@ function buildPipEditor(pip, onClose) {
   // 再表示用「？」ボタン → ファイルボタンの左。押すと最初から
   const peGuideOpen = d.createElement('button');
   peGuideOpen.className = 'pe-guide-open'; peGuideOpen.type = 'button'; peGuideOpen.textContent = '？'; peGuideOpen.title = 'つかいかた';
-  peGuideOpen.style.cssText = 'left:auto;top:auto;bottom:15px;right:96px';
+  peGuideOpen.style.cssText = 'left:auto;top:auto;bottom:14px;right:96px;width:34px;height:34px';
   peGuideOpen.addEventListener('click', () => peTutGoStage(1));
   const _peStageForGuide = d.getElementById('peStage');
   if (_peStageForGuide) _peStageForGuide.appendChild(peGuideOpen);
@@ -13980,6 +14068,7 @@ function buildPipEditor(pip, onClose) {
   });
   // 色パネル: ワンクリックで表示/非表示トグル
   const peColorEl=d.getElementById('peColor');
+  peColorEl.classList.add('collapsed');   // 初期は非表示
   d.getElementById('peColToggle').addEventListener('click',()=>peColorEl.classList.toggle('collapsed'));
   peColorEl.querySelector('h4').addEventListener('click',()=>peColorEl.classList.add('collapsed'));
 
@@ -14153,6 +14242,16 @@ function buildPipEditor(pip, onClose) {
   }
   function initFrame(){
     const cw=cv.width,ch=cv.height; let fw,fh;
+    if(st.img && st.ratio){
+      // 画像の表示矩形にいっぱい入る枠を作り、画像の端(上下or左右)に合わせる
+      const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
+      const imgW=iw*st.scale, imgH=ih*st.scale, imgL=st.offX, imgT=st.offY;
+      const ar=st.ratio.w/st.ratio.h;
+      if(imgW/imgH > ar){ fh=imgH; fw=fh*ar; }   // 縦が画像にぴったり(上下に合う)
+      else { fw=imgW; fh=fw/ar; }                 // 横が画像にぴったり(左右に合う)
+      st.frameRect={x:imgL+(imgW-fw)/2, y:imgT+(imgH-fh)/2, w:fw, h:fh};
+      return;
+    }
     if(st.ratio){const ar=st.ratio.w/st.ratio.h; fw=cw*0.7; fh=fw/ar; if(fh>ch*0.8){fh=ch*0.8;fw=fh*ar;}}
     else {const s=Math.min(cw,ch)*0.7; fw=s;fh=s;}
     st.frameRect={x:(cw-fw)/2,y:(ch-fh)/2,w:fw,h:fh};
@@ -14482,7 +14581,10 @@ function buildPipEditor(pip, onClose) {
       return;
     }
     try {
-      pipWin = await window.documentPictureInPicture.requestWindow({ width: 760, height: 500 });
+      const _pw = Math.max(380, Math.round((window.screen && window.screen.availWidth || 1280) / 3));
+      const _ph = Math.max(440, Math.round((window.screen && window.screen.availHeight || 800) / 3));
+      pipWin = await window.documentPictureInPicture.requestWindow({ width: _pw, height: _ph });
+      try { pipWin.moveTo(0, 0); } catch (e) {}   // 左上へ(ブラウザが許可すれば)
       buildPipEditor(pipWin, () => { pipWin = null; try { window.__pipLoadFile = null; } catch (e) {} });
       pipWin.addEventListener('pagehide', () => { pipWin = null; try { window.__pipLoadFile = null; } catch (e) {} });
     } catch (e) {

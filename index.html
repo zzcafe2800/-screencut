@@ -3175,15 +3175,17 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
 #welcomeOverlay { flex-direction: column; gap: 16px; }
 #welcomeOverlay .welcome-pair { flex: 0 1 auto; min-height: 0; }
 .welcome-tutorial-btn{
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  width: auto; margin: 0; padding: 14px 40px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+  width: auto; margin: 0; padding: 17px 58px;
   border: none; border-radius: 999px;
   background: linear-gradient(120deg,#5b9cb8,#7bb8d0);
-  color: #fff; font-size: 16px; font-weight: 800; letter-spacing: .03em;
-  cursor: pointer; box-shadow: 0 8px 22px rgba(91,156,184,.45);
+  color: #fff; font-size: 19px; font-weight: 800; letter-spacing: .04em;
+  cursor: pointer; box-shadow: 0 10px 26px rgba(91,156,184,.5);
   transition: transform .15s, box-shadow .15s, filter .15s;
+  animation: wtbPulse 2s ease-in-out infinite;
 }
-.welcome-tutorial-btn:hover{ filter:brightness(1.05); transform: translateY(-2px); box-shadow: 0 11px 26px rgba(91,156,184,.55); }
+@keyframes wtbPulse { 0%,100%{ box-shadow: 0 10px 26px rgba(91,156,184,.5);} 50%{ box-shadow: 0 10px 32px rgba(91,156,184,.78);} }
+.welcome-tutorial-btn:hover{ filter:brightness(1.05); transform: translateY(-2px); box-shadow: 0 13px 30px rgba(91,156,184,.6); }
 .welcome-tutorial-btn:active{ transform: translateY(0); }
 #tutorialSpot{ position:fixed; display:none; border-radius:14px; z-index:9000; pointer-events:none; border:3px solid #8fd3ed; animation:tutBlink 0.85s ease-in-out infinite; }
 @keyframes tutBlink{ 0%,100%{ border-color:rgba(143,211,237,1); box-shadow:0 0 0 9999px rgba(20,30,45,0.58), 0 0 18px 5px rgba(143,211,237,.85);} 50%{ border-color:rgba(143,211,237,0.3); box-shadow:0 0 0 9999px rgba(20,30,45,0.58), 0 0 8px 2px rgba(143,211,237,.3);} }
@@ -3296,8 +3298,13 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
   width: 110px;
   height: 56px;
   color: var(--accent);
+  background: rgba(91,156,184,0.08);
+  border: 1px solid rgba(91,156,184,0.15);
+  border-radius: 12px;
+  padding: 5px;
+  box-sizing: border-box;
 }
-.guide-step .illust svg { width: 100%; height: 100%; }
+.guide-step .illust svg { width: 100%; height: 100%; display: block; }
 .guide-step .txt {
   flex: 1;
   font-size: 13px;
@@ -4439,7 +4446,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     <!-- 「できること」機能一覧のみ -->
     <div class="guide-card welcome-card">
     <button id="welcomeClose" class="guide-close" aria-label="閉じる">×</button>
-    <h3>できること</h3>
+    <h3>機能一覧</h3>
     <div class="guide-step">
       <div class="num">1</div>
       <div class="illust">
@@ -4589,7 +4596,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     </div>
   </div>
   </div>
-  <button type="button" class="welcome-tutorial-btn" id="tutorialBtn">▶ チュートリアルを見る</button>
+  <button type="button" class="welcome-tutorial-btn" id="tutorialBtn">▶ チュートリアル</button>
 </div>
 
 <!-- チュートリアル説明 (ドロップくん起動時に表示) -->
@@ -6283,7 +6290,7 @@ guideOverlay.addEventListener('click', e => { if (e.target === guideOverlay) hid
 
 /* ===== Welcome overlay (開いた時) ===== */
 welcomeCloseBtn.addEventListener('click', () => closeOverlay(welcomeOverlay));
-welcomeOverlay.addEventListener('click', e => { if (e.target === welcomeOverlay) closeOverlay(welcomeOverlay); });
+/* この画面はチュートリアルか×でのみ閉じる(背景タップでは閉じない) */
 helpBtn.addEventListener('click', () => openOverlay(welcomeOverlay));
 
 /* メニュー(左バー)を手動で表示: 一度押したら戻せない */

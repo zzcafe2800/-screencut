@@ -171,13 +171,14 @@ body.sidebar-hidden:not(.thumb-mode) { grid-template-columns: 0 1fr !important; 
 body.sidebar-hidden:not(.thumb-mode) aside { width: 0 !important; min-width: 0 !important; padding: 0 !important; overflow: hidden !important; border-right: none !important; }
 body.sidebar-hidden:not(.thumb-mode) #sidebarReveal { display: flex; }
 #sidebarHide {
-  position: fixed; left: calc(var(--sidebar-w, 280px) - 30px); top: 10px;
-  z-index: 61; width: 24px; height: 32px;
-  border: none; border-radius: 9px;
-  background: rgba(91,156,184,0.9); color: #fff; font-size: 16px; font-weight: 800;
-  cursor: pointer; box-shadow: 0 2px 7px rgba(44,62,80,0.25);
+  position: fixed; left: calc(var(--sidebar-w, 280px) - 11px); top: 50%; transform: translateY(-50%);
+  z-index: 61; width: 22px; height: 50px;
+  border: none; border-radius: 7px;
+  background: rgba(150,165,175,0.5); color: rgba(255,255,255,0.92); font-size: 15px; font-weight: 700;
+  cursor: pointer; box-shadow: 0 1px 4px rgba(44,62,80,0.16);
   display: none; align-items: center; justify-content: center;
 }
+#sidebarHide:hover { background: rgba(120,138,150,0.7); }
 body.has-image:not(.sidebar-hidden):not(.thumb-mode) #sidebarHide,
 body.sidebar-forced:not(.sidebar-hidden):not(.thumb-mode) #sidebarHide { display: flex; }
 /* アイテム間隔: カテゴリ内は控えめに広めに (検索結果よりは狭め) */
@@ -1620,6 +1621,15 @@ canvas.deform-active:active { cursor: grabbing; }
 .brightness-btn:hover:not(:disabled) { color: var(--accent); }
 .brightness-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 .brightness-btn svg { position: relative; z-index: 1; }
+/* ホバーで短い名前を上に表示 */
+.brightness-btn[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  margin-bottom: 7px;
+  background: #2c3e50; color: #fff; font-size: 11px; font-weight: 700;
+  padding: 3px 9px; border-radius: 7px; white-space: nowrap;
+  pointer-events: none; z-index: 60; box-shadow: 0 3px 8px rgba(0,0,0,.25);
+}
 
 /* Quality button: same gauge + small level badge */
 .q-level {
@@ -4084,7 +4094,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       </svg>
     </button>
     <div class="tool-divider"></div>
-    <button class="brightness-btn" id="brightness" title="明るさ" disabled>
+    <button class="brightness-btn" id="brightness" data-tip="明るさ" title="明るさ" disabled>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="12" r="4"/>
         <line x1="12" y1="2.5" x2="12" y2="5"/>
@@ -4098,7 +4108,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       </svg>
       <span class="q-level" id="bLevel"></span>
     </button>
-    <button class="brightness-btn" id="quality" title="画質低下 (1.5倍ずつ)" disabled>
+    <button class="brightness-btn" id="quality" data-tip="画質" title="画質低下 (1.5倍ずつ)" disabled>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <!-- pixel grid icon -->
         <rect x="3.5" y="3.5" width="6" height="6"/>
@@ -4108,7 +4118,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       </svg>
       <span class="q-level" id="qLevel"></span>
     </button>
-    <button class="brightness-btn" id="colorAdjustBtn" title="色加工 (お部屋に合わせる)" disabled>
+    <button class="brightness-btn" id="colorAdjustBtn" data-tip="色加工" title="色加工 (お部屋に合わせる)" disabled>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 2C6.5 2 2 6.3 2 11.5c0 3.6 2.4 5.5 5 5.5h1.5a2 2 0 012 2v.5c0 1.4 1.1 2.5 2.5 2.5C18 22 22 17.5 22 12c0-5.5-4.5-10-10-10z"/>
         <circle cx="7.5" cy="10.5" r="1.2" fill="currentColor" stroke="none"/>
@@ -4117,7 +4127,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         <circle cx="17.5" cy="13" r="1.2" fill="currentColor" stroke="none"/>
       </svg>
     </button>
-    <button class="brightness-btn" id="simplify" title="単純化" disabled>
+    <button class="brightness-btn" id="simplify" data-tip="単純化" title="単純化" disabled>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <path d="M5 7c1-3 6-3 8-1s5 0 6 2-1 5-2 7-5 4-8 3-5-3-5-6 0-3 1-5z"/>
         <circle cx="9" cy="11" r="1.2" fill="currentColor" stroke="none"/>
@@ -4132,7 +4142,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       </svg>
     </button>
     <div class="effect-wrap">
-      <button class="brightness-btn" id="shrink" title="背景拡張 / 画像変形" disabled>
+      <button class="brightness-btn" id="shrink" data-tip="背景拡張" title="背景拡張 / 画像変形" disabled>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 4l6 6M4 8V4h4"/>
           <path d="M20 4l-6 6M20 8V4h-4"/>
@@ -4158,7 +4168,7 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         </button>
       </div>
     </div>
-    <button class="brightness-btn img-lock-btn mode-orig" id="imgLockBtn" type="button" title="画像のサイズ変更" hidden></button>
+    <button class="brightness-btn img-lock-btn mode-orig" id="imgLockBtn" type="button" data-tip="サイズ" title="画像のサイズ変更" hidden></button>
     <button class="brightness-btn trim-btn" id="trimToggle" title="長さ調節" hidden>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <!-- timeline with two markers icon -->
@@ -11045,9 +11055,10 @@ function syncImgLockBtn() {
   const mode = state.imgLockMode || 'orig';
   [document.getElementById('imgLockBtn'), document.getElementById('imgTransformBtn')].forEach(b => {
     if (!b) return;
-    b.classList.remove('mode-orig', 'mode-lock', 'mode-free');
+    b.classList.remove('mode-orig', 'mode-lock', 'mode-free', 'mode-fit');
     b.classList.add('mode-' + mode);
     b.innerHTML = IMG_LOCK_ICONS[mode];
+    b.style.setProperty('--fill', (mode === 'orig' ? 0 : 360) + 'deg'); // 押したら満タン
   });
 }
 function setImgLockMode(mode) {
@@ -12052,6 +12063,7 @@ rmConfirmBtn.addEventListener('click', () => {
   } else {
     showToast('色加工を反映しました');
   }
+  try { const _ca=document.getElementById('colorAdjustBtn'); if(_ca) _ca.style.setProperty('--fill','360deg'); } catch(e){}
 });
 
 /* roomCanvas クリック・ドラッグ: 移動 / リサイズ / 新規作成 */
@@ -13791,7 +13803,7 @@ function buildPipEditor(pip, onClose) {
     ratio:null,offX:0,offY:0,scale:1,frameRect:null,dragMode:null,sx:0,sy:0,fr0:null,
     simplify:false,blur:false,spot:false,
     simpLevels:16,simpEdge:0,bgMargin:0,bgTransp:false,bgColor:null,bgPosX:0,bgPosY:0,bgEyedrop:false,
-    splitW:1,splitH:1,pattern:false};
+    splitW:1,splitH:1,pattern:false,lockMode:'orig'};
   let _fxCache=null,_fxKey='';
   function peSampleBg(){
     try{ const t=(window.document?window.document:d).createElement('canvas'); t.width=1;t.height=1;
@@ -14077,7 +14089,12 @@ function buildPipEditor(pip, onClose) {
     {id:'rot',t:'回転',svg:'<path d="M21 12a9 9 0 11-3-6.7M21 3v5h-5"/>'},
     {id:'flipH',t:'左右反転',svg:'<path d="M12 3v18M7 8l-4 4 4 4M17 8l4 4-4 4"/>'},
     {id:'flipV',t:'上下反転',svg:'<path d="M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4"/>'},
+    {id:'lock',t:'枠に合わせる',svg:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9l-2 0 0 2M15 9l2 0 0 2M9 15l-2 0 0-2M15 15l2 0 0-2"/>'},
   ];
+  const PE_LOCK_ICONS={
+    orig:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0"/>',                 // 開いた錠(元)
+    fit:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8l8 8M16 8l-8 8" opacity="0"/><path d="M9 9l-2 0 0 2M15 9l2 0 0 2M9 15l-2 0 0-2M15 15l2 0 0-2"/>' // 枠に合わせる
+  };
   const tiEl=d.getElementById('peTopIcons');
   topIcons.forEach(t=>{
     const b=d.createElement('button'); b.className='pe-ti'; b.title=t.t;
@@ -14086,8 +14103,16 @@ function buildPipEditor(pip, onClose) {
       if(t.id==='rot'){ st.rot=(st.rot+90)%360; }
       if(t.id==='flipH'){ st.flipH=!st.flipH; b.classList.toggle('active',st.flipH); }
       if(t.id==='flipV'){ st.flipV=!st.flipV; b.classList.toggle('active',st.flipV); }
+      if(t.id==='lock'){
+        // 元 ⇄ 枠に合わせる(引き伸ばし)
+        st.lockMode = (st.lockMode==='fit') ? 'orig' : 'fit';
+        b.classList.toggle('active', st.lockMode==='fit');
+        b.title = st.lockMode==='fit' ? '元に戻す' : '枠に合わせる';
+        const sv=b.querySelector('svg'); if(sv) sv.innerHTML=PE_LOCK_ICONS[st.lockMode];
+      }
       render();
     });
+    if(t.id==='lock'){ const sv=b.querySelector('svg'); if(sv) sv.innerHTML=PE_LOCK_ICONS.orig; }
     tiEl.appendChild(b);
   });
 
@@ -14269,10 +14294,16 @@ function buildPipEditor(pip, onClose) {
   function drawImageOnly(c){
     const src=srcForDraw(); if(!src) return;
     const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
-    const dw=iw*st.scale, dh=ih*st.scale;
+    let dw, dh, ox, oy;
+    if(st.lockMode==='fit' && st.frameRect){
+      // 枠いっぱいに引き伸ばす(縦横別)
+      ox=st.frameRect.x; oy=st.frameRect.y; dw=st.frameRect.w; dh=st.frameRect.h;
+    } else {
+      dw=iw*st.scale; dh=ih*st.scale; ox=st.offX; oy=st.offY;
+    }
     c.save(); c.filter=filterStr();
     if(st.quality>0) c.imageSmoothingEnabled=false;
-    c.translate(st.offX+dw/2, st.offY+dh/2);
+    c.translate(ox+dw/2, oy+dh/2);
     c.rotate(st.rot*Math.PI/180);
     c.scale(st.flipH?-1:1, st.flipV?-1:1);
     c.drawImage(src,-dw/2,-dh/2,dw,dh);
@@ -14376,9 +14407,11 @@ function buildPipEditor(pip, onClose) {
     const octx=out.getContext('2d');
     octx.filter=filterStr();
     const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
-    const dw=iw*st.scale, dh=ih*st.scale;
+    let dw, dh, ox, oy;
+    if(st.lockMode==='fit' && fr){ ox=fr.x; oy=fr.y; dw=fr.w; dh=fr.h; }
+    else { dw=iw*st.scale; dh=ih*st.scale; ox=st.offX; oy=st.offY; }
     octx.save(); octx.translate(-fr.x,-fr.y);
-    octx.translate(st.offX+dw/2, st.offY+dh/2);
+    octx.translate(ox+dw/2, oy+dh/2);
     octx.rotate(st.rot*Math.PI/180);
     octx.scale(st.flipH?-1:1, st.flipV?-1:1);
     octx.drawImage(src,-dw/2,-dh/2,dw,dh);

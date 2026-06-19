@@ -84,12 +84,12 @@ window.addEventListener('appinstalled',function(){window.__appInstalled=true;win
 }
 .init-loader.hide { opacity: 0; pointer-events: none; }
 .init-loader-inner {
-  display: flex; flex-direction: column; align-items: center; gap: 14px;
-  background: rgba(255,255,255,0.92); padding: 34px 46px; border-radius: 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  background: rgba(255,255,255,0.92); padding: 46px 60px; border-radius: 26px;
   box-shadow: 0 12px 40px rgba(0,0,0,0.15);
 }
-.init-loader-gif { width: 96px; height: 96px; object-fit: contain; }
-.init-loader-text { font-size: 15px; font-weight: 700; color: #4a8aa3; letter-spacing: 0.12em; }
+.init-loader-gif { width: 180px; height: 180px; object-fit: contain; }
+.init-loader-text { font-size: 17px; font-weight: 700; color: #4a8aa3; letter-spacing: 0.12em; }
 .init-loader-text::after { content: ''; animation: loadDots 1.2s steps(4) infinite; }
 @keyframes loadDots { 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%{content:'...'} }
 @property --fill { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
@@ -3165,8 +3165,26 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
   z-index: 150;
 }
 .guide-overlay.shown { opacity: 1; pointer-events: auto; }
-.welcome-tutorial-btn{ display:block; width:100%; margin-top:10px; padding:11px; border:none; border-radius:12px; background:linear-gradient(120deg,#5b9cb8,#7bb8d0); color:#fff; font-size:14px; font-weight:800; cursor:pointer; box-shadow:0 4px 12px rgba(91,156,184,.3); }
-.welcome-tutorial-btn:hover{ filter:brightness(1.05); }
+/* アイテム比未選択ガイド: 一覧/検索(サイドバー)以外を軽く暗く */
+#ratioGuide { position: fixed; inset: 0; background: rgba(20,30,40,0.30); z-index: 90; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 46px; cursor: pointer; }
+#ratioGuide .rg-hint { background: #fff; color: #2c3e50; font-weight: 800; font-size: 14px; padding: 10px 22px; border-radius: 999px; box-shadow: 0 6px 18px rgba(0,0,0,0.3); animation: rgFloat 1.4s ease-in-out infinite; }
+@keyframes rgFloat { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-5px);} }
+body.ratio-guide-on aside { position: relative; z-index: 95; }
+body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
+/* ウェルカム: カードの下にチュートリアルボタンを単体配置 */
+#welcomeOverlay { flex-direction: column; gap: 16px; }
+#welcomeOverlay .welcome-pair { flex: 0 1 auto; min-height: 0; }
+.welcome-tutorial-btn{
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: auto; margin: 0; padding: 14px 40px;
+  border: none; border-radius: 999px;
+  background: linear-gradient(120deg,#5b9cb8,#7bb8d0);
+  color: #fff; font-size: 16px; font-weight: 800; letter-spacing: .03em;
+  cursor: pointer; box-shadow: 0 8px 22px rgba(91,156,184,.45);
+  transition: transform .15s, box-shadow .15s, filter .15s;
+}
+.welcome-tutorial-btn:hover{ filter:brightness(1.05); transform: translateY(-2px); box-shadow: 0 11px 26px rgba(91,156,184,.55); }
+.welcome-tutorial-btn:active{ transform: translateY(0); }
 #tutorialSpot{ position:fixed; display:none; border-radius:14px; z-index:9000; pointer-events:none; border:3px solid #8fd3ed; animation:tutBlink 0.85s ease-in-out infinite; }
 @keyframes tutBlink{ 0%,100%{ border-color:rgba(143,211,237,1); box-shadow:0 0 0 9999px rgba(20,30,45,0.58), 0 0 18px 5px rgba(143,211,237,.85);} 50%{ border-color:rgba(143,211,237,0.3); box-shadow:0 0 0 9999px rgba(20,30,45,0.58), 0 0 8px 2px rgba(143,211,237,.3);} }
 .tut-card{ max-width:600px; padding:34px 34px 30px; }
@@ -3452,6 +3470,12 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
 /* ===== Share modal ===== */
 .share-card { max-width: 440px; padding: 28px 26px 22px; }
 .share-section { margin-bottom: 20px; }
+.feature-list { list-style: none; margin: 6px 0 0; padding: 0; }
+.feature-list li { position: relative; padding: 6px 4px 6px 24px; font-size: 13px; color: #2c3e50; line-height: 1.5; border-bottom: 1px dashed rgba(91,156,184,0.25); }
+.feature-list li:last-child { border-bottom: none; }
+.feature-list li::before { content: '✓'; position: absolute; left: 4px; top: 6px; color: #5b9cb8; font-weight: 800; }
+.feature-list li b { color: #4a8aa3; }
+.credit-text { font-size: 13px; line-height: 1.7; color: #2c3e50; text-align: center; margin: 6px 0 0; }
 .share-section:last-child { margin-bottom: 0; }
 .share-section h4 {
   margin: 0 0 12px;
@@ -3594,6 +3618,11 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M17 2l4 4-4 4M21 6H9a4 4 0 00-4 4v2"/>
         <path d="M7 22l-4-4 4-4M3 18h12a4 4 0 004-4v-2"/>
+      </svg>
+    </button>
+    <button id="creditBtn" class="icon-btn" aria-label="クレジット・機能" title="クレジット / できること">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 21s-7-4.5-7-10a4 4 0 017-2.6A4 4 0 0119 11c0 5.5-7 10-7 10z"/>
       </svg>
     </button>
     <button id="helpBtn" class="icon-btn" aria-label="使い方" title="使い方">
@@ -4558,9 +4587,9 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
         <div class="txt"><b>GIFを短く</b><br>欲しい部分だけ切り出す</div>
       </div>
     </div>
-    <button type="button" class="welcome-tutorial-btn" id="tutorialBtn">▶ チュートリアル</button>
   </div>
   </div>
+  <button type="button" class="welcome-tutorial-btn" id="tutorialBtn">▶ チュートリアルを見る</button>
 </div>
 
 <!-- チュートリアル説明 (ドロップくん起動時に表示) -->
@@ -4784,6 +4813,29 @@ body.thumb-mode .lp-body { width: 100%; box-sizing: border-box; }
           リツイート
         </div>
       </a>
+    </section>
+  </div>
+</div>
+
+<!-- クレジット & できること -->
+<div id="creditOverlay" class="guide-overlay" role="dialog" aria-modal="true">
+  <div class="guide-card credit-card">
+    <button id="creditClose" class="guide-close" aria-label="閉じる">×</button>
+    <h3>便利くん<span style="color:#5b9cb8;">zz</span></h3>
+    <section class="share-section">
+      <h4>できること</h4>
+      <ul class="feature-list">
+        <li>画像・GIF・動画を<b>アイテム比に自動切り抜き</b></li>
+        <li><b>部屋サムネ</b>メイカー</li>
+        <li><b>ドロップくん</b>（小窓に浮かせて編集）</li>
+        <li>明るさ・画質・色加工・単純化・背景拡張</li>
+        <li><b>複数分割 / パターン</b>保存</li>
+        <li>レイヤー編集・<b>加工くん</b>（お部屋に色合わせ）</li>
+      </ul>
+    </section>
+    <section class="share-section">
+      <h4>クレジット</h4>
+      <p class="credit-text">制作: ユメミル<br>ZZcafe / ZUZU community<br><span style="opacity:.7;">みんなのおかげでできています。ありがとう！</span></p>
     </section>
   </div>
 </div>
@@ -6394,6 +6446,14 @@ showTutDStep(1);
 shareBtn.addEventListener('click', () => openOverlay(shareOverlay));
 shareCloseBtn.addEventListener('click', () => closeOverlay(shareOverlay));
 shareOverlay.addEventListener('click', e => { if (e.target === shareOverlay) closeOverlay(shareOverlay); });
+
+/* ===== Credit / 機能一覧 overlay ===== */
+(function(){
+  const cb=document.getElementById('creditBtn'), co=document.getElementById('creditOverlay'), cc=document.getElementById('creditClose');
+  if(cb&&co) cb.addEventListener('click',()=>openOverlay(co));
+  if(cc&&co) cc.addEventListener('click',()=>closeOverlay(co));
+  if(co) co.addEventListener('click',e=>{ if(e.target===co) closeOverlay(co); });
+})();
 
 /* ESC key closes any overlay */
 document.addEventListener('keydown', e => {
@@ -10182,6 +10242,26 @@ function updateToolBtns() {
   }
   const _itb = document.getElementById('imgTransformBtn');
   if (_itb) _itb.disabled = !en;
+  updateRatioGuide();
+}
+/* 画像は読み込んだがアイテム比未選択 → アイテム一覧/検索以外を軽く暗くして誘導。タップで消える */
+function updateRatioGuide() {
+  let ov = document.getElementById('ratioGuide');
+  if (!state.loaded) state._ratioGuideDismissed = false;
+  const show = state.loaded && !state.ratio && !state.thumbMode && !state._ratioGuideDismissed;
+  if (show) {
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'ratioGuide';
+      ov.innerHTML = '<div class="rg-hint">アイテムを選んでね</div>';
+      ov.addEventListener('click', () => { state._ratioGuideDismissed = true; document.body.classList.remove('ratio-guide-on'); ov.remove(); });
+      document.body.appendChild(ov);
+    }
+    document.body.classList.add('ratio-guide-on');
+  } else {
+    if (ov) ov.remove();
+    document.body.classList.remove('ratio-guide-on');
+  }
 }
 function updateBrightnessGauge() {
   // 選択中レイヤーがあればその値、なければ state.brightness
@@ -13798,6 +13878,11 @@ function buildPipEditor(pip, onClose) {
     .pe-tutspot.show{display:block;}
   `;
   d.head.appendChild(style);
+  // PiPのタイトルバーを水色に寄せる(ブラウザが対応していれば)
+  try {
+    const _tc = d.createElement('meta'); _tc.name = 'theme-color'; _tc.content = '#5b9cb8'; d.head.appendChild(_tc);
+    if (d.body) d.body.style.background = 'linear-gradient(#cdeaf5, #eef7fb 120px)';
+  } catch (e) {}
 
   const st={img:null,quality:0,brightness:0,contrast:0,hue:0,saturate:0,temp:0,tint:0,flipH:false,flipV:false,rot:0,
     ratio:null,offX:0,offY:0,scale:1,frameRect:null,dragMode:null,sx:0,sy:0,fr0:null,
@@ -14052,6 +14137,25 @@ function buildPipEditor(pip, onClose) {
   peTut._onSearched = ()=>{ if(_peTutStage===3) peTutGoStage(4); };
   peTut._onItemSelected = ()=>{ if(_peTutStage===4) setTimeout(()=>peTutGoStage(5),60); };
   peTut._onFrameMoved = ()=>{ if(_peTutStage===5) peTutGoStage(6); };
+  // 画像読込済みでアイテム比未選択 → 検索/一覧以外を軽く暗くして誘導(タップで消える)
+  function _peRaiseSI(on){
+    ['peSearch','peItems'].forEach(id=>{ const e=d.getElementById(id); if(e){ if(on){ if(getComputedStyle(e).position==='static') e.style.position='relative'; e.style.zIndex='45'; } else { e.style.zIndex=''; } } });
+  }
+  function _peRatioGuide(){
+    let ov=d.getElementById('peRatioGuide');
+    const show = st.img && !st.ratio && !st._rgDismissed && (!_peTutStage || _peTutStage===0);
+    if(show){
+      if(!ov){
+        ov=d.createElement('div'); ov.id='peRatioGuide';
+        ov.style.cssText='position:fixed;inset:0;background:rgba(20,30,40,.32);z-index:40;cursor:pointer;display:flex;align-items:flex-start;justify-content:flex-end;';
+        ov.innerHTML='<div style="margin:60px 14px 0 0;background:#fff;color:#2c3e50;font-weight:800;font-size:12px;padding:7px 14px;border-radius:999px;box-shadow:0 5px 14px rgba(0,0,0,.3);">アイテムを選んでね →</div>';
+        ov.addEventListener('click',()=>{ st._rgDismissed=true; _peRaiseSI(false); ov.remove(); });
+        d.body.appendChild(ov);
+      }
+      _peRaiseSI(true);
+    } else { if(ov){ ov.remove(); } _peRaiseSI(false); }
+  }
+  peTut._ratioGuide = _peRatioGuide;
   // 再表示用「？」ボタン → ファイルボタンの左。押すと最初から
   const peGuideOpen = d.createElement('button');
   peGuideOpen.className = 'pe-guide-open'; peGuideOpen.type = 'button'; peGuideOpen.textContent = '？'; peGuideOpen.title = 'つかいかた';
@@ -14226,6 +14330,7 @@ function buildPipEditor(pip, onClose) {
         row.classList.add('active');
         st.ratio={w:it.w,h:it.h}; if(st.img){ initFrame(); render(); } setBubble(it.name);
         try{ if(peTut && peTut._onItemSelected) peTut._onItemSelected(); }catch(e){}
+        try{ if(peTut && peTut._ratioGuide) peTut._ratioGuide(); }catch(e){}
         // 本体サイトのアイテム比も合わせる(共有)
         try{ if(typeof window.__mainSelectItem==='function') window.__mainSelectItem(it); }catch(e){}
       });
@@ -14488,6 +14593,7 @@ function buildPipEditor(pip, onClose) {
     const url=URL.createObjectURL(file); const img=new Image();
     img.onload=()=>{ st.img=img; dropEl.style.display='none'; layoutCanvas(); initFrame(); render(); setBubble('枠を動かして調整してね');
       try{ if(peTut && peTut._onImageLoaded) peTut._onImageLoaded(); }catch(e){}
+      try{ if(peTut && peTut._ratioGuide){ st._rgDismissed=false; peTut._ratioGuide(); } }catch(e){}
       // 本体サイトにも同じ画像を読み込む(共有)。fromMain の時は逆流させない
       if(!fromMain && !window.__pipImgSync){
         try{ if(typeof window.__mainLoadFile==='function'){ window.__pipImgSync=true; Promise.resolve(window.__mainLoadFile(file)).finally(()=>{window.__pipImgSync=false;}); } }catch(e){ window.__pipImgSync=false; }

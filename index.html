@@ -2725,8 +2725,8 @@ canvas.rm-active { cursor: crosshair; }
 .lp-title-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; }
 .lp-bucket{ background:none; border:none; color:var(--accent); cursor:pointer; padding:2px; display:flex; align-items:center; }
 .lp-bucket:hover{ filter:brightness(1.12); transform:scale(1.05); }
-#deformQuickSave{ position:absolute; right:10px; top:50%; transform:translateY(-50%) translateX(8px); z-index:15; display:none; align-items:center; gap:5px; background:#5b9cb8; color:#fff; border:none; border-radius:999px; padding:9px 16px; font-size:13px; font-weight:800; cursor:pointer; box-shadow:0 4px 14px rgba(91,156,184,.5); opacity:0; transition:opacity .2s, transform .2s; }
-body.deform-active #deformQuickSave{ display:flex; opacity:1; transform:translateY(-50%) translateX(0); }
+#deformQuickSave{ display:none; align-items:center; gap:4px; background:#5b9cb8; color:#fff; border:none; border-radius:999px; padding:6px 12px; font-size:12px; font-weight:800; cursor:pointer; box-shadow:0 3px 10px rgba(91,156,184,.45); white-space:nowrap; flex-shrink:0; }
+body.deform-active #deformQuickSave{ display:inline-flex; }
 #deformQuickSave:hover{ filter:brightness(1.07); }
 .bucket-card{ position:fixed; right:18px; bottom:96px; width:236px; background:#fff; border:2px solid #8fd3ed; border-radius:16px; padding:12px 14px; box-shadow:0 12px 34px rgba(0,0,0,.22); z-index:120; font-size:13px; color:#2c3e50; }
 .bucket-card[hidden]{ display:none; }
@@ -2739,6 +2739,11 @@ body.deform-active #deformQuickSave{ display:flex; opacity:1; transform:translat
 .bk-eyedrop{ width:34px; height:30px; border:1px solid #8fd3ed; border-radius:8px; background:#eef7fb; color:var(--accent); cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .bk-eyedrop.active{ background:var(--accent); color:#fff; }
 .bk-modes{ gap:6px; }
+.bk-scope{ gap:6px; }
+.bk-scope-btn{ flex:1; padding:5px 4px; border:1px solid #cfd8df; border-radius:8px; background:#fff; color:#6b7785; font-weight:700; font-size:11px; cursor:pointer; }
+.bk-scope-btn.active{ background:#eef7fb; color:var(--accent); border-color:#8fd3ed; }
+.bk-decide{ width:100%; padding:9px; border:none; border-radius:10px; background:var(--accent); color:#fff; font-weight:800; cursor:pointer; margin-bottom:7px; }
+.bk-decide:hover{ filter:brightness(1.05); }
 .bk-mode{ flex:1; padding:7px 4px; border:1px solid #cfd8df; border-radius:9px; background:#fff; color:#6b7785; font-weight:700; font-size:11.5px; cursor:pointer; }
 .bk-mode.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
 .bk-tol input[type=range]{ flex:1; min-width:0; }
@@ -3881,10 +3886,6 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
 
   <div class="canvas-wrap" id="canvasWrap">
     <canvas id="canvas"></canvas>
-    <button type="button" id="deformQuickSave" title="この位置・形で保存">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-      <span>保存</span>
-    </button>
     <!-- 画質変化の表示 (画像の上に重ねる, フェード付き) -->
     <div class="quality-overlay" id="qInfoOverlay" hidden></div>
     <div class="thumb-toolbar" id="thumbToolbar" hidden>
@@ -4036,13 +4037,18 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
         <button type="button" class="bk-mode active" id="bucketModeColor">同じ色を染める</button>
         <button type="button" class="bk-mode" id="bucketModeRegion">範囲を染める</button>
       </div>
+      <div class="bk-row bk-scope" id="bucketScopeRow">
+        <button type="button" class="bk-scope-btn active" id="bucketScopeAll">全部</button>
+        <button type="button" class="bk-scope-btn" id="bucketScopeConn">つながり</button>
+      </div>
       <div class="bk-row bk-tol">
         <span class="bk-label">許容</span>
         <input type="range" id="bucketTol" min="0" max="120" value="40">
         <span id="bucketTolVal">40</span>
       </div>
       <div class="bk-hint" id="bucketHint">画像をタップした色を染めます</div>
-      <button type="button" class="bk-reset" id="bucketReset">すべてリセット</button>
+      <button type="button" class="bk-decide" id="bucketDecide">決定（確定）</button>
+      <button type="button" class="bk-reset" id="bucketReset">リセット（決定前まで）</button>
     </div>
 
     <!-- 加工くん お部屋プレビュー (色サンプル用) -->
@@ -4267,6 +4273,10 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       </div>
     </div>
     <button class="brightness-btn img-lock-btn mode-orig" id="imgLockBtn" type="button" data-tip="サイズ" title="画像のサイズ変更" hidden></button>
+    <button type="button" id="deformQuickSave" title="この位置・形で保存">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>保存</span>
+    </button>
     <button class="brightness-btn trim-btn" id="trimToggle" title="長さ調節" hidden>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <!-- timeline with two markers icon -->
@@ -9061,17 +9071,24 @@ layerPanelToggle.addEventListener('click', () => {
   const mColor=document.getElementById('bucketModeColor'), mRegion=document.getElementById('bucketModeRegion');
   const tol=document.getElementById('bucketTol'), tolVal=document.getElementById('bucketTolVal');
   const hint=document.getElementById('bucketHint'), resetBtn=document.getElementById('bucketReset'), closeBtn=document.getElementById('bucketClose');
-  let mode='color', eyedrop=false, backups={}, dragStart=null;
+  const scopeRow=document.getElementById('bucketScopeRow'), scopeAll=document.getElementById('bucketScopeAll'), scopeConn=document.getElementById('bucketScopeConn'), decideBtn=document.getElementById('bucketDecide');
+  let mode='color', eyedrop=false, backups={}, dragStart=null, scope='all';
   function setActive(on){ document.body.classList.toggle('bucket-active', on && !card.hidden); }
   function open(){ card.hidden=false; setActive(true); }
   function close(){ card.hidden=true; document.body.classList.remove('bucket-active'); eyedrop=false; eyeBtn.classList.remove('active'); dragStart=null; }
   btn.addEventListener('click', ()=>{ card.hidden ? open() : close(); });
   closeBtn.addEventListener('click', close);
   tol.addEventListener('input', ()=>{ tolVal.textContent=tol.value; });
+  function setScope(s){ scope=s; scopeAll.classList.toggle('active',s==='all'); scopeConn.classList.toggle('active',s==='connected'); }
+  scopeAll.addEventListener('click', ()=>setScope('all'));
+  scopeConn.addEventListener('click', ()=>setScope('connected'));
   function setMode(m){ mode=m; mColor.classList.toggle('active',m==='color'); mRegion.classList.toggle('active',m==='region');
+    if(scopeRow) scopeRow.style.display = (m==='color') ? 'flex' : 'none';   // つながり切替は「同じ色」モードのみ
     hint.textContent = m==='color' ? '画像をタップした色を染めます' : '画像をなぞって囲むと、離した時に内側が塗られます'; }
   mColor.addEventListener('click', ()=>setMode('color'));
   mRegion.addEventListener('click', ()=>setMode('region'));
+  // 決定: ここまでの変更を確定(リセットの戻り先をここにする=戻りすぎ防止)
+  decideBtn.addEventListener('click', ()=>{ backups={}; if(typeof showToast==='function') showToast('バケツの変更を確定しました'); });
   eyeBtn.addEventListener('click', ()=>{ eyedrop=!eyedrop; eyeBtn.classList.toggle('active',eyedrop); hint.textContent = eyedrop ? '画像をタップして色を取得' : (mode==='color'?'画像をタップした色を染めます':'画像をなぞって囲むと、離した時に内側が塗られます'); });
   function curFrame(){ return state.frames && state.frames[state.currentFrame]; }
   function backup(){ const i=state.currentFrame, f=curFrame(); if(!f||!f.canvas) return; if(!backups[i]){ const c=document.createElement('canvas'); c.width=f.canvas.width; c.height=f.canvas.height; c.getContext('2d').drawImage(f.canvas,0,0); backups[i]=c; } }
@@ -9093,19 +9110,31 @@ layerPanelToggle.addEventListener('click', () => {
   function hex2rgb(h){ const n=parseInt(h.slice(1),16); return [(n>>16)&255,(n>>8)&255,n&255]; }
   function replaceColor(p){
     const f=p.f, ctx2=f.canvas.getContext('2d',{willReadFrequently:true});
-    if(p.fx<0||p.fy<0||p.fx>=f.canvas.width||p.fy>=f.canvas.height) return;
-    const id=ctx2.getImageData(0,0,f.canvas.width,f.canvas.height), d=id.data;
-    const idx=(p.fy*f.canvas.width+p.fx)*4, tr=d[idx],tg=d[idx+1],tb=d[idx+2],ta=d[idx+3];
-    const transTarget = ta < 16;                       // 透明な箇所を選んだ場合
+    const W=f.canvas.width, H=f.canvas.height;
+    if(p.fx<0||p.fy<0||p.fx>=W||p.fy>=H) return;
+    const id=ctx2.getImageData(0,0,W,H), d=id.data;
+    const idx=(p.fy*W+p.fx)*4, tr=d[idx],tg=d[idx+1],tb=d[idx+2],ta=d[idx+3];
+    const transTarget = ta < 16;
     const [nr,ng,nb]=hex2rgb(colorIn.value), t=parseInt(tol.value), t2=t*t*3;
-    for(let i=0;i<d.length;i+=4){
-      const a=d[i+3]; let match;
-      if(transTarget){ match = a < 16; }               // 透明同士を一致
-      else {
-        if(a < 16){ match=false; }                     // 不透明選択時は透明をスキップ
-        else { const dr=d[i]-tr, dg=d[i+1]-tg, db=d[i+2]-tb; match = (dr*dr+dg*dg+db*db<=t2); }
+    const isMatch=(i)=>{ const a=d[i+3];
+      if(transTarget) return a<16;
+      if(a<16) return false;
+      const dr=d[i]-tr, dg=d[i+1]-tg, db=d[i+2]-tb; return (dr*dr+dg*dg+db*db<=t2);
+    };
+    const paint=(i)=>{ d[i]=nr; d[i+1]=ng; d[i+2]=nb; d[i+3]=255; };
+    if(scope==='connected'){
+      // クリック地点からつながっている同じ色だけを塗る (flood fill)
+      const seen=new Uint8Array(W*H), stack=[p.fy*W+p.fx];
+      while(stack.length){
+        const pix=stack.pop(); if(seen[pix]) continue; seen[pix]=1;
+        const i=pix*4; if(!isMatch(i)) continue;
+        paint(i);
+        const x=pix%W, y=(pix-x)/W;
+        if(x>0) stack.push(pix-1); if(x<W-1) stack.push(pix+1);
+        if(y>0) stack.push(pix-W); if(y<H-1) stack.push(pix+W);
       }
-      if(match){ d[i]=nr; d[i+1]=ng; d[i+2]=nb; d[i+3]=255; }  // 染めたら不透明に
+    } else {
+      for(let i=0;i<d.length;i+=4){ if(isMatch(i)) paint(i); }   // 全部
     }
     ctx2.putImageData(id,0,0);
   }
@@ -11055,6 +11084,9 @@ document.addEventListener('pointerdown', e => {
   if (_ilb && _ilb.contains(e.target)) return;
   const _itb = document.getElementById('imgTransformBtn');
   if (_itb && _itb.contains(e.target)) return;
+  // 保存(確定)ボタンなら閉じない → 変形を確定してから処理させる
+  const _qs = document.getElementById('deformQuickSave');
+  if (_qs && _qs.contains(e.target)) return;
   // 変形モードでキャンバスを操作中なら閉じない
   if (state.deformActive && canvas.contains(e.target)) return;
   // スポイトモード中にキャンバスをクリックしてる場合は閉じない

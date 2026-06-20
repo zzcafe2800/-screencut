@@ -2725,6 +2725,9 @@ canvas.rm-active { cursor: crosshair; }
 .lp-title-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; }
 .lp-bucket{ background:none; border:none; color:var(--accent); cursor:pointer; padding:2px; display:flex; align-items:center; }
 .lp-bucket:hover{ filter:brightness(1.12); transform:scale(1.05); }
+#deformQuickSave{ position:absolute; right:10px; top:50%; transform:translateY(-50%) translateX(8px); z-index:15; display:none; align-items:center; gap:5px; background:#5b9cb8; color:#fff; border:none; border-radius:999px; padding:9px 16px; font-size:13px; font-weight:800; cursor:pointer; box-shadow:0 4px 14px rgba(91,156,184,.5); opacity:0; transition:opacity .2s, transform .2s; }
+body.deform-active #deformQuickSave{ display:flex; opacity:1; transform:translateY(-50%) translateX(0); }
+#deformQuickSave:hover{ filter:brightness(1.07); }
 .bucket-card{ position:fixed; right:18px; bottom:96px; width:236px; background:#fff; border:2px solid #8fd3ed; border-radius:16px; padding:12px 14px; box-shadow:0 12px 34px rgba(0,0,0,.22); z-index:120; font-size:13px; color:#2c3e50; }
 .bucket-card[hidden]{ display:none; }
 .bk-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
@@ -3878,6 +3881,10 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
 
   <div class="canvas-wrap" id="canvasWrap">
     <canvas id="canvas"></canvas>
+    <button type="button" id="deformQuickSave" title="この位置・形で保存">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      <span>保存</span>
+    </button>
     <!-- 画質変化の表示 (画像の上に重ねる, フェード付き) -->
     <div class="quality-overlay" id="qInfoOverlay" hidden></div>
     <div class="thumb-toolbar" id="thumbToolbar" hidden>
@@ -9947,6 +9954,7 @@ function pickContrastLineColor() {
 
 function draw() {
   if (!state.canvasW || !state.canvasH) return;
+  document.body.classList.toggle('deform-active', !!state.deformActive);
   // プレビューカードが開いていれば内容を更新 (再帰防止フラグ付き)
   if (typeof previewCard !== 'undefined' && previewCard && !previewCard.hidden && !window.__inPreviewRefresh) {
     window.__inPreviewRefresh = true;
@@ -10155,20 +10163,24 @@ function draw() {
     const dr = deformDisplayRect();
     const _col = state.imgLockMode === 'lock' ? '#5b9cb8' : state.imgLockMode === 'fit' ? '#e0699b' : '#e0a341';  // ロック=青 / フィット=ピンク / 解除=オレンジ
     ctx.save();
-    // 枠 (モード色, 点線) — 端で切れないよう内側にわずかに寄せて白枠の上に出す
-    const inset = 1.5;
-    const fx = Math.max(inset, dr.x), fy = Math.max(inset, dr.y);
-    const fr2 = Math.min(state.canvasW - inset, dr.x + dr.w), fb = Math.min(state.canvasH - inset, dr.y + dr.h);
+    // 反転/回転に追従する枠 (4隅を変換して描く)
+    const c1 = deformLocalToScreen(dr.x, dr.y);
+    const c2 = deformLocalToScreen(dr.x + dr.w, dr.y);
+    const c3 = deformLocalToScreen(dr.x + dr.w, dr.y + dr.h);
+    const c4 = deformLocalToScreen(dr.x, dr.y + dr.h);
     ctx.strokeStyle = _col;
     ctx.lineWidth = 2.5;
     ctx.setLineDash([6, 4]);
     ctx.shadowColor = 'rgba(0,0,0,0.3)';
     ctx.shadowBlur = 4;
-    ctx.strokeRect(fx, fy, Math.max(0, fr2 - fx), Math.max(0, fb - fy));
+    ctx.beginPath();
+    ctx.moveTo(c1.x, c1.y); ctx.lineTo(c2.x, c2.y); ctx.lineTo(c3.x, c3.y); ctx.lineTo(c4.x, c4.y); ctx.closePath();
+    ctx.stroke();
     ctx.shadowBlur = 0;
     ctx.setLineDash([]);
-    // 左上の○ハンドル (モード色) — クランプ位置で常に全部見える
-    const hp = deformHandlePos();
+    // ○ハンドル (モード色) — 変換後の位置に描く
+    const hpL = deformHandlePos();
+    const hp = deformLocalToScreen(hpL.x, hpL.y);
     const hr = DEFORM_HANDLE_R + 1;
     ctx.fillStyle = _col;
     ctx.shadowColor = 'rgba(0,0,0,0.35)';
@@ -11030,6 +11042,7 @@ const deformCancelBtn = document.getElementById('deformCancel');
 if (shrinkBgConfirmBtn) shrinkBgConfirmBtn.addEventListener('click', () => { bakeShrinkOrDeform(); showToast('背景拡張を確定しました'); });
 if (shrinkBgCancelBtn) shrinkBgCancelBtn.addEventListener('click', () => { closeShrinkPanel(); });
 if (deformConfirmBtn) deformConfirmBtn.addEventListener('click', () => { bakeShrinkOrDeform(); showToast('画像変形を確定しました'); });
+(function(){ const q=document.getElementById('deformQuickSave'); if(q) q.addEventListener('click', ()=>{ bakeShrinkOrDeform(); showToast('この位置・形で保存しました'); }); })();
 if (deformCancelBtn) deformCancelBtn.addEventListener('click', () => { closeShrinkPanel(); });
 
 /* 外側タップでも閉じる: パネル外のクリックを監視 */
@@ -11193,12 +11206,32 @@ canvas.addEventListener('pointerdown', e => {
 /* ===== 画像変形 (新方式: 左上■ハンドル=伸縮[右下基準], 本体ドラッグ=移動) ===== */
 const DEFORM_HANDLE_R = 9;     // 描画サイズ
 const DEFORM_HANDLE_HIT = 18;  // ヒット判定半径
+// 反転/回転を考慮: 画面canvas座標 → 変形ローカル座標(cW×cH空間)
+function deformScreenToLocal(sx, sy) {
+  const cW = state.canvasW, cH = state.canvasH;
+  const isRot90 = (state.rotation === 90 || state.rotation === 270);
+  const dw = isRot90 ? cH : cW, dh = isRot90 ? cW : cH;
+  let rx = sx - cW / 2, ry = sy - cH / 2;
+  const a = -(state.rotation || 0) * Math.PI / 180, cs = Math.cos(a), sn = Math.sin(a);
+  let lx = rx * cs - ry * sn, ly = rx * sn + ry * cs;   // 回転を戻す
+  lx *= (state.flipH ? -1 : 1); ly *= (state.flipV ? -1 : 1); // 反転を戻す
+  return { x: (lx + dw / 2) / dw * cW, y: (ly + dh / 2) / dh * cH };
+}
+// 変形ローカル座標 → 画面canvas座標
+function deformLocalToScreen(px, py) {
+  const cW = state.canvasW, cH = state.canvasH;
+  const isRot90 = (state.rotation === 90 || state.rotation === 270);
+  const dw = isRot90 ? cH : cW, dh = isRot90 ? cW : cH;
+  let lx = px / cW * dw - dw / 2, ly = py / cH * dh - dh / 2;
+  lx *= (state.flipH ? -1 : 1); ly *= (state.flipV ? -1 : 1);
+  const a = (state.rotation || 0) * Math.PI / 180, cs = Math.cos(a), sn = Math.sin(a);
+  return { x: (lx * cs - ly * sn) + cW / 2, y: (lx * sn + ly * cs) + cH / 2 };
+}
 function deformLocalPos(e) {
   const r = canvas.getBoundingClientRect();
-  return {
-    x: ((e.clientX - r.left) / r.width) * state.canvasW,
-    y: ((e.clientY - r.top) / r.height) * state.canvasH,
-  };
+  const sx = ((e.clientX - r.left) / r.width) * state.canvasW;
+  const sy = ((e.clientY - r.top) / r.height) * state.canvasH;
+  return deformScreenToLocal(sx, sy);   // 反転/回転を打ち消してローカル座標へ
 }
 /* 現在の表示矩形(canvas座標) を求める */
 function deformDisplayRect() {

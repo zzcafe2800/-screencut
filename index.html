@@ -9062,10 +9062,10 @@ layerPanelToggle.addEventListener('click', () => {
   closeBtn.addEventListener('click', close);
   tol.addEventListener('input', ()=>{ tolVal.textContent=tol.value; });
   function setMode(m){ mode=m; mColor.classList.toggle('active',m==='color'); mRegion.classList.toggle('active',m==='region');
-    hint.textContent = m==='color' ? '画像をタップした色を染めます' : '画像をドラッグで囲った範囲を染めます'; }
+    hint.textContent = m==='color' ? '画像をタップした色を染めます' : '画像をなぞって囲むと、離した時に内側が塗られます'; }
   mColor.addEventListener('click', ()=>setMode('color'));
   mRegion.addEventListener('click', ()=>setMode('region'));
-  eyeBtn.addEventListener('click', ()=>{ eyedrop=!eyedrop; eyeBtn.classList.toggle('active',eyedrop); hint.textContent = eyedrop ? '画像をタップして色を取得' : (mode==='color'?'画像をタップした色を染めます':'画像をドラッグで囲った範囲を染めます'); });
+  eyeBtn.addEventListener('click', ()=>{ eyedrop=!eyedrop; eyeBtn.classList.toggle('active',eyedrop); hint.textContent = eyedrop ? '画像をタップして色を取得' : (mode==='color'?'画像をタップした色を染めます':'画像をなぞって囲むと、離した時に内側が塗られます'); });
   function curFrame(){ return state.frames && state.frames[state.currentFrame]; }
   function backup(){ const i=state.currentFrame, f=curFrame(); if(!f||!f.canvas) return; if(!backups[i]){ const c=document.createElement('canvas'); c.width=f.canvas.width; c.height=f.canvas.height; c.getContext('2d').drawImage(f.canvas,0,0); backups[i]=c; } }
   function afterEdit(){ try{ if(state._effectCache) state._effectCache={}; }catch(e){} try{ draw(); updateFileSize&&updateFileSize(); }catch(e){} }
@@ -9088,33 +9088,64 @@ layerPanelToggle.addEventListener('click', () => {
     const f=p.f, ctx2=f.canvas.getContext('2d',{willReadFrequently:true});
     if(p.fx<0||p.fy<0||p.fx>=f.canvas.width||p.fy>=f.canvas.height) return;
     const id=ctx2.getImageData(0,0,f.canvas.width,f.canvas.height), d=id.data;
-    const idx=(p.fy*f.canvas.width+p.fx)*4, tr=d[idx],tg=d[idx+1],tb=d[idx+2];
+    const idx=(p.fy*f.canvas.width+p.fx)*4, tr=d[idx],tg=d[idx+1],tb=d[idx+2],ta=d[idx+3];
+    const transTarget = ta < 16;                       // 透明な箇所を選んだ場合
     const [nr,ng,nb]=hex2rgb(colorIn.value), t=parseInt(tol.value), t2=t*t*3;
     for(let i=0;i<d.length;i+=4){
-      if(d[i+3]===0) continue;
-      const dr=d[i]-tr, dg=d[i+1]-tg, db=d[i+2]-tb;
-      if(dr*dr+dg*dg+db*db<=t2){ d[i]=nr; d[i+1]=ng; d[i+2]=nb; }
+      const a=d[i+3]; let match;
+      if(transTarget){ match = a < 16; }               // 透明同士を一致
+      else {
+        if(a < 16){ match=false; }                     // 不透明選択時は透明をスキップ
+        else { const dr=d[i]-tr, dg=d[i+1]-tg, db=d[i+2]-tb; match = (dr*dr+dg*dg+db*db<=t2); }
+      }
+      if(match){ d[i]=nr; d[i+1]=ng; d[i+2]=nb; d[i+3]=255; }  // 染めたら不透明に
     }
     ctx2.putImageData(id,0,0);
   }
-  function fillRegion(p1,p2){
-    const f=p1.f, ctx2=f.canvas.getContext('2d');
-    const x=Math.min(p1.fx,p2.fx), y=Math.min(p1.fy,p2.fy), w=Math.abs(p2.fx-p1.fx), h=Math.abs(p2.fy-p1.fy);
-    ctx2.fillStyle=colorIn.value; ctx2.fillRect(x,y,w,h);
+  function fillPolygon(pts){              // pts: フレーム座標。始点と自動で結んで内部を塗る
+    if(!pts || pts.length<3) return;
+    const f=pts[0].f, ctx2=f.canvas.getContext('2d');
+    ctx2.save(); ctx2.beginPath(); ctx2.moveTo(pts[0].fx, pts[0].fy);
+    for(let k=1;k<pts.length;k++) ctx2.lineTo(pts[k].fx, pts[k].fy);
+    ctx2.closePath(); ctx2.fillStyle=colorIn.value; ctx2.fill(); ctx2.restore();
+  }
+  let lasso=null; // {framePts:[], screenPts:[]}
+  function screenPt(e){ const r=canvas.getBoundingClientRect(); return {x:(e.clientX-r.left)*(canvas.width/r.width), y:(e.clientY-r.top)*(canvas.height/r.height)}; }
+  function drawLassoPreview(){
+    if(!lasso||lasso.screenPts.length<1) return;
+    ctx.save();
+    ctx.strokeStyle=colorIn.value; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.lineJoin='round';
+    ctx.beginPath(); ctx.moveTo(lasso.screenPts[0].x, lasso.screenPts[0].y);
+    for(let k=1;k<lasso.screenPts.length;k++) ctx.lineTo(lasso.screenPts[k].x, lasso.screenPts[k].y);
+    ctx.stroke();
+    // 始点と現在地を結ぶ補助線
+    if(lasso.screenPts.length>1){ ctx.setLineDash([2,4]); ctx.globalAlpha=.6; ctx.beginPath(); ctx.moveTo(lasso.screenPts[lasso.screenPts.length-1].x, lasso.screenPts[lasso.screenPts.length-1].y); ctx.lineTo(lasso.screenPts[0].x, lasso.screenPts[0].y); ctx.stroke(); }
+    ctx.restore();
   }
   canvas.addEventListener('pointerdown', e=>{
     if(card.hidden) return;
     const p=toFrame(e); if(!p) return;
     if(eyedrop){ const ctx2=p.f.canvas.getContext('2d',{willReadFrequently:true}); if(p.fx>=0&&p.fy>=0&&p.fx<p.f.canvas.width&&p.fy<p.f.canvas.height){ const px=ctx2.getImageData(p.fx,p.fy,1,1).data; colorIn.value='#'+[px[0],px[1],px[2]].map(v=>v.toString(16).padStart(2,'0')).join(''); } eyedrop=false; eyeBtn.classList.remove('active'); e.preventDefault(); e.stopPropagation(); return; }
-    backup();
-    if(mode==='color'){ replaceColor(p); afterEdit(); e.preventDefault(); e.stopPropagation(); }
-    else { dragStart=p; e.preventDefault(); e.stopPropagation(); }
+    if(mode==='color'){ backup(); replaceColor(p); afterEdit(); e.preventDefault(); e.stopPropagation(); }
+    else { // 範囲: 押したまま線を描き、離すと始点と結んで塗る
+      lasso={ framePts:[p], screenPts:[screenPt(e)] };
+      try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+      e.preventDefault(); e.stopPropagation();
+    }
   }, true);
-  canvas.addEventListener('pointerup', e=>{
-    if(card.hidden||mode!=='region'||!dragStart) return;
-    const p=toFrame(e); if(p){ fillRegion(dragStart,p); afterEdit(); }
-    dragStart=null; e.preventDefault(); e.stopPropagation();
+  canvas.addEventListener('pointermove', e=>{
+    if(card.hidden||mode!=='region'||!lasso) return;
+    const p=toFrame(e); if(p){ lasso.framePts.push(p); lasso.screenPts.push(screenPt(e)); draw(); drawLassoPreview(); }
+    e.preventDefault(); e.stopPropagation();
   }, true);
+  function endLasso(e){
+    if(card.hidden||mode!=='region'||!lasso) return;
+    if(lasso.framePts.length>=3){ backup(); fillPolygon(lasso.framePts); }
+    lasso=null; afterEdit();
+    e.preventDefault(); e.stopPropagation();
+  }
+  canvas.addEventListener('pointerup', endLasso, true);
+  canvas.addEventListener('pointercancel', endLasso, true);
   resetBtn.addEventListener('click', ()=>{
     Object.keys(backups).forEach(i=>{ const f=state.frames&&state.frames[i]; if(f&&f.canvas&&backups[i]){ const c=f.canvas.getContext('2d'); c.clearRect(0,0,f.canvas.width,f.canvas.height); c.drawImage(backups[i],0,0); } });
     backups={}; afterEdit();

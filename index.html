@@ -1293,7 +1293,7 @@ body.thumb-mode #shrink { display: none !important; }
 .shrink-pick-btn:hover { background: #4a8aa3; }
 .shrink-pick-btn.active:hover { background: #c0392b; }
 /* 背景拡張: 余白サイズの横スライダー */
-.shrink-level-row {
+#shrinkColorPicker{ width:30px; height:26px; border:1px solid #cfd8df; border-radius:7px; padding:0; cursor:pointer; background:none; flex-shrink:0; }.shrink-level-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1951,6 +1951,9 @@ canvas.deform-active:active { cursor: grabbing; }
   margin-bottom: 12px;
 }
 .search-results.shown { display: block; }
+.sr-card .sr-pin { margin-left: auto; flex-shrink: 0; opacity: .6; }
+.sr-card:hover .sr-pin, .sr-card .sr-pin.pinned { opacity: 1; }
+.sr-card .sr-icon .item-icon-svg { color: var(--accent); opacity: .7; }
 #categories.hidden { display: none; }
 
 /* Sidebar TOP3 (オススメ) */
@@ -2413,17 +2416,7 @@ footer.controls {
   font-weight: 700;
   transition: all 0.15s;
   flex-shrink: 0;
-  position: relative;
 }
-/* 分割の時だけ下に青い線 */
-.pattern-toggle::after {
-  content: '';
-  position: absolute;
-  left: 10px; right: 10px; bottom: -5px;
-  height: 2.5px; border-radius: 2px;
-  background: var(--accent);
-}
-.pattern-toggle[aria-pressed="true"]::after { display: none; }
 .pattern-toggle:hover { background: rgba(91,156,184,0.18); }
 .pattern-toggle .ic-pattern { display: none; }
 .pattern-toggle .ic-split { display: inline-block; }
@@ -2440,7 +2433,8 @@ footer.controls {
 }
 .pattern-toggle .pt-label::before { content: '分割'; }
 .pattern-toggle .pt-label { font-size: 0; line-height: 0; }
-.pattern-toggle .pt-label::before { font-size: 13px; line-height: 1; }
+.pattern-toggle .pt-label::before { font-size: 13px; line-height: 1; border-bottom: 2px solid var(--accent); padding-bottom: 2px; }
+.pattern-toggle[aria-pressed="true"] .pt-label::before { border-bottom: none; padding-bottom: 0; }
 
 /* ===== 別機能ランチャー (分割の左, 扇状に展開) ===== */
 .sl-launcher-wrap { position: relative; display: inline-flex; align-items: center; margin-right: 4px; }
@@ -2783,7 +2777,8 @@ canvas.rm-active { cursor: crosshair; }
 @keyframes ltItemPop { from { opacity: 0; transform: translateY(-8px) scale(.9); } to { opacity: 1; transform: none; } }
 .lp-tools-btn[aria-expanded="true"] { background: rgba(91,156,184,.28); }
 #deformQuickSave{ display:none; align-items:center; gap:4px; background:#5b9cb8; color:#fff; border:none; border-radius:999px; padding:6px 12px; font-size:12px; font-weight:800; cursor:pointer; box-shadow:0 3px 10px rgba(91,156,184,.45); white-space:nowrap; flex-shrink:0; }
-body.deform-active #deformQuickSave{ display:inline-flex; }
+.img-lock-wrap{ position:relative; display:inline-flex; align-items:center; }
+body.deform-active #deformQuickSave{ display:inline-flex; position:absolute; left:100%; top:50%; transform:translateY(-50%); margin-left:6px; z-index:12; }
 #deformQuickSave:hover{ filter:brightness(1.07); }
 .bucket-card{ position:fixed; right:18px; bottom:96px; width:236px; background:#fff; border:2px solid #8fd3ed; border-radius:16px; padding:12px 14px; box-shadow:0 12px 34px rgba(0,0,0,.22); z-index:120; font-size:13px; color:#2c3e50; }
 .bucket-card[hidden]{ display:none; }
@@ -2793,6 +2788,8 @@ body.deform-active #deformQuickSave{ display:inline-flex; }
 .bk-row{ display:flex; align-items:center; gap:8px; margin-bottom:9px; }
 .bk-label{ font-weight:700; color:#6b7785; font-size:12px; min-width:28px; }
 #bucketColor{ width:42px; height:30px; border:1px solid #cfd8df; border-radius:8px; cursor:pointer; padding:0; background:none; }
+.bk-transp{ padding:5px 10px; border:1px solid #cfd8df; border-radius:8px; background:#fff; color:#6b7785; font-size:11px; font-weight:700; cursor:pointer; background-image:linear-gradient(45deg,#e6e6e6 25%,transparent 25%,transparent 75%,#e6e6e6 75%),linear-gradient(45deg,#e6e6e6 25%,#fff 25%,#fff 75%,#e6e6e6 75%); background-size:10px 10px; background-position:0 0,5px 5px; }
+.bk-transp.active{ outline:2px solid var(--accent); color:var(--accent); }
 .bk-eyedrop{ width:34px; height:30px; border:1px solid #8fd3ed; border-radius:8px; background:#eef7fb; color:var(--accent); cursor:pointer; display:flex; align-items:center; justify-content:center; }
 .bk-eyedrop.active{ background:var(--accent); color:#fff; }
 .bk-modes{ gap:6px; }
@@ -4096,6 +4093,21 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
                   <rect x="3" y="5" width="18" height="13" rx="2"/><path d="M3 19h18M10 9l5 3-5 3z"/>
                 </svg><span>スライド</span>
               </button>
+              <button type="button" class="lp-tool-item" id="lpTextBtn" title="テキストをレイヤーで追加">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 6h14M5 6V4M19 6V4M12 6v14M9 20h6"/>
+                </svg><span>テキスト</span>
+              </button>
+              <button type="button" class="lp-tool-item" id="lpAnimBtn" title="動き(アニメーション)を付ける">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 12c3-5 6 5 9 0s6-5 9 0"/><path d="M3 17c3-5 6 5 9 0s6-5 9 0"/>
+                </svg><span>動き</span>
+              </button>
+              <button type="button" class="lp-tool-item" id="lpCropBtn" title="レイヤー画像を四角く切り取る">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M6 2v16h16M2 6h16v16"/>
+                </svg><span>切り取り</span>
+              </button>
             </div>
           </div>
           <button type="button" class="lp-dup" id="lpDupBtn" title="選択レイヤーを複製">
@@ -4125,6 +4137,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
             <path d="M19 3a2.8 2.8 0 014 4l-9 9-4 1 1-4 8-8z"/><path d="M11 11l-7 7 1.5 1.5L13 13"/>
           </svg>
         </button>
+        <button type="button" class="bk-transp" id="bucketTransp" title="透明（消す）">透明</button>
       </div>
       <div class="bk-row bk-modes">
         <button type="button" class="bk-mode active" id="bucketModeColor">同じ色を染める</button>
@@ -4162,6 +4175,35 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       </div>
       <div class="bk-hint" id="slideStatus"></div>
       <button type="button" class="bk-decide" id="slideGenerate">GIFを作る</button>
+    </div>
+
+    <!-- 切り取りカード -->
+    <div class="bucket-card" id="cropCard" hidden>
+      <div class="bk-head"><span class="bk-title">切り取り</span><button type="button" class="bk-close" id="cropClose" aria-label="閉じる">×</button></div>
+      <div class="bk-hint">プレビュー上をドラッグで四角を作り、決定で切り取ります（選択レイヤー対象）</div>
+      <div id="cropStatus" class="bk-hint" style="color:var(--accent)"></div>
+      <button type="button" class="bk-decide" id="cropApply">決定（切り取る）</button>
+      <button type="button" class="bk-reset" id="cropReset">やり直し</button>
+    </div>
+
+    <!-- テキストカード (土台) -->
+    <div class="bucket-card" id="textCard" hidden>
+      <div class="bk-head"><span class="bk-title">テキスト</span><button type="button" class="bk-close" id="textClose" aria-label="閉じる">×</button></div>
+      <div class="bk-row" style="flex-direction:column;align-items:stretch;gap:8px">
+        <input type="text" id="textInput" placeholder="文字を入力" style="padding:8px 10px;border:1px solid #cfd8df;border-radius:8px;font-size:14px">
+        <div class="bk-row" style="gap:8px">
+          <span class="bk-label">色</span><input type="color" id="textColor" value="#333333" style="width:38px;height:28px;border:1px solid #cfd8df;border-radius:7px;padding:0">
+          <span class="bk-label">大きさ</span><input type="range" id="textSize" min="12" max="120" value="48" style="flex:1">
+        </div>
+      </div>
+      <button type="button" class="bk-decide" id="textAdd">レイヤーとして追加</button>
+      <div class="bk-hint">フォント・縁取り・影・円状配置などの細かい設定は順次追加予定です</div>
+    </div>
+
+    <!-- 動きカード (土台) -->
+    <div class="bucket-card" id="animCard" hidden>
+      <div class="bk-head"><span class="bk-title">動き</span><button type="button" class="bk-close" id="animClose" aria-label="閉じる">×</button></div>
+      <div class="bk-hint">たなびき・波・カーテン・草原などのアニメをループGIFにする機能を準備中です。<br>どの動きから欲しいか教えてもらえると優先して作ります。</div>
     </div>
 
     <!-- 加工くん お部屋プレビュー (色サンプル用) -->
@@ -4244,6 +4286,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
         <div class="shrink-bg-row">
           <span>背景色</span>
           <span class="shrink-swatch" id="shrinkSwatch" style="background:#fff"></span>
+          <input type="color" id="shrinkColorPicker" value="#ffffff" title="色を選ぶ">
           <button class="shrink-pick-btn" id="shrinkPickBtn" type="button">スポイト</button>
           <button class="shrink-pick-btn" id="shrinkTranspBtn" type="button">透明</button>
         </div>
@@ -4385,11 +4428,13 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
         </button>
       </div>
     </div>
+    <span class="img-lock-wrap" id="imgLockWrap">
     <button class="brightness-btn img-lock-btn mode-orig" id="imgLockBtn" type="button" data-tip="サイズ" title="画像のサイズ変更" hidden></button>
     <button type="button" id="deformQuickSave" title="この位置・形で保存">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       <span>保存</span>
     </button>
+    </span>
     <button class="brightness-btn trim-btn" id="trimToggle" title="長さ調節" hidden>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
         <!-- timeline with two markers icon -->
@@ -6384,6 +6429,14 @@ const shLevelEl = document.getElementById('shLevel');
 const shrinkPanel = document.getElementById('shrinkPanel');
 const shrinkSwatch = document.getElementById('shrinkSwatch');
 const shrinkPickBtn = document.getElementById('shrinkPickBtn');
+const shrinkColorPicker = document.getElementById('shrinkColorPicker');
+if (shrinkColorPicker) shrinkColorPicker.addEventListener('input', () => {
+  state.shrinkBgColor = shrinkColorPicker.value;
+  state.shrinkBgTransparent = false;
+  if (shrinkSwatch) shrinkSwatch.style.background = shrinkColorPicker.value;
+  const tb = document.getElementById('shrinkTranspBtn'); if (tb) tb.classList.remove('active');
+  try { draw(); } catch (e) {}
+});
 const shrinkChooserEl = document.getElementById('shrinkInPanelChooser');
 const shrinkBgModeEl = document.getElementById('shrinkBgMode');
 const shrinkDeformModeEl = document.getElementById('shrinkDeformMode');
@@ -7040,9 +7093,20 @@ function renderSidebar() {
     card.className = 'sr-card';
     const ic = it.icon
       ? `<span class="sr-icon"><img src="${it.icon}" alt=""></span>`
-      : `<span class="sr-icon"></span>`;
-    card.innerHTML = `${ic}<span class="sr-name">${it.name}</span><span class="sr-ratio">${it.w} : ${it.h}</span>`;
+      : `<span class="sr-icon">${itemIconSvg(it.name)}</span>`;
+    const pinned = isPinned(it);
+    const pinBtn = `<button class="pin-btn sr-pin ${pinned ? 'pinned' : ''}" title="${pinned ? 'ピンを外す' : 'ピン留め'}">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="${pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
+    </button>`;
+    card.innerHTML = `${ic}<span class="sr-name">${it.name}</span><span class="sr-ratio">${it.w} : ${it.h}</span>${pinBtn}`;
     card.addEventListener('click', () => selectItem(it, null));
+    card.querySelector('.sr-pin').addEventListener('click', ev => {
+      togglePin(it, ev);
+      const b = ev.currentTarget, now = isPinned(it);
+      b.classList.toggle('pinned', now);
+      const s = b.querySelector('svg'); if (s) s.setAttribute('fill', now ? 'currentColor' : 'none');
+      b.title = now ? 'ピンを外す' : 'ピン留め';
+    });
     results.appendChild(card);
   });
 }
@@ -9311,21 +9375,38 @@ layerPanelToggle.addEventListener('click', () => {
   scopeConn.addEventListener('click', ()=>setScope('connected'));
   function setMode(m){ mode=m; mColor.classList.toggle('active',m==='color'); mRegion.classList.toggle('active',m==='region');
     if(scopeRow) scopeRow.style.display = (m==='color') ? 'flex' : 'none';   // つながり切替は「同じ色」モードのみ
-    hint.textContent = m==='color' ? '画像をタップした色を染めます' : '画像をなぞって囲むと、離した時に内側が塗られます'; }
+    hint.textContent = m==='color' ? '画像をタップした色を染めます' : 'クリックで頂点を置き、始点をクリックで囲んで塗る'; }
   mColor.addEventListener('click', ()=>setMode('color'));
   mRegion.addEventListener('click', ()=>setMode('region'));
   // 決定: ここまでの変更を確定(リセットの戻り先をここにする=戻りすぎ防止)
   decideBtn.addEventListener('click', ()=>{ backups={}; if(typeof showToast==='function') showToast('バケツの変更を確定しました'); });
   eyeBtn.addEventListener('click', ()=>{ eyedrop=!eyedrop; eyeBtn.classList.toggle('active',eyedrop); hint.textContent = eyedrop ? '画像をタップして色を取得' : (mode==='color'?'画像をタップした色を染めます':'画像をなぞって囲むと、離した時に内側が塗られます'); });
-  function curFrame(){ return state.frames && state.frames[state.currentFrame]; }
-  function backup(){ const i=state.currentFrame, f=curFrame(); if(!f||!f.canvas) return; if(!backups[i]){ const c=document.createElement('canvas'); c.width=f.canvas.width; c.height=f.canvas.height; c.getContext('2d').drawImage(f.canvas,0,0); backups[i]=c; } }
+  // 透明(消す)
+  const transpBtn=document.getElementById('bucketTransp'); let useTransparent=false;
+  if(transpBtn) transpBtn.addEventListener('click', ()=>{ useTransparent=!useTransparent; transpBtn.classList.toggle('active',useTransparent); });
+  // 対象フレーム: 選択レイヤーがあればそれ、なければベース
+  function selLayer(){ return (typeof getPrimarySelectedLayer==='function') ? getPrimarySelectedLayer() : null; }
+  function targetFrame(){ const L=selLayer(); if(L&&L.frames){ return L.frames[L.currentFrame||0] || L.frames[0]; } return state.frames && state.frames[state.currentFrame]; }
+  function curFrame(){ return targetFrame(); }
+  function bkKey(){ const L=selLayer(); return L ? ('L'+state.layers.indexOf(L)+':'+(L.currentFrame||0)) : ('F'+state.currentFrame); }
+  function backup(){ const k=bkKey(), f=targetFrame(); if(!f||!f.canvas) return; if(!backups[k]){ const c=document.createElement('canvas'); c.width=f.canvas.width; c.height=f.canvas.height; c.getContext('2d').drawImage(f.canvas,0,0); backups[k]={ snap:c, target:f.canvas }; } }
   function afterEdit(){ try{ if(state._effectCache) state._effectCache={}; }catch(e){} try{ draw(); updateFileSize&&updateFileSize(); }catch(e){} }
-  // 表示canvas座標 → ベースフレームcanvas座標 (回転/反転対応)
+  // 表示canvas座標 → 対象フレームcanvas座標
   function toFrame(e){
-    const f=curFrame(); if(!f||!f.canvas) return null;
     const r=canvas.getBoundingClientRect();
-    const cx=(e.clientX-r.left)*(canvas.width/r.width), cy=(e.clientY-r.top)*(canvas.height/r.height);
-    let x=cx-state.canvasW/2, y=cy-state.canvasH/2;
+    const px=(e.clientX-r.left)*(canvas.width/r.width), py=(e.clientY-r.top)*(canvas.height/r.height);
+    const L=selLayer();
+    if(L && L.frames){
+      // 選択レイヤーへマップ (オフセット/拡縮を考慮)
+      const lf=L.frames[L.currentFrame||0]||L.frames[0]; if(!lf||!lf.canvas) return null;
+      const baseScale=state.canvasW/state.naturalW;
+      const drawW=(L.naturalW||lf.canvas.width)*(L.scaleX||1)*baseScale, drawH=(L.naturalH||lf.canvas.height)*(L.scaleY||1)*baseScale;
+      const x0=state.canvasW/2+(L.offsetX||0)-drawW/2, y0=state.canvasH/2+(L.offsetY||0)-drawH/2;
+      const fx=(px-x0)/drawW*lf.canvas.width, fy=(py-y0)/drawH*lf.canvas.height;
+      return { f:lf, fx:Math.round(fx), fy:Math.round(fy) };
+    }
+    const f=state.frames && state.frames[state.currentFrame]; if(!f||!f.canvas) return null;
+    let x=px-state.canvasW/2, y=py-state.canvasH/2;
     x*=(state.flipH?-1:1); y*=(state.flipV?-1:1);
     const a=-(state.rotation||0)*Math.PI/180, cs=Math.cos(a), sn=Math.sin(a);
     const rx=x*cs - y*sn, ry=x*sn + y*cs;
@@ -9348,7 +9429,7 @@ layerPanelToggle.addEventListener('click', () => {
       if(a<16) return false;
       const dr=d[i]-tr, dg=d[i+1]-tg, db=d[i+2]-tb; return (dr*dr+dg*dg+db*db<=t2);
     };
-    const paint=(i)=>{ d[i]=nr; d[i+1]=ng; d[i+2]=nb; d[i+3]=255; };
+    const paint=(i)=>{ if(useTransparent){ d[i+3]=0; } else { d[i]=nr; d[i+1]=ng; d[i+2]=nb; d[i+3]=255; } };
     if(scope==='connected'){
       // クリック地点からつながっている同じ色だけを塗る (flood fill)
       const seen=new Uint8Array(W*H), stack=[p.fy*W+p.fx];
@@ -9370,48 +9451,66 @@ layerPanelToggle.addEventListener('click', () => {
     const f=pts[0].f, ctx2=f.canvas.getContext('2d');
     ctx2.save(); ctx2.beginPath(); ctx2.moveTo(pts[0].fx, pts[0].fy);
     for(let k=1;k<pts.length;k++) ctx2.lineTo(pts[k].fx, pts[k].fy);
-    ctx2.closePath(); ctx2.fillStyle=colorIn.value; ctx2.fill(); ctx2.restore();
+    ctx2.closePath();
+    if(useTransparent){ ctx2.globalCompositeOperation='destination-out'; ctx2.fillStyle='#000'; }
+    else { ctx2.fillStyle=colorIn.value; }
+    ctx2.fill(); ctx2.restore();
   }
-  let lasso=null; // {framePts:[], screenPts:[]}
+  let lasso=null; // {framePts:[], screenPts:[], cursor:{x,y}}
   function screenPt(e){ const r=canvas.getBoundingClientRect(); return {x:(e.clientX-r.left)*(canvas.width/r.width), y:(e.clientY-r.top)*(canvas.height/r.height)}; }
   function drawLassoPreview(){
     if(!lasso||lasso.screenPts.length<1) return;
     ctx.save();
-    ctx.strokeStyle=colorIn.value; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.lineJoin='round';
+    const col=useTransparent?'#e0588f':colorIn.value;
+    // 確定済みの頂点を結ぶ
+    ctx.strokeStyle=col; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.lineJoin='round';
     ctx.beginPath(); ctx.moveTo(lasso.screenPts[0].x, lasso.screenPts[0].y);
     for(let k=1;k<lasso.screenPts.length;k++) ctx.lineTo(lasso.screenPts[k].x, lasso.screenPts[k].y);
     ctx.stroke();
-    // 始点と現在地を結ぶ補助線
-    if(lasso.screenPts.length>1){ ctx.setLineDash([2,4]); ctx.globalAlpha=.6; ctx.beginPath(); ctx.moveTo(lasso.screenPts[lasso.screenPts.length-1].x, lasso.screenPts[lasso.screenPts.length-1].y); ctx.lineTo(lasso.screenPts[0].x, lasso.screenPts[0].y); ctx.stroke(); }
+    // 最後の頂点 → カーソル の線
+    if(lasso.cursor){ ctx.setLineDash([3,4]); ctx.globalAlpha=.7; ctx.beginPath(); ctx.moveTo(lasso.screenPts[lasso.screenPts.length-1].x, lasso.screenPts[lasso.screenPts.length-1].y); ctx.lineTo(lasso.cursor.x, lasso.cursor.y); ctx.stroke(); ctx.globalAlpha=1; }
+    // 頂点を点で表示 + 始点は大きく(クリックで閉じる目印)
+    ctx.setLineDash([]);
+    lasso.screenPts.forEach((sp,i)=>{ ctx.beginPath(); ctx.fillStyle=(i===0)?col:'#fff'; ctx.strokeStyle=col; ctx.lineWidth=2; ctx.arc(sp.x,sp.y,(i===0?6:4),0,Math.PI*2); ctx.fill(); ctx.stroke(); });
     ctx.restore();
   }
+  function nearStart(sp){ if(!lasso||lasso.screenPts.length<3) return false; const s=lasso.screenPts[0]; const dx=sp.x-s.x, dy=sp.y-s.y; return (dx*dx+dy*dy) < (14*14); }
   canvas.addEventListener('pointerdown', e=>{
     if(card.hidden) return;
     const p=toFrame(e); if(!p) return;
-    if(eyedrop){ const ctx2=p.f.canvas.getContext('2d',{willReadFrequently:true}); if(p.fx>=0&&p.fy>=0&&p.fx<p.f.canvas.width&&p.fy<p.f.canvas.height){ const px=ctx2.getImageData(p.fx,p.fy,1,1).data; colorIn.value='#'+[px[0],px[1],px[2]].map(v=>v.toString(16).padStart(2,'0')).join(''); } eyedrop=false; eyeBtn.classList.remove('active'); e.preventDefault(); e.stopPropagation(); return; }
+    if(eyedrop){ const ctx2=p.f.canvas.getContext('2d',{willReadFrequently:true}); if(p.fx>=0&&p.fy>=0&&p.fx<p.f.canvas.width&&p.fy<p.f.canvas.height){ const px=ctx2.getImageData(p.fx,p.fy,1,1).data; colorIn.value='#'+[px[0],px[1],px[2]].map(v=>v.toString(16).padStart(2,'0')).join(''); } eyedrop=false; eyeBtn.classList.remove('active'); useTransparent=false; if(transpBtn) transpBtn.classList.remove('active'); e.preventDefault(); e.stopPropagation(); return; }
     if(mode==='color'){ backup(); replaceColor(p); afterEdit(); e.preventDefault(); e.stopPropagation(); }
-    else { // 範囲: 押したまま線を描き、離すと始点と結んで塗る
-      lasso={ framePts:[p], screenPts:[screenPt(e)] };
-      try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+    else { // 範囲(多角形): クリックで頂点を置く / 始点クリックで閉じて塗る
+      const sp=screenPt(e);
+      if(lasso && nearStart(sp)){
+        backup(); fillPolygon(lasso.framePts); lasso=null; afterEdit();
+      } else if(lasso){
+        lasso.framePts.push(p); lasso.screenPts.push(sp); lasso.cursor=sp; draw(); drawLassoPreview();
+      } else {
+        lasso={ framePts:[p], screenPts:[sp], cursor:sp }; draw(); drawLassoPreview();
+      }
       e.preventDefault(); e.stopPropagation();
     }
   }, true);
   canvas.addEventListener('pointermove', e=>{
     if(card.hidden||mode!=='region'||!lasso) return;
-    const p=toFrame(e); if(p){ lasso.framePts.push(p); lasso.screenPts.push(screenPt(e)); draw(); drawLassoPreview(); }
+    lasso.cursor=screenPt(e); draw(); drawLassoPreview();
     e.preventDefault(); e.stopPropagation();
   }, true);
-  function endLasso(e){
+  // ダブルクリック / 右クリックでも閉じる (3頂点以上)
+  canvas.addEventListener('dblclick', e=>{
     if(card.hidden||mode!=='region'||!lasso) return;
     if(lasso.framePts.length>=3){ backup(); fillPolygon(lasso.framePts); }
-    lasso=null; afterEdit();
-    e.preventDefault(); e.stopPropagation();
-  }
-  canvas.addEventListener('pointerup', endLasso, true);
-  canvas.addEventListener('pointercancel', endLasso, true);
+    lasso=null; afterEdit(); e.preventDefault(); e.stopPropagation();
+  }, true);
+  canvas.addEventListener('contextmenu', e=>{
+    if(card.hidden||mode!=='region'||!lasso) return;
+    if(lasso.framePts.length>=3){ backup(); fillPolygon(lasso.framePts); }
+    lasso=null; afterEdit(); e.preventDefault(); e.stopPropagation();
+  });
   resetBtn.addEventListener('click', ()=>{
-    Object.keys(backups).forEach(i=>{ const f=state.frames&&state.frames[i]; if(f&&f.canvas&&backups[i]){ const c=f.canvas.getContext('2d'); c.clearRect(0,0,f.canvas.width,f.canvas.height); c.drawImage(backups[i],0,0); } });
-    backups={}; afterEdit();
+    Object.keys(backups).forEach(k=>{ const b=backups[k]; if(b&&b.target&&b.snap){ const c=b.target.getContext('2d'); c.clearRect(0,0,b.target.width,b.target.height); c.drawImage(b.snap,0,0); } });
+    backups={}; lasso=null; afterEdit();
   });
   setMode('color');
 })();
@@ -9512,7 +9611,109 @@ layerPanelToggle.addEventListener('click', () => {
   });
 })();
 
-/* 機能まとめボタン: 押すと下に縦展開 */
+/* ===== 切り取り / テキスト / 動き ツール ===== */
+(function setupExtraTools(){
+  const cropCard=document.getElementById('cropCard'), textCard=document.getElementById('textCard'), animCard=document.getElementById('animCard');
+  const lpCrop=document.getElementById('lpCropBtn'), lpText=document.getElementById('lpTextBtn'), lpAnim=document.getElementById('lpAnimBtn');
+  const bucketCard=document.getElementById('bucketCard'), slideCard=document.getElementById('slideshowCard');
+  function hideAll(){ [cropCard,textCard,animCard].forEach(c=>{ if(c) c.hidden=true; }); document.body.classList.remove('crop-active'); cropRect=null; }
+  function openOnly(card, withCrop){ [bucketCard,slideCard,cropCard,textCard,animCard].forEach(c=>{ if(c&&c!==card) c.hidden=true; }); if(card) card.hidden=false; document.body.classList.toggle('crop-active', !!withCrop && card && !card.hidden); if(!(withCrop&&card&&!card.hidden)){ document.body.classList.remove('crop-active'); cropRect=null; } try{ draw(); }catch(e){} }
+  if(lpCrop) lpCrop.addEventListener('click', ()=>{ const willOpen=cropCard.hidden; willOpen?openOnly(cropCard,true):(cropCard.hidden=true, document.body.classList.remove('crop-active'), cropRect=null, draw()); });
+  if(lpText) lpText.addEventListener('click', ()=>{ const willOpen=textCard.hidden; willOpen?openOnly(textCard,false):(textCard.hidden=true); });
+  if(lpAnim) lpAnim.addEventListener('click', ()=>{ const willOpen=animCard.hidden; willOpen?openOnly(animCard,false):(animCard.hidden=true); });
+  const cropClose=document.getElementById('cropClose'); if(cropClose) cropClose.addEventListener('click', ()=>{ cropCard.hidden=true; document.body.classList.remove('crop-active'); cropRect=null; draw(); });
+  const textClose=document.getElementById('textClose'); if(textClose) textClose.addEventListener('click', ()=>{ textCard.hidden=true; });
+  const animClose=document.getElementById('animClose'); if(animClose) animClose.addEventListener('click', ()=>{ animCard.hidden=true; });
+
+  /* ---- 切り取り ---- */
+  let cropRect=null, cropDrag=null;
+  const cropStatus=document.getElementById('cropStatus');
+  function scr(e){ const r=canvas.getBoundingClientRect(); return {x:(e.clientX-r.left)*(canvas.width/r.width), y:(e.clientY-r.top)*(canvas.height/r.height)}; }
+  function selLayer(){ return (typeof getPrimarySelectedLayer==='function') ? getPrimarySelectedLayer() : null; }
+  // 表示canvas座標 → 対象(選択レイヤー or ベース)のフレーム画素座標
+  function mapToTarget(px,py){
+    const L=selLayer();
+    if(L && L.frames){
+      const lf=L.frames[L.currentFrame||0]||L.frames[0]; if(!lf||!lf.canvas) return null;
+      const baseScale=state.canvasW/state.naturalW;
+      const drawW=(L.naturalW||lf.canvas.width)*(L.scaleX||1)*baseScale, drawH=(L.naturalH||lf.canvas.height)*(L.scaleY||1)*baseScale;
+      const x0=state.canvasW/2+(L.offsetX||0)-drawW/2, y0=state.canvasH/2+(L.offsetY||0)-drawH/2;
+      return { frame:lf, layer:L, x:(px-x0)/drawW*lf.canvas.width, y:(py-y0)/drawH*lf.canvas.height };
+    }
+    const f=state.frames && state.frames[state.currentFrame]; if(!f||!f.canvas) return null;
+    let x=px-state.canvasW/2, y=py-state.canvasH/2;
+    x*=(state.flipH?-1:1); y*=(state.flipV?-1:1);
+    const a=-(state.rotation||0)*Math.PI/180, cs=Math.cos(a), sn=Math.sin(a);
+    const rx=x*cs - y*sn, ry=x*sn + y*cs;
+    const isRot90=(state.rotation===90||state.rotation===270);
+    const dw=isRot90?state.canvasH:state.canvasW, dh=isRot90?state.canvasW:state.canvasH;
+    return { frame:f, layer:null, x:(rx+dw/2)*(f.canvas.width/dw), y:(ry+dh/2)*(f.canvas.height/dh) };
+  }
+  function drawCropPreview(){
+    if(!cropRect) return;
+    ctx.save(); ctx.strokeStyle='#5b9cb8'; ctx.lineWidth=2; ctx.setLineDash([6,4]);
+    ctx.strokeRect(cropRect.x0, cropRect.y0, cropRect.x1-cropRect.x0, cropRect.y1-cropRect.y0);
+    ctx.fillStyle='rgba(91,156,184,.12)'; ctx.fillRect(cropRect.x0, cropRect.y0, cropRect.x1-cropRect.x0, cropRect.y1-cropRect.y0);
+    ctx.restore();
+  }
+  canvas.addEventListener('pointerdown', e=>{
+    if(cropCard.hidden) return;
+    const s=scr(e); cropDrag={x:s.x,y:s.y}; cropRect={x0:s.x,y0:s.y,x1:s.x,y1:s.y};
+    try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+    draw(); drawCropPreview(); e.preventDefault(); e.stopPropagation();
+  }, true);
+  canvas.addEventListener('pointermove', e=>{
+    if(cropCard.hidden||!cropDrag) return;
+    const s=scr(e); cropRect={ x0:Math.min(cropDrag.x,s.x), y0:Math.min(cropDrag.y,s.y), x1:Math.max(cropDrag.x,s.x), y1:Math.max(cropDrag.y,s.y) };
+    draw(); drawCropPreview(); e.preventDefault(); e.stopPropagation();
+  }, true);
+  canvas.addEventListener('pointerup', e=>{ if(cropCard.hidden||!cropDrag) return; cropDrag=null; e.preventDefault(); e.stopPropagation(); }, true);
+  const cropReset=document.getElementById('cropReset'); if(cropReset) cropReset.addEventListener('click', ()=>{ cropRect=null; if(cropStatus) cropStatus.textContent=''; draw(); });
+  const cropApply=document.getElementById('cropApply');
+  if(cropApply) cropApply.addEventListener('click', ()=>{
+    if(!cropRect || Math.abs(cropRect.x1-cropRect.x0)<5 || Math.abs(cropRect.y1-cropRect.y0)<5){ if(cropStatus) cropStatus.textContent='四角をドラッグで作ってね'; return; }
+    const a=mapToTarget(cropRect.x0,cropRect.y0), b=mapToTarget(cropRect.x1,cropRect.y1);
+    if(!a||!b||!a.frame){ if(cropStatus) cropStatus.textContent='対象が見つかりません'; return; }
+    const src=a.frame.canvas;
+    let sx=Math.max(0,Math.min(a.x,b.x)), sy=Math.max(0,Math.min(a.y,b.y));
+    let ex=Math.min(src.width,Math.max(a.x,b.x)), ey=Math.min(src.height,Math.max(a.y,b.y));
+    const sw=Math.round(ex-sx), sh=Math.round(ey-sy);
+    if(sw<2||sh<2){ if(cropStatus) cropStatus.textContent='範囲が画像の外です'; return; }
+    const out=document.createElement('canvas'); out.width=sw; out.height=sh;
+    out.getContext('2d').drawImage(src, Math.round(sx),Math.round(sy),sw,sh, 0,0,sw,sh);
+    const L=a.layer;
+    if(L){
+      L.frames=[{ canvas:out, delay:(L.frames[0]&&L.frames[0].delay)||100 }];
+      L.currentFrame=0; L.naturalW=sw; L.naturalH=sh;
+    } else {
+      const f=a.frame; f.canvas=out;
+      state.frames=[f]; state.currentFrame=0; state.naturalW=sw; state.naturalH=sh;
+      if(typeof recalculateFrame==='function') recalculateFrame();
+    }
+    cropRect=null; if(cropStatus) cropStatus.textContent='切り取りました';
+    try{ if(typeof renderLayerPanel==='function') renderLayerPanel(); }catch(e){}
+    try{ draw(); updateFileSize&&updateFileSize(); }catch(e){}
+  });
+
+  /* ---- テキスト: レイヤーとして追加 (基本) ---- */
+  const textAdd=document.getElementById('textAdd');
+  if(textAdd) textAdd.addEventListener('click', ()=>{
+    const txt=(document.getElementById('textInput').value||'').trim(); if(!txt){ return; }
+    const col=document.getElementById('textColor').value, size=parseInt(document.getElementById('textSize').value)||48;
+    // テキストをcanvasに描いてレイヤー画像にする
+    const pad=Math.round(size*0.4);
+    const meas=document.createElement('canvas').getContext('2d'); meas.font=`700 ${size}px sans-serif`;
+    const w=Math.ceil(meas.measureText(txt).width)+pad*2, hh=Math.ceil(size*1.4)+pad;
+    const c=document.createElement('canvas'); c.width=w; c.height=hh;
+    const cx=c.getContext('2d'); cx.font=`700 ${size}px sans-serif`; cx.textBaseline='middle'; cx.fillStyle=col;
+    cx.fillText(txt, pad, hh/2);
+    const url=c.toDataURL('image/png');
+    if(typeof addImageAsLayer==='function'){ addImageAsLayer(url, 'text.png'); }
+    else { if(typeof showToast==='function') showToast('テキストレイヤーの追加に対応していません'); return; }
+    if(typeof showToast==='function') showToast('テキストをレイヤーで追加しました');
+    textCard.hidden=true;
+  });
+})();
 (function setupLpTools(){
   const tBtn=document.getElementById('lpToolsBtn'), tMenu=document.getElementById('lpToolsMenu');
   if(!tBtn||!tMenu) return;

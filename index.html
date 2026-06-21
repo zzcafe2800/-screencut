@@ -2798,6 +2798,29 @@ body.deform-active #deformQuickSave{ display:inline-flex; position:absolute; lef
 .bk-scope-btn.active{ background:#eef7fb; color:var(--accent); border-color:#8fd3ed; }
 .bk-decide{ width:100%; padding:9px; border:none; border-radius:10px; background:var(--accent); color:#fff; font-weight:800; cursor:pointer; margin-bottom:7px; }
 .bk-decide:hover{ filter:brightness(1.05); }
+.bk-anim-types{ display:grid; grid-template-columns:repeat(2,1fr); gap:6px; }
+.anim-type{ padding:7px 4px; border:1px solid #cfd8df; border-radius:8px; background:#fff; color:#6b7785; font-size:11.5px; font-weight:700; cursor:pointer; }
+.anim-type.active{ background:#eef7fb; color:var(--accent); border-color:#8fd3ed; }
+.text-card{ width:300px; max-width:92vw; }
+.tx-input{ width:100%; padding:9px 10px; border:1px solid #cfd8df; border-radius:8px; font-size:14px; margin-bottom:8px; box-sizing:border-box; }
+.tx-tags{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
+.tx-tag{ padding:5px 9px; border:1px solid #cfd8df; border-radius:999px; background:#fff; color:#6b7785; font-size:11px; font-weight:700; cursor:pointer; }
+.tx-tag.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
+.tx-panel{ display:flex; flex-direction:column; gap:8px; padding:4px 0 8px; }
+.tx-r{ display:flex; align-items:center; gap:7px; font-size:12px; color:#5a6b78; flex-wrap:wrap; }
+.tx-r span{ flex-shrink:0; }
+.tx-r select{ padding:5px 7px; border:1px solid #cfd8df; border-radius:7px; font-size:12px; background:#fff; }
+.tx-r input[type=color]{ width:34px; height:26px; border:1px solid #cfd8df; border-radius:6px; padding:0; }
+.tx-r input[type=range]{ flex:1; min-width:80px; }
+.tx-r label{ display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:700; color:var(--accent); }
+.tx-chips{ display:flex; flex-wrap:wrap; gap:5px; }
+.tx-chip{ min-width:26px; padding:5px 7px; border:1px solid #cfd8df; border-radius:7px; background:#fff; font-weight:800; cursor:pointer; font-size:13px; }
+.tx-chip[data-scale="0"]{ color:#9aa; font-size:11px; }
+.tx-chip[data-scale="2"]{ color:var(--accent); font-size:15px; }
+.tx-chip[data-scale="3"]{ color:#d6694f; font-size:17px; }
+.tx-preview-wrap{ margin:6px 0; padding:10px; border-radius:10px; background:linear-gradient(45deg,#eee 25%,transparent 25%,transparent 75%,#eee 75%),linear-gradient(45deg,#eee 25%,#fff 25%,#fff 75%,#eee 75%); background-size:14px 14px; background-position:0 0,7px 7px; display:flex; align-items:center; justify-content:center; min-height:70px; overflow:hidden; }
+#txPreview{ max-width:100%; max-height:140px; }
+.tx-actions{ display:flex; gap:8px; }
 .bk-mode{ flex:1; padding:7px 4px; border:1px solid #cfd8df; border-radius:9px; background:#fff; color:#6b7785; font-weight:700; font-size:11.5px; cursor:pointer; }
 .bk-mode.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
 .bk-tol input[type=range]{ flex:1; min-width:0; }
@@ -4187,23 +4210,78 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     </div>
 
     <!-- テキストカード (土台) -->
-    <div class="bucket-card" id="textCard" hidden>
+    <div class="bucket-card text-card" id="textCard" hidden>
       <div class="bk-head"><span class="bk-title">テキスト</span><button type="button" class="bk-close" id="textClose" aria-label="閉じる">×</button></div>
-      <div class="bk-row" style="flex-direction:column;align-items:stretch;gap:8px">
-        <input type="text" id="textInput" placeholder="文字を入力" style="padding:8px 10px;border:1px solid #cfd8df;border-radius:8px;font-size:14px">
-        <div class="bk-row" style="gap:8px">
-          <span class="bk-label">色</span><input type="color" id="textColor" value="#333333" style="width:38px;height:28px;border:1px solid #cfd8df;border-radius:7px;padding:0">
-          <span class="bk-label">大きさ</span><input type="range" id="textSize" min="12" max="120" value="48" style="flex:1">
-        </div>
+      <input type="text" id="textInput" placeholder="文字を入力" value="サンプル" class="tx-input">
+      <div class="tx-tags" id="txTags">
+        <button type="button" class="tx-tag active" data-tab="basic">文字</button>
+        <button type="button" class="tx-tag" data-tab="outline">縁取り</button>
+        <button type="button" class="tx-tag" data-tab="shadow">影</button>
+        <button type="button" class="tx-tag" data-tab="fade">フェード</button>
+        <button type="button" class="tx-tag" data-tab="layout">配置</button>
+        <button type="button" class="tx-tag" data-tab="each">一文字</button>
       </div>
-      <button type="button" class="bk-decide" id="textAdd">レイヤーとして追加</button>
-      <div class="bk-hint">フォント・縁取り・影・円状配置などの細かい設定は順次追加予定です</div>
+      <div class="tx-panel" data-panel="basic">
+        <div class="tx-r"><span>フォント</span>
+          <select id="txFont">
+            <option value="sans-serif">ゴシック</option>
+            <option value="serif">明朝</option>
+            <option value="'Rounded Mplus 1c', sans-serif">丸ゴシック</option>
+            <option value="'Hiragino Maru Gothic ProN', sans-serif">丸ゴ2</option>
+            <option value="cursive">手書き</option>
+            <option value="fantasy">ポップ</option>
+          </select>
+        </div>
+        <div class="tx-r"><span>色</span><input type="color" id="txColor" value="#333333"><span>太さ</span><select id="txWeight"><option value="400">細</option><option value="700" selected>太</option><option value="900">極太</option></select></div>
+        <div class="tx-r"><span>大きさ</span><input type="range" id="txSize" min="14" max="160" value="56"><span id="txSizeVal">56</span></div>
+      </div>
+      <div class="tx-panel" data-panel="outline" hidden>
+        <div class="tx-r"><label><input type="checkbox" id="txOutOn"> 縁取りをつける</label></div>
+        <div class="tx-r"><span>色</span><input type="color" id="txOutColor" value="#ffffff"><span>太さ</span><input type="range" id="txOutW" min="1" max="20" value="6"><span id="txOutWVal">6</span></div>
+      </div>
+      <div class="tx-panel" data-panel="shadow" hidden>
+        <div class="tx-r"><label><input type="checkbox" id="txShOn"> 影をつける</label></div>
+        <div class="tx-r"><span>色</span><input type="color" id="txShColor" value="#000000"><span>ぼかし</span><input type="range" id="txShBlur" min="0" max="30" value="6"><span id="txShBlurVal">6</span></div>
+        <div class="tx-r"><span>横</span><input type="range" id="txShX" min="-20" max="20" value="3"><span>縦</span><input type="range" id="txShY" min="-20" max="20" value="3"></div>
+      </div>
+      <div class="tx-panel" data-panel="fade" hidden>
+        <div class="tx-r"><label><input type="checkbox" id="txFadeOn"> 下にフェード</label></div>
+        <div class="tx-r"><span>向き</span><select id="txFadeDir"><option value="down">下が薄く</option><option value="up">上が薄く</option></select><span>強さ</span><input type="range" id="txFadeAmt" min="0" max="100" value="70"></div>
+      </div>
+      <div class="tx-panel" data-panel="layout" hidden>
+        <div class="tx-r"><span>並び</span>
+          <select id="txLayout"><option value="line">直線</option><option value="arcUp">円（上向き）</option><option value="arcDown">円（下向き）</option><option value="wave">波打つ</option></select>
+        </div>
+        <div class="tx-r"><span>曲がり/半径</span><input type="range" id="txRadius" min="60" max="400" value="160"><span id="txRadiusVal">160</span></div>
+        <div class="tx-r"><span>字間</span><input type="range" id="txSpacing" min="-10" max="40" value="2"><span id="txSpacingVal">2</span></div>
+      </div>
+      <div class="tx-panel" data-panel="each" hidden>
+        <div class="bk-hint" style="margin:0 0 6px">文字をタップで大きさが変わります（小→大→特大→標準）</div>
+        <div class="tx-chips" id="txChips"></div>
+        <button type="button" class="bk-scope-btn" id="txEachReset" style="margin-top:6px">大きさをそろえる</button>
+      </div>
+      <div class="tx-preview-wrap"><canvas id="txPreview"></canvas></div>
+      <div class="tx-actions">
+        <button type="button" class="bk-reset" id="textReset" style="flex:1">リセット</button>
+        <button type="button" class="bk-decide" id="textAdd" style="flex:1;margin:0">決定（追加）</button>
+      </div>
     </div>
 
-    <!-- 動きカード (土台) -->
+    <!-- 動きカード -->
     <div class="bucket-card" id="animCard" hidden>
       <div class="bk-head"><span class="bk-title">動き</span><button type="button" class="bk-close" id="animClose" aria-label="閉じる">×</button></div>
-      <div class="bk-hint">たなびき・波・カーテン・草原などのアニメをループGIFにする機能を準備中です。<br>どの動きから欲しいか教えてもらえると優先して作ります。</div>
+      <div class="bk-hint">選択レイヤーを揺らしてループGIFにします</div>
+      <div class="bk-row bk-anim-types">
+        <button type="button" class="anim-type active" id="animTypeFlag" data-type="flag">たなびき</button>
+        <button type="button" class="anim-type" id="animTypeWave" data-type="wave">波</button>
+        <button type="button" class="anim-type" id="animTypeCurtain" data-type="curtain">カーテン</button>
+        <button type="button" class="anim-type" id="animTypeGrass" data-type="grass">草原</button>
+      </div>
+      <div class="bk-row bk-tol"><span class="bk-label">強さ</span><input type="range" id="animAmp" min="2" max="30" value="10"><span id="animAmpVal">10</span></div>
+      <div class="bk-row bk-tol"><span class="bk-label">速さ</span><input type="range" id="animSpeed" min="1" max="10" value="5"><span id="animSpeedVal">5</span></div>
+      <div class="bk-row"><span class="bk-label">背景</span><input type="color" id="animBg" value="#ffffff" style="width:38px;height:28px;border:1px solid #cfd8df;border-radius:7px;padding:0"><button type="button" class="bk-scope-btn" id="animBgTransp">なし(白)</button></div>
+      <div class="bk-hint" id="animStatus"></div>
+      <button type="button" class="bk-decide" id="animGenerate">ループGIFを作る</button>
     </div>
 
     <!-- 加工くん お部屋プレビュー (色サンプル用) -->
@@ -9619,7 +9697,7 @@ layerPanelToggle.addEventListener('click', () => {
   function hideAll(){ [cropCard,textCard,animCard].forEach(c=>{ if(c) c.hidden=true; }); document.body.classList.remove('crop-active'); cropRect=null; }
   function openOnly(card, withCrop){ [bucketCard,slideCard,cropCard,textCard,animCard].forEach(c=>{ if(c&&c!==card) c.hidden=true; }); if(card) card.hidden=false; document.body.classList.toggle('crop-active', !!withCrop && card && !card.hidden); if(!(withCrop&&card&&!card.hidden)){ document.body.classList.remove('crop-active'); cropRect=null; } try{ draw(); }catch(e){} }
   if(lpCrop) lpCrop.addEventListener('click', ()=>{ const willOpen=cropCard.hidden; willOpen?openOnly(cropCard,true):(cropCard.hidden=true, document.body.classList.remove('crop-active'), cropRect=null, draw()); });
-  if(lpText) lpText.addEventListener('click', ()=>{ const willOpen=textCard.hidden; willOpen?openOnly(textCard,false):(textCard.hidden=true); });
+  if(lpText) lpText.addEventListener('click', ()=>{ const willOpen=textCard.hidden; willOpen?openOnly(textCard,false):(textCard.hidden=true); if(willOpen && window.__txRefresh) setTimeout(window.__txRefresh,0); });
   if(lpAnim) lpAnim.addEventListener('click', ()=>{ const willOpen=animCard.hidden; willOpen?openOnly(animCard,false):(animCard.hidden=true); });
   const cropClose=document.getElementById('cropClose'); if(cropClose) cropClose.addEventListener('click', ()=>{ cropCard.hidden=true; document.body.classList.remove('crop-active'); cropRect=null; draw(); });
   const textClose=document.getElementById('textClose'); if(textClose) textClose.addEventListener('click', ()=>{ textCard.hidden=true; });
@@ -9695,23 +9773,178 @@ layerPanelToggle.addEventListener('click', () => {
     try{ draw(); updateFileSize&&updateFileSize(); }catch(e){}
   });
 
-  /* ---- テキスト: レイヤーとして追加 (基本) ---- */
-  const textAdd=document.getElementById('textAdd');
-  if(textAdd) textAdd.addEventListener('click', ()=>{
-    const txt=(document.getElementById('textInput').value||'').trim(); if(!txt){ return; }
-    const col=document.getElementById('textColor').value, size=parseInt(document.getElementById('textSize').value)||48;
-    // テキストをcanvasに描いてレイヤー画像にする
-    const pad=Math.round(size*0.4);
-    const meas=document.createElement('canvas').getContext('2d'); meas.font=`700 ${size}px sans-serif`;
-    const w=Math.ceil(meas.measureText(txt).width)+pad*2, hh=Math.ceil(size*1.4)+pad;
-    const c=document.createElement('canvas'); c.width=w; c.height=hh;
-    const cx=c.getContext('2d'); cx.font=`700 ${size}px sans-serif`; cx.textBaseline='middle'; cx.fillStyle=col;
-    cx.fillText(txt, pad, hh/2);
-    const url=c.toDataURL('image/png');
-    if(typeof addImageAsLayer==='function'){ addImageAsLayer(url, 'text.png'); }
-    else { if(typeof showToast==='function') showToast('テキストレイヤーの追加に対応していません'); return; }
-    if(typeof showToast==='function') showToast('テキストをレイヤーで追加しました');
-    textCard.hidden=true;
+  /* ---- テキスト: 詳細設定つきでレイヤー追加 ---- */
+  (function(){
+    const $=id=>document.getElementById(id);
+    const inp=$('textInput'), prev=$('txPreview'); if(!inp||!prev) return;
+    let charScales={};   // index -> 0:小 1:標準 2:大 3:特大
+    const SCALE_MUL=[0.6,1,1.4,1.9];
+    // タブ切替
+    document.querySelectorAll('#txTags .tx-tag').forEach(t=> t.addEventListener('click', ()=>{
+      document.querySelectorAll('#txTags .tx-tag').forEach(x=>x.classList.toggle('active',x===t));
+      document.querySelectorAll('#textCard .tx-panel').forEach(p=> p.hidden = (p.dataset.panel!==t.dataset.tab));
+      if(t.dataset.tab==='each') buildChips();
+    }));
+    function readCfg(){
+      return {
+        text: inp.value||'',
+        font: $('txFont').value, weight: $('txWeight').value, size: parseInt($('txSize').value)||56, color: $('txColor').value,
+        outOn: $('txOutOn').checked, outColor: $('txOutColor').value, outW: parseInt($('txOutW').value)||6,
+        shOn: $('txShOn').checked, shColor: $('txShColor').value, shBlur: parseInt($('txShBlur').value)||0, shX: parseInt($('txShX').value)||0, shY: parseInt($('txShY').value)||0,
+        fadeOn: $('txFadeOn').checked, fadeDir: $('txFadeDir').value, fadeAmt: parseInt($('txFadeAmt').value)/100,
+        layout: $('txLayout').value, radius: parseInt($('txRadius').value)||160, spacing: parseInt($('txSpacing').value)||0,
+      };
+    }
+    function charSize(cfg,i){ return cfg.size * (SCALE_MUL[charScales[i]!=null?charScales[i]:1]); }
+    // テキストを描いて、透明をトリムしたcanvasを返す
+    function renderText(cfg){
+      const chars=[...cfg.text]; if(chars.length===0) chars.push(' ');
+      const PAD=Math.ceil(cfg.size*0.5)+cfg.outW+cfg.shBlur+Math.max(Math.abs(cfg.shX),Math.abs(cfg.shY))+10;
+      const big=document.createElement('canvas');
+      // 仮の大きめキャンバス
+      let cw=2000, ch=Math.ceil(cfg.size*4)+PAD*2;
+      const measC=document.createElement('canvas').getContext('2d');
+      const setFont=(cx,sz)=>{ cx.font=`${cfg.weight} ${sz}px ${cfg.font}`; };
+      // レイアウトごとに配置を計算
+      const place=[]; // {ch, x, y, size, rot}
+      if(cfg.layout==='line' || cfg.layout==='wave'){
+        let x=0; const ax=[];
+        chars.forEach((c,i)=>{ const sz=charSize(cfg,i); setFont(measC,sz); const w=measC.measureText(c).width; ax.push({c,sz,w,x}); x+=w+cfg.spacing; });
+        const totalW=x; cw=Math.ceil(totalW)+PAD*2; ch=Math.ceil(cfg.size*SCALE_MUL[3])+PAD*2;
+        ax.forEach((o,i)=>{ let yy=ch/2; if(cfg.layout==='wave'){ yy+=Math.sin(i*0.9)*cfg.size*0.28; } place.push({ch:o.c,x:PAD+o.x+o.w/2,y:yy,size:o.sz,rot:0}); });
+      } else { // arcUp / arcDown
+        const r=cfg.radius, up=(cfg.layout==='arcUp');
+        // 各文字の角度幅
+        const angs=[]; let totalAng=0;
+        chars.forEach((c,i)=>{ const sz=charSize(cfg,i); setFont(measC,sz); const w=measC.measureText(c).width+cfg.spacing; const a=(w)/r; angs.push({c,sz,a}); totalAng+=a; });
+        let acc=-totalAng/2;
+        const cx0=cw/2, cy0=ch/2;
+        angs.forEach(o=>{ const mid=acc+o.a/2; acc+=o.a;
+          const ang = up ? (-Math.PI/2 + mid) : (Math.PI/2 - mid);
+          const px = cx0 + r*Math.cos(ang), py = cy0 + r*Math.sin(ang);
+          const rot = up ? (ang + Math.PI/2) : (ang - Math.PI/2);
+          place.push({ch:o.c,x:px,y:py,size:o.sz,rot}); });
+        cw=Math.ceil(r*2)+PAD*2; ch=Math.ceil(r*2)+PAD*2;
+        // 中心再計算
+        const dx=cw/2-cx0, dy=ch/2-cy0; place.forEach(p=>{ p.x+=dx; p.y+=dy; });
+      }
+      big.width=cw; big.height=ch; const cx=big.getContext('2d');
+      cx.textAlign='center'; cx.textBaseline='middle';
+      place.forEach(p=>{
+        cx.save(); cx.translate(p.x,p.y); if(p.rot) cx.rotate(p.rot);
+        setFont(cx,p.size);
+        if(cfg.shOn){ cx.shadowColor=cfg.shColor; cx.shadowBlur=cfg.shBlur; cx.shadowOffsetX=cfg.shX; cx.shadowOffsetY=cfg.shY; }
+        if(cfg.outOn){ cx.lineWidth=cfg.outW; cx.strokeStyle=cfg.outColor; cx.lineJoin='round'; cx.strokeText(p.ch,0,0); cx.shadowColor='transparent'; }
+        cx.fillStyle=cfg.color; cx.fillText(p.ch,0,0);
+        cx.restore();
+      });
+      // フェード
+      if(cfg.fadeOn && cfg.fadeAmt>0){
+        cx.save(); cx.globalCompositeOperation='destination-in';
+        const g=cx.createLinearGradient(0,0,0,ch);
+        const a0=cfg.fadeDir==='down'?1:(1-cfg.fadeAmt), a1=cfg.fadeDir==='down'?(1-cfg.fadeAmt):1;
+        g.addColorStop(0,`rgba(0,0,0,${a0})`); g.addColorStop(1,`rgba(0,0,0,${a1})`);
+        cx.fillStyle=g; cx.fillRect(0,0,cw,ch); cx.restore();
+      }
+      return trimCanvas(big);
+    }
+    function trimCanvas(c){
+      const cx=c.getContext('2d'), w=c.width, h=c.height, d=cx.getImageData(0,0,w,h).data;
+      let x0=w,y0=h,x1=0,y1=0,found=false;
+      for(let y=0;y<h;y++) for(let x=0;x<w;x++){ if(d[(y*w+x)*4+3]>4){ found=true; if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; } }
+      if(!found) return c;
+      const pad=4; x0=Math.max(0,x0-pad); y0=Math.max(0,y0-pad); x1=Math.min(w-1,x1+pad); y1=Math.min(h-1,y1+pad);
+      const ow=x1-x0+1, oh=y1-y0+1, o=document.createElement('canvas'); o.width=ow; o.height=oh;
+      o.getContext('2d').drawImage(c,x0,y0,ow,oh,0,0,ow,oh); return o;
+    }
+    let lastCanvas=null;
+    function refresh(){ try{ const cfg=readCfg(); const c=renderText(cfg); lastCanvas=c; const pc=prev.getContext('2d'); const scale=Math.min(280/c.width,130/c.height,1); prev.width=Math.max(1,c.width*scale); prev.height=Math.max(1,c.height*scale); pc.clearRect(0,0,prev.width,prev.height); pc.drawImage(c,0,0,prev.width,prev.height); }catch(e){ console.warn('txt',e); } }
+    function buildChips(){
+      const wrap=$('txChips'); if(!wrap) return; wrap.innerHTML='';
+      [...inp.value].forEach((c,i)=>{ const b=document.createElement('button'); b.type='button'; b.className='tx-chip'; b.textContent=c===' '?'␣':c; const s=charScales[i]!=null?charScales[i]:1; b.dataset.scale=s;
+        b.addEventListener('click', ()=>{ charScales[i]=((charScales[i]!=null?charScales[i]:1)+1)%4; b.dataset.scale=charScales[i]; refresh(); });
+        wrap.appendChild(b); });
+    }
+    // 入力で再描画
+    ['input','change'].forEach(ev=> document.getElementById('textCard').addEventListener(ev, e=>{ if(e.target && e.target.closest('.tx-chip')) return; if(e.target===$('txSize')) $('txSizeVal').textContent=$('txSize').value; if(e.target===$('txOutW')) $('txOutWVal').textContent=$('txOutW').value; if(e.target===$('txShBlur')) $('txShBlurVal').textContent=$('txShBlur').value; if(e.target===$('txRadius')) $('txRadiusVal').textContent=$('txRadius').value; if(e.target===$('txSpacing')) $('txSpacingVal').textContent=$('txSpacing').value; if(e.target===inp){ charScales={}; buildChips(); } refresh(); }));
+    // リセット
+    const rst=$('textReset'); if(rst) rst.addEventListener('click', ()=>{ charScales={}; $('txOutOn').checked=false; $('txShOn').checked=false; $('txFadeOn').checked=false; $('txLayout').value='line'; $('txSize').value=56; $('txSizeVal').textContent='56'; $('txColor').value='#333333'; buildChips(); refresh(); });
+    const eachRst=$('txEachReset'); if(eachRst) eachRst.addEventListener('click', ()=>{ charScales={}; buildChips(); refresh(); });
+    // 決定: レイヤー追加
+    const add=$('textAdd'); if(add) add.addEventListener('click', ()=>{
+      if(!inp.value.trim()) return;
+      const c=lastCanvas||renderText(readCfg());
+      const url=c.toDataURL('image/png');
+      if(typeof addImageAsLayer==='function'){ addImageAsLayer(url,'text.png'); if(typeof showToast==='function') showToast('テキストを追加しました（プレビューで移動・拡大できます）'); }
+      textCard.hidden=true;
+    });
+    // 初回
+    setTimeout(()=>{ buildChips(); refresh(); }, 0);
+    // カードを開いたら再描画できるようフックを公開
+    window.__txRefresh=refresh;
+  })();
+
+  /* ---- 動き: 揺らしてループGIF ---- */
+  let animType='flag';
+  const ampIn=document.getElementById('animAmp'), ampVal=document.getElementById('animAmpVal');
+  const spdIn=document.getElementById('animSpeed'), spdVal=document.getElementById('animSpeedVal');
+  const animBg=document.getElementById('animBg'), animBgTransp=document.getElementById('animBgTransp'), animStatus=document.getElementById('animStatus');
+  let animUseWhite=false;
+  document.querySelectorAll('.anim-type').forEach(b=> b.addEventListener('click', ()=>{ animType=b.dataset.type; document.querySelectorAll('.anim-type').forEach(x=>x.classList.toggle('active',x===b)); }));
+  if(ampIn) ampIn.addEventListener('input', ()=>{ ampVal.textContent=ampIn.value; });
+  if(spdIn) spdIn.addEventListener('input', ()=>{ spdVal.textContent=spdIn.value; });
+  if(animBgTransp) animBgTransp.addEventListener('click', ()=>{ animUseWhite=!animUseWhite; animBgTransp.classList.toggle('active',animUseWhite); });
+  function warpFrame(src, type, t, amp, bgCol){
+    const W=src.width, H=src.height;
+    const c=document.createElement('canvas'); c.width=W; c.height=H; const cx=c.getContext('2d');
+    cx.fillStyle=bgCol; cx.fillRect(0,0,W,H);
+    const phase=t*Math.PI*2;
+    if(type==='flag' || type==='curtain'){
+      const freq=(Math.PI*2*1.4)/W;
+      for(let x=0;x<W;x++){
+        let dx=0, dy=0;
+        if(type==='flag'){ dy=Math.sin(x*freq+phase)*amp*(x/W); }     // 左固定で右ほど揺れる
+        else { dx=Math.sin(x*freq+phase)*amp; }                        // カーテンの横揺れ
+        cx.drawImage(src, x,0,1,H, x+dx, dy, 1, H);
+      }
+    } else { // wave / grass: 行スライス・横ずらし
+      const freq=(Math.PI*2*1.6)/H;
+      for(let y=0;y<H;y++){
+        let dx;
+        if(type==='grass'){ dx=Math.sin(y*freq*0.7+phase)*amp*((H-y)/H); }  // 下固定・上ほど揺れる
+        else { dx=Math.sin(y*freq+phase)*amp; }                              // 波
+        cx.drawImage(src, 0,y,W,1, dx, y, W, 1);
+      }
+    }
+    return c;
+  }
+  function animTarget(){ const L=selLayer(); if(L&&L.frames){ const lf=L.frames[L.currentFrame||0]||L.frames[0]; return lf&&lf.canvas; } const f=state.frames&&state.frames[state.currentFrame]; return f&&f.canvas; }
+  const animGen=document.getElementById('animGenerate');
+  if(animGen) animGen.addEventListener('click', async ()=>{
+    const src=animTarget();
+    if(!src){ if(animStatus) animStatus.textContent='対象の画像がありません'; return; }
+    animGen.disabled=true; if(animStatus) animStatus.textContent='作成中…';
+    try{
+      let W=src.width, H=src.height; const cap=420, mx=Math.max(W,H);
+      let s=1; if(mx>cap){ s=cap/mx; }
+      const base=document.createElement('canvas'); base.width=Math.round(W*s); base.height=Math.round(H*s);
+      base.getContext('2d').drawImage(src,0,0,base.width,base.height);
+      W=base.width; H=base.height;
+      const amp=parseInt(ampIn.value)*s, N=16;
+      const bgCol = animUseWhite ? '#ffffff' : animBg.value;
+      const delay = Math.round(120 - parseInt(spdIn.value)*10);  // 速さ大→delay小
+      const frames=[];
+      for(let i=0;i<N;i++){
+        const fr=warpFrame(base, animType, i/N, amp, bgCol);
+        frames.push({ rgba: fr.getContext('2d').getImageData(0,0,W,H).data, delay });
+      }
+      const bytes=await encodeAnimatedGIF(W,H,frames,(i,n)=>{ if(animStatus) animStatus.textContent='作成中… '+Math.round(i/n*100)+'%'; });
+      const blob=new Blob([bytes],{type:'image/gif'}); const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download='animation.gif'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),4000);
+      if(animStatus) animStatus.textContent='完成！ダウンロードしました';
+    }catch(err){ if(animStatus) animStatus.textContent='失敗しました'; console.warn('anim',err); }
+    animGen.disabled=false;
   });
 })();
 (function setupLpTools(){

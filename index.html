@@ -10100,17 +10100,18 @@ layerPanelToggle.addEventListener('click', () => {
   let drawPts=[], drawing=false, polyCursor=null;
   let allEpi=[], epi=[], center={x:0,y:0};
   let raf=null, time=0, trace=[], paused=false, resampled=[];
-  let zoom=1, dim3d=false, view='top', panX=0, panY=0;
+  let zoom=1, dim3d=false, view='top', panX=0, panY=0, showArrows=false;
   let W=300,H=300;
   const pv=$('rkPreview'), pvx=pv?pv.getContext('2d'):null;
   let path3d=[], keypts=[], zProfileFn=null, dragKp=null; const PVW=150, PVH=150;
+  let allZ=[], zKept=[], zDC=0;
 
   function fit(){ const r=cv.getBoundingClientRect(); const dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); W=r.width; H=r.height; }
   window.__rkInit=function(){ setTimeout(()=>{ fit(); resetAll(); }, 30); };
 
   function resetAll(){
     cancelAnimationFrame(raf); raf=null; mode='draw'; drawPts=[]; polyCursor=null; allEpi=[]; epi=[]; trace=[]; time=0; paused=false; zoom=1; selJoint=null; panX=0; panY=0;
-    path3d=[]; keypts=[]; dragKp=null; if(pv) pv.hidden=true;
+    path3d=[]; keypts=[]; dragKp=null; allZ=[]; zKept=[]; zDC=0; showArrows=false; if(pv) pv.hidden=true;
     if(sideEl) sideEl.innerHTML='';
     redrawBtn.hidden=true; pauseBtn.hidden=true; genBtn.hidden=false; if(initBtn) initBtn.hidden=true; if(resetBtn) resetBtn.hidden=false;
     genBtn.textContent = dim3d ? '上下' : '生成';
@@ -10171,6 +10172,7 @@ layerPanelToggle.addEventListener('click', () => {
     const n=Math.min(parseInt(countRange.value)||8, allEpi.length);
     epi=allEpi.slice(0,n);
     epi.forEach((c)=>{ c.tilt=0; });   // 高さは別途プロファイルで付ける
+    zKept = allZ.slice(0, Math.min(parseInt(countRange.value)||8, allZ.length));
     if(countVal) countVal.textContent=String(n);
     buildSide();
   }
@@ -10185,7 +10187,7 @@ layerPanelToggle.addEventListener('click', () => {
     allEpi=coeffs.filter(c=>c.freq!==0).sort((a,b)=>b.amp-a.amp).slice(0,22).filter(c=>c.amp>0.6);
     if(countRange){ countRange.max=String(allEpi.length); if(parseInt(countRange.value)>allEpi.length) countRange.value=String(allEpi.length); }
     applyCount();
-    mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0;
+    mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0; showArrows=false;
     redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true;
     if(dimBox){ dimBox.style.pointerEvents='none'; dimBox.style.opacity='0.45'; }   // 生成後は2D/3D切替不可
     if(countBox) countBox.hidden=false; if(zoomBox) zoomBox.hidden=false; if(initBtn) initBtn.hidden=false;
@@ -10218,15 +10220,21 @@ layerPanelToggle.addEventListener('click', () => {
 
   function drawScene(){
     computeJoints(); numberHits=[]; clear();
-    // 3D再生・横ビュー: 高さプロファイル＋進む点
+    // 3D再生・横ビュー: 目標(薄)＋実際に動いた高さ(ピンク)＋進む点
     if(mode==='play' && dim3d && view==='side'){
       const g=heightGeo();
       ctx.strokeStyle='#cddde6'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(g.x0,g.base); ctx.lineTo(g.x1,g.base); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle='#9bb4c2'; ctx.font='11px sans-serif'; ctx.textAlign='left'; ctx.fillText('高さ0（地面）', g.x0, g.base-6);
-      ctx.strokeStyle='#5b9cb8'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath();
+      // 目標(描いた高さ)を薄く
+      ctx.strokeStyle='rgba(91,156,184,.30)'; ctx.lineWidth=2; ctx.beginPath();
       for(let i=0;i<=80;i++){ const s=i/80, X=sToX(s), Y=hToY(sampleHeight(s)); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); } ctx.stroke();
-      const ts=time, tx=sToX(ts), ty=hToY(sampleHeight(ts));
+      // 実際に動いた経路(回転くんで近似)をピンクで
+      ctx.strokeStyle='#e0588f'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath();
+      for(let i=0;i<=120;i++){ const s=i/120, X=sToX(s), Y=hToY(zActual(s)); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); } ctx.stroke();
+      const ts=time, tx=sToX(ts), ty=hToY(zActual(ts));
       ctx.fillStyle='#e0588f'; ctx.beginPath(); ctx.arc(tx,ty,5,0,Math.PI*2); ctx.fill();
+      // 確認ボタン時: 各回転くん位置で上下の向き矢印
+      if(showArrows){ epi.forEach((c,i)=>{ if(i>=8) return; const s=(i+1)/(epi.length+1), X=sToX(s), Y=hToY(zActual(s)); const dz=zActual(s+0.02)-zActual(s-0.02); const dir=dz<0?-1:1; ctx.strokeStyle='#e0588f'; ctx.lineWidth=1.8; ctx.beginPath(); ctx.moveTo(X,Y); ctx.lineTo(X,Y-18*dir); ctx.stroke(); ctx.beginPath(); ctx.moveTo(X,Y-18*dir); ctx.lineTo(X-4,Y-18*dir+6*dir); ctx.moveTo(X,Y-18*dir); ctx.lineTo(X+4,Y-18*dir+6*dir); ctx.stroke(); ctx.fillStyle='#5b9cb8'; ctx.font='700 9px sans-serif'; ctx.textAlign='center'; ctx.fillText(String(i+1),X,Y+14); }); }
       return;
     }
     if(resampled.length && view==='top'){ ctx.lineWidth=2; ctx.strokeStyle='rgba(91,156,184,.22)'; ctx.beginPath(); const p0=proj({x:resampled[0].x,y:resampled[0].y,z:0}); ctx.moveTo(p0.x,p0.y); for(let i=1;i<resampled.length;i++){ const p=proj({x:resampled[i].x,y:resampled[i].y,z:0}); ctx.lineTo(p.x,p.y); } ctx.closePath(); ctx.stroke(); }
@@ -10242,7 +10250,7 @@ layerPanelToggle.addEventListener('click', () => {
         ctx.fillStyle=seld?'#e0588f':'#5b9cb8'; ctx.beginPath(); ctx.arc(a.x,a.y,8,0,Math.PI*2); ctx.fill();
         ctx.fillStyle='#fff'; ctx.font='700 9px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(i+1),a.x,a.y);
         numberHits.push({x:a.x,y:a.y,idx:i});
-        if(dim3d){ // 3Dの時だけ向き矢印
+        if(dim3d && showArrows){ // 3D + 確認ボタン時だけ向き矢印
           const ux=b.x-a.x, uy=b.y-a.y, ul=Math.hypot(ux,uy)||1, al=18, ax=a.x+ux/ul*al, ay=a.y+uy/ul*al, aa=Math.atan2(uy,ux);
           ctx.strokeStyle='#e0588f'; ctx.lineWidth=1.8; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(ax,ay); ctx.stroke();
           ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(ax-6*Math.cos(aa-0.5),ay-6*Math.sin(aa-0.5)); ctx.moveTo(ax,ay); ctx.lineTo(ax-6*Math.cos(aa+0.5),ay-6*Math.sin(aa+0.5)); ctx.stroke();
@@ -10296,6 +10304,8 @@ layerPanelToggle.addEventListener('click', () => {
   function sToX(s){ const g=heightGeo(); return g.x0+(g.x1-g.x0)*(((s%1)+1)%1); }
   function hToY(h){ return heightGeo().base - h; }
   function yToH(y){ return heightGeo().base - y; }
+  // 高さも回転くん(フーリエ)で近似した実際の動き
+  function zActual(t){ let v=zDC; for(let i=0;i<zKept.length;i++){ const c=zKept[i]; v += 2*(c.re*Math.cos(2*Math.PI*c.k*t) - c.im*Math.sin(2*Math.PI*c.k*t)); } return v; }
   function enterHeight(){
     if(drawPts.length<3){ if(typeof showToast==='function') showToast('先に上から見た輪を描いてね'); return; }
     path3d=resample(drawPts,96);
@@ -10314,7 +10324,7 @@ layerPanelToggle.addEventListener('click', () => {
     ctx.fillStyle='#9bb4c2'; ctx.font='11px sans-serif'; ctx.textAlign='left'; ctx.fillText('高さ0（地面）', g.x0, g.base-6);
     const ks=keypts.slice().sort((a,b)=>a.s-b.s);
     if(ks.length>=2){ ctx.strokeStyle='#5b9cb8'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath(); ks.forEach((k,i)=>{ const X=sToX(k.s),Y=hToY(k.h); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.stroke(); }
-    ks.forEach(k=>{ const X=sToX(k.s),Y=hToY(k.h); ctx.fillStyle='#e0588f'; ctx.beginPath(); ctx.arc(X,Y,7,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke(); });
+    keypts.forEach((k,i)=>{ const X=sToX(k.s),Y=hToY(k.h); ctx.fillStyle='#e0588f'; ctx.beginPath(); ctx.arc(X,Y,9,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle='#fff'; ctx.font='700 10px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(i+1),X,Y); });
     drawTopPreview();
   }
   function pvFit(){ let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9; path3d.forEach(p=>{minx=Math.min(minx,p.x);miny=Math.min(miny,p.y);maxx=Math.max(maxx,p.x);maxy=Math.max(maxy,p.y);}); const pad=14, s=Math.min((PVW-pad*2)/Math.max(1,maxx-minx),(PVH-pad*2)/Math.max(1,maxy-miny)); const ox=pad+(PVW-pad*2-(maxx-minx)*s)/2, oy=pad+(PVH-pad*2-(maxy-miny)*s)/2; return {minx,miny,s,ox,oy}; }
@@ -10323,14 +10333,16 @@ layerPanelToggle.addEventListener('click', () => {
     pvx.clearRect(0,0,PVW,PVH); pvx.fillStyle='#fff'; pvx.fillRect(0,0,PVW,PVH);
     const m=pvFit(), mp=p=>({x:m.ox+(p.x-m.minx)*m.s, y:m.oy+(p.y-m.miny)*m.s});
     pvx.strokeStyle='#5b9cb8'; pvx.lineWidth=2; pvx.beginPath(); path3d.forEach((p,i)=>{ const q=mp(p); i?pvx.lineTo(q.x,q.y):pvx.moveTo(q.x,q.y); }); pvx.closePath(); pvx.stroke();
-    keypts.forEach(k=>{ const idx=Math.min(path3d.length-1,Math.round(k.s*(path3d.length-1))), q=mp(path3d[idx]); pvx.fillStyle='#e0588f'; pvx.beginPath(); pvx.arc(q.x,q.y,4,0,Math.PI*2); pvx.fill(); });
+    keypts.forEach((k,i)=>{ const idx=Math.min(path3d.length-1,Math.round(k.s*(path3d.length-1))), q=mp(path3d[idx]); pvx.fillStyle='#e0588f'; pvx.beginPath(); pvx.arc(q.x,q.y,7,0,Math.PI*2); pvx.fill(); pvx.fillStyle='#fff'; pvx.font='700 9px sans-serif'; pvx.textAlign='center'; pvx.textBaseline='middle'; pvx.fillText(String(i+1),q.x,q.y); });
     pv._map=m;
   }
   if(pv) pv.addEventListener('pointerdown', e=>{
     if(mode!=='height') return; const r=pv.getBoundingClientRect(); const x=(e.clientX-r.left)*(PVW/r.width), y=(e.clientY-r.top)*(PVH/r.height); const m=pv._map; if(!m) return;
     let best=0,bd=1e9; path3d.forEach((p,i)=>{ const qx=m.ox+(p.x-m.minx)*m.s, qy=m.oy+(p.y-m.miny)*m.s, d=(qx-x)*(qx-x)+(qy-y)*(qy-y); if(d<bd){bd=d;best=i;} });
     const s=best/(path3d.length-1);
-    if(!keypts.some(k=>Math.abs(k.s-s)<0.025)){ keypts.push({s,h:0}); drawHeightEditor(); }
+    const lastS = keypts.length ? keypts[keypts.length-1].s : 0;
+    if(s <= lastS + 0.01){ if(typeof showToast==='function') showToast('線を引いた向きに、前の●より先を選んでね'); return; }  // 描いた方向のみ
+    keypts.push({s,h:0}); drawHeightEditor();
     e.preventDefault(); e.stopPropagation();
   });
   cv.addEventListener('pointerdown', e=>{ if(mode!=='height') return; const p=toPt(e); let best=null,bd=16*16; keypts.forEach(k=>{ const X=sToX(k.s),Y=hToY(k.h),d=(p.x-X)*(p.x-X)+(p.y-Y)*(p.y-Y); if(d<bd){bd=d;best=k;} }); dragKp=best; try{cv.setPointerCapture(e.pointerId);}catch(x){} });
@@ -10340,9 +10352,14 @@ layerPanelToggle.addEventListener('click', () => {
     resampled=path3d.slice();
     const coeffs=dft(resampled); const dc=coeffs.find(c=>c.freq===0)||{re:W/2,im:H/2}; center={x:dc.re,y:dc.im};
     allEpi=coeffs.filter(c=>c.freq!==0).sort((a,b)=>b.amp-a.amp).slice(0,22).filter(c=>c.amp>0.6);
-    if(countRange){ countRange.max=String(allEpi.length); if(+countRange.value>allEpi.length) countRange.value=String(allEpi.length); }
+    // 高さプロファイルを回転くん(フーリエ)に分解
+    const M=96, zs=[]; for(let i=0;i<M;i++) zs.push(sampleHeight(i/M));
+    let c0=0; for(let n=0;n<M;n++) c0+=zs[n]; zDC=c0/M;
+    allZ=[]; for(let k=1;k<=M/2;k++){ let re=0,im=0; for(let n=0;n<M;n++){ const phi=-2*Math.PI*k*n/M; re+=zs[n]*Math.cos(phi); im+=zs[n]*Math.sin(phi); } re/=M; im/=M; allZ.push({k,re,im,amp:Math.hypot(re,im)}); }
+    allZ.sort((a,b)=>b.amp-a.amp);
+    if(countRange){ countRange.max=String(Math.max(allEpi.length,allZ.length)); if(+countRange.value>allEpi.length) countRange.value=String(allEpi.length); }
     applyCount();
-    mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0; view='top';
+    mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0; view='top'; showArrows=false;
     if(pv) pv.hidden=true;
     if(viewTop) viewTop.classList.add('active'); if(viewSide) viewSide.classList.remove('active');
     redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true;
@@ -10356,8 +10373,8 @@ layerPanelToggle.addEventListener('click', () => {
   resetBtn.addEventListener('click', resetAll);
   redrawBtn.addEventListener('click', resetAll);
   genBtn.addEventListener('click', ()=>{ if(dim3d && mode==='draw'){ enterHeight(); } else if(dim3d && mode==='height'){ generate3D(); } else { generate(); } });
-  if(initBtn) initBtn.addEventListener('click', ()=>{ paused=true; pauseBtn.textContent='▶'; time=0; trace=[]; drawScene(); });
-  pauseBtn.addEventListener('click', ()=>{ paused=!paused; pauseBtn.textContent=paused?'▶':'❚❚'; if(!paused) animate(); else drawScene(); });
+  if(initBtn) initBtn.addEventListener('click', ()=>{ paused=true; pauseBtn.textContent='▶'; time=0; trace=[]; showArrows=true; drawScene(); });
+  pauseBtn.addEventListener('click', ()=>{ paused=!paused; pauseBtn.textContent=paused?'▶':'❚❚'; if(!paused){ showArrows=false; animate(); } else drawScene(); });
   window.addEventListener('resize', ()=>{ if(!ov.hidden && mode==='draw'){ fit(); drawCurrent(inputMode==='pen'); } });
 })();
 

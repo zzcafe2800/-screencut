@@ -2478,6 +2478,8 @@ footer.controls {
 .rk-mode-toggle { position: absolute; top: 10px; left: 10px; z-index: 5; }
 .rk-mode-toggle button { padding: 5px 12px; font-size: 11px; }
 .rk-view-toggle { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 5; }
+.rk-view-label { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 5; background: #fff; border: 1.5px solid #cddde6; border-radius: 999px; padding: 5px 16px; font-size: 12px; font-weight: 800; color: #6b8896; }
+.rk-pv-bottom { top: auto !important; bottom: 12px; right: 12px; }
 .rk-view-toggle button { padding: 5px 12px; font-size: 11px; }
 .rk-zoom { position: absolute; top: 10px; right: 10px; z-index: 5; display: flex; flex-direction: column; gap: 5px; }
 .rk-zoom button { width: 32px; height: 32px; border-radius: 9px; border: 1.5px solid #cddde6; background: #fff; color: #5b9cb8; font-size: 15px; font-weight: 800; cursor: pointer; }
@@ -4850,6 +4852,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
         <button id="rkViewTop" type="button" class="active">上から</button>
         <button id="rkViewSide" type="button">真横から</button>
       </div>
+      <div class="rk-view-label" id="rkViewLabel" hidden>上から</div>
     </div>
     <div class="rk-side" id="rkSide"></div>
   </div>
@@ -4871,7 +4874,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     <!-- 「できること」機能一覧のみ -->
     <div class="guide-card welcome-card brief">
     <button id="welcomeClose" class="guide-close" aria-label="閉じる">×</button>
-    <h3>機能一覧</h3>
+    <h3>できること</h3>
     <div class="welcome-brief">
     <div class="guide-step">
       <div class="num">1</div>
@@ -10094,7 +10097,12 @@ layerPanelToggle.addEventListener('click', () => {
   const zoomBox=$('rkZoom'), zoomIn=$('rkZoomIn'), zoomOut=$('rkZoomOut'), zoomReset=$('rkZoomReset');
   const countBox=$('rkCount'), countRange=$('rkCountRange'), countVal=$('rkCountVal');
   const dim2D=$('rkDim2D'), dim3D=$('rkDim3D'), dimBox=$('rkDim');
-  const viewToggle=$('rkViewToggle'), viewTop=$('rkViewTop'), viewSide=$('rkViewSide');
+  const viewToggle=$('rkViewToggle'), viewTop=$('rkViewTop'), viewSide=$('rkViewSide'), viewLabel=$('rkViewLabel');
+  function updateViewUI(){
+    const playable = (mode==='play' && dim3d);
+    if(viewToggle) viewToggle.hidden = !playable;
+    if(viewLabel){ if(mode==='play'){ viewLabel.hidden=true; } else { viewLabel.hidden=false; viewLabel.textContent = (view==='side')?'真横から':'上から'; } }
+  }
 
   let mode='draw', inputMode='pen';      // draw|play ; pen|poly
   let drawPts=[], drawing=false, polyCursor=null;
@@ -10111,14 +10119,14 @@ layerPanelToggle.addEventListener('click', () => {
 
   function resetAll(){
     cancelAnimationFrame(raf); raf=null; mode='draw'; drawPts=[]; polyCursor=null; allEpi=[]; epi=[]; trace=[]; time=0; paused=false; zoom=1; selJoint=null; panX=0; panY=0;
-    path3d=[]; keypts=[]; dragKp=null; allZ=[]; zKept=[]; zDC=0; showArrows=false; lastKp=null; pathMinX=0; pathMaxX=1; if(pv) pv.hidden=true;
+    path3d=[]; keypts=[]; dragKp=null; allZ=[]; zKept=[]; zDC=0; showArrows=false; lastKp=null; pathMinX=0; pathMaxX=1; if(pv){ pv.hidden=true; pv.classList.remove('rk-pv-bottom'); }
     if(sideEl) sideEl.innerHTML='';
     redrawBtn.hidden=true; pauseBtn.hidden=true; genBtn.hidden=false; if(initBtn) initBtn.hidden=true; if(resetBtn) resetBtn.hidden=false;
     genBtn.textContent = dim3d ? '上下' : '生成';
     if(dimBox){ dimBox.style.pointerEvents=''; dimBox.style.opacity=''; }
-    if(!dim3d) view='top';
+    view='top';   // 描くときは常に上から
     if(countBox) countBox.hidden=true; if(zoomBox) zoomBox.hidden=true;
-    if(modeToggle) modeToggle.hidden=false; if(viewToggle) viewToggle.hidden=true;
+    if(modeToggle) modeToggle.hidden=false; updateViewUI();
     if(hintEl){ hintEl.style.display=''; hintEl.textContent = inputMode==='pen' ? '指で一筆描き（始点と終点が自動でつながる輪）' : 'タップで頂点を置く（直線でつながり、最後は自動で輪に）'; }
     clear();
   }
@@ -10171,8 +10179,21 @@ layerPanelToggle.addEventListener('click', () => {
   function applyCount(){
     const n=Math.min(parseInt(countRange.value)||8, allEpi.length);
     epi=allEpi.slice(0,n);
-    epi.forEach((c)=>{ c.tilt=0; });   // 高さは別途プロファイルで付ける
     zKept = allZ.slice(0, Math.min(parseInt(countRange.value)||8, allZ.length));
+    // 各回転くんに3D傾きを割当: 描いた高さの同じ周波数成分を、その回転くんの傾きで再現
+    epi.forEach(c=>{ c.tilt=0; c.azim=0; });
+    if(dim3d && zKept.length){
+      const used=new Array(epi.length).fill(false);
+      const comps = allZ.map(z=>({k:z.k, M:2*z.amp, Phi:Math.atan2(z.im,z.re)+Math.PI/2})).sort((a,b)=>b.M-a.M).slice(0, zKept.length);
+      comps.forEach(zc=>{
+        let idx=-1; for(let i=0;i<epi.length;i++){ if(!used[i] && Math.abs(epi[i].freq)===zc.k){ idx=i; break; } }
+        if(idx<0){ for(let i=0;i<epi.length;i++){ if(!used[i]){ idx=i; break; } } }
+        if(idx<0) return;
+        const c=epi[idx]; used[idx]=true;
+        const ratio=Math.max(-0.95,Math.min(0.95, zc.M/Math.max(1,c.amp)));
+        c.tilt=Math.asin(ratio); c.azim=c.phase - zc.Phi;
+      });
+    }
     if(countVal) countVal.textContent=String(n);
     buildSide();
   }
@@ -10191,7 +10212,7 @@ layerPanelToggle.addEventListener('click', () => {
     redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true;
     if(dimBox){ dimBox.style.pointerEvents='none'; dimBox.style.opacity='0.45'; }   // 生成後は2D/3D切替不可
     if(countBox) countBox.hidden=false; if(zoomBox) zoomBox.hidden=false; if(initBtn) initBtn.hidden=false;
-    if(modeToggle) modeToggle.hidden=true; if(viewToggle) viewToggle.hidden=!dim3d;
+    if(modeToggle) modeToggle.hidden=true; updateViewUI();
     if(hintEl) hintEl.style.display='none';
     cancelAnimationFrame(raf); animate();
   }
@@ -10213,29 +10234,29 @@ layerPanelToggle.addEventListener('click', () => {
   let joints=[], numberHits=[], selJoint=null;
   function computeJoints(){
     joints=[]; let x=center.x,y=center.y,z=0; joints.push({x,y,z});
-    for(let i=0;i<epi.length;i++){ const c=epi[i], ang=2*Math.PI*c.freq*time + c.phase; let dx=c.amp*Math.cos(ang), dy=c.amp*Math.sin(ang), dz=0; if(dim3d){ const t=c.tilt||0; dz=dy*Math.sin(t); dy=dy*Math.cos(t); } x+=dx; y+=dy; z+=dz; joints.push({x,y,z}); }
+    for(let i=0;i<epi.length;i++){
+      const c=epi[i], ang=2*Math.PI*c.freq*time + c.phase;
+      let vx=c.amp*Math.cos(ang), vy=c.amp*Math.sin(ang), vz=0;
+      if(dim3d && c.tilt){
+        // 傾き軸 u=(cosψ,sinψ,0) まわりに τ 回転 (Rodrigues) → 高さが出る
+        const t=c.tilt, ps=c.azim||0, cT=Math.cos(t), sT=Math.sin(t), uc=Math.cos(ps), us=Math.sin(ps);
+        const udotv=vx*uc+vy*us, crossz=uc*vy-us*vx;
+        const rx=vx*cT+uc*udotv*(1-cT), ry=vy*cT+us*udotv*(1-cT), rz=crossz*sT;
+        vx=rx; vy=ry; vz=rz;
+      }
+      x+=vx; y+=vy; z+=vz; joints.push({x,y,z});
+    }
   }
   function zoomWorld(){ const j=(selJoint!=null&&joints[selJoint])?joints[selJoint]:{x:center.x,y:center.y,z:0}; return view==='side'?{x:j.x,y:H/2-j.z}:{x:j.x,y:j.y}; }
   function proj(j){ const wx=j.x, wy=(view==='side')?(H/2-j.z):j.y; const zc=zoomWorld(); return { x:W/2+(wx-zc.x)*zoom+panX, y:H/2+(wy-zc.y)*zoom+panY }; }
 
   function drawScene(){
     computeJoints(); numberHits=[]; clear();
-    // 3D再生・横ビュー: 目標(薄)＋実際に動いた高さ(ピンク)＋進む点
-    if(mode==='play' && dim3d && view==='side'){
-      const g=heightGeo();
-      ctx.strokeStyle='#cddde6'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(g.x0,g.base); ctx.lineTo(g.x1,g.base); ctx.stroke(); ctx.setLineDash([]);
-      ctx.fillStyle='#9bb4c2'; ctx.font='11px sans-serif'; ctx.textAlign='left'; ctx.fillText('高さ0（地面）', g.x0, g.base-6);
-      // 目標(描いた高さ)を薄く
-      ctx.strokeStyle='rgba(91,156,184,.30)'; ctx.lineWidth=2; ctx.beginPath();
-      for(let i=0;i<=80;i++){ const s=i/80, X=sToX(s), Y=hToY(sampleHeight(s)); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); } ctx.stroke();
-      // 実際に動いた経路(回転くんで近似)をピンクで
-      ctx.strokeStyle='#e0588f'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath();
-      for(let i=0;i<=120;i++){ const s=i/120, X=sToX(s), Y=hToY(zActual(s)); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); } ctx.stroke();
-      const ts=time, tx=sToX(ts), ty=hToY(zActual(ts));
-      ctx.fillStyle='#e0588f'; ctx.beginPath(); ctx.arc(tx,ty,5,0,Math.PI*2); ctx.fill();
-      // 確認ボタン時: 各回転くん位置で上下の向き矢印
-      if(showArrows){ epi.forEach((c,i)=>{ if(i>=8) return; const s=(i+1)/(epi.length+1), X=sToX(s), Y=hToY(zActual(s)); const dz=zActual(s+0.02)-zActual(s-0.02); const dir=dz<0?-1:1; ctx.strokeStyle='#e0588f'; ctx.lineWidth=1.8; ctx.beginPath(); ctx.moveTo(X,Y); ctx.lineTo(X,Y-18*dir); ctx.stroke(); ctx.beginPath(); ctx.moveTo(X,Y-18*dir); ctx.lineTo(X-4,Y-18*dir+6*dir); ctx.moveTo(X,Y-18*dir); ctx.lineTo(X+4,Y-18*dir+6*dir); ctx.stroke(); ctx.fillStyle='#5b9cb8'; ctx.font='700 9px sans-serif'; ctx.textAlign='center'; ctx.fillText(String(i+1),X,Y+14); }); }
-      return;
+    // 3D・横ビュー: 目標の3D経路(xy+高さ)を薄く。チェーン本体は下で描画
+    if(mode==='play' && dim3d && view==='side' && resampled.length){
+      ctx.lineWidth=2; ctx.strokeStyle='rgba(91,156,184,.20)'; ctx.beginPath();
+      for(let i=0;i<resampled.length;i++){ const p=proj({x:resampled[i].x,y:resampled[i].y,z:sampleHeight(i/resampled.length)}); i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y); }
+      ctx.closePath(); ctx.stroke();
     }
     if(resampled.length && view==='top'){ ctx.lineWidth=2; ctx.strokeStyle='rgba(91,156,184,.22)'; ctx.beginPath(); const p0=proj({x:resampled[0].x,y:resampled[0].y,z:0}); ctx.moveTo(p0.x,p0.y); for(let i=1;i<resampled.length;i++){ const p=proj({x:resampled[i].x,y:resampled[i].y,z:0}); ctx.lineTo(p.x,p.y); } ctx.closePath(); ctx.stroke(); }
     for(let i=0;i<epi.length;i++){
@@ -10262,9 +10283,26 @@ layerPanelToggle.addEventListener('click', () => {
     const tip=joints[joints.length-1]; trace.push({x:tip.x,y:tip.y,z:tip.z});
     if(trace.length>1){ ctx.strokeStyle='#e0588f'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath(); const q0=proj(trace[0]); ctx.moveTo(q0.x,q0.y); for(let i=1;i<trace.length;i++){ const q=proj(trace[i]); ctx.lineTo(q.x,q.y); } ctx.stroke(); }
     const tp=proj(tip); ctx.fillStyle='#e0588f'; ctx.beginPath(); ctx.arc(tp.x,tp.y,4,0,Math.PI*2); ctx.fill();
+    if(mode==='play' && dim3d) drawMiniOpposite(); else if(mode==='play' && pv) { pv.hidden=true; pv.classList.remove('rk-pv-bottom'); }
   }
   function step(){ if(paused) return; time+=1/600; if(time>=1){ time-=1; trace=[]; } drawScene(); raf=requestAnimationFrame(step); }
   function animate(){ cancelAnimationFrame(raf); step(); }
+
+  // 再生中: 反対側のビューを右下にミニ表示
+  function projMini(j,tv){ return tv==='side' ? {x:j.x, y:-j.z} : {x:j.x, y:j.y}; }
+  function drawMiniOpposite(){
+    if(!pv||!pvx) return;
+    pv.hidden=false; pv.classList.add('rk-pv-bottom'); pv.width=PVW; pv.height=PVH;
+    const tv=(view==='top')?'side':'top';
+    pvx.clearRect(0,0,PVW,PVH); pvx.fillStyle='#fff'; pvx.fillRect(0,0,PVW,PVH);
+    const R=Math.max(40, epi.reduce((a,c)=>a+c.amp,0)*0.6), cc=projMini({x:center.x,y:center.y,z:0},tv), sc=(PVW-20)/(2*R);
+    const mp=p=>({x:PVW/2+(p.x-cc.x)*sc, y:PVH/2+(p.y-cc.y)*sc});
+    pvx.strokeStyle='rgba(70,110,130,.55)'; pvx.lineWidth=1.2; pvx.beginPath();
+    joints.forEach((j,i)=>{ const q=mp(projMini(j,tv)); i?pvx.lineTo(q.x,q.y):pvx.moveTo(q.x,q.y); }); pvx.stroke();
+    for(let i=0;i<Math.min(epi.length,6);i++){ const a=mp(projMini(joints[i],tv)), b=mp(projMini(joints[i+1],tv)); pvx.fillStyle='#5b9cb8'; pvx.beginPath(); pvx.arc(a.x,a.y,6,0,Math.PI*2); pvx.fill(); pvx.fillStyle='#fff'; pvx.font='700 8px sans-serif'; pvx.textAlign='center'; pvx.textBaseline='middle'; pvx.fillText(String(i+1),a.x,a.y); pvx.fillStyle='rgba(44,93,114,.8)'; pvx.font='700 7px sans-serif'; pvx.fillText(String(Math.round(epi[i].amp)), (a.x+b.x)/2,(a.y+b.y)/2-5); }
+    const tp=mp(projMini(joints[joints.length-1],tv)); pvx.fillStyle='#e0588f'; pvx.beginPath(); pvx.arc(tp.x,tp.y,3.5,0,Math.PI*2); pvx.fill();
+    pvx.fillStyle='#9bb4c2'; pvx.font='700 10px sans-serif'; pvx.textAlign='left'; pvx.textBaseline='top'; pvx.fillText(tv==='side'?'横から':'上から', 7, 7);
+  }
 
   // 再生中: ドラッグでカメラ移動 / タップで番号選択
   let rkDown=null, rkMoved=false;
@@ -10277,7 +10315,7 @@ layerPanelToggle.addEventListener('click', () => {
   if(modePen) modePen.addEventListener('click', ()=>setInputMode('pen'));
   if(modePoly) modePoly.addEventListener('click', ()=>setInputMode('poly'));
   // 2D/3D
-  function setDim(d3){ dim3d=d3; dim2D.classList.toggle('active',!d3); dim3D.classList.toggle('active',d3); if(!d3){ view='top'; if(viewTop) viewTop.classList.add('active'); if(viewSide) viewSide.classList.remove('active'); } if(viewToggle) viewToggle.hidden=!(d3&&mode==='play'); if(mode==='draw'){ genBtn.textContent = d3 ? '上下' : '生成'; } if(mode==='play'){ applyCount(); if(paused) drawScene(); } }
+  function setDim(d3){ dim3d=d3; dim2D.classList.toggle('active',!d3); dim3D.classList.toggle('active',d3); if(!d3){ view='top'; if(viewTop) viewTop.classList.add('active'); if(viewSide) viewSide.classList.remove('active'); } if(mode==='draw'){ genBtn.textContent = d3 ? '上下' : '生成'; } updateViewUI(); if(mode==='play'){ applyCount(); if(paused) drawScene(); } }
   if(dim2D) dim2D.addEventListener('click', ()=>setDim(false));
   if(dim3D) dim3D.addEventListener('click', ()=>setDim(true));
   if(viewTop) viewTop.addEventListener('click', ()=>{ view='top'; viewTop.classList.add('active'); viewSide.classList.remove('active'); trace=[]; if(paused) drawScene(); });
@@ -10286,6 +10324,7 @@ layerPanelToggle.addEventListener('click', () => {
   if(zoomIn) zoomIn.addEventListener('click', ()=>{ zoom=Math.min(6,zoom*1.25); if(paused) drawScene(); });
   if(zoomOut) zoomOut.addEventListener('click', ()=>{ zoom=Math.max(0.4,zoom/1.25); if(paused) drawScene(); });
   if(zoomReset) zoomReset.addEventListener('click', ()=>{ zoom=1; selJoint=null; panX=0; panY=0; if(paused) drawScene(); });
+  cv.addEventListener('wheel', e=>{ if(mode!=='play') return; e.preventDefault(); const f=e.deltaY<0?1.12:1/1.12; zoom=Math.max(0.4,Math.min(6,zoom*f)); if(paused) drawScene(); }, {passive:false});
   // 個数
   if(countRange) countRange.addEventListener('input', ()=>{ applyCount(); if(paused) drawScene(); });
   // ===== 3D 高さエディタ =====
@@ -10317,7 +10356,7 @@ layerPanelToggle.addEventListener('click', () => {
     mode='height'; view='side'; keypts=[{s:0,h:0}]; dragKp=null; lastKp=keypts[0];
     if(pv){ pv.hidden=false; pv.width=PVW; pv.height=PVH; }
     genBtn.textContent='生成'; redrawBtn.hidden=false; if(resetBtn) resetBtn.hidden=true;
-    if(modeToggle) modeToggle.hidden=true; if(viewToggle) viewToggle.hidden=true;
+    if(modeToggle) modeToggle.hidden=true; updateViewUI();
     if(dimBox){ dimBox.style.pointerEvents='none'; dimBox.style.opacity='0.45'; }
     if(hintEl){ hintEl.style.display=''; hintEl.textContent='右上の図で位置を選び、●を上下に動かして高さを決める'; }
     drawHeightEditor();
@@ -10327,7 +10366,7 @@ layerPanelToggle.addEventListener('click', () => {
     ctx.strokeStyle='#cddde6'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(g.x0,g.base); ctx.lineTo(g.x1,g.base); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle='#9bb4c2'; ctx.font='11px sans-serif'; ctx.textAlign='left'; ctx.fillText('高さ0（地面）', g.x0, g.base-6);
     const ks=keypts.slice().sort((a,b)=>a.s-b.s);
-    if(ks.length>=2){ ctx.strokeStyle='#5b9cb8'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath(); ks.forEach((k,i)=>{ const X=sToX(k.s),Y=hToY(k.h); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.stroke(); }
+    if(ks.length>=2){ ctx.strokeStyle='#5b9cb8'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath(); ks.forEach((k,i)=>{ const X=sToX(k.s),Y=hToY(k.h); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.lineTo(sToX(ks[0].s),hToY(ks[0].h)); ctx.stroke(); }  // 最後→最初で一周
     keypts.forEach((k,i)=>{ const X=sToX(k.s),Y=hToY(k.h);
       ctx.fillStyle=hColor(k.h); ctx.beginPath(); ctx.arc(X,Y,9,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
       ctx.fillStyle='#fff'; ctx.font='700 10px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(i+1),X,Y);
@@ -10342,6 +10381,7 @@ layerPanelToggle.addEventListener('click', () => {
   function pvFit(){ let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9; path3d.forEach(p=>{minx=Math.min(minx,p.x);miny=Math.min(miny,p.y);maxx=Math.max(maxx,p.x);maxy=Math.max(maxy,p.y);}); const pad=14, s=Math.min((PVW-pad*2)/Math.max(1,maxx-minx),(PVH-pad*2)/Math.max(1,maxy-miny)); const ox=pad+(PVW-pad*2-(maxx-minx)*s)/2, oy=pad+(PVH-pad*2-(maxy-miny)*s)/2; return {minx,miny,s,ox,oy}; }
   function drawTopPreview(){
     if(!pv||!pvx||!path3d.length) return;
+    pv.classList.remove('rk-pv-bottom');
     pvx.clearRect(0,0,PVW,PVH); pvx.fillStyle='#fff'; pvx.fillRect(0,0,PVW,PVH);
     const m=pvFit(), mp=p=>({x:m.ox+(p.x-m.minx)*m.s, y:m.oy+(p.y-m.miny)*m.s});
     pvx.strokeStyle='#5b9cb8'; pvx.lineWidth=2; pvx.beginPath(); path3d.forEach((p,i)=>{ const q=mp(p); i?pvx.lineTo(q.x,q.y):pvx.moveTo(q.x,q.y); }); pvx.closePath(); pvx.stroke();
@@ -10352,9 +10392,8 @@ layerPanelToggle.addEventListener('click', () => {
     if(mode!=='height') return; const r=pv.getBoundingClientRect(); const x=(e.clientX-r.left)*(PVW/r.width), y=(e.clientY-r.top)*(PVH/r.height); const m=pv._map; if(!m) return;
     let best=0,bd=1e9; path3d.forEach((p,i)=>{ const qx=m.ox+(p.x-m.minx)*m.s, qy=m.oy+(p.y-m.miny)*m.s, d=(qx-x)*(qx-x)+(qy-y)*(qy-y); if(d<bd){bd=d;best=i;} });
     const s=best/(path3d.length-1);
-    const lastS = keypts.length ? keypts[keypts.length-1].s : 0;
-    if(s <= lastS + 0.01){ if(typeof showToast==='function') showToast('線を引いた向きに、前の●より先を選んでね'); return; }  // 描いた方向のみ
-    const kp={s,h:0}; keypts.push(kp); lastKp=kp; drawHeightEditor();
+    if(keypts.some(k=>Math.abs(k.s-s)<0.02)){ return; }   // 近すぎる重複だけ拒否
+    const kp={s,h:0}; keypts.push(kp); keypts.sort((a,b)=>a.s-b.s); lastKp=kp; drawHeightEditor();   // 線の向き順に並ぶ
     e.preventDefault(); e.stopPropagation();
   });
   cv.addEventListener('pointerdown', e=>{ if(mode!=='height') return; const p=toPt(e); let best=null,bd=16*16; keypts.forEach(k=>{ const X=sToX(k.s),Y=hToY(k.h),d=(p.x-X)*(p.x-X)+(p.y-Y)*(p.y-Y); if(d<bd){bd=d;best=k;} }); dragKp=best; if(best) lastKp=best; if(best) drawHeightEditor(); try{cv.setPointerCapture(e.pointerId);}catch(x){} });
@@ -10375,7 +10414,7 @@ layerPanelToggle.addEventListener('click', () => {
     if(pv) pv.hidden=true;
     if(viewTop) viewTop.classList.add('active'); if(viewSide) viewSide.classList.remove('active');
     redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true;
-    if(countBox) countBox.hidden=false; if(zoomBox) zoomBox.hidden=false; if(initBtn) initBtn.hidden=false; if(viewToggle) viewToggle.hidden=false;
+    if(countBox) countBox.hidden=false; if(zoomBox) zoomBox.hidden=false; if(initBtn) initBtn.hidden=false; updateViewUI();
     if(hintEl) hintEl.style.display='none';
     cancelAnimationFrame(raf); animate();
   }

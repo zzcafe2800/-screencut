@@ -228,13 +228,11 @@ aside::-webkit-scrollbar { width: 0; height: 0; display: none; }
   gap: 8px;
 }
 .category-header::before {
-  content: '';
-  width: 16px; height: 16px;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232c3e50' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z'/><path d='M14 2v6h6'/></svg>");
-  background-size: contain; background-repeat: no-repeat; background-position: center;
-  flex-shrink: 0; opacity: 0.7;
+  content: none;
 }
 .category-header > span:first-of-type { flex: 1; }
+.category-header .cat-icon { flex-shrink: 0; margin-right: 7px; opacity: 0.8; vertical-align: middle; }
+.category.open > .category-header .cat-icon { opacity: 1; }
 .category-header:hover { color: var(--accent); }
 .category-header .arrow {
   font-family: var(--serif);
@@ -3479,11 +3477,12 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
 .brand-row {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 3px;
   padding: 0;
   margin: 0 0 18px;
 }
 .brand-row .brand { padding: 0; margin: 0; }
+.brand-row #startupPipToggle { margin-left: auto; }
 .icon-btn {
   width: 30px;
   height: 30px;
@@ -3915,7 +3914,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
         </svg>
       </button>
     </div>
-    <div class="empty-msg" id="emptyMsg">ここに画像・GIF・動画をドロップ<br><span style="font-size:.82em;opacity:.7">タップでファイルを選ぶ</span></div>
+    <div class="empty-msg" id="emptyMsg">ここに画像・GIF・動画をドロップ<br><span style="display:block;margin-top:8px;font-size:.82em;opacity:.7">タップでファイルを選ぶ</span></div>
     <div class="loading-overlay" id="loadingOverlay" hidden>
       <div class="loading-spinner"></div>
       <div class="loading-text" id="loadingText">読み込み中…</div>
@@ -3999,6 +3998,11 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       <div class="lp-body">
         <div class="lp-title-row">
           <span class="lp-title">レイヤー</span>
+          <button type="button" class="lp-bucket" id="lpSlideBtn" title="スライドショーGIFを作る">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="5" width="18" height="13" rx="2"/><path d="M3 19h18M10 9l5 3-5 3z"/>
+            </svg>
+          </button>
           <button type="button" class="lp-bucket" id="lpBucketBtn" title="バケツ(色を染める)">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M4 11.5l7-7 7.5 7.5-6.3 6.3a2 2 0 01-2.8 0l-4.4-4.4a1.8 1.8 0 010-2.4z"/>
@@ -4049,6 +4053,26 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       <div class="bk-hint" id="bucketHint">画像をタップした色を染めます</div>
       <button type="button" class="bk-decide" id="bucketDecide">決定（確定）</button>
       <button type="button" class="bk-reset" id="bucketReset">リセット（決定前まで）</button>
+    </div>
+
+    <!-- スライドショーGIF カード -->
+    <div class="bucket-card" id="slideshowCard" hidden>
+      <div class="bk-head">
+        <span class="bk-title">スライドショーGIF</span>
+        <button type="button" class="bk-close" id="slideshowClose" aria-label="閉じる">×</button>
+      </div>
+      <div class="bk-hint">レイヤーを順番に流すGIFを作ります（下から上の順）</div>
+      <div class="bk-row">
+        <span class="bk-label">1枚</span>
+        <input type="range" id="slideDur" min="0.3" max="4" step="0.1" value="1.2">
+        <span id="slideDurVal">1.2秒</span>
+      </div>
+      <div class="bk-row bk-scope" id="slideFadeRow">
+        <button type="button" class="bk-scope-btn active" id="slideFadeOn">フェードあり</button>
+        <button type="button" class="bk-scope-btn" id="slideFadeOff">なし</button>
+      </div>
+      <div class="bk-hint" id="slideStatus"></div>
+      <button type="button" class="bk-decide" id="slideGenerate">GIFを作る</button>
     </div>
 
     <!-- 加工くん お部屋プレビュー (色サンプル用) -->
@@ -6721,6 +6745,29 @@ function buildItemRow(it) {
 }
 function renderCategoriesInto(root) {
   root.innerHTML = '';
+  // カテゴリ名に合うアイコン
+  function catIconSvg(name) {
+    const P = {
+      '壁掛け家具': '<rect x="4" y="5" width="16" height="11" rx="1"/><path d="M9 20h6"/>',
+      'その他': '<circle cx="6" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18" cy="12" r="1.3"/>',
+      'キッチン': '<path d="M5 10h14l-1 10H6z"/><path d="M4 10l1-3h14l1 3"/>',
+      'PC': '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4"/>',
+      'スクリーン': '<rect x="3" y="5" width="18" height="13" rx="2"/><path d="M8 21h8"/>',
+      'ゲーム': '<rect x="2" y="8" width="20" height="9" rx="4"/><path d="M7 12h3M8.5 10.5v3M15.5 12h.01M18 13h.01"/>',
+      '印刷物': '<rect x="6" y="3" width="12" height="5"/><rect x="4" y="8" width="16" height="8" rx="1"/><rect x="7" y="14" width="10" height="6"/>',
+      'アート': '<path d="M12 3a9 9 0 100 18c1.2 0 2-1 2-2s-1-1.5 0-2.5 3 0 4-1.5A8 8 0 0012 3z"/><circle cx="8.5" cy="10" r="1"/><circle cx="12" cy="8" r="1"/>',
+      'メディア': '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3z"/>',
+      'フォト': '<rect x="3" y="7" width="18" height="12" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M8.5 7l1-2h5l1 2"/>',
+      '本': '<path d="M5 4h11a2 2 0 012 2v14H7a2 2 0 01-2-2z"/><path d="M5 17.5a2 2 0 012-1.5h11"/>',
+      'グッズ': '<path d="M3 12l9-9 9 9-9 9z"/><circle cx="9" cy="9" r="1.2"/>',
+      '文房具': '<path d="M4 20l3.5-1L19 7.5 16.5 5 5 16.5z"/><path d="M14 7l3 3"/>',
+      'スポーツ': '<circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/>',
+      'ドリンク': '<path d="M6 8h12l-1.2 11H7.2z"/><path d="M9 8V5h6v3"/>',
+      'お気に入り': '<path d="M12 3.5l2.5 5.5 6 .5-4.5 4 1.4 5.8L12 16l-5.4 3.3 1.4-5.8-4.5-4 6-.5z"/>',
+    };
+    const d = P[name] || '<path d="M4 7a2 2 0 012-2h3l2 2h7a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2z"/>';
+    return '<svg class="cat-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+  }
   // ピン済みカテゴリ (1つ以上ピンがあれば先頭に)
   if (state.pinnedKeys && state.pinnedKeys.size > 0) {
     const pinnedItems = [];
@@ -6734,7 +6781,7 @@ function renderCategoriesInto(root) {
       w.className = 'category pinned-category open';
       const h = document.createElement('div');
       h.className = 'category-header';
-      h.innerHTML = `<span>お気に入り</span><span class="arrow">›</span>`;
+      h.innerHTML = `${catIconSvg('お気に入り')}<span>お気に入り</span><span class="arrow">›</span>`;
       h.addEventListener('click', () => {
         const wasOpen = w.classList.contains('open');
         const nav = document.getElementById('categories');
@@ -6760,7 +6807,7 @@ function renderCategoriesInto(root) {
     w.className = 'category';
     const h = document.createElement('div');
     h.className = 'category-header';
-    h.innerHTML = `<span>${cat.name}</span><span class="arrow">›</span>`;
+    h.innerHTML = `${catIconSvg(cat.name)}<span>${cat.name}</span><span class="arrow">›</span>`;
     h.addEventListener('click', () => {
       const wasOpen = w.classList.contains('open');
       const nav = document.getElementById('categories');
@@ -9187,6 +9234,63 @@ layerPanelToggle.addEventListener('click', () => {
     backups={}; afterEdit();
   });
   setMode('color');
+})();
+
+/* ===== スライドショーGIF (複数レイヤーを順番にフェードで流す) ===== */
+(function setupSlideshow(){
+  const card=document.getElementById('slideshowCard'), btn=document.getElementById('lpSlideBtn');
+  if(!card||!btn) return;
+  const closeBtn=document.getElementById('slideshowClose'), durIn=document.getElementById('slideDur'), durVal=document.getElementById('slideDurVal');
+  const fadeOnBtn=document.getElementById('slideFadeOn'), fadeOffBtn=document.getElementById('slideFadeOff');
+  const genBtn=document.getElementById('slideGenerate'), statusEl=document.getElementById('slideStatus');
+  let fade=true;
+  btn.addEventListener('click', ()=>{ card.hidden=!card.hidden; });
+  closeBtn.addEventListener('click', ()=>{ card.hidden=true; });
+  durIn.addEventListener('input', ()=>{ durVal.textContent=parseFloat(durIn.value).toFixed(1)+'秒'; });
+  fadeOnBtn.addEventListener('click', ()=>{ fade=true; fadeOnBtn.classList.add('active'); fadeOffBtn.classList.remove('active'); });
+  fadeOffBtn.addEventListener('click', ()=>{ fade=false; fadeOffBtn.classList.add('active'); fadeOnBtn.classList.remove('active'); });
+  function layerCanvas(l){ return l && l.frames && l.frames[0] && l.frames[0].canvas; }
+  genBtn.addEventListener('click', async ()=>{
+    const layers = (state.layers||[]).filter(l=>layerCanvas(l));
+    if(layers.length < 2){ statusEl.textContent='レイヤーが2枚以上必要です'; return; }
+    genBtn.disabled=true; statusEl.textContent='作成中…';
+    try{
+      // スライドのサイズ (重すぎないよう最大480に)
+      let W = state.canvasW||480, H = state.canvasH||480;
+      const cap=480, mx=Math.max(W,H); if(mx>cap){ const s=cap/mx; W=Math.round(W*s); H=Math.round(H*s); }
+      // 各レイヤーをスライド化(白背景・中央フィット)
+      const slides = layers.map(l=>{
+        const src=layerCanvas(l), c=document.createElement('canvas'); c.width=W; c.height=H;
+        const cx=c.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,W,H);
+        const sc=Math.min(W/src.width, H/src.height), dw=src.width*sc, dh=src.height*sc;
+        cx.imageSmoothingQuality='high'; cx.drawImage(src,(W-dw)/2,(H-dh)/2,dw,dh);
+        return c;
+      });
+      const holdMs = Math.round(parseFloat(durIn.value)*1000);
+      const STEPS = fade ? 8 : 0, FADE_MS = 45;
+      const frames=[];
+      const tmp=document.createElement('canvas'); tmp.width=W; tmp.height=H; const tctx=tmp.getContext('2d');
+      for(let i=0;i<slides.length;i++){
+        frames.push({ rgba: slides[i].getContext('2d').getImageData(0,0,W,H).data, delay: holdMs });
+        if(fade){
+          const next=slides[(i+1)%slides.length];
+          for(let s=1;s<=STEPS;s++){
+            const a=s/(STEPS+1);
+            tctx.globalAlpha=1; tctx.clearRect(0,0,W,H); tctx.drawImage(slides[i],0,0);
+            tctx.globalAlpha=a; tctx.drawImage(next,0,0); tctx.globalAlpha=1;
+            frames.push({ rgba: tctx.getImageData(0,0,W,H).data, delay: FADE_MS });
+          }
+        }
+      }
+      const bytes = await encodeAnimatedGIF(W, H, frames, (i,n)=>{ statusEl.textContent='作成中… '+Math.round(i/n*100)+'%'; });
+      const blob = new Blob([bytes], { type:'image/gif' });
+      const url = URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download='slideshow.gif'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 4000);
+      statusEl.textContent='完成！ダウンロードしました';
+    }catch(err){ statusEl.textContent='失敗しました'; console.warn('slideshow', err); }
+    genBtn.disabled=false;
+  });
 })();
 if (lpBgTransparent) lpBgTransparent.addEventListener('click', () => {
   state.bgMode = 'transparent';

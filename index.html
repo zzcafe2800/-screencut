@@ -2471,6 +2471,19 @@ footer.controls {
 .rk-go { background: #5b9cb8; color: #fff; box-shadow: 0 6px 16px rgba(91,156,184,.45); }
 .rk-go:hover { filter: brightness(1.06); }
 .rk-ghost { background: #fff; color: #5a7a89; border: 1.5px solid #cddde6; }
+.rk-dim, .rk-mode-toggle, .rk-view-toggle { display: inline-flex; border-radius: 999px; overflow: hidden; border: 1.5px solid #cddde6; background: #fff; }
+.rk-dim { margin-left: auto; margin-right: 10px; }
+.rk-dim button, .rk-mode-toggle button, .rk-view-toggle button { border: none; background: none; padding: 6px 14px; font-size: 12px; font-weight: 800; color: #6b8896; cursor: pointer; }
+.rk-dim button.active, .rk-mode-toggle button.active, .rk-view-toggle button.active { background: #5b9cb8; color: #fff; }
+.rk-mode-toggle { position: absolute; top: 10px; left: 10px; z-index: 5; }
+.rk-mode-toggle button { padding: 5px 12px; font-size: 11px; }
+.rk-view-toggle { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 5; }
+.rk-view-toggle button { padding: 5px 12px; font-size: 11px; }
+.rk-zoom { position: absolute; top: 10px; right: 10px; z-index: 5; display: flex; flex-direction: column; gap: 5px; }
+.rk-zoom button { width: 32px; height: 32px; border-radius: 9px; border: 1.5px solid #cddde6; background: #fff; color: #5b9cb8; font-size: 15px; font-weight: 800; cursor: pointer; }
+.rk-zoom button:hover { background: #eef7fb; }
+.rk-count { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #5a7a89; background: #fff; padding: 6px 12px; border-radius: 999px; border: 1.5px solid #cddde6; }
+.rk-count input[type=range] { width: 110px; }
 @media (max-width: 640px) { .rk-body { flex-direction: column; } .rk-side { width: auto; max-height: 26vh; flex-direction: row; flex-wrap: wrap; } .rk-side .rk-item { flex: 1 1 44%; } }
 .thumbmaker-overlay[hidden] { display: none; }
 .tm-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
@@ -4807,18 +4820,40 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
 <div id="rotKunOverlay" class="rotkun-overlay" hidden>
   <div class="rk-head">
     <span class="rk-title">回転くん</span>
+    <div class="rk-dim" id="rkDim">
+      <button id="rkDim2D" type="button" class="active">2D</button>
+      <button id="rkDim3D" type="button">3D</button>
+    </div>
     <button class="rk-close" id="rkClose" type="button" aria-label="閉じる">×</button>
   </div>
   <div class="rk-body">
     <div class="rk-stage">
       <canvas id="rkCanvas"></canvas>
       <div class="rk-hint" id="rkHint">指で一筆描き（始点と終点が自動でつながる輪）</div>
+      <div class="rk-mode-toggle" id="rkModeToggle">
+        <button id="rkModePen" type="button" class="active">ペン</button>
+        <button id="rkModePoly" type="button">頂点</button>
+      </div>
+      <div class="rk-zoom" id="rkZoom" hidden>
+        <button id="rkZoomIn" type="button">＋</button>
+        <button id="rkZoomOut" type="button">－</button>
+        <button id="rkZoomReset" type="button">⟲</button>
+      </div>
+      <div class="rk-view-toggle" id="rkViewToggle" hidden>
+        <button id="rkViewTop" type="button" class="active">上から</button>
+        <button id="rkViewSide" type="button">真横から</button>
+      </div>
     </div>
     <div class="rk-side" id="rkSide"></div>
   </div>
   <div class="rk-controls">
     <button class="rk-btn rk-ghost" id="rkReset" type="button">リセット</button>
     <button class="rk-btn rk-ghost" id="rkRedraw" type="button" hidden>描き直す</button>
+    <div class="rk-count" id="rkCount" hidden>
+      <span>回転くんの数</span>
+      <input type="range" id="rkCountRange" min="1" max="22" value="8">
+      <span id="rkCountVal">8</span>
+    </div>
     <button class="rk-btn rk-go" id="rkGenerate" type="button">生成</button>
     <button class="rk-btn rk-ghost" id="rkPause" type="button" hidden>一時停止</button>
   </div>
@@ -10041,101 +10076,108 @@ layerPanelToggle.addEventListener('click', () => {
   layout(false);
 })();
 
-/* ===== 回転くん: 一筆描きの輪を周転円(フーリエ級数)で再現 ===== */
+/* ===== 回転くん: 一筆描き/頂点の輪を周転円(フーリエ級数)で再現 + ズーム/個数/2D・3D ===== */
 (function setupRotKun(){
   const ov=document.getElementById('rotKunOverlay'), cv=document.getElementById('rkCanvas');
   if(!ov||!cv) return;
   const ctx=cv.getContext('2d');
-  const closeBtn=document.getElementById('rkClose'), resetBtn=document.getElementById('rkReset'), redrawBtn=document.getElementById('rkRedraw'), genBtn=document.getElementById('rkGenerate'), pauseBtn=document.getElementById('rkPause'), hintEl=document.getElementById('rkHint'), sideEl=document.getElementById('rkSide');
-  let mode='draw';            // 'draw' | 'play'
-  let drawPts=[];             // 描いた点 (canvas座標)
-  let drawing=false;
-  let epi=null;               // 周転円の配列
-  let center={x:0,y:0};
-  let raf=null, time=0, trace=[], paused=false;
-  let resampled=[];           // 元の線(リサンプル)
+  const $=id=>document.getElementById(id);
+  const closeBtn=$('rkClose'), resetBtn=$('rkReset'), redrawBtn=$('rkRedraw'), genBtn=$('rkGenerate'), pauseBtn=$('rkPause'), hintEl=$('rkHint'), sideEl=$('rkSide');
+  const modePen=$('rkModePen'), modePoly=$('rkModePoly'), modeToggle=$('rkModeToggle');
+  const zoomBox=$('rkZoom'), zoomIn=$('rkZoomIn'), zoomOut=$('rkZoomOut'), zoomReset=$('rkZoomReset');
+  const countBox=$('rkCount'), countRange=$('rkCountRange'), countVal=$('rkCountVal');
+  const dim2D=$('rkDim2D'), dim3D=$('rkDim3D');
+  const viewToggle=$('rkViewToggle'), viewTop=$('rkViewTop'), viewSide=$('rkViewSide');
 
-  function fit(){
-    const r=cv.getBoundingClientRect();
-    const dpr=Math.min(2, window.devicePixelRatio||1);
-    cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    W=r.width; H=r.height;
-  }
+  let mode='draw', inputMode='pen';      // draw|play ; pen|poly
+  let drawPts=[], drawing=false, polyCursor=null;
+  let allEpi=[], epi=[], center={x:0,y:0};
+  let raf=null, time=0, trace=[], paused=false, resampled=[];
+  let zoom=1, dim3d=false, view='top';
   let W=300,H=300;
+
+  function fit(){ const r=cv.getBoundingClientRect(); const dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); W=r.width; H=r.height; }
   window.__rkInit=function(){ setTimeout(()=>{ fit(); resetAll(); }, 30); };
 
   function resetAll(){
-    cancelAnimationFrame(raf); raf=null; mode='draw'; drawPts=[]; epi=null; trace=[]; time=0; paused=false;
+    cancelAnimationFrame(raf); raf=null; mode='draw'; drawPts=[]; polyCursor=null; allEpi=[]; epi=[]; trace=[]; time=0; paused=false; zoom=1;
     if(sideEl) sideEl.innerHTML='';
     redrawBtn.hidden=true; pauseBtn.hidden=true; genBtn.hidden=false;
-    if(hintEl) hintEl.style.display='';
+    if(countBox) countBox.hidden=true; if(zoomBox) zoomBox.hidden=true;
+    if(modeToggle) modeToggle.hidden=false; if(viewToggle) viewToggle.hidden=true;
+    if(hintEl){ hintEl.style.display=''; hintEl.textContent = inputMode==='pen' ? '指で一筆描き（始点と終点が自動でつながる輪）' : 'タップで頂点を置く（直線でつながり、最後は自動で輪に）'; }
     clear();
   }
   function clear(){ ctx.clearRect(0,0,W,H); }
 
-  // --- 描画モード ---
   function toPt(e){ const r=cv.getBoundingClientRect(); return { x:e.clientX-r.left, y:e.clientY-r.top }; }
-  cv.addEventListener('pointerdown', e=>{ if(mode!=='draw') return; drawing=true; drawPts=[toPt(e)]; try{cv.setPointerCapture(e.pointerId);}catch(x){} e.preventDefault(); });
-  cv.addEventListener('pointermove', e=>{ if(mode!=='draw'||!drawing) return; const p=toPt(e), last=drawPts[drawPts.length-1]; if(!last||Math.hypot(p.x-last.x,p.y-last.y)>2){ drawPts.push(p); drawCurrent(); } e.preventDefault(); });
-  cv.addEventListener('pointerup', e=>{ if(mode!=='draw') return; drawing=false; drawCurrent(true); e.preventDefault(); });
+  cv.addEventListener('pointerdown', e=>{
+    if(mode!=='draw') return;
+    if(inputMode==='pen'){ drawing=true; drawPts=[toPt(e)]; try{cv.setPointerCapture(e.pointerId);}catch(x){} }
+    else { drawPts.push(toPt(e)); polyCursor=toPt(e); drawCurrent(false); }
+    e.preventDefault();
+  });
+  cv.addEventListener('pointermove', e=>{
+    if(mode!=='draw') return;
+    if(inputMode==='pen'){ if(!drawing) return; const p=toPt(e), last=drawPts[drawPts.length-1]; if(!last||Math.hypot(p.x-last.x,p.y-last.y)>2){ drawPts.push(p); drawCurrent(); } }
+    else if(drawPts.length){ polyCursor=toPt(e); drawCurrent(false); }
+    e.preventDefault();
+  });
+  cv.addEventListener('pointerup', e=>{ if(mode!=='draw') return; if(inputMode==='pen'){ drawing=false; drawCurrent(true); } e.preventDefault(); });
+  cv.addEventListener('dblclick', e=>{ if(mode==='draw'&&inputMode==='poly'&&drawPts.length>=3){ generate(); } });
+
   function drawCurrent(closed){
     clear();
-    if(drawPts.length<2) return;
+    if(drawPts.length<1) return;
     ctx.lineWidth=3; ctx.strokeStyle='#5b9cb8'; ctx.lineJoin='round'; ctx.lineCap='round';
-    ctx.beginPath(); ctx.moveTo(drawPts[0].x,drawPts[0].y);
-    for(let i=1;i<drawPts.length;i++) ctx.lineTo(drawPts[i].x,drawPts[i].y);
-    if(closed){ ctx.lineTo(drawPts[0].x,drawPts[0].y); }
-    ctx.stroke();
-    if(hintEl) hintEl.style.display = drawPts.length>4 ? 'none' : '';
+    if(drawPts.length>=2){ ctx.beginPath(); ctx.moveTo(drawPts[0].x,drawPts[0].y); for(let i=1;i<drawPts.length;i++) ctx.lineTo(drawPts[i].x,drawPts[i].y); if(closed) ctx.lineTo(drawPts[0].x,drawPts[0].y); ctx.stroke(); }
+    if(inputMode==='poly'){
+      if(polyCursor && drawPts.length>=1){ ctx.setLineDash([5,4]); ctx.globalAlpha=.6; ctx.beginPath(); ctx.moveTo(drawPts[drawPts.length-1].x,drawPts[drawPts.length-1].y); ctx.lineTo(polyCursor.x,polyCursor.y); ctx.lineTo(drawPts[0].x,drawPts[0].y); ctx.stroke(); ctx.globalAlpha=1; ctx.setLineDash([]); }
+      drawPts.forEach((p,i)=>{ ctx.beginPath(); ctx.fillStyle=(i===0)?'#5b9cb8':'#fff'; ctx.strokeStyle='#5b9cb8'; ctx.lineWidth=2; ctx.arc(p.x,p.y,(i===0?6:4),0,Math.PI*2); ctx.fill(); ctx.stroke(); });
+    }
+    if(hintEl) hintEl.style.display = drawPts.length>3 ? 'none' : '';
   }
 
-  // --- リサンプル(等間隔) ---
-  function resample(pts, N){
+  function resample(pts,N){
     const P=pts.slice(); if(P.length<2) return [];
-    P.push({x:P[0].x,y:P[0].y});  // 輪を閉じる
+    P.push({x:P[0].x,y:P[0].y});
     let total=0; const seg=[];
     for(let i=1;i<P.length;i++){ const d=Math.hypot(P[i].x-P[i-1].x,P[i].y-P[i-1].y); seg.push(d); total+=d; }
     if(total<1) return [];
-    const out=[]; let target=0, step=total/N, acc=0, idx=0;
-    for(let k=0;k<N;k++){
-      target=k*step;
-      while(idx<seg.length-1 && acc+seg[idx]<target){ acc+=seg[idx]; idx++; }
-      const segLen=seg[idx]||1, tt=(target-acc)/segLen;
-      out.push({ x:P[idx].x+(P[idx+1].x-P[idx].x)*tt, y:P[idx].y+(P[idx+1].y-P[idx].y)*tt });
-    }
+    const out=[]; let step=total/N, acc=0, idx=0;
+    for(let k=0;k<N;k++){ const target=k*step; while(idx<seg.length-1 && acc+seg[idx]<target){ acc+=seg[idx]; idx++; } const segLen=seg[idx]||1, tt=(target-acc)/segLen; out.push({ x:P[idx].x+(P[idx+1].x-P[idx].x)*tt, y:P[idx].y+(P[idx+1].y-P[idx].y)*tt }); }
     return out;
   }
-  // --- DFT ---
   function dft(pts){
     const N=pts.length, out=[];
-    for(let k=0;k<N;k++){
-      let re=0, im=0;
-      for(let n=0;n<N;n++){ const phi=-2*Math.PI*k*n/N, c=Math.cos(phi), s=Math.sin(phi); re+=pts[n].x*c - pts[n].y*s; im+=pts[n].x*s + pts[n].y*c; }
-      re/=N; im/=N;
-      let freq=k; if(k>N/2) freq=k-N;
-      out.push({ re, im, freq, amp:Math.hypot(re,im), phase:Math.atan2(im,re) });
-    }
+    for(let k=0;k<N;k++){ let re=0,im=0; for(let n=0;n<N;n++){ const phi=-2*Math.PI*k*n/N, c=Math.cos(phi), s=Math.sin(phi); re+=pts[n].x*c-pts[n].y*s; im+=pts[n].x*s+pts[n].y*c; } re/=N; im/=N; let freq=k; if(k>N/2) freq=k-N; out.push({ re,im,freq,amp:Math.hypot(re,im),phase:Math.atan2(im,re) }); }
     return out;
   }
 
+  function applyCount(){
+    const n=Math.min(parseInt(countRange.value)||8, allEpi.length);
+    epi=allEpi.slice(0,n);
+    // 3D用の傾き(自動・各回転くんで変える)。2Dは0。
+    epi.forEach((c,i)=>{ c.tilt = dim3d ? (((i*47)%140)-70)*Math.PI/180 : 0; });
+    if(countVal) countVal.textContent=String(n);
+    buildSide();
+  }
+
   function generate(){
-    if(drawPts.length<6){ if(typeof showToast==='function') showToast('もう少し大きく輪を描いてね'); return; }
-    const N=128;
-    resampled=resample(drawPts,N);
+    if(drawPts.length<3){ if(typeof showToast==='function') showToast('もう少し大きく輪を描いてね'); return; }
+    resampled=resample(drawPts,128);
     if(resampled.length<8) return;
     const coeffs=dft(resampled);
-    // freq0 = 中心
     const dc=coeffs.find(c=>c.freq===0)||{re:W/2,im:H/2};
     center={x:dc.re,y:dc.im};
-    // 非0を振幅順に
-    let arr=coeffs.filter(c=>c.freq!==0).sort((a,b)=>b.amp-a.amp);
-    const MAX=22; arr=arr.slice(0,MAX).filter(c=>c.amp>0.6);
-    epi=arr;
-    mode='play'; time=0; trace=[]; paused=false;
+    allEpi=coeffs.filter(c=>c.freq!==0).sort((a,b)=>b.amp-a.amp).slice(0,22).filter(c=>c.amp>0.6);
+    if(countRange){ countRange.max=String(allEpi.length); if(parseInt(countRange.value)>allEpi.length) countRange.value=String(allEpi.length); }
+    applyCount();
+    mode='play'; time=0; trace=[]; paused=false; zoom=1;
     redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='一時停止';
+    if(countBox) countBox.hidden=false; if(zoomBox) zoomBox.hidden=false;
+    if(modeToggle) modeToggle.hidden=true; if(viewToggle) viewToggle.hidden=!dim3d;
     if(hintEl) hintEl.style.display='none';
-    buildSide();
     cancelAnimationFrame(raf); animate();
   }
 
@@ -10143,50 +10185,85 @@ layerPanelToggle.addEventListener('click', () => {
     if(!sideEl) return; sideEl.innerHTML='';
     const f1=Math.abs(epi[0]?epi[0].freq:1)||1;
     epi.forEach((c,i)=>{
-      const dir = c.freq>0 ? '↺ 反時計' : '↻ 時計';
-      const spd = (Math.abs(c.freq)/f1);
+      const dir=c.freq>0?'↺ 反時計':'↻ 時計';
+      const spd=(Math.abs(c.freq)/f1);
+      const tiltTxt = dim3d ? `・傾き ${Math.round(c.tilt*180/Math.PI)}°` : '';
       const item=document.createElement('div'); item.className='rk-item';
-      item.innerHTML=`<span class="rk-num">${i+1}</span><div class="rk-meta"><span>${dir}・速さ <b>×${spd.toFixed(2)}</b></span><span>下との距離 <b>${Math.round(c.amp)}</b></span></div>`;
+      item.innerHTML=`<span class="rk-num">${i+1}</span><div class="rk-meta"><span>${dir}・速さ <b>×${spd.toFixed(2)}</b>${tiltTxt}</span><span>下との距離 <b>${Math.round(c.amp)}</b></span></div>`;
       sideEl.appendChild(item);
     });
   }
 
+  // 投影: jointの3D位置 → 画面(top:xy / side:xz)
+  function baseY(){ return view==='side' ? H/2 : center.y; }
+  function zp(px,py){ const zcx=center.x, zcy=baseY(); return { x: zcx+(px-zcx)*zoom, y: zcy+(py-zcy)*zoom }; }
+
   function animate(){
     if(paused) return;
-    time += 1/600;   // 1周= 600フレームくらい
-    if(time>=1){ time-=1; trace=[]; }
+    time+=1/600; if(time>=1){ time-=1; trace=[]; }
     clear();
-    // 薄く元の線
-    if(resampled.length){ ctx.lineWidth=2; ctx.strokeStyle='rgba(91,156,184,.25)'; ctx.beginPath(); ctx.moveTo(resampled[0].x,resampled[0].y); for(let i=1;i<resampled.length;i++) ctx.lineTo(resampled[i].x,resampled[i].y); ctx.closePath(); ctx.stroke(); }
-    // 周転円チェーン
-    let x=center.x, y=center.y;
+    // 元の線(薄く) — topのみ
+    if(resampled.length && view==='top'){ ctx.lineWidth=2; ctx.strokeStyle='rgba(91,156,184,.22)'; ctx.beginPath(); const p0=zp(resampled[0].x,resampled[0].y); ctx.moveTo(p0.x,p0.y); for(let i=1;i<resampled.length;i++){ const p=zp(resampled[i].x,resampled[i].y); ctx.lineTo(p.x,p.y); } ctx.closePath(); ctx.stroke(); }
+    // チェーン
+    let x=center.x, y=center.y, z=0;             // 3D座標
+    const joints=[{x,y,z}];
     for(let i=0;i<epi.length;i++){
       const c=epi[i], ang=2*Math.PI*c.freq*time + c.phase;
-      const nx=x+c.amp*Math.cos(ang), ny=y+c.amp*Math.sin(ang);
-      // 円
-      ctx.strokeStyle='rgba(120,150,165,.28)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(x,y,c.amp,0,Math.PI*2); ctx.stroke();
-      // 腕
-      ctx.strokeStyle='rgba(70,110,130,.6)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(nx,ny); ctx.stroke();
-      // 番号 (大きい円のみラベル: 上位8個)
-      if(i<8){ ctx.fillStyle='#5b9cb8'; ctx.beginPath(); ctx.arc(x,y,7,0,Math.PI*2); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='700 9px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(i+1), x, y);
-        // 距離ラベル
-        ctx.fillStyle='rgba(44,93,114,.85)'; ctx.font='700 9px sans-serif'; ctx.fillText(String(Math.round(c.amp)), (x+nx)/2, (y+ny)/2 - 6);
-      }
-      x=nx; y=ny;
+      let dx=c.amp*Math.cos(ang), dy=c.amp*Math.sin(ang), dz=0;
+      if(dim3d){ const t=c.tilt||0; dz=dy*Math.sin(t); dy=dy*Math.cos(t); }
+      x+=dx; y+=dy; z+=dz; joints.push({x,y,z});
     }
-    // ペン先
-    trace.push({x,y});
-    if(trace.length>1){ ctx.strokeStyle='#e0588f'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath(); ctx.moveTo(trace[0].x,trace[0].y); for(let i=1;i<trace.length;i++) ctx.lineTo(trace[i].x,trace[i].y); ctx.stroke(); }
-    ctx.fillStyle='#e0588f'; ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill();
+    // 描画(投影してズーム)
+    function proj(j){ return view==='side' ? zp(j.x, H/2 - j.z) : zp(j.x, j.y); }
+    for(let i=0;i<epi.length;i++){
+      const a=proj(joints[i]), b=proj(joints[i+1]);
+      const rad=Math.hypot(b.x-a.x,b.y-a.y);
+      ctx.strokeStyle='rgba(120,150,165,.25)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(a.x,a.y,rad,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle='rgba(70,110,130,.6)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
+      if(i<10){
+        // 番号
+        ctx.fillStyle='#5b9cb8'; ctx.beginPath(); ctx.arc(a.x,a.y,7,0,Math.PI*2); ctx.fill();
+        ctx.fillStyle='#fff'; ctx.font='700 9px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(i+1),a.x,a.y);
+        // 向き矢印 (この回転くんが向いている方向 = 腕の向き)
+        const ux=b.x-a.x, uy=b.y-a.y, ul=Math.hypot(ux,uy)||1; const al=16;
+        const ax=a.x+ux/ul*al, ay=a.y+uy/ul*al;
+        ctx.strokeStyle='#e0588f'; ctx.lineWidth=1.6; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(ax,ay); ctx.stroke();
+        const aa=Math.atan2(uy,ux);
+        ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(ax-5*Math.cos(aa-0.5),ay-5*Math.sin(aa-0.5)); ctx.moveTo(ax,ay); ctx.lineTo(ax-5*Math.cos(aa+0.5),ay-5*Math.sin(aa+0.5)); ctx.stroke();
+        // 距離
+        ctx.fillStyle='rgba(44,93,114,.85)'; ctx.font='700 9px sans-serif'; ctx.fillText(String(Math.round(epi[i].amp)), (a.x+b.x)/2, (a.y+b.y)/2-7);
+      }
+    }
+    // ペン先トレース
+    const tip=joints[joints.length-1]; trace.push({x:tip.x,y:tip.y,z:tip.z});
+    if(trace.length>1){ ctx.strokeStyle='#e0588f'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath(); const q0=proj(trace[0]); ctx.moveTo(q0.x,q0.y); for(let i=1;i<trace.length;i++){ const q=proj(trace[i]); ctx.lineTo(q.x,q.y); } ctx.stroke(); }
+    const tp=proj(tip); ctx.fillStyle='#e0588f'; ctx.beginPath(); ctx.arc(tp.x,tp.y,4,0,Math.PI*2); ctx.fill();
     raf=requestAnimationFrame(animate);
   }
 
+  // 入力モード
+  function setInputMode(m){ inputMode=m; modePen.classList.toggle('active',m==='pen'); modePoly.classList.toggle('active',m==='poly'); drawPts=[]; polyCursor=null; clear(); if(hintEl){ hintEl.style.display=''; hintEl.textContent = m==='pen' ? '指で一筆描き（始点と終点が自動でつながる輪）' : 'タップで頂点を置く（直線でつながり、ダブルタップで生成）'; } }
+  if(modePen) modePen.addEventListener('click', ()=>setInputMode('pen'));
+  if(modePoly) modePoly.addEventListener('click', ()=>setInputMode('poly'));
+  // 2D/3D
+  function setDim(d3){ dim3d=d3; dim2D.classList.toggle('active',!d3); dim3D.classList.toggle('active',d3); if(viewToggle) viewToggle.hidden=!(d3&&mode==='play'); if(mode==='play'){ applyCount(); } }
+  if(dim2D) dim2D.addEventListener('click', ()=>setDim(false));
+  if(dim3D) dim3D.addEventListener('click', ()=>setDim(true));
+  if(viewTop) viewTop.addEventListener('click', ()=>{ view='top'; viewTop.classList.add('active'); viewSide.classList.remove('active'); trace=[]; });
+  if(viewSide) viewSide.addEventListener('click', ()=>{ view='side'; viewSide.classList.add('active'); viewTop.classList.remove('active'); trace=[]; });
+  // ズーム
+  if(zoomIn) zoomIn.addEventListener('click', ()=>{ zoom=Math.min(6,zoom*1.25); });
+  if(zoomOut) zoomOut.addEventListener('click', ()=>{ zoom=Math.max(0.4,zoom/1.25); });
+  if(zoomReset) zoomReset.addEventListener('click', ()=>{ zoom=1; });
+  // 個数
+  if(countRange) countRange.addEventListener('input', ()=>{ applyCount(); });
+  // ボタン
   closeBtn.addEventListener('click', ()=>{ cancelAnimationFrame(raf); raf=null; ov.hidden=true; });
   resetBtn.addEventListener('click', resetAll);
   redrawBtn.addEventListener('click', resetAll);
   genBtn.addEventListener('click', generate);
   pauseBtn.addEventListener('click', ()=>{ paused=!paused; pauseBtn.textContent=paused?'再生':'一時停止'; if(!paused) animate(); });
-  window.addEventListener('resize', ()=>{ if(!ov.hidden && mode==='draw'){ fit(); drawCurrent(true); } });
+  window.addEventListener('resize', ()=>{ if(!ov.hidden && mode==='draw'){ fit(); drawCurrent(inputMode==='pen'); } });
 })();
 
 if (lpBgTransparent) lpBgTransparent.addEventListener('click', () => {

@@ -2484,6 +2484,7 @@ footer.controls {
 .rk-zoom button:hover { background: #eef7fb; }
 .rk-count { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #5a7a89; background: #fff; padding: 6px 12px; border-radius: 999px; border: 1.5px solid #cddde6; }
 .rk-count input[type=range] { width: 110px; }
+.rk-btn.rk-icon { min-width: 56px; font-size: 16px; letter-spacing: 2px; }
 @media (max-width: 640px) { .rk-body { flex-direction: column; } .rk-side { width: auto; max-height: 26vh; flex-direction: row; flex-wrap: wrap; } .rk-side .rk-item { flex: 1 1 44%; } }
 .thumbmaker-overlay[hidden] { display: none; }
 .tm-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
@@ -4835,6 +4836,9 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
         <button id="rkModePoly" type="button">頂点</button>
       </div>
       <div class="rk-zoom" id="rkZoom" hidden>
+        <button id="rkInitView" type="button" title="最初の配置を見る">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
         <button id="rkZoomIn" type="button">＋</button>
         <button id="rkZoomOut" type="button">－</button>
         <button id="rkZoomReset" type="button">⟲</button>
@@ -4855,8 +4859,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       <span id="rkCountVal">8</span>
     </div>
     <button class="rk-btn rk-go" id="rkGenerate" type="button">生成</button>
-    <button class="rk-btn rk-ghost" id="rkInitView" type="button" hidden>最初の配置を見る</button>
-    <button class="rk-btn rk-ghost" id="rkPause" type="button" hidden>一時停止</button>
+    <button class="rk-btn rk-ghost rk-icon" id="rkPause" type="button" hidden>❚❚</button>
   </div>
 </div>
 
@@ -10094,16 +10097,16 @@ layerPanelToggle.addEventListener('click', () => {
   let drawPts=[], drawing=false, polyCursor=null;
   let allEpi=[], epi=[], center={x:0,y:0};
   let raf=null, time=0, trace=[], paused=false, resampled=[];
-  let zoom=1, dim3d=false, view='top';
+  let zoom=1, dim3d=false, view='top', panX=0, panY=0;
   let W=300,H=300;
 
   function fit(){ const r=cv.getBoundingClientRect(); const dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); W=r.width; H=r.height; }
   window.__rkInit=function(){ setTimeout(()=>{ fit(); resetAll(); }, 30); };
 
   function resetAll(){
-    cancelAnimationFrame(raf); raf=null; mode='draw'; drawPts=[]; polyCursor=null; allEpi=[]; epi=[]; trace=[]; time=0; paused=false; zoom=1; selJoint=null;
+    cancelAnimationFrame(raf); raf=null; mode='draw'; drawPts=[]; polyCursor=null; allEpi=[]; epi=[]; trace=[]; time=0; paused=false; zoom=1; selJoint=null; panX=0; panY=0;
     if(sideEl) sideEl.innerHTML='';
-    redrawBtn.hidden=true; pauseBtn.hidden=true; genBtn.hidden=false; if(initBtn) initBtn.hidden=true;
+    redrawBtn.hidden=true; pauseBtn.hidden=true; genBtn.hidden=false; if(initBtn) initBtn.hidden=true; if(resetBtn) resetBtn.hidden=false;
     if(countBox) countBox.hidden=true; if(zoomBox) zoomBox.hidden=true;
     if(modeToggle) modeToggle.hidden=false; if(viewToggle) viewToggle.hidden=true;
     if(hintEl){ hintEl.style.display=''; hintEl.textContent = inputMode==='pen' ? '指で一筆描き（始点と終点が自動でつながる輪）' : 'タップで頂点を置く（直線でつながり、最後は自動で輪に）'; }
@@ -10174,8 +10177,8 @@ layerPanelToggle.addEventListener('click', () => {
     allEpi=coeffs.filter(c=>c.freq!==0).sort((a,b)=>b.amp-a.amp).slice(0,22).filter(c=>c.amp>0.6);
     if(countRange){ countRange.max=String(allEpi.length); if(parseInt(countRange.value)>allEpi.length) countRange.value=String(allEpi.length); }
     applyCount();
-    mode='play'; time=0; trace=[]; paused=false; zoom=1;
-    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='一時停止';
+    mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0;
+    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true;
     if(countBox) countBox.hidden=false; if(zoomBox) zoomBox.hidden=false; if(initBtn) initBtn.hidden=false;
     if(modeToggle) modeToggle.hidden=true; if(viewToggle) viewToggle.hidden=!dim3d;
     if(hintEl) hintEl.style.display='none';
@@ -10202,7 +10205,7 @@ layerPanelToggle.addEventListener('click', () => {
     for(let i=0;i<epi.length;i++){ const c=epi[i], ang=2*Math.PI*c.freq*time + c.phase; let dx=c.amp*Math.cos(ang), dy=c.amp*Math.sin(ang), dz=0; if(dim3d){ const t=c.tilt||0; dz=dy*Math.sin(t); dy=dy*Math.cos(t); } x+=dx; y+=dy; z+=dz; joints.push({x,y,z}); }
   }
   function zoomWorld(){ const j=(selJoint!=null&&joints[selJoint])?joints[selJoint]:{x:center.x,y:center.y,z:0}; return view==='side'?{x:j.x,y:H/2-j.z}:{x:j.x,y:j.y}; }
-  function proj(j){ const wx=j.x, wy=(view==='side')?(H/2-j.z):j.y; const zc=zoomWorld(); return { x:W/2+(wx-zc.x)*zoom, y:H/2+(wy-zc.y)*zoom }; }
+  function proj(j){ const wx=j.x, wy=(view==='side')?(H/2-j.z):j.y; const zc=zoomWorld(); return { x:W/2+(wx-zc.x)*zoom+panX, y:H/2+(wy-zc.y)*zoom+panY }; }
 
   function drawScene(){
     computeJoints(); numberHits=[]; clear();
@@ -10210,6 +10213,8 @@ layerPanelToggle.addEventListener('click', () => {
     for(let i=0;i<epi.length;i++){
       const a=proj(joints[i]), b=proj(joints[i+1]);
       const rad=epi[i].amp*zoom;                       // ★ 半径は固定(配置した距離)
+      const dimi=(selJoint!=null && selJoint!==i);     // 選択中以外は薄く
+      ctx.save(); if(dimi) ctx.globalAlpha=0.22;
       ctx.strokeStyle='rgba(120,150,165,.25)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(a.x,a.y,rad,0,Math.PI*2); ctx.stroke();
       ctx.strokeStyle='rgba(70,110,130,.6)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
       if(i<12){
@@ -10224,6 +10229,7 @@ layerPanelToggle.addEventListener('click', () => {
         }
         ctx.fillStyle='rgba(44,93,114,.85)'; ctx.font='700 9px sans-serif'; ctx.fillText(String(Math.round(epi[i].amp)), (a.x+b.x)/2, (a.y+b.y)/2-7);
       }
+      ctx.restore();
     }
     const tip=joints[joints.length-1]; trace.push({x:tip.x,y:tip.y,z:tip.z});
     if(trace.length>1){ ctx.strokeStyle='#e0588f'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath(); const q0=proj(trace[0]); ctx.moveTo(q0.x,q0.y); for(let i=1;i<trace.length;i++){ const q=proj(trace[i]); ctx.lineTo(q.x,q.y); } ctx.stroke(); }
@@ -10232,8 +10238,11 @@ layerPanelToggle.addEventListener('click', () => {
   function step(){ if(paused) return; time+=1/600; if(time>=1){ time-=1; trace=[]; } drawScene(); raf=requestAnimationFrame(step); }
   function animate(){ cancelAnimationFrame(raf); step(); }
 
-  // 番号クリックでそこを中心にズーム
-  cv.addEventListener('click', e=>{ if(mode!=='play') return; const p=toPt(e); let best=null,bd=18*18; numberHits.forEach(h=>{ const dx=p.x-h.x,dy=p.y-h.y,d=dx*dx+dy*dy; if(d<bd){bd=d;best=h;} }); selJoint = best?best.idx:null; if(paused) drawScene(); });
+  // 再生中: ドラッグでカメラ移動 / タップで番号選択
+  let rkDown=null, rkMoved=false;
+  cv.addEventListener('pointerdown', e=>{ if(mode!=='play') return; rkDown={x:e.clientX,y:e.clientY,px:panX,py:panY}; rkMoved=false; try{cv.setPointerCapture(e.pointerId);}catch(x){} });
+  cv.addEventListener('pointermove', e=>{ if(mode!=='play'||!rkDown) return; const dx=e.clientX-rkDown.x, dy=e.clientY-rkDown.y; if(Math.abs(dx)+Math.abs(dy)>3) rkMoved=true; if(rkMoved){ panX=rkDown.px+dx; panY=rkDown.py+dy; if(paused) drawScene(); } });
+  cv.addEventListener('pointerup', e=>{ if(mode!=='play'||!rkDown){ return; } if(!rkMoved){ const p=toPt(e); let best=null,bd=18*18; numberHits.forEach(h=>{ const ddx=p.x-h.x,ddy=p.y-h.y,d=ddx*ddx+ddy*ddy; if(d<bd){bd=d;best=h;} }); if(best){ selJoint=best.idx; panX=0; panY=0; } else { selJoint=null; } if(paused) drawScene(); } rkDown=null; });
 
   // 入力モード
   function setInputMode(m){ inputMode=m; modePen.classList.toggle('active',m==='pen'); modePoly.classList.toggle('active',m==='poly'); drawPts=[]; polyCursor=null; clear(); if(hintEl){ hintEl.style.display=''; hintEl.textContent = m==='pen' ? '指で一筆描き（始点と終点が自動でつながる輪）' : 'タップで頂点を置く。最初の点をもう一度押すと輪が閉じて決定'; } }
@@ -10248,7 +10257,7 @@ layerPanelToggle.addEventListener('click', () => {
   // ズーム
   if(zoomIn) zoomIn.addEventListener('click', ()=>{ zoom=Math.min(6,zoom*1.25); if(paused) drawScene(); });
   if(zoomOut) zoomOut.addEventListener('click', ()=>{ zoom=Math.max(0.4,zoom/1.25); if(paused) drawScene(); });
-  if(zoomReset) zoomReset.addEventListener('click', ()=>{ zoom=1; selJoint=null; if(paused) drawScene(); });
+  if(zoomReset) zoomReset.addEventListener('click', ()=>{ zoom=1; selJoint=null; panX=0; panY=0; if(paused) drawScene(); });
   // 個数
   if(countRange) countRange.addEventListener('input', ()=>{ applyCount(); if(paused) drawScene(); });
   // ボタン
@@ -10256,8 +10265,8 @@ layerPanelToggle.addEventListener('click', () => {
   resetBtn.addEventListener('click', resetAll);
   redrawBtn.addEventListener('click', resetAll);
   genBtn.addEventListener('click', generate);
-  if(initBtn) initBtn.addEventListener('click', ()=>{ paused=true; pauseBtn.textContent='再生'; time=0; trace=[]; drawScene(); });
-  pauseBtn.addEventListener('click', ()=>{ paused=!paused; pauseBtn.textContent=paused?'再生':'一時停止'; if(!paused) animate(); else drawScene(); });
+  if(initBtn) initBtn.addEventListener('click', ()=>{ paused=true; pauseBtn.textContent='▶'; time=0; trace=[]; drawScene(); });
+  pauseBtn.addEventListener('click', ()=>{ paused=!paused; pauseBtn.textContent=paused?'▶':'❚❚'; if(!paused) animate(); else drawScene(); });
   window.addEventListener('resize', ()=>{ if(!ov.hidden && mode==='draw'){ fit(); drawCurrent(inputMode==='pen'); } });
 })();
 

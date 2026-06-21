@@ -10104,14 +10104,14 @@ layerPanelToggle.addEventListener('click', () => {
   let W=300,H=300;
   const pv=$('rkPreview'), pvx=pv?pv.getContext('2d'):null;
   let path3d=[], keypts=[], zProfileFn=null, dragKp=null; const PVW=150, PVH=150;
-  let allZ=[], zKept=[], zDC=0;
+  let allZ=[], zKept=[], zDC=0, lastKp=null, pathMinX=0, pathMaxX=1;
 
   function fit(){ const r=cv.getBoundingClientRect(); const dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); W=r.width; H=r.height; }
   window.__rkInit=function(){ setTimeout(()=>{ fit(); resetAll(); }, 30); };
 
   function resetAll(){
     cancelAnimationFrame(raf); raf=null; mode='draw'; drawPts=[]; polyCursor=null; allEpi=[]; epi=[]; trace=[]; time=0; paused=false; zoom=1; selJoint=null; panX=0; panY=0;
-    path3d=[]; keypts=[]; dragKp=null; allZ=[]; zKept=[]; zDC=0; showArrows=false; if(pv) pv.hidden=true;
+    path3d=[]; keypts=[]; dragKp=null; allZ=[]; zKept=[]; zDC=0; showArrows=false; lastKp=null; pathMinX=0; pathMaxX=1; if(pv) pv.hidden=true;
     if(sideEl) sideEl.innerHTML='';
     redrawBtn.hidden=true; pauseBtn.hidden=true; genBtn.hidden=false; if(initBtn) initBtn.hidden=true; if(resetBtn) resetBtn.hidden=false;
     genBtn.textContent = dim3d ? '上下' : '生成';
@@ -10301,16 +10301,20 @@ layerPanelToggle.addEventListener('click', () => {
     return prev.h+(next.h-prev.h)*t;
   }
   function heightGeo(){ const m=34; return { x0:m, x1:W-m, base:H*0.52 }; }
-  function sToX(s){ const g=heightGeo(); return g.x0+(g.x1-g.x0)*(((s%1)+1)%1); }
+  function computePathXRange(){ pathMinX=1e9; pathMaxX=-1e9; path3d.forEach(p=>{ if(p.x<pathMinX)pathMinX=p.x; if(p.x>pathMaxX)pathMaxX=p.x; }); if(pathMaxX<=pathMinX) pathMaxX=pathMinX+1; }
+  function pathXat(s){ s=((s%1)+1)%1; const idx=Math.min(path3d.length-1, Math.round(s*((path3d.length||1)-1))); return path3d[idx]?path3d[idx].x:0; }
+  function sToX(s){ const g=heightGeo(); return g.x0 + (g.x1-g.x0)*((pathXat(s)-pathMinX)/(pathMaxX-pathMinX)); }   // 上からのX = 横から見た位置
   function hToY(h){ return heightGeo().base - h; }
   function yToH(y){ return heightGeo().base - y; }
+  // 高さで色: 低い=薄いピンク / 高い=濃いピンク
+  function hColor(h){ const lim=heightGeo().base-20; const t=Math.max(0,Math.min(1,(h+lim)/(2*lim))); const r=Math.round(245-(245-204)*t), g=Math.round(208-(208-40)*t), b=Math.round(224-(224-110)*t); return `rgb(${r},${g},${b})`; }
   // 高さも回転くん(フーリエ)で近似した実際の動き
   function zActual(t){ let v=zDC; for(let i=0;i<zKept.length;i++){ const c=zKept[i]; v += 2*(c.re*Math.cos(2*Math.PI*c.k*t) - c.im*Math.sin(2*Math.PI*c.k*t)); } return v; }
   function enterHeight(){
     if(drawPts.length<3){ if(typeof showToast==='function') showToast('先に上から見た輪を描いてね'); return; }
-    path3d=resample(drawPts,96);
+    path3d=resample(drawPts,96); computePathXRange();
     let cx=0,cy=0; path3d.forEach(p=>{cx+=p.x;cy+=p.y;}); cx/=path3d.length; cy/=path3d.length; center={x:cx,y:cy};
-    mode='height'; view='side'; keypts=[{s:0,h:0}]; dragKp=null;
+    mode='height'; view='side'; keypts=[{s:0,h:0}]; dragKp=null; lastKp=keypts[0];
     if(pv){ pv.hidden=false; pv.width=PVW; pv.height=PVH; }
     genBtn.textContent='生成'; redrawBtn.hidden=false; if(resetBtn) resetBtn.hidden=true;
     if(modeToggle) modeToggle.hidden=true; if(viewToggle) viewToggle.hidden=true;
@@ -10324,7 +10328,15 @@ layerPanelToggle.addEventListener('click', () => {
     ctx.fillStyle='#9bb4c2'; ctx.font='11px sans-serif'; ctx.textAlign='left'; ctx.fillText('高さ0（地面）', g.x0, g.base-6);
     const ks=keypts.slice().sort((a,b)=>a.s-b.s);
     if(ks.length>=2){ ctx.strokeStyle='#5b9cb8'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath(); ks.forEach((k,i)=>{ const X=sToX(k.s),Y=hToY(k.h); i?ctx.lineTo(X,Y):ctx.moveTo(X,Y); }); ctx.stroke(); }
-    keypts.forEach((k,i)=>{ const X=sToX(k.s),Y=hToY(k.h); ctx.fillStyle='#e0588f'; ctx.beginPath(); ctx.arc(X,Y,9,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle='#fff'; ctx.font='700 10px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(i+1),X,Y); });
+    keypts.forEach((k,i)=>{ const X=sToX(k.s),Y=hToY(k.h);
+      ctx.fillStyle=hColor(k.h); ctx.beginPath(); ctx.arc(X,Y,9,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+      ctx.fillStyle='#fff'; ctx.font='700 10px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(i+1),X,Y);
+      if(k===lastKp){ // 最後に選んだ●は上下に動かせる目印
+        ctx.strokeStyle='#e0588f'; ctx.fillStyle='#e0588f'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(X,Y-13); ctx.lineTo(X,Y-22); ctx.stroke(); ctx.beginPath(); ctx.moveTo(X,Y-23); ctx.lineTo(X-4,Y-18); ctx.lineTo(X+4,Y-18); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(X,Y+13); ctx.lineTo(X,Y+22); ctx.stroke(); ctx.beginPath(); ctx.moveTo(X,Y+23); ctx.lineTo(X-4,Y+18); ctx.lineTo(X+4,Y+18); ctx.closePath(); ctx.fill();
+      }
+    });
     drawTopPreview();
   }
   function pvFit(){ let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9; path3d.forEach(p=>{minx=Math.min(minx,p.x);miny=Math.min(miny,p.y);maxx=Math.max(maxx,p.x);maxy=Math.max(maxy,p.y);}); const pad=14, s=Math.min((PVW-pad*2)/Math.max(1,maxx-minx),(PVH-pad*2)/Math.max(1,maxy-miny)); const ox=pad+(PVW-pad*2-(maxx-minx)*s)/2, oy=pad+(PVH-pad*2-(maxy-miny)*s)/2; return {minx,miny,s,ox,oy}; }
@@ -10333,7 +10345,7 @@ layerPanelToggle.addEventListener('click', () => {
     pvx.clearRect(0,0,PVW,PVH); pvx.fillStyle='#fff'; pvx.fillRect(0,0,PVW,PVH);
     const m=pvFit(), mp=p=>({x:m.ox+(p.x-m.minx)*m.s, y:m.oy+(p.y-m.miny)*m.s});
     pvx.strokeStyle='#5b9cb8'; pvx.lineWidth=2; pvx.beginPath(); path3d.forEach((p,i)=>{ const q=mp(p); i?pvx.lineTo(q.x,q.y):pvx.moveTo(q.x,q.y); }); pvx.closePath(); pvx.stroke();
-    keypts.forEach((k,i)=>{ const idx=Math.min(path3d.length-1,Math.round(k.s*(path3d.length-1))), q=mp(path3d[idx]); pvx.fillStyle='#e0588f'; pvx.beginPath(); pvx.arc(q.x,q.y,7,0,Math.PI*2); pvx.fill(); pvx.fillStyle='#fff'; pvx.font='700 9px sans-serif'; pvx.textAlign='center'; pvx.textBaseline='middle'; pvx.fillText(String(i+1),q.x,q.y); });
+    keypts.forEach((k,i)=>{ const idx=Math.min(path3d.length-1,Math.round(k.s*(path3d.length-1))), q=mp(path3d[idx]); pvx.fillStyle=hColor(k.h); pvx.beginPath(); pvx.arc(q.x,q.y,7,0,Math.PI*2); pvx.fill(); pvx.strokeStyle='#fff'; pvx.lineWidth=1.5; pvx.stroke(); pvx.fillStyle='#fff'; pvx.font='700 9px sans-serif'; pvx.textAlign='center'; pvx.textBaseline='middle'; pvx.fillText(String(i+1),q.x,q.y); });
     pv._map=m;
   }
   if(pv) pv.addEventListener('pointerdown', e=>{
@@ -10342,14 +10354,14 @@ layerPanelToggle.addEventListener('click', () => {
     const s=best/(path3d.length-1);
     const lastS = keypts.length ? keypts[keypts.length-1].s : 0;
     if(s <= lastS + 0.01){ if(typeof showToast==='function') showToast('線を引いた向きに、前の●より先を選んでね'); return; }  // 描いた方向のみ
-    keypts.push({s,h:0}); drawHeightEditor();
+    const kp={s,h:0}; keypts.push(kp); lastKp=kp; drawHeightEditor();
     e.preventDefault(); e.stopPropagation();
   });
-  cv.addEventListener('pointerdown', e=>{ if(mode!=='height') return; const p=toPt(e); let best=null,bd=16*16; keypts.forEach(k=>{ const X=sToX(k.s),Y=hToY(k.h),d=(p.x-X)*(p.x-X)+(p.y-Y)*(p.y-Y); if(d<bd){bd=d;best=k;} }); dragKp=best; try{cv.setPointerCapture(e.pointerId);}catch(x){} });
+  cv.addEventListener('pointerdown', e=>{ if(mode!=='height') return; const p=toPt(e); let best=null,bd=16*16; keypts.forEach(k=>{ const X=sToX(k.s),Y=hToY(k.h),d=(p.x-X)*(p.x-X)+(p.y-Y)*(p.y-Y); if(d<bd){bd=d;best=k;} }); dragKp=best; if(best) lastKp=best; if(best) drawHeightEditor(); try{cv.setPointerCapture(e.pointerId);}catch(x){} });
   cv.addEventListener('pointermove', e=>{ if(mode!=='height'||!dragKp) return; const p=toPt(e); const lim=heightGeo().base-20; dragKp.h=Math.max(-lim, Math.min(lim, yToH(p.y))); drawHeightEditor(); });
   cv.addEventListener('pointerup', e=>{ if(mode==='height') dragKp=null; });
   function generate3D(){
-    resampled=path3d.slice();
+    resampled=path3d.slice(); computePathXRange();
     const coeffs=dft(resampled); const dc=coeffs.find(c=>c.freq===0)||{re:W/2,im:H/2}; center={x:dc.re,y:dc.im};
     allEpi=coeffs.filter(c=>c.freq!==0).sort((a,b)=>b.amp-a.amp).slice(0,22).filter(c=>c.amp>0.6);
     // 高さプロファイルを回転くん(フーリエ)に分解

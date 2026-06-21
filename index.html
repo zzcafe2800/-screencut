@@ -2471,14 +2471,48 @@ footer.controls {
 .rk-go { background: #5b9cb8; color: #fff; box-shadow: 0 6px 16px rgba(91,156,184,.45); }
 .rk-go:hover { filter: brightness(1.06); }
 .rk-ghost { background: #fff; color: #5a7a89; border: 1.5px solid #cddde6; }
+.rk-build { background: linear-gradient(135deg,#6db58a,#3ca96f); color: #fff; box-shadow: 0 6px 16px rgba(60,175,112,.4); }
+.rk-build[hidden] { display: none; }
+.rk-build:hover { filter: brightness(1.06); }
+/* 作る: ガイド画像 → プロジェクター分割パネル */
+.rkb-panel { position: fixed; inset: 0; z-index: 70; background: rgba(20,40,50,.5); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.rkb-panel[hidden] { display: none; }
+.rkb-card { position: relative; width: 344px; max-width: 92%; max-height: 92vh; overflow-y: auto; background: #fff; border-radius: 18px; padding: 18px 18px 16px; box-shadow: 0 18px 50px rgba(0,0,0,.3); scrollbar-width: none; }
+.rkb-card::-webkit-scrollbar { display: none; }
+.rkb-close { position: absolute; top: 8px; right: 10px; border: none; background: transparent; font-size: 22px; color: #9bb4c2; cursor: pointer; line-height: 1; }
+.rkb-title { font-size: 16px; font-weight: 800; color: #2c5d72; }
+.rkb-sub { font-size: 11.5px; color: #7c98a6; margin: 4px 0 12px; line-height: 1.6; }
+.rkb-guide { width: 100%; border-radius: 12px; background: #f3f7f9; border: 1px solid rgba(91,156,184,.18); display: block; }
+.rkb-scalewrap { margin: 14px 0 6px; }
+.rkb-scalelabel { font-size: 12.5px; font-weight: 700; color: #2c5d72; }
+.rkb-scalelabel b { color: #5b9cb8; font-size: 15px; }
+.rkb-scalewrap input[type=range] { width: 100%; margin: 8px 0 4px; accent-color: #5b9cb8; }
+.rkb-note { font-size: 10.5px; color: #9bb4c2; line-height: 1.5; }
+.rkb-info { text-align: center; font-size: 13px; font-weight: 800; color: #2c5d72; background: rgba(91,156,184,.1); border-radius: 10px; padding: 8px; margin: 8px 0 12px; }
+.rkb-go { width: 100%; border: none; background: #5b9cb8; color: #fff; font-weight: 800; font-size: 14px; border-radius: 999px; padding: 12px; cursor: pointer; box-shadow: 0 6px 16px rgba(91,156,184,.4); }
+.rkb-go:active { transform: translateY(1px); }
 .rk-dim, .rk-mode-toggle, .rk-view-toggle { display: inline-flex; border-radius: 999px; overflow: hidden; border: 1.5px solid #cddde6; background: #fff; }
-.rk-dim { margin-left: auto; margin-right: 10px; }
+.rk-dim[hidden], .rk-mode-toggle[hidden], .rk-view-toggle[hidden], .rk-view-label[hidden], .rk-zoom[hidden], .rk-count[hidden] { display: none !important; }
+.rk-dim { margin-left: auto; margin-right: 10px; box-shadow: 0 2px 8px rgba(91,156,184,.28); }
+.rk-dim button { padding: 8px 20px !important; font-size: 14px !important; }
+.rk-dim button.active { box-shadow: inset 0 0 0 1px rgba(255,255,255,.4); }
 .rk-dim button, .rk-mode-toggle button, .rk-view-toggle button { border: none; background: none; padding: 6px 14px; font-size: 12px; font-weight: 800; color: #6b8896; cursor: pointer; }
 .rk-dim button.active, .rk-mode-toggle button.active, .rk-view-toggle button.active { background: #5b9cb8; color: #fff; }
 .rk-mode-toggle { position: absolute; top: 10px; left: 10px; z-index: 5; }
 .rk-mode-toggle button { padding: 5px 12px; font-size: 11px; }
 .rk-view-toggle { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 5; }
-.rk-view-label { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 5; background: #fff; border: 1.5px solid #cddde6; border-radius: 999px; padding: 5px 16px; font-size: 12px; font-weight: 800; color: #6b8896; }
+.rk-view-label { position: absolute; top: 13px; left: 50%; transform: translateX(-50%); z-index: 5; background: none; border: none; padding: 0; font-size: 12px; font-weight: 700; color: #9bb4c2; letter-spacing: .04em; pointer-events: none; }
+.rk-dir-back { position: absolute; right: 16px; bottom: 16px; z-index: 6; background: #5b9cb8; border: none; border-radius: 999px; padding: 12px 22px; font-size: 14px; font-weight: 800; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(91,156,184,.45); }
+.rk-dir-back:hover { background: #4a8aa3; }
+.rk-match { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); z-index: 5; background: rgba(255,255,255,.92); border: 1.5px solid #cddde6; border-radius: 999px; padding: 4px 14px; font-size: 12px; font-weight: 700; color: #6b8896; pointer-events: none; white-space: nowrap; }
+.rk-match b { color: #5b9cb8; font-size: 14px; }
+.rk-match-sub { color: #9bb4c2; font-size: 10.5px; font-weight: 600; }
+.rk-match-sep { color: #cddde6; margin: 0 2px; }
+.rk-match[hidden] { display: none !important; }
+.rk-dir-back[hidden] { display: none !important; }
+.rk-item { cursor: pointer; transition: background .12s; }
+.rk-item:hover { background: rgba(91,156,184,.08); }
+.rk-item .rk-num { cursor: pointer; }
 .rk-pv-bottom { top: auto !important; bottom: 12px; right: 12px; }
 .rk-view-toggle button { padding: 5px 12px; font-size: 11px; }
 .rk-zoom { position: absolute; top: 10px; right: 10px; z-index: 5; display: flex; flex-direction: column; gap: 5px; }
@@ -2486,6 +2520,8 @@ footer.controls {
 .rk-zoom button:hover { background: #eef7fb; }
 .rk-count { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #5a7a89; background: #fff; padding: 6px 12px; border-radius: 999px; border: 1.5px solid #cddde6; }
 .rk-count input[type=range] { width: 110px; }
+.rk-count input[type=number] { width: 40px; text-align: center; font-size: 12px; font-weight: 800; color: #5b9cb8; border: 1.5px solid #cddde6; border-radius: 8px; padding: 3px 2px; background: #fff; -moz-appearance: textfield; }
+.rk-count input[type=number]::-webkit-outer-spin-button, .rk-count input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .rk-btn.rk-icon { min-width: 56px; font-size: 16px; letter-spacing: 2px; }
 .rk-preview { position: absolute; top: 10px; right: 10px; width: 150px; height: 150px; background: #fff; border: 1.5px solid #cddde6; border-radius: 12px; box-shadow: 0 4px 14px rgba(40,80,100,.18); z-index: 6; touch-action: none; }
 .rk-dim button:disabled { opacity: .4; cursor: default; }
@@ -2843,10 +2879,12 @@ body.deform-active #deformQuickSave{ display:inline-flex; position:absolute; lef
 .anim-type.active{ background:#eef7fb; color:var(--accent); border-color:#8fd3ed; }
 .text-card{ width:300px; max-width:92vw; }
 .tx-input{ width:100%; padding:9px 10px; border:1px solid #cfd8df; border-radius:8px; font-size:14px; margin-bottom:8px; box-sizing:border-box; }
-.tx-tags{ display:flex; flex-wrap:wrap; gap:4px; margin-bottom:8px; }
-.tx-tag{ padding:5px 9px; border:1px solid #cfd8df; border-radius:999px; background:#fff; color:#6b7785; font-size:11px; font-weight:700; cursor:pointer; }
+.tx-tags{ display:flex; flex-wrap:nowrap; gap:4px; margin-bottom:8px; overflow-x:auto; scrollbar-width:none; -ms-overflow-style:none; }
+.tx-tags::-webkit-scrollbar{ width:0; height:0; display:none; }
+.tx-tag{ flex:0 0 auto; white-space:nowrap; padding:5px 8px; border:1px solid #cfd8df; border-radius:999px; background:#fff; color:#6b7785; font-size:11px; font-weight:700; cursor:pointer; }
 .tx-tag.active{ background:var(--accent); color:#fff; border-color:var(--accent); }
-.tx-panel{ display:flex; flex-direction:column; gap:8px; padding:4px 0 8px; }
+.tx-panel{ display:flex; flex-direction:column; gap:8px; padding:4px 0 8px; min-height:120px; }
+.tx-panel[hidden]{ display:none !important; }
 .tx-r{ display:flex; align-items:center; gap:7px; font-size:12px; color:#5a6b78; flex-wrap:wrap; }
 .tx-r span{ flex-shrink:0; }
 .tx-r select{ padding:5px 7px; border:1px solid #cfd8df; border-radius:7px; font-size:12px; background:#fff; }
@@ -2866,6 +2904,9 @@ body.deform-active #deformQuickSave{ display:inline-flex; position:absolute; lef
 .bk-tol input[type=range]{ flex:1; min-width:0; }
 .bk-hint{ font-size:11px; color:#7c8b94; margin:2px 0 10px; line-height:1.45; }
 .bk-reset{ width:100%; padding:9px; border:none; border-radius:10px; background:#f0d6dd; color:#b94e85; font-weight:800; cursor:pointer; }
+.memory-preview{ width:100%; max-height:240px; object-fit:contain; border-radius:10px; background:#eef4f8; display:block; margin-bottom:9px; }
+.bk-mini{ padding:5px 12px; border:1.5px solid #cddde6; background:#fff; color:#5a7a89; border-radius:999px; font-weight:700; font-size:12px; cursor:pointer; }
+.bk-mini.on{ background:#5b9cb8; color:#fff; border-color:#5b9cb8; }
 .bk-reset:hover{ filter:brightness(1.03); }
 body.bucket-active #canvas{ cursor:crosshair; }
 .lp-title-row .lp-title { flex: 1; }
@@ -3469,17 +3510,17 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
   color: var(--fg);
 }
 .guide-step .txt b { color: var(--accent); }
-/* 機能一覧: イラスト＋番号だけのパッと見モード */
-.welcome-card.brief .welcome-brief { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0 4px; }
-.welcome-card.brief .welcome-brief .guide-step { flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 12px 6px; border: 1px solid rgba(91,156,184,0.16); border-top: 1px solid rgba(91,156,184,0.16); border-radius: 14px; background: rgba(91,156,184,0.05); position: relative; }
-.welcome-card.brief .welcome-brief .guide-step .txt { display: none; }
-.welcome-card.brief .welcome-brief .guide-step .num { position: absolute; top: -9px; left: -9px; width: 24px; height: 24px; font-size: 12px; box-shadow: 0 2px 5px rgba(91,156,184,.4); }
-.welcome-card.brief .welcome-brief .guide-step .illust { flex: none; width: 100%; height: 52px; }
+/* 機能一覧: イラスト＋番号だけのパッと見モード（1〜3も4〜16も完全に同じ並び） */
+.welcome-card.brief .welcome-brief, .welcome-card .welcome-more { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0 4px; }
+.welcome-card.brief .welcome-brief .guide-step, .welcome-card .welcome-more .guide-step { flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 12px 6px; border: 1px solid rgba(91,156,184,0.16); border-top: 1px solid rgba(91,156,184,0.16); border-radius: 14px; background: rgba(91,156,184,0.05); position: relative; }
+.welcome-card.brief .welcome-brief .guide-step .txt, .welcome-card .welcome-more .guide-step .txt { display: none; }
+.welcome-card.brief .welcome-brief .guide-step .num, .welcome-card .welcome-more .guide-step .num { position: absolute; top: -9px; left: -9px; width: 24px; height: 24px; font-size: 12px; box-shadow: 0 2px 5px rgba(91,156,184,.4); }
+.welcome-card.brief .welcome-brief .guide-step .illust, .welcome-card .welcome-more .guide-step .illust { flex: none; width: 100%; height: 52px; }
+.welcome-card { max-height: 86vh; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; }
+.welcome-card::-webkit-scrollbar { width: 0; height: 0; display: none; }
 @media (max-width: 540px) {
-  .welcome-card.brief .welcome-brief { gap: 8px; }
-  .welcome-card.brief .welcome-brief .guide-step .illust { height: 40px; }
-}
-@media (max-width: 540px) {
+  .welcome-card.brief .welcome-brief, .welcome-card .welcome-more { gap: 8px; }
+  .welcome-card.brief .welcome-brief .guide-step .illust, .welcome-card .welcome-more .guide-step .illust { height: 40px; }
   .guide-card { padding: 28px 20px 22px; }
   .guide-step { flex-wrap: wrap; }
   .guide-step .illust { flex: 0 0 80px; width: 80px; height: 44px; }
@@ -3551,11 +3592,11 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
   transition: color 0.15s;
 }
 .welcome-more-btn:hover { color: var(--accent); }
-.welcome-more-btn.hidden { display: none; }
+.welcome-more-btn.hidden, .welcome-more-btn[hidden] { display: none; }
 .welcome-more {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px dashed var(--line);
+  margin-top: 8px;
+  padding-top: 0;
+  border-top: none;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 10px 12px;
@@ -4171,6 +4212,11 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
                   <path d="M6 2v16h16M2 6h16v16"/>
                 </svg><span>切り取り</span>
               </button>
+              <button type="button" class="lp-tool-item" id="lpMemoryBtn" title="レイヤー画像を隙間なく並べる">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="8" height="10" rx="1"/><rect x="13" y="3" width="8" height="6" rx="1"/><rect x="13" y="11" width="8" height="10" rx="1"/><rect x="3" y="15" width="8" height="6" rx="1"/>
+                </svg><span>思い出</span>
+              </button>
             </div>
           </div>
           <button type="button" class="lp-dup" id="lpDupBtn" title="選択レイヤーを複製">
@@ -4238,6 +4284,24 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       </div>
       <div class="bk-hint" id="slideStatus"></div>
       <button type="button" class="bk-decide" id="slideGenerate">GIFを作る</button>
+    </div>
+
+    <!-- 思い出カード (コラージュ) -->
+    <div class="bucket-card" id="memoryCard" hidden>
+      <div class="bk-head"><span class="bk-title">思い出</span><button type="button" class="bk-close" id="memoryClose" aria-label="閉じる">×</button></div>
+      <div class="bk-hint">レイヤーの画像を、今のアイテム比に隙間なく並べます</div>
+      <canvas id="memoryPreview" class="memory-preview"></canvas>
+      <div class="bk-row">
+        <span>背景</span>
+        <input type="color" id="memoryBg" value="#ffffff">
+        <button type="button" class="bk-mini" id="memoryTransp">透明</button>
+        <span style="flex:1"></span>
+        <span>すき間</span>
+        <input type="range" id="memoryGap" min="0" max="20" value="0" style="width:80px">
+      </div>
+      <div id="memoryStatus" class="bk-hint" style="color:var(--accent)"></div>
+      <button type="button" class="bk-decide" id="memoryApply">決定（レイヤーにする）</button>
+      <button type="button" class="bk-reset" id="memoryShuffle">並べ替え</button>
     </div>
 
     <!-- 切り取りカード -->
@@ -4835,6 +4899,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     <div class="rk-stage">
       <canvas id="rkCanvas"></canvas>
       <canvas id="rkPreview" class="rk-preview" hidden></canvas>
+      <div class="rk-match" id="rkMatch" hidden></div>
       <div class="rk-hint" id="rkHint">指で一筆描き（始点と終点が自動でつながる輪）</div>
       <div class="rk-mode-toggle" id="rkModeToggle">
         <button id="rkModePen" type="button" class="active">ペン</button>
@@ -4851,8 +4916,10 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       <div class="rk-view-toggle" id="rkViewToggle" hidden>
         <button id="rkViewTop" type="button" class="active">上から</button>
         <button id="rkViewSide" type="button">真横から</button>
+        <button id="rkViewPersp" type="button">立体</button>
       </div>
       <div class="rk-view-label" id="rkViewLabel" hidden>上から</div>
+      <button class="rk-dir-back" id="rkDirBack" type="button" hidden>← もどる</button>
     </div>
     <div class="rk-side" id="rkSide"></div>
   </div>
@@ -4861,11 +4928,30 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     <button class="rk-btn rk-ghost" id="rkRedraw" type="button" hidden>描き直す</button>
     <div class="rk-count" id="rkCount" hidden>
       <span>回転くんの数</span>
-      <input type="range" id="rkCountRange" min="1" max="22" value="8">
-      <span id="rkCountVal">8</span>
+      <input type="range" id="rkCountRange" min="1" max="50" value="8">
+      <input type="number" id="rkCountVal" min="1" max="50" value="8" inputmode="numeric">
     </div>
     <button class="rk-btn rk-go" id="rkGenerate" type="button">生成</button>
+    <button class="rk-btn rk-ghost" id="rkCenter" type="button" hidden>中心①</button>
+    <button class="rk-btn rk-build" id="rkBuild" type="button" hidden>作る</button>
     <button class="rk-btn rk-ghost rk-icon" id="rkPause" type="button" hidden>❚❚</button>
+  </div>
+</div>
+
+<!-- 回転くん: ガイド画像をプロジェクター分割ZIPで保存 -->
+<div class="rkb-panel" id="rkBuildPanel" hidden>
+  <div class="rkb-card">
+    <button class="rkb-close" id="rkbClose" type="button" aria-label="閉じる">×</button>
+    <div class="rkb-title">ガイド画像を作る</div>
+    <div class="rkb-sub">ゲームのプロジェクターに貼って、青い①〜の位置に回転くんを置けば、距離を測らなくても完成！</div>
+    <canvas id="rkbGuide" class="rkb-guide"></canvas>
+    <div class="rkb-scalewrap">
+      <div class="rkb-scalelabel">横幅：アバター <b id="rkbCols">2</b> 人分</div>
+      <input type="range" id="rkbSize" min="1" max="8" value="2">
+      <div class="rkb-note">プロジェクター1枚 ≒ アバターを横に寝かせた1人分（2273×1624）</div>
+    </div>
+    <div class="rkb-info" id="rkbInfo">プロジェクター 2個 × 2個</div>
+    <button class="rkb-go" id="rkbGo" type="button">決定（ZIPで保存）</button>
   </div>
 </div>
 
@@ -5022,6 +5108,77 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
           </svg>
         </div>
         <div class="txt"><b>GIFを短く</b><br>欲しい部分だけ切り出す</div>
+      </div>
+      <div class="guide-step">
+        <div class="num">11</div>
+        <div class="illust">
+          <svg viewBox="0 0 110 56" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="40" cy="28" r="18" opacity="0.4"/><circle cx="40" cy="28" r="9"/>
+            <circle cx="40" cy="28" r="2.2" fill="currentColor" stroke="none"/>
+            <path d="M40 28l13 -6" /><circle cx="53" cy="22" r="2.4" fill="currentColor" stroke="none"/>
+            <path d="M72 28h12M80 24l4 4-4 4"/><path d="M92 18c4 6 4 16 0 22" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="txt"><b>回転くん</b><br>一筆描き→回る動きを再現</div>
+      </div>
+      <div class="guide-step">
+        <div class="num">12</div>
+        <div class="illust">
+          <svg viewBox="0 0 110 56" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="8" y="10" width="20" height="26" rx="1.5"/><rect x="32" y="10" width="22" height="16" rx="1.5"/><rect x="32" y="30" width="22" height="16" rx="1.5"/><rect x="8" y="40" width="20" height="6" rx="1.5"/>
+            <path d="M64 28h12M72 24l4 4-4 4"/>
+            <rect x="84" y="12" width="20" height="14" rx="1.5"/><rect x="84" y="28" width="9" height="16" rx="1.5"/><rect x="95" y="28" width="9" height="16" rx="1.5"/>
+          </svg>
+        </div>
+        <div class="txt"><b>思い出</b><br>画像を隙間なく並べる</div>
+      </div>
+      <div class="guide-step">
+        <div class="num">13</div>
+        <div class="illust">
+          <svg viewBox="0 0 110 56" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="8" y="12" width="40" height="32" rx="2"/>
+            <path d="M16 22h22M16 22v-2M38 22v-2M27 22v14M22 36h10"/>
+            <path d="M56 28h12M64 24l4 4-4 4"/>
+            <rect x="74" y="12" width="30" height="32" rx="2" fill="rgba(91,156,184,0.12)"/><path d="M80 30h18M80 36h12" opacity="0.6"/>
+          </svg>
+        </div>
+        <div class="txt"><b>テキスト</b><br>文字を縁取り・影・配置</div>
+      </div>
+      <div class="guide-step">
+        <div class="num">14</div>
+        <div class="illust">
+          <svg viewBox="0 0 110 56" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="10" y="10" width="40" height="36" rx="2" opacity="0.35"/>
+            <path d="M22 6v40M16 18h40" opacity="0.7"/><rect x="22" y="18" width="22" height="20" rx="1.5" stroke-width="2"/>
+            <path d="M60 28h12M68 24l4 4-4 4"/>
+            <rect x="80" y="14" width="24" height="28" rx="2"/>
+          </svg>
+        </div>
+        <div class="txt"><b>切り取り</b><br>レイヤーを四角く切る</div>
+      </div>
+      <div class="guide-step">
+        <div class="num">15</div>
+        <div class="illust">
+          <svg viewBox="0 0 110 56" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M30 12l16 16-14 14a3 3 0 01-4 0l-10-10a3 3 0 010-4z"/><path d="M30 12l-3-3"/>
+            <path d="M48 32c2 3 3.4 5 3.4 6.6a3.4 3.4 0 01-6.8 0c0-1.6 1.4-3.6 3.4-6.6z" fill="currentColor" stroke="none" opacity="0.6"/>
+            <path d="M70 28h12M78 24l4 4-4 4"/>
+            <rect x="90" y="14" width="14" height="28" rx="2" fill="rgba(91,156,184,0.18)"/>
+          </svg>
+        </div>
+        <div class="txt"><b>バケツ</b><br>選んだ範囲を色で塗る</div>
+      </div>
+      <div class="guide-step">
+        <div class="num">16</div>
+        <div class="illust">
+          <svg viewBox="0 0 110 56" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="8" y="12" width="40" height="32" rx="2"/>
+            <path d="M12 30c5-8 10 8 15 0s10-8 15 0" /><path d="M12 36c5-8 10 8 15 0s10-8 15 0" opacity="0.5"/>
+            <path d="M56 28h12M64 24l4 4-4 4"/>
+            <rect x="74" y="12" width="30" height="32" rx="2" fill="rgba(228,170,90,0.18)"/><path d="M80 32c4-6 8 6 12 0s8-6 0 0" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="txt"><b>動き</b><br>たなびき・波などのGIF</div>
       </div>
     </div>
   </div>
@@ -9784,7 +9941,7 @@ layerPanelToggle.addEventListener('click', () => {
   const bucketCard=document.getElementById('bucketCard'), slideCard=document.getElementById('slideshowCard');
   function hideAll(){ [cropCard,textCard,animCard].forEach(c=>{ if(c) c.hidden=true; }); document.body.classList.remove('crop-active'); cropRect=null; }
   function openOnly(card, withCrop){ [bucketCard,slideCard,cropCard,textCard,animCard].forEach(c=>{ if(c&&c!==card) c.hidden=true; }); if(card) card.hidden=false; document.body.classList.toggle('crop-active', !!withCrop && card && !card.hidden); if(!(withCrop&&card&&!card.hidden)){ document.body.classList.remove('crop-active'); cropRect=null; } try{ draw(); }catch(e){} }
-  if(lpCrop) lpCrop.addEventListener('click', ()=>{ const willOpen=cropCard.hidden; willOpen?openOnly(cropCard,true):(cropCard.hidden=true, document.body.classList.remove('crop-active'), cropRect=null, draw()); });
+  if(lpCrop) lpCrop.addEventListener('click', ()=>{ const willOpen=cropCard.hidden; cropUndoState=null; willOpen?openOnly(cropCard,true):(cropCard.hidden=true, document.body.classList.remove('crop-active'), cropRect=null, draw()); });
   if(lpText) lpText.addEventListener('click', ()=>{ const willOpen=textCard.hidden; willOpen?openOnly(textCard,false):(textCard.hidden=true); if(willOpen && window.__txRefresh) setTimeout(window.__txRefresh,0); });
   if(lpAnim) lpAnim.addEventListener('click', ()=>{ const willOpen=animCard.hidden; willOpen?openOnly(animCard,false):(animCard.hidden=true); });
   const cropClose=document.getElementById('cropClose'); if(cropClose) cropClose.addEventListener('click', ()=>{ cropCard.hidden=true; document.body.classList.remove('crop-active'); cropRect=null; draw(); });
@@ -9792,7 +9949,7 @@ layerPanelToggle.addEventListener('click', () => {
   const animClose=document.getElementById('animClose'); if(animClose) animClose.addEventListener('click', ()=>{ animCard.hidden=true; });
 
   /* ---- 切り取り ---- */
-  let cropRect=null, cropDrag=null;
+  let cropRect=null, cropDrag=null, cropUndoState=null;
   const cropStatus=document.getElementById('cropStatus');
   function scr(e){ const r=canvas.getBoundingClientRect(); return {x:(e.clientX-r.left)*(canvas.width/r.width), y:(e.clientY-r.top)*(canvas.height/r.height)}; }
   function selLayer(){ return (typeof getPrimarySelectedLayer==='function') ? getPrimarySelectedLayer() : null; }
@@ -9834,7 +9991,18 @@ layerPanelToggle.addEventListener('click', () => {
     draw(); drawCropPreview(); e.preventDefault(); e.stopPropagation();
   }, true);
   canvas.addEventListener('pointerup', e=>{ if(cropCard.hidden||!cropDrag) return; cropDrag=null; e.preventDefault(); e.stopPropagation(); }, true);
-  const cropReset=document.getElementById('cropReset'); if(cropReset) cropReset.addEventListener('click', ()=>{ cropRect=null; if(cropStatus) cropStatus.textContent=''; draw(); });
+  const cropReset=document.getElementById('cropReset'); if(cropReset) cropReset.addEventListener('click', ()=>{
+    if(cropUndoState){   // 決定後: 直前の切り取りを取り消して元に戻す
+      const u=cropUndoState;
+      if(u.L){ u.L.frames=u.frames; u.L.currentFrame=u.currentFrame; u.L.naturalW=u.naturalW; u.L.naturalH=u.naturalH; }
+      else { if(u.frame) u.frame.canvas=u.frameCanvas; state.frames=u.frames; state.currentFrame=u.currentFrame; state.naturalW=u.naturalW; state.naturalH=u.naturalH; if(typeof recalculateFrame==='function') recalculateFrame(); }
+      cropUndoState=null; cropRect=null; if(cropStatus) cropStatus.textContent='元に戻しました';
+      try{ if(typeof renderLayerPanel==='function') renderLayerPanel(); }catch(e){}
+      try{ draw(); updateFileSize&&updateFileSize(); }catch(e){}
+      return;
+    }
+    cropRect=null; if(cropStatus) cropStatus.textContent=''; draw();
+  });
   const cropApply=document.getElementById('cropApply');
   if(cropApply) cropApply.addEventListener('click', ()=>{
     if(!cropRect || Math.abs(cropRect.x1-cropRect.x0)<5 || Math.abs(cropRect.y1-cropRect.y0)<5){ if(cropStatus) cropStatus.textContent='四角をドラッグで作ってね'; return; }
@@ -9849,14 +10017,17 @@ layerPanelToggle.addEventListener('click', () => {
     out.getContext('2d').drawImage(src, Math.round(sx),Math.round(sy),sw,sh, 0,0,sw,sh);
     const L=a.layer;
     if(L){
+      cropUndoState={ L, frames:L.frames, currentFrame:L.currentFrame, naturalW:L.naturalW, naturalH:L.naturalH };   // やり直し用に保存
       L.frames=[{ canvas:out, delay:(L.frames[0]&&L.frames[0].delay)||100 }];
       L.currentFrame=0; L.naturalW=sw; L.naturalH=sh;
     } else {
-      const f=a.frame; f.canvas=out;
+      const f=a.frame;
+      cropUndoState={ frame:f, frameCanvas:f.canvas, frames:state.frames, currentFrame:state.currentFrame, naturalW:state.naturalW, naturalH:state.naturalH };
+      f.canvas=out;
       state.frames=[f]; state.currentFrame=0; state.naturalW=sw; state.naturalH=sh;
       if(typeof recalculateFrame==='function') recalculateFrame();
     }
-    cropRect=null; if(cropStatus) cropStatus.textContent='切り取りました';
+    cropRect=null; if(cropStatus) cropStatus.textContent='切り取りました（やり直しで戻せます）';
     try{ if(typeof renderLayerPanel==='function') renderLayerPanel(); }catch(e){}
     try{ draw(); updateFileSize&&updateFileSize(); }catch(e){}
   });
@@ -10009,6 +10180,7 @@ layerPanelToggle.addEventListener('click', () => {
   function animTarget(){ const L=selLayer(); if(L&&L.frames){ const lf=L.frames[L.currentFrame||0]||L.frames[0]; return lf&&lf.canvas; } const f=state.frames&&state.frames[state.currentFrame]; return f&&f.canvas; }
   const animGen=document.getElementById('animGenerate');
   if(animGen) animGen.addEventListener('click', async ()=>{
+    stopAnimPreview();
     const src=animTarget();
     if(!src){ if(animStatus) animStatus.textContent='対象の画像がありません'; return; }
     animGen.disabled=true; if(animStatus) animStatus.textContent='作成中…';
@@ -10034,7 +10206,78 @@ layerPanelToggle.addEventListener('click', () => {
     }catch(err){ if(animStatus) animStatus.textContent='失敗しました'; console.warn('anim',err); }
     animGen.disabled=false;
   });
+  // ===== 動き: 大プレビュー(メインキャンバス)にリアルタイム表示 =====
+  let animPreviewRaf=null, animPreviewT=0, animOrig=null, animFrameObj=null;
+  function animFrameObjGet(){ const L=(typeof selLayer==='function')&&selLayer(); if(L&&L.frames){ return L.frames[L.currentFrame||0]||L.frames[0]; } const f=state.frames&&state.frames[state.currentFrame]; return f; }
+  function stopAnimPreview(){ if(animPreviewRaf){ cancelAnimationFrame(animPreviewRaf); animPreviewRaf=null; } if(animFrameObj&&animOrig){ animFrameObj.canvas=animOrig; } animFrameObj=null; animOrig=null; try{ draw(); }catch(e){} }
+  function startAnimPreview(){ stopAnimPreview(); const fo=animFrameObjGet(); if(!fo||!fo.canvas){ return; } animFrameObj=fo; animOrig=fo.canvas; animPreviewT=0; let last=0;
+    const loop=(ts)=>{ if(!animFrameObj){ return; }
+      if(ts-last>55){ last=ts; const spd=parseInt(spdIn.value)||5; animPreviewT=(animPreviewT+0.016*spd)%1; const amp=parseInt(ampIn.value)||10; const bgCol=animUseWhite?'#ffffff':((animBg&&animBg.value)||'#ffffff');
+        try{ const warped=warpFrame(animOrig, animType, animPreviewT, amp, bgCol); animFrameObj.canvas=warped; draw(); }catch(e){} }
+      animPreviewRaf=requestAnimationFrame(loop); };
+    animPreviewRaf=requestAnimationFrame(loop);
+  }
+  { const _ac=document.getElementById('animCard'); if(_ac){ const mo=new MutationObserver(()=>{ if(_ac.hidden) stopAnimPreview(); else startAnimPreview(); }); mo.observe(_ac,{attributes:true, attributeFilter:['hidden']}); } }
 })();
+/* ===== 思い出: レイヤー画像を隙間なくパズル配置 ===== */
+(function setupMemory(){
+  const card=document.getElementById('memoryCard'), pv=document.getElementById('memoryPreview');
+  const lpBtn=document.getElementById('lpMemoryBtn'), closeBtn=document.getElementById('memoryClose');
+  const bgIn=document.getElementById('memoryBg'), transpBtn=document.getElementById('memoryTransp'), gapIn=document.getElementById('memoryGap');
+  const applyBtn=document.getElementById('memoryApply'), shuffleBtn=document.getElementById('memoryShuffle'), statusEl=document.getElementById('memoryStatus');
+  if(!card||!pv) return;
+  const pctx=pv.getContext('2d');
+  let images=[], order=[], bg='#ffffff', transparent=false, gap=0;
+
+  function getLayerImages(){
+    const out=[];
+    (state.layers||[]).forEach(L=>{ const f=L.frames&&(L.frames[L.currentFrame||0]||L.frames[0]); if(f&&f.canvas&&f.canvas.width>1&&f.canvas.height>1) out.push(f.canvas); });
+    return out;
+  }
+  function pack(imgs,W,H,g){
+    if(!imgs.length) return [];
+    const ars=imgs.map(im=>Math.max(0.35,Math.min(2.8, im.width/im.height)));
+    const n=imgs.length, targetH=H/Math.max(1,Math.round(Math.sqrt(n)));
+    const rows=[]; let row=[], sumAr=0;
+    for(let i=0;i<n;i++){ row.push(i); sumAr+=ars[i]; if(sumAr*targetH>=W && i<n-1){ rows.push({idx:row,ar:sumAr}); row=[]; sumAr=0; } }
+    if(row.length) rows.push({idx:row,ar:sumAr});
+    rows.forEach(r=> r.hnat=W/r.ar );
+    const totalH=rows.reduce((a,r)=>a+r.hnat,0)||1, vs=H/totalH;
+    const places=[]; let y=0;
+    rows.forEach(r=>{ const hd=r.hnat*vs; let x=0; r.idx.forEach(i=>{ const w=r.hnat*ars[i]; places.push({img:imgs[i],x:x+g/2,y:y+g/2,w:Math.max(1,w-g),h:Math.max(1,hd-g)}); x+=w; }); y+=hd; });
+    return places;
+  }
+  function drawCover(c,img,x,y,w,h){ const iar=img.width/img.height, car=w/h; let sw,sh,sx,sy; if(iar>car){ sh=img.height; sw=sh*car; sx=(img.width-sw)/2; sy=0; } else { sw=img.width; sh=sw/car; sx=0; sy=(img.height-sh)/2; } c.drawImage(img,sx,sy,sw,sh,x,y,w,h); }
+  function renderTo(c,W,H,g){ if(transparent) c.clearRect(0,0,W,H); else { c.fillStyle=bg; c.fillRect(0,0,W,H); } pack(order.map(i=>images[i]),W,H,g).forEach(p=> drawCover(c,p.img,p.x,p.y,p.w,p.h)); }
+  function render2(){ const ar=(state.canvasW||16)/(state.canvasH||9), PW=600, PH=Math.max(40,Math.round(PW/ar)); pv.width=PW; pv.height=PH; renderTo(pctx,PW,PH, gap); }
+
+  function open(){
+    if(typeof tMenuHide==='function') tMenuHide();
+    images=getLayerImages();
+    if(images.length<2){ if(typeof showToast==='function') showToast('画像レイヤーを2枚以上入れてね'); return; }
+    order=images.map((_,i)=>i); bg='#ffffff'; transparent=false; if(bgIn) bgIn.value='#ffffff'; if(transpBtn) transpBtn.classList.remove('on'); gap=parseInt(gapIn&&gapIn.value)||0;
+    ['bucketCard','slideshowCard','cropCard','textCard','animCard'].forEach(id=>{ const c=document.getElementById(id); if(c) c.hidden=true; });
+    card.hidden=false; if(statusEl) statusEl.textContent='';
+    render2();
+  }
+  function tMenuHide(){ const m=document.getElementById('lpToolsMenu'); if(m) m.hidden=true; }
+
+  if(lpBtn) lpBtn.addEventListener('click', ()=>{ const willOpen=card.hidden; if(willOpen) open(); else card.hidden=true; });
+  if(closeBtn) closeBtn.addEventListener('click', ()=>{ card.hidden=true; });
+  if(bgIn) bgIn.addEventListener('input', ()=>{ bg=bgIn.value; transparent=false; if(transpBtn) transpBtn.classList.remove('on'); render2(); });
+  if(transpBtn) transpBtn.addEventListener('click', ()=>{ transparent=!transparent; transpBtn.classList.toggle('on',transparent); render2(); });
+  if(gapIn) gapIn.addEventListener('input', ()=>{ gap=parseInt(gapIn.value)||0; render2(); });
+  if(shuffleBtn) shuffleBtn.addEventListener('click', ()=>{ for(let i=order.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [order[i],order[j]]=[order[j],order[i]]; } render2(); });
+  if(applyBtn) applyBtn.addEventListener('click', ()=>{
+    const W=state.canvasW||1200, H=state.canvasH||675;
+    const cv=document.createElement('canvas'); cv.width=W; cv.height=H; const c=cv.getContext('2d');
+    renderTo(c,W,H, gap*(W/600));
+    const url=cv.toDataURL('image/png');
+    if(typeof addImageAsLayer==='function'){ addImageAsLayer(url,'omoide.png'); if(typeof showToast==='function') showToast('思い出を1枚のレイヤーにしました'); }
+    card.hidden=true;
+  });
+})();
+
 (function setupLpTools(){
   const tBtn=document.getElementById('lpToolsBtn'), tMenu=document.getElementById('lpToolsMenu');
   if(!tBtn||!tMenu) return;
@@ -10092,16 +10335,18 @@ layerPanelToggle.addEventListener('click', () => {
   if(!ov||!cv) return;
   const ctx=cv.getContext('2d');
   const $=id=>document.getElementById(id);
-  const closeBtn=$('rkClose'), resetBtn=$('rkReset'), redrawBtn=$('rkRedraw'), genBtn=$('rkGenerate'), pauseBtn=$('rkPause'), initBtn=$('rkInitView'), hintEl=$('rkHint'), sideEl=$('rkSide');
+  const closeBtn=$('rkClose'), resetBtn=$('rkReset'), redrawBtn=$('rkRedraw'), genBtn=$('rkGenerate'), pauseBtn=$('rkPause'), initBtn=$('rkInitView'), hintEl=$('rkHint'), sideEl=$('rkSide'), centerBtn=$('rkCenter'), buildBtn=$('rkBuild');
+  function updateCenterBtn(){ if(!centerBtn) return; const show=(mode==='play'&&dim3d&&view==='persp'); centerBtn.hidden=!show; if(show){ const circ='①②③④⑤⑥⑦⑧⑨⑩⑪⑫'; centerBtn.textContent='中心'+(orbitCenter<12?circ.charAt(orbitCenter):String(orbitCenter+1)); } }
   const modePen=$('rkModePen'), modePoly=$('rkModePoly'), modeToggle=$('rkModeToggle');
   const zoomBox=$('rkZoom'), zoomIn=$('rkZoomIn'), zoomOut=$('rkZoomOut'), zoomReset=$('rkZoomReset');
-  const countBox=$('rkCount'), countRange=$('rkCountRange'), countVal=$('rkCountVal');
+  const countBox=$('rkCount'), countRange=$('rkCountRange'), countVal=$('rkCountVal'), dirBack=$('rkDirBack'), matchEl=$('rkMatch');
   const dim2D=$('rkDim2D'), dim3D=$('rkDim3D'), dimBox=$('rkDim');
-  const viewToggle=$('rkViewToggle'), viewTop=$('rkViewTop'), viewSide=$('rkViewSide'), viewLabel=$('rkViewLabel');
+  const viewToggle=$('rkViewToggle'), viewTop=$('rkViewTop'), viewSide=$('rkViewSide'), viewPersp=$('rkViewPersp'), viewLabel=$('rkViewLabel');
   function updateViewUI(){
     const playable = (mode==='play' && dim3d);
     if(viewToggle) viewToggle.hidden = !playable;
     if(viewLabel){ if(mode==='play'){ viewLabel.hidden=true; } else { viewLabel.hidden=false; viewLabel.textContent = (view==='side')?'真横から':'上から'; } }
+    updateCenterBtn();
   }
 
   let mode='draw', inputMode='pen';      // draw|play ; pen|poly
@@ -10112,16 +10357,66 @@ layerPanelToggle.addEventListener('click', () => {
   let W=300,H=300;
   const pv=$('rkPreview'), pvx=pv?pv.getContext('2d'):null;
   let path3d=[], keypts=[], zProfileFn=null, dragKp=null; const PVW=150, PVH=150;
-  let allZ=[], zKept=[], zDC=0, lastKp=null, pathMinX=0, pathMaxX=1;
+  let allZ=[], zKept=[], zDC=0, lastKp=null, pathMinX=0, pathMaxX=1, orbit3d=[], target3d=[];
+  let camAz=-Math.PI/4, camEl=0.5, sceneR=120, orbBox=null, platformBox=null, orbitCenter=0, dirFocus=null, soloCard=null;
 
   function fit(){ const r=cv.getBoundingClientRect(); const dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); W=r.width; H=r.height; }
   window.__rkInit=function(){ setTimeout(()=>{ fit(); resetAll(); }, 30); };
 
+  // ===== 作る: ガイド画像をプロジェクター(2273×1624)分割ZIPで保存 =====
+  const PJW=2273, PJH=1624;
+  const buildPanel=$('rkBuildPanel'), bClose=$('rkbClose'), bGuide=$('rkbGuide'), bSize=$('rkbSize'), bCols=$('rkbCols'), bInfo=$('rkbInfo'), bGo=$('rkbGo');
+  function rkJointsAt(t){ let x=center.x,y=center.y; const J=[{x,y}]; for(let i=0;i<epi.length;i++){ const c=epi[i]; let vx,vy; if(c.A){ const th=2*Math.PI*c.freq*t,ct=Math.cos(th),st=Math.sin(th); vx=c.A[0]*ct-c.B[0]*st; vy=c.A[1]*ct-c.B[1]*st; } else { const a=2*Math.PI*c.freq*t+c.phase; vx=c.amp*Math.cos(a); vy=c.amp*Math.sin(a); } x+=vx; y+=vy; J.push({x,y}); } return J; }
+  function rkGuideBBox(){ let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9; const upd=(px,py)=>{ if(px<minx)minx=px; if(py<miny)miny=py; if(px>maxx)maxx=px; if(py>maxy)maxy=py; };
+    for(let s=0;s<=90;s++){ rkJointsAt(s/90).forEach(p=>upd(p.x,p.y)); }
+    if(resampled&&resampled.length) resampled.forEach(p=>upd(p.x,p.y));
+    if(minx>maxx){ minx=center.x-100;maxx=center.x+100;miny=center.y-100;maxy=center.y+100; }
+    return {minx,miny,maxx,maxy}; }
+  function rkRenderGuide(cnv, pxW, pxH){ const g=cnv.getContext('2d'); cnv.width=pxW; cnv.height=pxH;
+    g.fillStyle='#ffffff'; g.fillRect(0,0,pxW,pxH);
+    const bb=rkGuideBBox(); const dw=(bb.maxx-bb.minx)||1, dh=(bb.maxy-bb.miny)||1;
+    const pad=Math.min(pxW,pxH)*0.09, s=Math.min((pxW-pad*2)/dw,(pxH-pad*2)/dh);
+    const ox=(pxW-dw*s)/2 - bb.minx*s, oy=(pxH-dh*s)/2 - bb.miny*s;
+    const M=p=>({x:ox+p.x*s, y:oy+p.y*s});
+    const lw=Math.max(1.4, pxW*0.0016);
+    if(resampled&&resampled.length){ g.strokeStyle='rgba(91,156,184,.30)'; g.lineWidth=lw*1.2; g.beginPath(); resampled.forEach((p,i)=>{ const q=M(p); i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }); g.closePath(); g.stroke(); }
+    // 緑の軌道 = 各青ノードが実際に通った場所
+    const paths=[]; for(let q=0;q<=epi.length;q++) paths.push([]);
+    for(let s2=0;s2<=120;s2++){ const J=rkJointsAt(s2/120); for(let i=0;i<J.length;i++) paths[i].push(J[i]); }
+    g.strokeStyle='rgba(60,175,112,.6)'; g.lineWidth=lw;
+    for(let i=1;i<paths.length;i++){ g.beginPath(); paths[i].forEach((p,k)=>{ const q=M(p); k?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }); g.closePath(); g.stroke(); }
+    // チェーン(t=0)＋青い番号ノード(=ゲームで回転くんを置く位置)
+    const J0=rkJointsAt(0);
+    g.strokeStyle='rgba(70,110,130,.5)'; g.lineWidth=lw; g.beginPath(); J0.forEach((p,i)=>{ const q=M(p); i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }); g.stroke();
+    const nodeR=Math.max(6, pxW*0.012);
+    for(let i=0;i<J0.length-1;i++){ const q=M(J0[i]); g.fillStyle='#5b9cb8'; g.beginPath(); g.arc(q.x,q.y,nodeR,0,Math.PI*2); g.fill(); g.fillStyle='#fff'; g.font='800 '+Math.round(nodeR*1.15)+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(i+1), q.x, q.y); }
+  }
+  function rkGridDims(cols){ const bb=rkGuideBBox(); const Ag=((bb.maxx-bb.minx)||1)/((bb.maxy-bb.miny)||1), Ap=PJW/PJH; const rows=Math.max(1, Math.round(cols*Ap/Ag)); return {cols,rows}; }
+  function rkUpdateBuild(){ const cols=parseInt(bSize.value)||2; const {rows}=rkGridDims(cols);
+    if(bCols) bCols.textContent=String(cols); if(bInfo) bInfo.textContent='プロジェクター '+cols+'個 × '+rows+'個 （計'+(cols*rows)+'枚）';
+    const gw=cols*PJW, gh=rows*PJH, pw=304, ph=Math.max(120, Math.round(pw*gh/gw)); rkRenderGuide(bGuide, pw, ph); }
+  function rkOpenBuild(){ if(!epi.length) return; buildPanel.hidden=false; rkUpdateBuild(); }
+  async function rkBuildExport(){ if(!epi.length) return; const cols=parseInt(bSize.value)||2; const {rows}=rkGridDims(cols);
+    bGo.disabled=true; const orig=bGo.textContent; bGo.textContent='作成中…';
+    try{
+      const full=document.createElement('canvas'); rkRenderGuide(full, cols*PJW, rows*PJH);
+      const files=[];
+      for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ const t=document.createElement('canvas'); t.width=PJW; t.height=PJH; t.getContext('2d').drawImage(full, c*PJW, r*PJH, PJW, PJH, 0,0,PJW,PJH); const b=await new Promise(res=>t.toBlob(res,'image/png')); files.push({name:'guide_r'+(r+1)+'_c'+(c+1)+'.png', data:new Uint8Array(await b.arrayBuffer())}); }
+      const zip=makeZip(files); const url=(window.URL||URL).createObjectURL(new Blob([zip],{type:'application/zip'})); const a=document.createElement('a'); a.href=url; a.download='回転くんガイド_'+cols+'x'+rows+'.zip'; document.body.appendChild(a); a.click(); a.remove();
+      if(typeof showToast==='function') showToast(cols*rows+'枚のガイドを保存しました');
+    }catch(e){ if(typeof showToast==='function') showToast('保存に失敗しました'); }
+    bGo.disabled=false; bGo.textContent=orig;
+  }
+  if(buildBtn) buildBtn.addEventListener('click', rkOpenBuild);
+  if(bClose) bClose.addEventListener('click', ()=>{ buildPanel.hidden=true; });
+  if(bSize) bSize.addEventListener('input', rkUpdateBuild);
+  if(bGo) bGo.addEventListener('click', rkBuildExport);
+
   function resetAll(){
-    cancelAnimationFrame(raf); raf=null; mode='draw'; drawPts=[]; polyCursor=null; allEpi=[]; epi=[]; trace=[]; time=0; paused=false; zoom=1; selJoint=null; panX=0; panY=0;
-    path3d=[]; keypts=[]; dragKp=null; allZ=[]; zKept=[]; zDC=0; showArrows=false; lastKp=null; pathMinX=0; pathMaxX=1; if(pv){ pv.hidden=true; pv.classList.remove('rk-pv-bottom'); }
+    cancelAnimationFrame(raf); raf=null; mode='draw'; drawPts=[]; polyCursor=null; allEpi=[]; epi=[]; trace=[]; time=0; paused=false; zoom=1; selJoint=null; panX=0; panY=0; orbitCenter=0; dirFocus=null; soloCard=null; if(dirBack) dirBack.hidden=true;
+    path3d=[]; keypts=[]; dragKp=null; allZ=[]; zKept=[]; zDC=0; showArrows=false; lastKp=null; pathMinX=0; pathMaxX=1; orbit3d=[]; target3d=[]; if(pv){ pv.hidden=true; pv.classList.remove('rk-pv-bottom'); } if(matchEl) matchEl.hidden=true;
     if(sideEl) sideEl.innerHTML='';
-    redrawBtn.hidden=true; pauseBtn.hidden=true; genBtn.hidden=false; if(initBtn) initBtn.hidden=true; if(resetBtn) resetBtn.hidden=false;
+    redrawBtn.hidden=true; pauseBtn.hidden=true; genBtn.hidden=false; if(initBtn) initBtn.hidden=true; if(resetBtn) resetBtn.hidden=false; if(buildBtn) buildBtn.hidden=true;
     genBtn.textContent = dim3d ? '上下' : '生成';
     if(dimBox){ dimBox.style.pointerEvents=''; dimBox.style.opacity=''; }
     view='top';   // 描くときは常に上から
@@ -10136,7 +10431,7 @@ layerPanelToggle.addEventListener('click', () => {
   cv.addEventListener('pointerdown', e=>{
     if(mode!=='draw') return;
     if(inputMode==='pen'){ drawing=true; drawPts=[toPt(e)]; try{cv.setPointerCapture(e.pointerId);}catch(x){} }
-    else { const p=toPt(e); if(drawPts.length>=3){ const f=drawPts[0]; if(Math.hypot(p.x-f.x,p.y-f.y)<=12){ generate(); return; } } drawPts.push(p); polyCursor=p; drawCurrent(false); }
+    else { const p=toPt(e); if(drawPts.length>=3){ const f=drawPts[0]; if(Math.hypot(p.x-f.x,p.y-f.y)<=12){ if(dim3d){ enterHeight(); } else { generate(); } return; } } drawPts.push(p); polyCursor=p; drawCurrent(false); }
     e.preventDefault();
   });
   cv.addEventListener('pointermove', e=>{
@@ -10146,10 +10441,11 @@ layerPanelToggle.addEventListener('click', () => {
     e.preventDefault();
   });
   cv.addEventListener('pointerup', e=>{ if(mode!=='draw') return; if(inputMode==='pen'){ drawing=false; drawCurrent(true); } e.preventDefault(); });
-  cv.addEventListener('dblclick', e=>{ if(mode==='draw'&&inputMode==='poly'&&drawPts.length>=3){ generate(); } });
+  cv.addEventListener('dblclick', e=>{ if(mode==='draw'&&inputMode==='poly'&&drawPts.length>=3){ if(dim3d){ enterHeight(); } else { generate(); } } });
 
   function drawCurrent(closed){
     clear();
+    if(dim3d){ const m=18; ctx.save(); ctx.shadowColor='rgba(40,80,100,.10)'; ctx.shadowBlur=14; ctx.shadowOffsetY=6; ctx.fillStyle='rgba(244,247,249,.9)'; rkRoundRect(ctx, m, m, W-2*m, H-2*m, 16); ctx.fill(); ctx.restore(); ctx.strokeStyle='rgba(150,180,195,.35)'; ctx.lineWidth=1; rkRoundRect(ctx, m, m, W-2*m, H-2*m, 16); ctx.stroke(); }
     if(drawPts.length<1) return;
     ctx.lineWidth=3; ctx.strokeStyle='#5b9cb8'; ctx.lineJoin='round'; ctx.lineCap='round';
     if(drawPts.length>=2){ ctx.beginPath(); ctx.moveTo(drawPts[0].x,drawPts[0].y); for(let i=1;i<drawPts.length;i++) ctx.lineTo(drawPts[i].x,drawPts[i].y); if(closed) ctx.lineTo(drawPts[0].x,drawPts[0].y); ctx.stroke(); }
@@ -10175,27 +10471,138 @@ layerPanelToggle.addEventListener('click', () => {
     for(let k=0;k<N;k++){ let re=0,im=0; for(let n=0;n<N;n++){ const phi=-2*Math.PI*k*n/N, c=Math.cos(phi), s=Math.sin(phi); re+=pts[n].x*c-pts[n].y*s; im+=pts[n].x*s+pts[n].y*c; } re/=N; im/=N; let freq=k; if(k>N/2) freq=k-N; out.push({ re,im,freq,amp:Math.hypot(re,im),phase:Math.atan2(im,re) }); }
     return out;
   }
+  // 対称3x3行列の固有値・固有ベクトル(Jacobi法)
+  function eig3(M){
+    const a=[[M[0][0],M[0][1],M[0][2]],[M[1][0],M[1][1],M[1][2]],[M[2][0],M[2][1],M[2][2]]];
+    const v=[[1,0,0],[0,1,0],[0,0,1]];
+    for(let it=0;it<60;it++){
+      let p=0,q=1,mx=Math.abs(a[0][1]);
+      if(Math.abs(a[0][2])>mx){mx=Math.abs(a[0][2]);p=0;q=2;}
+      if(Math.abs(a[1][2])>mx){mx=Math.abs(a[1][2]);p=1;q=2;}
+      if(mx<1e-11) break;
+      const phi=0.5*Math.atan2(2*a[p][q], a[p][p]-a[q][q]), c=Math.cos(phi), s=Math.sin(phi);
+      for(let k=0;k<3;k++){ const akp=a[k][p], akq=a[k][q]; a[k][p]=c*akp-s*akq; a[k][q]=s*akp+c*akq; }
+      for(let k=0;k<3;k++){ const apk=a[p][k], aqk=a[q][k]; a[p][k]=c*apk-s*aqk; a[q][k]=s*apk+c*aqk; }
+      for(let k=0;k<3;k++){ const vkp=v[k][p], vkq=v[k][q]; v[k][p]=c*vkp-s*vkq; v[k][q]=s*vkp+c*vkq; }
+    }
+    return {vals:[a[0][0],a[1][1],a[2][2]], vecs:v};
+  }
+  // 曲線の最適平面を求める。平面に近ければ平面内の2Dフーリエ(=同一平面の真円)で表せる
+  function planarFit(pts){
+    let cx=0,cy=0,cz=0; const N=pts.length; pts.forEach(p=>{cx+=p.x;cy+=p.y;cz+=p.z;}); cx/=N;cy/=N;cz/=N;
+    let xx=0,xy=0,xz=0,yy=0,yz=0,zz=0;
+    pts.forEach(p=>{ const dx=p.x-cx,dy=p.y-cy,dz=p.z-cz; xx+=dx*dx;xy+=dx*dy;xz+=dx*dz;yy+=dy*dy;yz+=dy*dz;zz+=dz*dz; });
+    const {vals,vecs}=eig3([[xx,xy,xz],[xy,yy,yz],[xz,yz,zz]]);
+    const idx=[0,1,2].sort((a,b)=>vals[b]-vals[a]);
+    const col=j=>[vecs[0][j],vecs[1][j],vecs[2][j]];
+    const u=col(idx[0]), w=col(idx[1]);
+    const lMax=Math.max(vals[idx[0]],1e-9), lMin=Math.max(vals[idx[2]],0);
+    return {center:{x:cx,y:cy,z:cz}, u, w, ratio:Math.sqrt(lMin/lMax)};
+  }
+  // 平面内2Dフーリエ → 3D成分(各成分は曲線の平面内の「真円」。平面曲線なら厳密再現)
+  function fourierInPlane(pts, pf){
+    const {center,u,w}=pf;
+    const p2=pts.map(p=>{ const dx=p.x-center.x,dy=p.y-center.y,dz=p.z-center.z; return {x:dx*u[0]+dy*u[1]+dz*u[2], y:dx*w[0]+dy*w[1]+dz*w[2]}; });
+    const coeffs=dft(p2), out=[];
+    coeffs.forEach(c=>{
+      if(c.freq===0){ out.push({freq:0, A:[center.x+c.re*u[0]+c.im*w[0], center.y+c.re*u[1]+c.im*w[1], center.z+c.re*u[2]+c.im*w[2]], B:[0,0,0], amp:0}); return; }
+      const cph=Math.cos(c.phase), sph=Math.sin(c.phase), a=c.amp;
+      const A=[a*(cph*u[0]+sph*w[0]), a*(cph*u[1]+sph*w[1]), a*(cph*u[2]+sph*w[2])];
+      const B=[a*(sph*u[0]-cph*w[0]), a*(sph*u[1]-cph*w[1]), a*(sph*u[2]-cph*w[2])];
+      out.push({freq:c.freq, A, B, amp:a});
+    });
+    return out;
+  }
+  // 3D DFT: 各周波数を「任意の3D平面で回る円(回転くん)」として求める(楕円→固定半径円で表示)
+  // 各3D成分(A·cosθ−B·sinθ=楕円)を、同じ平面・同じ半径amp・同じ回転向きの「真円」に整える
+  function circularize(c){
+    if(!c.A) return;
+    const A=c.A, B=c.B, r=c.amp;
+    const Al=Math.hypot(A[0],A[1],A[2]);
+    let nx=A[1]*B[2]-A[2]*B[1], ny=A[2]*B[0]-A[0]*B[2], nz=A[0]*B[1]-A[1]*B[0];
+    const nl=Math.hypot(nx,ny,nz);
+    if(nl<1e-6 || Al<1e-6 || r<1e-6) return;   // 退化(直線状)はそのまま
+    nx/=nl; ny/=nl; nz/=nl;
+    const ux=A[0]/Al, uy=A[1]/Al, uz=A[2]/Al;                 // u = Aの向き
+    let wx=ny*uz-nz*uy, wy=nz*ux-nx*uz, wz=nx*uy-ny*ux;        // w = n×u (面内・u直交)
+    const wl=Math.hypot(wx,wy,wz)||1; wx/=wl; wy/=wl; wz/=wl;
+    const Bdu=B[0]*ux+B[1]*uy+B[2]*uz;                         // Bの面内垂直成分の向きで回転向きを保持
+    const bpx=B[0]-Bdu*ux, bpy=B[1]-Bdu*uy, bpz=B[2]-Bdu*uz;
+    const sgn=(bpx*wx+bpy*wy+bpz*wz)>=0?1:-1;
+    c.A=[r*ux, r*uy, r*uz];
+    c.B=[sgn*r*wx, sgn*r*wy, sgn*r*wz];                        // |A|=|B|=r, A⊥B → 真円
+  }
+  // 3D楕円(A·cosθ−B·sinθ)を、同じ平面内の「2つの逆回転する真円」に厳密分解する。
+  // 2円の和は元の楕円と完全一致 → 真円のまま引いた線を正確に再現できる(構造はそのまま)。
+  function splitToCircles(c){
+    const A=c.A, B=c.B; const Al=Math.hypot(A[0],A[1],A[2]), Bl=Math.hypot(B[0],B[1],B[2]);
+    if(Al<1e-9 && Bl<1e-9) return [c];
+    const big=(Al>=Bl)?A:B, bl=(Al>=Bl)?Al:Bl, oth=(Al>=Bl)?B:A;   // 主軸=大きい方
+    const u=[big[0]/bl,big[1]/bl,big[2]/bl];
+    const odu=oth[0]*u[0]+oth[1]*u[1]+oth[2]*u[2];
+    let vx=oth[0]-odu*u[0], vy=oth[1]-odu*u[1], vz=oth[2]-odu*u[2]; let vl=Math.hypot(vx,vy,vz);
+    if(vl<1e-9){ const t=Math.abs(u[0])<0.9?[1,0,0]:[0,1,0]; vx=t[1]*u[2]-t[2]*u[1]; vy=t[2]*u[0]-t[0]*u[2]; vz=t[0]*u[1]-t[1]*u[0]; vl=Math.hypot(vx,vy,vz)||1; }
+    const v=[vx/vl,vy/vl,vz/vl];
+    const a_u=A[0]*u[0]+A[1]*u[1]+A[2]*u[2], a_v=A[0]*v[0]+A[1]*v[1]+A[2]*v[2];
+    const b_u=B[0]*u[0]+B[1]*u[1]+B[2]*u[2], b_v=B[0]*v[0]+B[1]*v[1]+B[2]*v[2];
+    const pRe=0.5*(a_u-b_v), pIm=0.5*(a_v+b_u);   // c+ (前進円)
+    const mRe=0.5*(a_u+b_v), mIm=0.5*(a_v-b_u);   // c- (後退円)
+    const out=[]; const rp=Math.hypot(pRe,pIm), rm=Math.hypot(mRe,mIm);
+    if(rp>1e-9) out.push({freq:c.freq, amp:rp,
+      A:[pRe*u[0]+pIm*v[0], pRe*u[1]+pIm*v[1], pRe*u[2]+pIm*v[2]],
+      B:[pIm*u[0]-pRe*v[0], pIm*u[1]-pRe*v[1], pIm*u[2]-pRe*v[2]]});
+    if(rm>1e-9) out.push({freq:c.freq, amp:rm,
+      A:[mRe*u[0]+mIm*v[0], mRe*u[1]+mIm*v[1], mRe*u[2]+mIm*v[2]],
+      B:[mRe*v[0]-mIm*u[0], mRe*v[1]-mIm*u[1], mRe*v[2]-mIm*u[2]]});
+    return out.length?out:[c];
+  }
+  function dft3d(pts){
+    const N=pts.length, out=[];
+    for(let k=0;k<=Math.floor(N/2);k++){
+      let pr=[0,0,0], pi=[0,0,0];
+      for(let n=0;n<N;n++){ const phi=-2*Math.PI*k*n/N, c=Math.cos(phi), s=Math.sin(phi); pr[0]+=pts[n].x*c; pr[1]+=pts[n].y*c; pr[2]+=pts[n].z*c; pi[0]+=pts[n].x*s; pi[1]+=pts[n].y*s; pi[2]+=pts[n].z*s; }
+      for(let d=0;d<3;d++){ pr[d]/=N; pi[d]/=N; }
+      if(k===0){ out.push({freq:0, A:[pr[0],pr[1],pr[2]], B:[0,0,0], amp:0}); continue; }
+      const f=(k===N/2)?1:2;  // ナイキストは1倍
+      const A=[f*pr[0],f*pr[1],f*pr[2]], B=[f*pi[0],f*pi[1],f*pi[2]];
+      const R=Math.sqrt((A[0]*A[0]+A[1]*A[1]+A[2]*A[2]+B[0]*B[0]+B[1]*B[1]+B[2]*B[2])/2);
+      out.push({freq:k, A, B, amp:R});
+    }
+    return out;
+  }
 
+  function tipAt(t){ let x=center.x,y=center.y,z=center.z||0; for(let i=0;i<epi.length;i++){ const c=epi[i]; if(c.A){ const th=2*Math.PI*c.freq*t,ct=Math.cos(th),st=Math.sin(th); x+=c.A[0]*ct-c.B[0]*st; y+=c.A[1]*ct-c.B[1]*st; z+=c.A[2]*ct-c.B[2]*st; } else { const a=2*Math.PI*c.freq*t+c.phase; x+=c.amp*Math.cos(a); y+=c.amp*Math.sin(a); } } return {x,y,z}; }
   function applyCount(){
     const n=Math.min(parseInt(countRange.value)||8, allEpi.length);
     epi=allEpi.slice(0,n);
-    zKept = allZ.slice(0, Math.min(parseInt(countRange.value)||8, allZ.length));
-    // 各回転くんに3D傾きを割当: 描いた高さの同じ周波数成分を、その回転くんの傾きで再現
-    epi.forEach(c=>{ c.tilt=0; c.azim=0; });
-    if(dim3d && zKept.length){
-      const used=new Array(epi.length).fill(false);
-      const comps = allZ.map(z=>({k:z.k, M:2*z.amp, Phi:Math.atan2(z.im,z.re)+Math.PI/2})).sort((a,b)=>b.M-a.M).slice(0, zKept.length);
-      comps.forEach(zc=>{
-        let idx=-1; for(let i=0;i<epi.length;i++){ if(!used[i] && Math.abs(epi[i].freq)===zc.k){ idx=i; break; } }
-        if(idx<0){ for(let i=0;i<epi.length;i++){ if(!used[i]){ idx=i; break; } } }
-        if(idx<0) return;
-        const c=epi[idx]; used[idx]=true;
-        const ratio=Math.max(-0.95,Math.min(0.95, zc.M/Math.max(1,c.amp)));
-        c.tilt=Math.asin(ratio); c.azim=c.phase - zc.Phi;
-      });
-    }
-    if(countVal) countVal.textContent=String(n);
+    orbit3d=[]; const SAMP=140; for(let s=0;s<=SAMP;s++) orbit3d.push(tipAt(s/SAMP));   // 実際の軌道
+    { let sr=1,minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9,minz=1e9,maxz=-1e9;
+      orbit3d.forEach(p=>{ const z=p.z||0; const d=Math.hypot(p.x-center.x,p.y-center.y,z-(center.z||0)); if(d>sr)sr=d; if(p.x<minx)minx=p.x;if(p.x>maxx)maxx=p.x;if(p.y<miny)miny=p.y;if(p.y>maxy)maxy=p.y;if(z<minz)minz=z;if(z>maxz)maxz=z; });
+      sceneR=sr; orbBox={minx,maxx,miny,maxy,minz,maxz}; }
+    if(countVal) countVal.value=String(n);
+    computeMatch();
     buildSide();
+  }
+  let matchInfo=null;
+  function computeMatch(){
+    matchInfo=null; if(!resampled||!resampled.length) return;
+    const M=resampled.length; let sumXY=0,sumSide=0;
+    const spread=Math.max(20, 2*sceneR);
+    for(let i=0;i<M;i++){ const t=i/M, p=tipAt(t);
+      const tg = dim3d ? (target3d[i]||{x:resampled[i].x,y:resampled[i].y,z:0}) : {x:resampled[i].x,y:resampled[i].y,z:0};
+      sumXY += Math.hypot(p.x-tg.x, p.y-tg.y);
+      sumSide += Math.hypot(p.x-tg.x, (p.z||0)-(tg.z||0));
+    }
+    const top=Math.max(0,Math.min(100, 100*(1-(sumXY/M)/spread)));
+    const side=Math.max(0,Math.min(100, 100*(1-(sumSide/M)/spread)));
+    matchInfo = dim3d ? {top,side,avg:(top+side)/2} : {avg:top};
+    // 必要アイテム数: 回転くん本体に加え、回転くん同士の間にも1個ずつ使う → 回転くん数の約2倍。3Dで傾いた回転くんは+3
+    let items=epi.length*2, angled=0;
+    if(dim3d){ epi.forEach(c=>{ if(c.A){ const nx=c.A[1]*c.B[2]-c.A[2]*c.B[1], ny=c.A[2]*c.B[0]-c.A[0]*c.B[2], nz=c.A[0]*c.B[1]-c.A[1]*c.B[0]; const nl=Math.hypot(nx,ny,nz)||1; const tilt=Math.acos(Math.min(1,Math.abs(nz)/nl)); if(tilt>12*Math.PI/180){ angled++; } } }); items+=angled*3; }
+    if(matchEl){ matchEl.hidden=false; matchEl.innerHTML = (dim3d
+      ? `一致率 <b>${matchInfo.avg.toFixed(0)}%</b> <span class="rk-match-sub">(上${top.toFixed(0)}/横${side.toFixed(0)})</span>`
+      : `一致率 <b>${matchInfo.avg.toFixed(0)}%</b>`)
+      + ` <span class="rk-match-sep">・</span> 必要アイテム 約<b>${items}</b>個`; }
   }
 
   function generate(){
@@ -10205,11 +10612,11 @@ layerPanelToggle.addEventListener('click', () => {
     const coeffs=dft(resampled);
     const dc=coeffs.find(c=>c.freq===0)||{re:W/2,im:H/2};
     center={x:dc.re,y:dc.im};
-    allEpi=coeffs.filter(c=>c.freq!==0).sort((a,b)=>b.amp-a.amp).slice(0,22).filter(c=>c.amp>0.6);
-    if(countRange){ countRange.max=String(allEpi.length); if(parseInt(countRange.value)>allEpi.length) countRange.value=String(allEpi.length); }
+    allEpi=coeffs.filter(c=>c.freq!==0).sort((a,b)=>b.amp-a.amp).filter(c=>c.amp>0.05).slice(0,50);
+    if(countRange){ countRange.max=String(allEpi.length); if(parseInt(countRange.value)>allEpi.length) countRange.value=String(allEpi.length); } if(countVal) countVal.max=String(allEpi.length);
     applyCount();
     mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0; showArrows=false;
-    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true;
+    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true; if(buildBtn) buildBtn.hidden=false;
     if(dimBox){ dimBox.style.pointerEvents='none'; dimBox.style.opacity='0.45'; }   // 生成後は2D/3D切替不可
     if(countBox) countBox.hidden=false; if(zoomBox) zoomBox.hidden=false; if(initBtn) initBtn.hidden=false;
     if(modeToggle) modeToggle.hidden=true; updateViewUI();
@@ -10221,11 +10628,19 @@ layerPanelToggle.addEventListener('click', () => {
     if(!sideEl) return; sideEl.innerHTML='';
     const f1=Math.abs(epi[0]?epi[0].freq:1)||1;
     epi.forEach((c,i)=>{
-      const dir=c.freq>0?'↺ 反時計':'↻ 時計';
       const spd=(Math.abs(c.freq)/f1);
-      const tiltTxt = dim3d ? `・傾き ${Math.round(c.tilt*180/Math.PI)}°` : '';
+      let info;
+      if(c.A){ // 3D: 向いている方向(全天) = 回る平面の法線
+        const nx=c.A[1]*c.B[2]-c.A[2]*c.B[1], ny=c.A[2]*c.B[0]-c.A[0]*c.B[2], nz=c.A[0]*c.B[1]-c.A[1]*c.B[0];
+        const nl=Math.hypot(nx,ny,nz)||1, elev=Math.round(Math.asin(Math.max(-1,Math.min(1,nz/nl)))*180/Math.PI);
+        info = `向き(上下) <b>${elev}°</b>・速さ <b>×${spd.toFixed(2)}</b>`;
+      } else {
+        const dir=c.freq>0?'↺ 反時計':'↻ 時計';
+        info = `${dir}・速さ <b>×${spd.toFixed(2)}</b>`;
+      }
       const item=document.createElement('div'); item.className='rk-item';
-      item.innerHTML=`<span class="rk-num">${i+1}</span><div class="rk-meta"><span>${dir}・速さ <b>×${spd.toFixed(2)}</b>${tiltTxt}</span><span>下との距離 <b>${Math.round(c.amp)}</b></span></div>`;
+      item.innerHTML=`<span class="rk-num">${i+1}</span><div class="rk-meta"><span>${info}</span><span>下との距離 <b>${Math.round(c.amp)}</b></span></div>`;
+      if(c.A){ item.title='タップで向きを大きく確認'; item.addEventListener('click', ()=>enterDirFocus(i)); }
       sideEl.appendChild(item);
     });
   }
@@ -10233,25 +10648,27 @@ layerPanelToggle.addEventListener('click', () => {
   // 投影: jointの3D位置 → 画面。selJointを画面中央にしてズーム。
   let joints=[], numberHits=[], selJoint=null;
   function computeJoints(){
-    joints=[]; let x=center.x,y=center.y,z=0; joints.push({x,y,z});
+    joints=[]; let x=center.x,y=center.y,z=center.z||0; joints.push({x,y,z});
     for(let i=0;i<epi.length;i++){
-      const c=epi[i], ang=2*Math.PI*c.freq*time + c.phase;
-      let vx=c.amp*Math.cos(ang), vy=c.amp*Math.sin(ang), vz=0;
-      if(dim3d && c.tilt){
-        // 傾き軸 u=(cosψ,sinψ,0) まわりに τ 回転 (Rodrigues) → 高さが出る
-        const t=c.tilt, ps=c.azim||0, cT=Math.cos(t), sT=Math.sin(t), uc=Math.cos(ps), us=Math.sin(ps);
-        const udotv=vx*uc+vy*us, crossz=uc*vy-us*vx;
-        const rx=vx*cT+uc*udotv*(1-cT), ry=vy*cT+us*udotv*(1-cT), rz=crossz*sT;
-        vx=rx; vy=ry; vz=rz;
+      const c=epi[i]; let vx,vy,vz;
+      if(c.A){   // 3D成分: 任意平面の楕円(=傾いた回転くん)
+        const th=2*Math.PI*c.freq*time, ct=Math.cos(th), st=Math.sin(th);
+        vx=c.A[0]*ct - c.B[0]*st; vy=c.A[1]*ct - c.B[1]*st; vz=c.A[2]*ct - c.B[2]*st;
+      } else {   // 2D成分
+        const ang=2*Math.PI*c.freq*time + c.phase;
+        vx=c.amp*Math.cos(ang); vy=c.amp*Math.sin(ang); vz=0;
       }
       x+=vx; y+=vy; z+=vz; joints.push({x,y,z});
     }
   }
-  function zoomWorld(){ const j=(selJoint!=null&&joints[selJoint])?joints[selJoint]:{x:center.x,y:center.y,z:0}; return view==='side'?{x:j.x,y:H/2-j.z}:{x:j.x,y:j.y}; }
+  function zoomWorld(){ const j=(selJoint!=null&&joints[selJoint])?joints[selJoint]:{x:center.x,y:center.y,z:center.z||0}; return view==='side'?{x:j.x,y:H/2-j.z}:{x:j.x,y:j.y}; }
   function proj(j){ const wx=j.x, wy=(view==='side')?(H/2-j.z):j.y; const zc=zoomWorld(); return { x:W/2+(wx-zc.x)*zoom+panX, y:H/2+(wy-zc.y)*zoom+panY }; }
 
   function drawScene(){
     computeJoints(); numberHits=[]; clear();
+    if(dirFocus!=null && mode==='play' && dim3d){ drawDirFocus(); return; }
+    if(view==='persp' && mode==='play' && dim3d){ drawScenePersp(); return; }
+    if(mode==='play' && dim3d) drawPlatform();   // サイト(台)の背景
     // 3D・横ビュー: 目標の3D経路(xy+高さ)を薄く。チェーン本体は下で描画
     if(mode==='play' && dim3d && view==='side' && resampled.length){
       ctx.lineWidth=2; ctx.strokeStyle='rgba(91,156,184,.20)'; ctx.beginPath();
@@ -10259,14 +10676,23 @@ layerPanelToggle.addEventListener('click', () => {
       ctx.closePath(); ctx.stroke();
     }
     if(resampled.length && view==='top'){ ctx.lineWidth=2; ctx.strokeStyle='rgba(91,156,184,.22)'; ctx.beginPath(); const p0=proj({x:resampled[0].x,y:resampled[0].y,z:0}); ctx.moveTo(p0.x,p0.y); for(let i=1;i<resampled.length;i++){ const p=proj({x:resampled[i].x,y:resampled[i].y,z:0}); ctx.lineTo(p.x,p.y); } ctx.closePath(); ctx.stroke(); }
+    // 各青ノードが実際に通る軌道(=本当に通ったところ)を先に計算。上/横はこれを緑線にする(角度差もそのまま反映)
+    const NSAMP=84, nodePaths=[]; for(let q=0;q<=epi.length;q++) nodePaths.push([]);
+    for(let s=0;s<=NSAMP;s++){ const tt=s/NSAMP; let X=center.x,Y=center.y,Z=center.z||0; nodePaths[0].push({x:X,y:Y,z:Z});
+      for(let i=0;i<epi.length;i++){ const c=epi[i]; let vx,vy,vz;
+        if(c.A){ const th=2*Math.PI*c.freq*tt,ct=Math.cos(th),st=Math.sin(th); vx=c.A[0]*ct-c.B[0]*st; vy=c.A[1]*ct-c.B[1]*st; vz=c.A[2]*ct-c.B[2]*st; }
+        else { const ang=2*Math.PI*c.freq*tt+c.phase; vx=c.amp*Math.cos(ang); vy=c.amp*Math.sin(ang); vz=0; }
+        X+=vx; Y+=vy; Z+=vz; nodePaths[i+1].push({x:X,y:Y,z:Z}); } }
     for(let i=0;i<epi.length;i++){
       const a=proj(joints[i]), b=proj(joints[i+1]);
-      const rad=epi[i].amp*zoom;                       // ★ 半径は固定(配置した距離)
       const dimi=(selJoint!=null && selJoint!==i);     // 選択中以外は薄く
       ctx.save(); if(dimi) ctx.globalAlpha=0.22;
-      ctx.strokeStyle='rgba(120,150,165,.25)'; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(a.x,a.y,rad,0,Math.PI*2); ctx.stroke();
+      const seldc=(selJoint===i);
+      // 緑の軌道 = この回転くんの子ノードが実際に通った場所そのもの
+      ctx.strokeStyle=seldc?'rgba(26,150,88,.95)':'rgba(60,175,112,.5)'; ctx.lineWidth=seldc?2.6:1.1;
+      ctx.beginPath(); const pp=nodePaths[i+1]; for(let k=0;k<pp.length;k++){ const q=proj(pp[k]); k?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y); } ctx.closePath(); ctx.stroke();
       ctx.strokeStyle='rgba(70,110,130,.6)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
-      if(i<12){
+      if(i<50){
         const seld=(selJoint===i);
         ctx.fillStyle=seld?'#e0588f':'#5b9cb8'; ctx.beginPath(); ctx.arc(a.x,a.y,8,0,Math.PI*2); ctx.fill();
         ctx.fillStyle='#fff'; ctx.font='700 9px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(i+1),a.x,a.y);
@@ -10283,32 +10709,258 @@ layerPanelToggle.addEventListener('click', () => {
     const tip=joints[joints.length-1]; trace.push({x:tip.x,y:tip.y,z:tip.z});
     if(trace.length>1){ ctx.strokeStyle='#e0588f'; ctx.lineWidth=2.5; ctx.lineJoin='round'; ctx.beginPath(); const q0=proj(trace[0]); ctx.moveTo(q0.x,q0.y); for(let i=1;i<trace.length;i++){ const q=proj(trace[i]); ctx.lineTo(q.x,q.y); } ctx.stroke(); }
     const tp=proj(tip); ctx.fillStyle='#e0588f'; ctx.beginPath(); ctx.arc(tp.x,tp.y,4,0,Math.PI*2); ctx.fill();
-    if(mode==='play' && dim3d) drawMiniOpposite(); else if(mode==='play' && pv) { pv.hidden=true; pv.classList.remove('rk-pv-bottom'); }
+    if(mode==='play' && dim3d){ drawMiniOpposite();
+      if(view==='top' && platformBox && platformBox.mode==='top'){ drawStickFigure(ctx, platformBox.x+30, platformBox.y+platformBox.h-26, 1.9, 'top', '#5b9cb8'); }
+      else if(view==='side' && platformBox && platformBox.mode==='side'){ drawStickFigure(ctx, platformBox.x0+36, platformBox.gy-15, 1.9, 'side', '#5b9cb8'); }
+      else { drawStickFigure(ctx, 34, H-34, 1.9, view, '#5b9cb8'); }
+    } else if(mode==='play' && pv) { pv.hidden=true; pv.classList.remove('rk-pv-bottom'); }
   }
   function step(){ if(paused) return; time+=1/600; if(time>=1){ time-=1; trace=[]; } drawScene(); raf=requestAnimationFrame(step); }
   function animate(){ cancelAnimationFrame(raf); step(); }
 
   // 再生中: 反対側のビューを右下にミニ表示
   function projMini(j,tv){ return tv==='side' ? {x:j.x, y:-j.z} : {x:j.x, y:j.y}; }
+  function drawStickFigure(c,x,y,sc,vw,color){
+    c.save(); c.strokeStyle=color; c.fillStyle=color; c.lineWidth=1.8; c.lineCap='round'; c.lineJoin='round';
+    if(vw==='side'){   // 正面向きTポーズ
+      c.beginPath(); c.arc(x, y-7*sc, 3*sc, 0, Math.PI*2); c.stroke();        // 頭
+      c.beginPath(); c.moveTo(x, y-4*sc); c.lineTo(x, y+3*sc); c.stroke();    // 体
+      c.beginPath(); c.moveTo(x-6.5*sc, y-1*sc); c.lineTo(x+6.5*sc, y-1*sc); c.stroke();  // 腕(T)
+      c.beginPath(); c.moveTo(x, y+3*sc); c.lineTo(x-2.6*sc, y+8*sc); c.moveTo(x, y+3*sc); c.lineTo(x+2.6*sc, y+8*sc); c.stroke();  // 脚
+    } else {   // 真上から: 丸＋横線(Tポーズ)
+      c.beginPath(); c.arc(x, y, 3.6*sc, 0, Math.PI*2); c.stroke();
+      c.beginPath(); c.moveTo(x-7.5*sc, y); c.lineTo(x+7.5*sc, y); c.stroke();
+    }
+    c.restore();
+  }
+  function rkRoundRect(c,x,y,w,h,r){ c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+  function drawPlatform(){
+    if(!orbit3d.length) return;
+    let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+    orbit3d.forEach(p=>{ const q=proj(p); if(q.x<minx)minx=q.x; if(q.x>maxx)maxx=q.x; if(q.y<miny)miny=q.y; if(q.y>maxy)maxy=q.y; });
+    if(view==='top'){
+      const mx=46,my=40, x=minx-mx,y=miny-my,w=(maxx-minx)+2*mx,h=(maxy-miny)+2*my;
+      platformBox={mode:'top',x,y,w,h};
+      ctx.save(); ctx.shadowColor='rgba(40,80,100,.16)'; ctx.shadowBlur=20; ctx.shadowOffsetY=10; ctx.fillStyle='#f4f7f9'; rkRoundRect(ctx,x,y,w,h,16); ctx.fill(); ctx.restore();
+      ctx.strokeStyle='rgba(180,200,210,.5)'; ctx.lineWidth=1; rkRoundRect(ctx,x,y,w,h,16); ctx.stroke();
+    } else {
+      const mx=50, x0=minx-mx, x1=maxx+mx, gy=maxy+18, depth=14, th=16;
+      platformBox={mode:'side',x0,x1,gy,depth,th};
+      ctx.save();
+      ctx.shadowColor='rgba(40,80,100,.14)'; ctx.shadowBlur=16; ctx.shadowOffsetY=8;
+      ctx.fillStyle='#eef2f5'; ctx.beginPath(); ctx.moveTo(x0,gy); ctx.lineTo(x1,gy); ctx.lineTo(x1-depth,gy-depth); ctx.lineTo(x0-depth,gy-depth); ctx.closePath(); ctx.fill();   // 天面(奥行き)
+      ctx.shadowColor='transparent'; ctx.fillStyle='#e2e8ec'; ctx.beginPath(); ctx.moveTo(x0,gy); ctx.lineTo(x1,gy); ctx.lineTo(x1,gy+th); ctx.lineTo(x0,gy+th); ctx.closePath(); ctx.fill();  // 前面(厚み)
+      ctx.restore();
+    }
+  }
   function drawMiniOpposite(){
     if(!pv||!pvx) return;
     pv.hidden=false; pv.classList.add('rk-pv-bottom'); pv.width=PVW; pv.height=PVH;
     const tv=(view==='top')?'side':'top';
     pvx.clearRect(0,0,PVW,PVH); pvx.fillStyle='#fff'; pvx.fillRect(0,0,PVW,PVH);
-    const R=Math.max(40, epi.reduce((a,c)=>a+c.amp,0)*0.6), cc=projMini({x:center.x,y:center.y,z:0},tv), sc=(PVW-20)/(2*R);
+    const R=Math.max(40, epi.reduce((a,c)=>a+c.amp,0)*0.6), cc=projMini({x:center.x,y:center.y,z:center.z||0},tv), sc=(PVW-22)/(2*R);
     const mp=p=>({x:PVW/2+(p.x-cc.x)*sc, y:PVH/2+(p.y-cc.y)*sc});
-    pvx.strokeStyle='rgba(70,110,130,.55)'; pvx.lineWidth=1.2; pvx.beginPath();
-    joints.forEach((j,i)=>{ const q=mp(projMini(j,tv)); i?pvx.lineTo(q.x,q.y):pvx.moveTo(q.x,q.y); }); pvx.stroke();
-    for(let i=0;i<Math.min(epi.length,6);i++){ const a=mp(projMini(joints[i],tv)), b=mp(projMini(joints[i+1],tv)); pvx.fillStyle='#5b9cb8'; pvx.beginPath(); pvx.arc(a.x,a.y,6,0,Math.PI*2); pvx.fill(); pvx.fillStyle='#fff'; pvx.font='700 8px sans-serif'; pvx.textAlign='center'; pvx.textBaseline='middle'; pvx.fillText(String(i+1),a.x,a.y); pvx.fillStyle='rgba(44,93,114,.8)'; pvx.font='700 7px sans-serif'; pvx.fillText(String(Math.round(epi[i].amp)), (a.x+b.x)/2,(a.y+b.y)/2-5); }
-    const tp=mp(projMini(joints[joints.length-1],tv)); pvx.fillStyle='#e0588f'; pvx.beginPath(); pvx.arc(tp.x,tp.y,3.5,0,Math.PI*2); pvx.fill();
-    pvx.fillStyle='#9bb4c2'; pvx.font='700 10px sans-serif'; pvx.textAlign='left'; pvx.textBaseline='top'; pvx.fillText(tv==='side'?'横から':'上から', 7, 7);
+    if(orbit3d.length){ let a=1e9,b=-1e9,u=1e9,d=-1e9; orbit3d.forEach(p=>{ const q=mp(projMini(p,tv)); if(q.x<a)a=q.x;if(q.x>b)b=q.x;if(q.y<u)u=q.y;if(q.y>d)d=q.y; }); if(tv==='top'){ pvx.fillStyle='#f4f7f9'; rkRoundRect(pvx,a-9,u-9,(b-a)+18,(d-u)+18,8); pvx.fill(); } else { pvx.fillStyle='#eef2f5'; pvx.fillRect(a-9,d+7,(b-a)+18,5); } }
+    if(target3d.length){ pvx.strokeStyle='rgba(91,156,184,.30)'; pvx.lineWidth=1.4; pvx.beginPath(); target3d.forEach((p,i)=>{ const q=mp(projMini(p,tv)); i?pvx.lineTo(q.x,q.y):pvx.moveTo(q.x,q.y); }); pvx.closePath(); pvx.stroke(); }
+    if(orbit3d.length){ pvx.strokeStyle='#e0588f'; pvx.lineWidth=1.8; pvx.lineJoin='round'; pvx.beginPath(); orbit3d.forEach((p,i)=>{ const q=mp(projMini(p,tv)); i?pvx.lineTo(q.x,q.y):pvx.moveTo(q.x,q.y); }); pvx.stroke(); }
+    pvx.strokeStyle='rgba(70,110,130,.5)'; pvx.lineWidth=1.1; pvx.beginPath(); joints.forEach((j,i)=>{ const q=mp(projMini(j,tv)); i?pvx.lineTo(q.x,q.y):pvx.moveTo(q.x,q.y); }); pvx.stroke();
+    for(let i=0;i<Math.min(epi.length,6);i++){ const a=mp(projMini(joints[i],tv)); pvx.fillStyle='#5b9cb8'; pvx.beginPath(); pvx.arc(a.x,a.y,5,0,Math.PI*2); pvx.fill(); pvx.fillStyle='#fff'; pvx.font='700 7px sans-serif'; pvx.textAlign='center'; pvx.textBaseline='middle'; pvx.fillText(String(i+1),a.x,a.y); }
+    const tp=mp(projMini(joints[joints.length-1],tv)); pvx.fillStyle='#e0588f'; pvx.beginPath(); pvx.arc(tp.x,tp.y,3,0,Math.PI*2); pvx.fill();
+    pvx.fillStyle='#9bb4c2'; pvx.font='700 10px sans-serif'; pvx.textAlign='left'; pvx.textBaseline='top'; pvx.fillText(tv==='side'?'横から':'上から', 7, 6);
+    drawStickFigure(pvx, PVW-18, PVH-20, 1.3, tv, '#5b9cb8');
+  }
+
+  // ===== 立体(透視)ビュー: ①を中心にカメラを球面オービット =====
+  function camBasis(oc){
+    const ce=Math.cos(camEl), se=Math.sin(camEl), ca=Math.cos(camAz), sa=Math.sin(camAz);
+    const dir=[ce*ca, ce*sa, se];                              // 中心→カメラ
+    const dist=Math.max(sceneR*0.7, (sceneR*2.8)/zoom);
+    const camPos=[dir[0]*dist, dir[1]*dist, dir[2]*dist];      // 注視点(oc)基準
+    const fwd=[-dir[0],-dir[1],-dir[2]];
+    let rx=fwd[1], ry=-fwd[0], rz=0;                            // cross(fwd,(0,0,1))
+    const rl=Math.hypot(rx,ry,rz)||1; rx/=rl; ry/=rl; rz/=rl;
+    const ux=ry*fwd[2]-rz*fwd[1], uy=rz*fwd[0]-rx*fwd[2], uz=rx*fwd[1]-ry*fwd[0]; // cross(right,fwd)
+    return {camPos, fwd, right:[rx,ry,rz], up:[ux,uy,uz], focal:W*0.95, oc:oc||{x:center.x,y:center.y,z:center.z||0}};
+  }
+  function proj3d(p,B){
+    const oc=B.oc;
+    const rx=(p.x-oc.x)-B.camPos[0], ry=(p.y-oc.y)-B.camPos[1], rz=((p.z||0)-(oc.z||0))-B.camPos[2];
+    const cz=rx*B.fwd[0]+ry*B.fwd[1]+rz*B.fwd[2];
+    if(cz<=0.05) return {x:0,y:0,z:cz,vis:false};
+    const cx=rx*B.right[0]+ry*B.right[1]+rz*B.right[2];
+    const cy=rx*B.up[0]+ry*B.up[1]+rz*B.up[2];
+    return {x:W/2+cx*B.focal/cz, y:H/2-cy*B.focal/cz, z:cz, vis:true};
+  }
+  function poly3d(P, pts, close){ ctx.beginPath(); let st=false; for(let i=0;i<pts.length;i++){ const q=P(pts[i]); if(q.vis){ st?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y); st=true; } else st=false; } if(close&&st) ctx.closePath(); ctx.stroke(); }
+  function drawStickFig3D(P, base, h){
+    const rgt=[-Math.sin(camAz), Math.cos(camAz), 0];   // 画面の横方向(地面上)=常にカメラに正対
+    const aw=h*0.5;
+    const head=P({x:base.x,y:base.y,z:base.z+h}), neck=P({x:base.x,y:base.y,z:base.z+h*0.72}), hip=P({x:base.x,y:base.y,z:base.z+h*0.4});
+    const armL=P({x:base.x-rgt[0]*aw,y:base.y-rgt[1]*aw,z:base.z+h*0.58}), armR=P({x:base.x+rgt[0]*aw,y:base.y+rgt[1]*aw,z:base.z+h*0.58});
+    const lL=P({x:base.x-rgt[0]*aw*0.4,y:base.y-rgt[1]*aw*0.4,z:base.z}), lR=P({x:base.x+rgt[0]*aw*0.4,y:base.y+rgt[1]*aw*0.4,z:base.z});
+    if(![head,neck,hip,armL,armR,lL,lR].every(q=>q&&q.vis)) return;
+    ctx.save(); ctx.strokeStyle='#5b9cb8'; ctx.fillStyle='#5b9cb8'; ctx.lineWidth=2.4; ctx.lineCap='round'; ctx.lineJoin='round';
+    const hr=Math.max(3.5, Math.hypot(head.x-neck.x,head.y-neck.y)*0.62+2.5);
+    ctx.beginPath(); ctx.arc(head.x,head.y,hr,0,Math.PI*2); ctx.fillStyle='rgba(91,156,184,.18)'; ctx.fill(); ctx.fillStyle='#5b9cb8'; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(neck.x,neck.y); ctx.lineTo(hip.x,hip.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(armL.x,armL.y); ctx.lineTo(neck.x,neck.y); ctx.lineTo(armR.x,armR.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(hip.x,hip.y); ctx.lineTo(lL.x,lL.y); ctx.moveTo(hip.x,hip.y); ctx.lineTo(lR.x,lR.y); ctx.stroke();
+    ctx.restore();
+  }
+  // 回転くんの向きを可視化する「青い四角カード＋数字」。表は正立、裏は薄く逆さま。
+  function drawCardNumber(P, B, ji, c, i, seld, dimi, camW, scale){
+    let ux,uy,uz,wx,wy,wz;
+    if(c.A){ const Al=Math.hypot(c.A[0],c.A[1],c.A[2])||1, Bl=Math.hypot(c.B[0],c.B[1],c.B[2])||1;
+      ux=c.A[0]/Al; uy=c.A[1]/Al; uz=c.A[2]/Al; wx=c.B[0]/Bl; wy=c.B[1]/Bl; wz=c.B[2]/Bl; }
+    else { ux=1;uy=0;uz=0; wx=0;wy=1;wz=0; }
+    const nx=uy*wz-uz*wy, ny=uz*wx-ux*wz, nz=ux*wy-uy*wx;   // カードの面法線(表向き)
+    const C0=P(ji); if(!C0.vis) return null;
+    const half=9.5*(scale||1) * C0.z / B.focal;   // どの奥行きでも画面上 ~9.5px*scale。角度では潰れる
+    const Ru=P({x:ji.x+ux*half, y:ji.y+uy*half, z:(ji.z||0)+uz*half});
+    const Rw=P({x:ji.x+wx*half, y:ji.y+wy*half, z:(ji.z||0)+wz*half});
+    const cor=[[1,1],[1,-1],[-1,-1],[-1,1]].map(([sx,sy])=>P({x:ji.x+(ux*sx+wx*sy)*half, y:ji.y+(uy*sx+wy*sy)*half, z:(ji.z||0)+(uz*sx+wz*sy)*half}));
+    const front=(nx*(camW.x-ji.x)+ny*(camW.y-ji.y)+nz*((camW.z||0)-(ji.z||0)))>=0;
+    ctx.save(); if(dimi) ctx.globalAlpha=0.32;
+    if(cor.every(q=>q.vis)){
+      ctx.beginPath(); ctx.moveTo(cor[0].x,cor[0].y); for(let k=1;k<4;k++) ctx.lineTo(cor[k].x,cor[k].y); ctx.closePath();
+      ctx.fillStyle = front ? (seld?'rgba(40,120,150,.96)':'rgba(91,156,184,.9)') : (seld?'rgba(91,156,184,.42)':'rgba(91,156,184,.3)');
+      ctx.fill();
+      ctx.lineWidth=seld?2:1.1; ctx.strokeStyle = front?'rgba(255,255,255,.75)':'rgba(120,160,180,.5)'; ctx.stroke();
+    }
+    let exx=Ru.x-C0.x, exy=Ru.y-C0.y, eyx=Rw.x-C0.x, eyy=Rw.y-C0.y;
+    if(!front){ exx=-exx; exy=-exy; eyx=-eyx; eyy=-eyy; }   // 裏は上下逆さま
+    ctx.globalAlpha=(dimi?0.32:1)*(front?1:0.42);
+    ctx.fillStyle = front?'#fff':'rgba(255,255,255,.92)';
+    ctx.translate(C0.x,C0.y);
+    ctx.transform(exx/50, exy/50, eyx/50, eyy/50, 0, 0);   // 局所[-50,50]の正方形→カード四角形(遠近で潰れる=角度がリアルに反映)
+    ctx.font='700 68px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(String(i+1), 0, 0);
+    ctx.restore();
+    return C0;
+  }
+  function drawScenePersp(){
+    const oc=(orbitCenter>0 && joints[orbitCenter])?{x:joints[orbitCenter].x,y:joints[orbitCenter].y,z:joints[orbitCenter].z||0}:{x:center.x,y:center.y,z:center.z||0};
+    const B=camBasis(oc); const P=p=>proj3d(p,B);
+    // --- 台(床) ---
+    if(orbBox){
+      const m=Math.max(30,sceneR*0.22), bz=orbBox.minz - sceneR*0.06;
+      const X0=orbBox.minx-m,X1=orbBox.maxx+m,Y0=orbBox.miny-m,Y1=orbBox.maxy+m;
+      const corners=[{x:X0,y:Y0,z:bz},{x:X1,y:Y0,z:bz},{x:X1,y:Y1,z:bz},{x:X0,y:Y1,z:bz}].map(P);
+      if(corners.every(q=>q.vis)){
+        ctx.save(); ctx.shadowColor='rgba(40,80,100,.12)'; ctx.shadowBlur=16; ctx.shadowOffsetY=8;
+        ctx.fillStyle='rgba(240,244,247,.92)'; ctx.beginPath(); ctx.moveTo(corners[0].x,corners[0].y); for(let i=1;i<4;i++) ctx.lineTo(corners[i].x,corners[i].y); ctx.closePath(); ctx.fill(); ctx.restore();
+        ctx.strokeStyle='rgba(150,180,195,.5)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(corners[0].x,corners[0].y); for(let i=1;i<4;i++) ctx.lineTo(corners[i].x,corners[i].y); ctx.closePath(); ctx.stroke();
+        ctx.strokeStyle='rgba(150,180,195,.22)'; ctx.lineWidth=1;
+        for(let g=1;g<4;g++){ const t=g/4;
+          poly3d(P,[{x:X0+(X1-X0)*t,y:Y0,z:bz},{x:X0+(X1-X0)*t,y:Y1,z:bz}],false);
+          poly3d(P,[{x:X0,y:Y0+(Y1-Y0)*t,z:bz},{x:X1,y:Y0+(Y1-Y0)*t,z:bz}],false);
+        }
+        drawStickFig3D(P, {x:X0+m*0.5,y:Y1-m*0.5,z:bz}, Math.max(26,sceneR*0.22));
+      }
+    }
+    // --- 目標の3D経路(薄) ---
+    if(target3d.length>1){ ctx.strokeStyle='rgba(91,156,184,.22)'; ctx.lineWidth=1.6; poly3d(P,target3d,true); }
+    // --- チェーン: 円(緑・真円)＋アーム ---
+    for(let i=0;i<epi.length;i++){
+      const c=epi[i], ji=joints[i]; const dimi=(selJoint!=null && selJoint!==i); const seldc=(selJoint===i);
+      ctx.save(); if(dimi) ctx.globalAlpha=0.16;
+      const circ=[]; for(let k=0;k<=48;k++){ const al=k/48*2*Math.PI; let vx,vy,vz;
+        if(c.A){ vx=c.A[0]*Math.cos(al)-c.B[0]*Math.sin(al); vy=c.A[1]*Math.cos(al)-c.B[1]*Math.sin(al); vz=c.A[2]*Math.cos(al)-c.B[2]*Math.sin(al); }
+        else { vx=c.amp*Math.cos(al); vy=c.amp*Math.sin(al); vz=0; }
+        circ.push({x:ji.x+vx,y:ji.y+vy,z:(ji.z||0)+vz}); }
+      ctx.strokeStyle=seldc?'rgba(26,150,88,.97)':'rgba(60,175,112,.5)'; ctx.lineWidth=seldc?2.8:1.2; poly3d(P,circ,true);
+      const a=P(ji), b=P(joints[i+1]); if(a.vis&&b.vis){ ctx.strokeStyle='rgba(70,110,130,.6)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); }
+      ctx.restore();
+    }
+    // --- 全天方向の矢印(常時=表方向)・番号カード・距離(上) ---
+    const camW={x:oc.x+B.camPos[0], y:oc.y+B.camPos[1], z:(oc.z||0)+B.camPos[2]};
+    numberHits=[];
+    for(let i=0;i<Math.min(epi.length,50);i++){
+      const c=epi[i], ji=joints[i], a=P(ji), b=P(joints[i+1]); if(!a.vis) continue;
+      const seld=(selJoint===i), dimi=(selJoint!=null && !seld);
+      const soloHide=(soloCard!=null && soloCard!==i);   // 選択中以外はカード・矢印を隠す
+      if(!soloHide){ let n; if(c.A){ n=[c.A[1]*c.B[2]-c.A[2]*c.B[1], c.A[2]*c.B[0]-c.A[0]*c.B[2], c.A[0]*c.B[1]-c.A[1]*c.B[0]]; } else { n=[0,0,1]; }
+        const nl=Math.hypot(n[0],n[1],n[2])||1, al=Math.max(16,sceneR*0.16)*(seld?1.35:1);
+        const tip=P({x:ji.x+n[0]/nl*al, y:ji.y+n[1]/nl*al, z:(ji.z||0)+n[2]/nl*al});
+        if(tip.vis){ ctx.save(); ctx.globalAlpha=dimi?0.3:(seld?1:0.85); ctx.strokeStyle=seld?'#d6357a':'#e0588f'; ctx.fillStyle=ctx.strokeStyle; ctx.lineWidth=seld?2.6:1.7;
+          ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(tip.x,tip.y); ctx.stroke();
+          const aa=Math.atan2(tip.y-a.y,tip.x-a.x), hl=seld?9:7; ctx.beginPath(); ctx.moveTo(tip.x,tip.y); ctx.lineTo(tip.x-hl*Math.cos(aa-0.5),tip.y-hl*Math.sin(aa-0.5)); ctx.lineTo(tip.x-hl*Math.cos(aa+0.5),tip.y-hl*Math.sin(aa+0.5)); ctx.closePath(); ctx.fill();
+          ctx.restore(); }
+      }
+      if(b.vis && !soloHide){ ctx.save(); if(dimi) ctx.globalAlpha=0.4; ctx.fillStyle='rgba(44,93,114,.85)'; ctx.font='700 9px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(String(Math.round(c.amp)),(a.x+b.x)/2,(a.y+b.y)/2-7); ctx.restore(); }
+      let C0=a;
+      if(!soloHide){ C0=drawCardNumber(P, B, ji, c, i, seld, dimi, camW) || a; }
+      numberHits.push({x:C0.x,y:C0.y,idx:i});
+    }
+    // --- 実際の軌跡(ピンク)＋先端 ---
+    const tip=joints[joints.length-1]; trace.push({x:tip.x,y:tip.y,z:tip.z});
+    if(trace.length>1){ ctx.strokeStyle='#e0588f'; ctx.lineWidth=2.5; ctx.lineJoin='round'; poly3d(P,trace,false); }
+    const tq=P(tip); if(tq.vis){ ctx.fillStyle='#e0588f'; ctx.beginPath(); ctx.arc(tq.x,tq.y,4,0,Math.PI*2); ctx.fill(); }
+    ctx.fillStyle='#9bb4c2'; ctx.font='700 11px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText('立体', 10, 8);
+    if(pv){ pv.hidden=true; pv.classList.remove('rk-pv-bottom'); }
+  }
+  // ===== 向きフォーカス画面: 板の中央に、選んだ回転くんの向き矢印1本 =====
+  function enterDirFocus(i){
+    if(mode!=='play' || !dim3d || !epi[i]) return;
+    dirFocus=i; paused=true; if(pauseBtn) pauseBtn.textContent='▶';
+    camAz=-Math.PI/4; camEl=0.45;
+    if(dirBack) dirBack.hidden=false;
+    if(viewToggle) viewToggle.hidden=true; if(centerBtn) centerBtn.hidden=true;
+    cancelAnimationFrame(raf); drawScene();
+  }
+  function exitDirFocus(){
+    dirFocus=null; if(dirBack) dirBack.hidden=true;
+    updateViewUI();
+    if(paused) drawScene(); else animate();
+  }
+  function drawDirFocus(){
+    const c=epi[dirFocus]; if(!c){ exitDirFocus(); return; }
+    const bz=orbBox? orbBox.minz - sceneR*0.06 : (center.z||0);
+    const ocx=orbBox?(orbBox.minx+orbBox.maxx)/2:center.x, ocy=orbBox?(orbBox.miny+orbBox.maxy)/2:center.y;
+    const oc={x:ocx,y:ocy,z:bz}, B=camBasis(oc), P=p=>proj3d(p,B);
+    clear();
+    // 板
+    if(orbBox){
+      const m=Math.max(30,sceneR*0.22), X0=orbBox.minx-m,X1=orbBox.maxx+m,Y0=orbBox.miny-m,Y1=orbBox.maxy+m;
+      const cor=[{x:X0,y:Y0,z:bz},{x:X1,y:Y0,z:bz},{x:X1,y:Y1,z:bz},{x:X0,y:Y1,z:bz}].map(P);
+      if(cor.every(q=>q.vis)){
+        ctx.save(); ctx.shadowColor='rgba(40,80,100,.12)'; ctx.shadowBlur=16; ctx.shadowOffsetY=8; ctx.fillStyle='rgba(240,244,247,.92)'; ctx.beginPath(); ctx.moveTo(cor[0].x,cor[0].y); for(let k=1;k<4;k++) ctx.lineTo(cor[k].x,cor[k].y); ctx.closePath(); ctx.fill(); ctx.restore();
+        ctx.strokeStyle='rgba(150,180,195,.5)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(cor[0].x,cor[0].y); for(let k=1;k<4;k++) ctx.lineTo(cor[k].x,cor[k].y); ctx.closePath(); ctx.stroke();
+        ctx.strokeStyle='rgba(150,180,195,.22)'; ctx.lineWidth=1;
+        for(let g=1;g<4;g++){ const t=g/4; poly3d(P,[{x:X0+(X1-X0)*t,y:Y0,z:bz},{x:X0+(X1-X0)*t,y:Y1,z:bz}],false); poly3d(P,[{x:X0,y:Y0+(Y1-Y0)*t,z:bz},{x:X1,y:Y0+(Y1-Y0)*t,z:bz}],false); }
+      }
+    }
+    // 中央の回転くんの円(緑・その平面)
+    const Al=Math.hypot(c.A[0],c.A[1],c.A[2])||1, Bl=Math.hypot(c.B[0],c.B[1],c.B[2])||1;
+    const ux=c.A[0]/Al,uy=c.A[1]/Al,uz=c.A[2]/Al, wx=c.B[0]/Bl,wy=c.B[1]/Bl,wz=c.B[2]/Bl, r=c.amp;
+    { const circ=[]; for(let k=0;k<=60;k++){ const al=k/60*2*Math.PI; circ.push({x:ocx+(ux*Math.cos(al)+wx*Math.sin(al))*r, y:ocy+(uy*Math.cos(al)+wy*Math.sin(al))*r, z:bz+(uz*Math.cos(al)+wz*Math.sin(al))*r}); }
+      ctx.strokeStyle='rgba(26,150,88,.9)'; ctx.lineWidth=2.4; poly3d(P,circ,true);
+    }
+    const camW={x:oc.x+B.camPos[0], y:oc.y+B.camPos[1], z:(oc.z||0)+B.camPos[2]};
+    // 半径線(中心→縁) と 縁の点(次の回転くんが乗る位置)
+    const rim={x:ocx+ux*r, y:ocy+uy*r, z:bz+uz*r};
+    { const a=P(oc), b=P(rim); if(a.vis&&b.vis){ ctx.strokeStyle='rgba(26,150,88,.85)'; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle='rgba(26,150,88,.9)'; ctx.font='700 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText('半径 '+Math.round(r), (a.x+b.x)/2, (a.y+b.y)/2-4); } }
+    // 中央の向き矢印(全天=表方向)
+    let n=[c.A[1]*c.B[2]-c.A[2]*c.B[1], c.A[2]*c.B[0]-c.A[0]*c.B[2], c.A[0]*c.B[1]-c.A[1]*c.B[0]];
+    const nl=Math.hypot(n[0],n[1],n[2])||1, L=Math.max(60,sceneR*0.95);
+    const base=P(oc), tip=P({x:ocx+n[0]/nl*L, y:ocy+n[1]/nl*L, z:bz+n[2]/nl*L});
+    if(base.vis&&tip.vis){ ctx.save(); ctx.strokeStyle='#e0588f'; ctx.fillStyle='#e0588f'; ctx.lineWidth=5; ctx.lineCap='round'; ctx.lineJoin='round';
+      ctx.beginPath(); ctx.moveTo(base.x,base.y); ctx.lineTo(tip.x,tip.y); ctx.stroke();
+      const aa=Math.atan2(tip.y-base.y,tip.x-base.x), hl=22; ctx.beginPath(); ctx.moveTo(tip.x,tip.y); ctx.lineTo(tip.x-hl*Math.cos(aa-0.42),tip.y-hl*Math.sin(aa-0.42)); ctx.lineTo(tip.x-hl*Math.cos(aa+0.42),tip.y-hl*Math.sin(aa+0.42)); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#5b9cb8'; ctx.beginPath(); ctx.arc(base.x,base.y,5,0,Math.PI*2); ctx.fill(); ctx.restore(); }
+    // 中央: この回転くんの番号カード(大きめ) と 縁に乗る次の番号カード
+    drawCardNumber(P, B, oc, c, dirFocus, false, false, camW, 3.0);
+    if(epi[dirFocus+1]) drawCardNumber(P, B, rim, epi[dirFocus+1], dirFocus+1, false, false, camW, 2.0);
+    ctx.fillStyle='#5b9cb8'; ctx.font='700 13px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='top'; ctx.fillText('番号 '+(dirFocus+1)+' の向き', 14, 12);
+    if(pv){ pv.hidden=true; pv.classList.remove('rk-pv-bottom'); }
   }
 
   // 再生中: ドラッグでカメラ移動 / タップで番号選択
   let rkDown=null, rkMoved=false;
-  cv.addEventListener('pointerdown', e=>{ if(mode!=='play') return; rkDown={x:e.clientX,y:e.clientY,px:panX,py:panY}; rkMoved=false; try{cv.setPointerCapture(e.pointerId);}catch(x){} });
-  cv.addEventListener('pointermove', e=>{ if(mode!=='play'||!rkDown) return; const dx=e.clientX-rkDown.x, dy=e.clientY-rkDown.y; if(Math.abs(dx)+Math.abs(dy)>3) rkMoved=true; if(rkMoved){ panX=rkDown.px+dx; panY=rkDown.py+dy; if(paused) drawScene(); } });
-  cv.addEventListener('pointerup', e=>{ if(mode!=='play'||!rkDown){ return; } if(!rkMoved){ const p=toPt(e); let best=null,bd=18*18; numberHits.forEach(h=>{ const ddx=p.x-h.x,ddy=p.y-h.y,d=ddx*ddx+ddy*ddy; if(d<bd){bd=d;best=h;} }); if(best){ selJoint=best.idx; panX=0; panY=0; } else { selJoint=null; } if(paused) drawScene(); } rkDown=null; });
+  cv.addEventListener('pointerdown', e=>{ if(mode!=='play') return; rkDown={x:e.clientX,y:e.clientY,px:panX,py:panY,az:camAz,el:camEl}; rkMoved=false; try{cv.setPointerCapture(e.pointerId);}catch(x){} });
+  cv.addEventListener('pointermove', e=>{ if(mode!=='play'||!rkDown) return; const dx=e.clientX-rkDown.x, dy=e.clientY-rkDown.y; if(Math.abs(dx)+Math.abs(dy)>3) rkMoved=true; if(rkMoved){ if(view==='persp'||dirFocus!=null){ camAz=rkDown.az - dx*0.008; camEl=Math.max(-1.45,Math.min(1.45, rkDown.el + dy*0.008)); if(paused||dirFocus!=null) drawScene(); } else { panX=rkDown.px+dx; panY=rkDown.py+dy; if(paused) drawScene(); } } });
+  cv.addEventListener('pointerup', e=>{ if(mode!=='play'||!rkDown){ return; } if(!rkMoved){ const p=toPt(e); let best=null,bd=18*18; numberHits.forEach(h=>{ const ddx=p.x-h.x,ddy=p.y-h.y,d=ddx*ddx+ddy*ddy; if(d<bd){bd=d;best=h;} }); if(best){ selJoint=best.idx; if(view==='persp') soloCard=best.idx; panX=0; panY=0; } else { selJoint=null; soloCard=null; } if(paused) drawScene(); } rkDown=null; });
 
   // 入力モード
   function setInputMode(m){ inputMode=m; modePen.classList.toggle('active',m==='pen'); modePoly.classList.toggle('active',m==='poly'); drawPts=[]; polyCursor=null; clear(); if(hintEl){ hintEl.style.display=''; hintEl.textContent = m==='pen' ? '指で一筆描き（始点と終点が自動でつながる輪）' : 'タップで頂点を置く。最初の点をもう一度押すと輪が閉じて決定'; } }
@@ -10318,15 +10970,26 @@ layerPanelToggle.addEventListener('click', () => {
   function setDim(d3){ dim3d=d3; dim2D.classList.toggle('active',!d3); dim3D.classList.toggle('active',d3); if(!d3){ view='top'; if(viewTop) viewTop.classList.add('active'); if(viewSide) viewSide.classList.remove('active'); } if(mode==='draw'){ genBtn.textContent = d3 ? '上下' : '生成'; } updateViewUI(); if(mode==='play'){ applyCount(); if(paused) drawScene(); } }
   if(dim2D) dim2D.addEventListener('click', ()=>setDim(false));
   if(dim3D) dim3D.addEventListener('click', ()=>setDim(true));
-  if(viewTop) viewTop.addEventListener('click', ()=>{ view='top'; viewTop.classList.add('active'); viewSide.classList.remove('active'); trace=[]; if(paused) drawScene(); });
-  if(viewSide) viewSide.addEventListener('click', ()=>{ view='side'; viewSide.classList.add('active'); viewTop.classList.remove('active'); trace=[]; if(paused) drawScene(); });
+  if(viewTop) viewTop.addEventListener('click', ()=>{ view='top'; viewTop.classList.add('active'); viewSide.classList.remove('active'); if(viewPersp) viewPersp.classList.remove('active'); trace=[]; soloCard=null; updateCenterBtn(); if(paused) drawScene(); });
+  if(viewSide) viewSide.addEventListener('click', ()=>{ view='side'; viewSide.classList.add('active'); viewTop.classList.remove('active'); if(viewPersp) viewPersp.classList.remove('active'); trace=[]; soloCard=null; updateCenterBtn(); if(paused) drawScene(); });
+  if(viewPersp) viewPersp.addEventListener('click', ()=>{ view='persp'; viewPersp.classList.add('active'); viewTop.classList.remove('active'); viewSide.classList.remove('active'); selJoint=null; soloCard=null; trace=[]; updateCenterBtn(); if(paused) drawScene(); });
+  if(dirBack) dirBack.addEventListener('click', exitDirFocus);
+  if(centerBtn) centerBtn.addEventListener('click', ()=>{ soloCard=null; const n=Math.min(epi.length,50)||1; orbitCenter=(orbitCenter+1)%n; updateCenterBtn(); if(paused) drawScene(); });
   // ズーム
-  if(zoomIn) zoomIn.addEventListener('click', ()=>{ zoom=Math.min(6,zoom*1.25); if(paused) drawScene(); });
-  if(zoomOut) zoomOut.addEventListener('click', ()=>{ zoom=Math.max(0.4,zoom/1.25); if(paused) drawScene(); });
-  if(zoomReset) zoomReset.addEventListener('click', ()=>{ zoom=1; selJoint=null; panX=0; panY=0; if(paused) drawScene(); });
-  cv.addEventListener('wheel', e=>{ if(mode!=='play') return; e.preventDefault(); const f=e.deltaY<0?1.12:1/1.12; zoom=Math.max(0.4,Math.min(6,zoom*f)); if(paused) drawScene(); }, {passive:false});
+  if(zoomIn) zoomIn.addEventListener('click', ()=>{ soloCard=null; zoom=Math.min(12,zoom*1.25); if(paused) drawScene(); });
+  if(zoomOut) zoomOut.addEventListener('click', ()=>{ soloCard=null; zoom=Math.max(0.2,zoom/1.25); if(paused) drawScene(); });
+  if(zoomReset) zoomReset.addEventListener('click', ()=>{ soloCard=null; zoom=1; selJoint=null; panX=0; panY=0; if(view==='persp'){ camAz=-Math.PI/4; camEl=0.5; } if(paused) drawScene(); });
+  cv.addEventListener('wheel', e=>{ if(mode!=='play') return; e.preventDefault();
+    if(view==='persp'||dirFocus!=null){ soloCard=null; zoom=Math.max(0.2,Math.min(12,zoom*(e.deltaY<0?1.12:1/1.12))); if(paused||dirFocus!=null) drawScene(); return; }
+    const r=cv.getBoundingClientRect(), cx=(e.clientX-r.left), cy=(e.clientY-r.top);
+    const f=e.deltaY<0?1.12:1/1.12, nz=Math.max(0.2,Math.min(12,zoom*f)), zc=zoomWorld();
+    const wx=zc.x+(cx-W/2-panX)/zoom, wy=zc.y+(cy-H/2-panY)/zoom;   // カーソル下のワールド点
+    panX=cx-W/2-(wx-zc.x)*nz; panY=cy-H/2-(wy-zc.y)*nz;            // その点を固定したまま拡大
+    zoom=nz; if(paused) drawScene();
+  }, {passive:false});
   // 個数
-  if(countRange) countRange.addEventListener('input', ()=>{ applyCount(); if(paused) drawScene(); });
+  if(countRange) countRange.addEventListener('input', ()=>{ soloCard=null; if(countVal) countVal.value=countRange.value; applyCount(); if(paused) drawScene(); });
+  if(countVal) countVal.addEventListener('change', ()=>{ soloCard=null; let v=parseInt(countVal.value)||1; const mx=allEpi.length||1; v=Math.max(1,Math.min(mx,v)); countVal.value=String(v); if(countRange) countRange.value=String(v); applyCount(); if(paused) drawScene(); });
   // ===== 3D 高さエディタ =====
   function sampleHeight(s){
     if(!keypts.length) return 0;
@@ -10351,7 +11014,7 @@ layerPanelToggle.addEventListener('click', () => {
   function zActual(t){ let v=zDC; for(let i=0;i<zKept.length;i++){ const c=zKept[i]; v += 2*(c.re*Math.cos(2*Math.PI*c.k*t) - c.im*Math.sin(2*Math.PI*c.k*t)); } return v; }
   function enterHeight(){
     if(drawPts.length<3){ if(typeof showToast==='function') showToast('先に上から見た輪を描いてね'); return; }
-    path3d=resample(drawPts,96); computePathXRange();
+    path3d=resample(drawPts,128); computePathXRange();
     let cx=0,cy=0; path3d.forEach(p=>{cx+=p.x;cy+=p.y;}); cx/=path3d.length; cy/=path3d.length; center={x:cx,y:cy};
     mode='height'; view='side'; keypts=[{s:0,h:0}]; dragKp=null; lastKp=keypts[0];
     if(pv){ pv.hidden=false; pv.width=PVW; pv.height=PVH; }
@@ -10363,6 +11026,10 @@ layerPanelToggle.addEventListener('click', () => {
   }
   function drawHeightEditor(){
     clear(); const g=heightGeo();
+    { const x0=g.x0-6, x1=g.x1+6, gy=g.base, depth=12, th=14; ctx.save();
+      ctx.shadowColor='rgba(40,80,100,.10)'; ctx.shadowBlur=12; ctx.shadowOffsetY=6;
+      ctx.fillStyle='rgba(238,242,245,.85)'; ctx.beginPath(); ctx.moveTo(x0,gy); ctx.lineTo(x1,gy); ctx.lineTo(x1-depth,gy-depth); ctx.lineTo(x0-depth,gy-depth); ctx.closePath(); ctx.fill();
+      ctx.shadowColor='transparent'; ctx.fillStyle='rgba(226,232,236,.85)'; ctx.beginPath(); ctx.moveTo(x0,gy); ctx.lineTo(x1,gy); ctx.lineTo(x1,gy+th); ctx.lineTo(x0,gy+th); ctx.closePath(); ctx.fill(); ctx.restore(); }
     ctx.strokeStyle='#cddde6'; ctx.lineWidth=1; ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(g.x0,g.base); ctx.lineTo(g.x1,g.base); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle='#9bb4c2'; ctx.font='11px sans-serif'; ctx.textAlign='left'; ctx.fillText('高さ0（地面）', g.x0, g.base-6);
     const ks=keypts.slice().sort((a,b)=>a.s-b.s);
@@ -10401,19 +11068,27 @@ layerPanelToggle.addEventListener('click', () => {
   cv.addEventListener('pointerup', e=>{ if(mode==='height') dragKp=null; });
   function generate3D(){
     resampled=path3d.slice(); computePathXRange();
-    const coeffs=dft(resampled); const dc=coeffs.find(c=>c.freq===0)||{re:W/2,im:H/2}; center={x:dc.re,y:dc.im};
-    allEpi=coeffs.filter(c=>c.freq!==0).sort((a,b)=>b.amp-a.amp).slice(0,22).filter(c=>c.amp>0.6);
-    // 高さプロファイルを回転くん(フーリエ)に分解
-    const M=96, zs=[]; for(let i=0;i<M;i++) zs.push(sampleHeight(i/M));
-    let c0=0; for(let n=0;n<M;n++) c0+=zs[n]; zDC=c0/M;
-    allZ=[]; for(let k=1;k<=M/2;k++){ let re=0,im=0; for(let n=0;n<M;n++){ const phi=-2*Math.PI*k*n/M; re+=zs[n]*Math.cos(phi); im+=zs[n]*Math.sin(phi); } re/=M; im/=M; allZ.push({k,re,im,amp:Math.hypot(re,im)}); }
-    allZ.sort((a,b)=>b.amp-a.amp);
-    if(countRange){ countRange.max=String(Math.max(allEpi.length,allZ.length)); if(+countRange.value>allEpi.length) countRange.value=String(allEpi.length); }
+    // 上から(xy)＋横から(高さz) を合成した3D目標カーブ
+    const N=path3d.length, pts3d=path3d.map((p,i)=>({x:p.x, y:p.y, z:sampleHeight(i/N)}));
+    target3d=pts3d.slice();
+    // 計算の判断: 曲線が平面に近ければ「平面内の真円(=2Dのように向きを揃える)」、複雑なら従来の3D
+    const pf=planarFit(pts3d);
+    const usePlanar = pf.ratio < 0.06;
+    const comps = usePlanar ? fourierInPlane(pts3d, pf) : dft3d(pts3d);
+    const dc=comps.find(c=>c.freq===0);
+    center={ x:dc?dc.A[0]:W/2, y:dc?dc.A[1]:H/2, z:dc?dc.A[2]:0 };   // 中心(平均位置=高さの基準)
+    let raw=comps.filter(c=>c.freq!==0);
+    let circs=[];
+    if(usePlanar){ circs=raw; }                                  // 平面内フーリエは元から真円(符号付き周波数)
+    else { raw.forEach(c=>{ splitToCircles(c).forEach(cc=>circs.push(cc)); }); }  // 立体の楕円→2つの真円に厳密分解(=線を正確に再現)
+    allEpi=circs.filter(c=>c.amp>0.05).sort((a,b)=>b.amp-a.amp).slice(0,50);
+    allEpi.forEach(circularize);   // 念のため真円を保証(分解後は既に真円なので不変)
+    if(countRange){ countRange.max=String(allEpi.length); if(+countRange.value>allEpi.length) countRange.value=String(allEpi.length); } if(countVal) countVal.max=String(allEpi.length);
     applyCount();
-    mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0; view='top'; showArrows=false;
+    mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0; view='top'; showArrows=false; camAz=-Math.PI/4; camEl=0.5; orbitCenter=0; dirFocus=null; soloCard=null; if(dirBack) dirBack.hidden=true;
     if(pv) pv.hidden=true;
-    if(viewTop) viewTop.classList.add('active'); if(viewSide) viewSide.classList.remove('active');
-    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true;
+    if(viewTop) viewTop.classList.add('active'); if(viewSide) viewSide.classList.remove('active'); if(viewPersp) viewPersp.classList.remove('active');
+    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true; if(buildBtn) buildBtn.hidden=false;
     if(countBox) countBox.hidden=false; if(zoomBox) zoomBox.hidden=false; if(initBtn) initBtn.hidden=false; updateViewUI();
     if(hintEl) hintEl.style.display='none';
     cancelAnimationFrame(raf); animate();
@@ -10424,8 +11099,8 @@ layerPanelToggle.addEventListener('click', () => {
   resetBtn.addEventListener('click', resetAll);
   redrawBtn.addEventListener('click', resetAll);
   genBtn.addEventListener('click', ()=>{ if(dim3d && mode==='draw'){ enterHeight(); } else if(dim3d && mode==='height'){ generate3D(); } else { generate(); } });
-  if(initBtn) initBtn.addEventListener('click', ()=>{ paused=true; pauseBtn.textContent='▶'; time=0; trace=[]; showArrows=true; drawScene(); });
-  pauseBtn.addEventListener('click', ()=>{ paused=!paused; pauseBtn.textContent=paused?'▶':'❚❚'; if(!paused){ showArrows=false; animate(); } else drawScene(); });
+  if(initBtn) initBtn.addEventListener('click', ()=>{ soloCard=null; paused=true; pauseBtn.textContent='▶'; time=0; trace=[]; showArrows=true; drawScene(); });
+  pauseBtn.addEventListener('click', ()=>{ soloCard=null; paused=!paused; pauseBtn.textContent=paused?'▶':'❚❚'; if(!paused){ showArrows=false; animate(); } else drawScene(); });
   window.addEventListener('resize', ()=>{ if(!ov.hidden && mode==='draw'){ fit(); drawCurrent(inputMode==='pen'); } });
 })();
 

@@ -2413,7 +2413,17 @@ footer.controls {
   font-weight: 700;
   transition: all 0.15s;
   flex-shrink: 0;
+  position: relative;
 }
+/* 分割の時だけ下に青い線 */
+.pattern-toggle::after {
+  content: '';
+  position: absolute;
+  left: 10px; right: 10px; bottom: -5px;
+  height: 2.5px; border-radius: 2px;
+  background: var(--accent);
+}
+.pattern-toggle[aria-pressed="true"]::after { display: none; }
 .pattern-toggle:hover { background: rgba(91,156,184,0.18); }
 .pattern-toggle .ic-pattern { display: none; }
 .pattern-toggle .ic-split { display: inline-block; }
@@ -2436,7 +2446,7 @@ footer.controls {
 .sl-launcher-wrap { position: relative; display: inline-flex; align-items: center; margin-right: 4px; }
 .sl-launcher { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid var(--accent); background: #fff; color: var(--accent); border-radius: 9px; cursor: pointer; transition: background .15s, transform .15s; }
 .sl-launcher:hover { background: rgba(91,156,184,.12); }
-.sl-launcher[aria-expanded="true"] { background: var(--accent); color: #fff; transform: rotate(45deg); }
+.sl-launcher[aria-expanded="true"] { background: var(--accent); color: #fff; transform: scale(1.05); }
 .sl-fan { position: absolute; left: 50%; top: 0; width: 0; height: 0; z-index: 80; pointer-events: none; }
 .sl-item { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; padding: 0; opacity: 0; transform: translate(-50%, -50%) scale(.3); transition: transform .38s cubic-bezier(.18,.9,.32,1.35), opacity .25s; pointer-events: none; }
 .sl-fan.open .sl-item { opacity: 1; pointer-events: auto; }
@@ -3285,7 +3295,18 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
 .tut-opendrop{ display:block; margin:14px auto 0; background:#5b9cb8; color:#fff; border:none; border-radius:999px; padding:9px 22px; font-size:13px; font-weight:800; cursor:pointer; }
 .tut-opendrop:hover{ background:#4a8aa3; }
 #tutorialDesktop{ flex-direction:column; }
-.tut-install-btn{ display:block; margin:16px auto 0; background:#5b9cb8; color:#fff; border:none; border-radius:999px; padding:12px 34px; font-size:16px; font-weight:800; cursor:pointer; box-shadow:0 5px 16px rgba(91,156,184,.4); }
+.tut-intro-card{ max-width:420px; text-align:center; }
+.tut-intro-illust{ width:118px; height:94px; margin:4px auto 2px; color:var(--accent); }
+.tut-intro-illust svg{ width:100%; height:100%; display:block; }
+.tut-intro-title{ margin:6px 0 14px; }
+.tut-intro-lead{ font-size:14px; line-height:1.8; color:var(--fg); margin:0 0 14px; }
+.tut-intro-lead b{ color:var(--accent); }
+.tut-intro-sub{ font-size:12.5px; color:var(--fg-faint); margin:0 0 22px; }
+.tut-intro-btns{ display:flex; gap:12px; justify-content:center; }
+.tut-intro-cancel{ padding:12px 26px; border:1.5px solid #cfd8df; background:#fff; color:#6b7785; border-radius:999px; font-weight:700; cursor:pointer; }
+.tut-intro-cancel:hover{ background:#f5f7f9; }
+.tut-intro-go{ padding:12px 34px; border:none; background:var(--accent); color:#fff; border-radius:999px; font-weight:800; cursor:pointer; box-shadow:0 6px 16px rgba(91,156,184,.45); }
+.tut-intro-go:hover{ filter:brightness(1.06); }.tut-install-btn{ display:block; margin:16px auto 0; background:#5b9cb8; color:#fff; border:none; border-radius:999px; padding:12px 34px; font-size:16px; font-weight:800; cursor:pointer; box-shadow:0 5px 16px rgba(91,156,184,.4); }
 .tut-install-btn:hover{ background:#4a8aa3; transform:translateY(-1px); }
 .tut-install-hint{ font-size:12px; color:#fff; text-align:center; margin:10px auto 0; max-width:300px; line-height:1.5; text-shadow:0 1px 2px rgba(0,0,0,.3); }
 @keyframes tutFade{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:none;} }
@@ -3388,6 +3409,16 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
   color: var(--fg);
 }
 .guide-step .txt b { color: var(--accent); }
+/* 機能一覧: イラスト＋番号だけのパッと見モード */
+.welcome-card.brief .welcome-brief { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0 4px; }
+.welcome-card.brief .welcome-brief .guide-step { flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 12px 6px; border: 1px solid rgba(91,156,184,0.16); border-top: 1px solid rgba(91,156,184,0.16); border-radius: 14px; background: rgba(91,156,184,0.05); position: relative; }
+.welcome-card.brief .welcome-brief .guide-step .txt { display: none; }
+.welcome-card.brief .welcome-brief .guide-step .num { position: absolute; top: -9px; left: -9px; width: 24px; height: 24px; font-size: 12px; box-shadow: 0 2px 5px rgba(91,156,184,.4); }
+.welcome-card.brief .welcome-brief .guide-step .illust { flex: none; width: 100%; height: 52px; }
+@media (max-width: 540px) {
+  .welcome-card.brief .welcome-brief { gap: 8px; }
+  .welcome-card.brief .welcome-brief .guide-step .illust { height: 40px; }
+}
 @media (max-width: 540px) {
   .guide-card { padding: 28px 20px 22px; }
   .guide-step { flex-wrap: wrap; }
@@ -4390,8 +4421,8 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     <div class="splits collapsed" id="splitsContainer">
       <div class="sl-launcher-wrap">
         <button class="sl-launcher" id="siteLauncherBtn" type="button" title="別の機能" aria-expanded="false">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 001 1h12a1 1 0 001-1v-9"/><path d="M9 20v-6h6v6"/>
           </svg>
         </button>
         <div class="sl-fan" id="siteLauncherFan" aria-hidden="true">
@@ -4630,9 +4661,10 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
 <div id="welcomeOverlay" class="guide-overlay" role="dialog" aria-modal="true">
   <div class="welcome-pair">
     <!-- 「できること」機能一覧のみ -->
-    <div class="guide-card welcome-card">
+    <div class="guide-card welcome-card brief">
     <button id="welcomeClose" class="guide-close" aria-label="閉じる">×</button>
     <h3>機能一覧</h3>
+    <div class="welcome-brief">
     <div class="guide-step">
       <div class="num">1</div>
       <div class="illust">
@@ -4676,7 +4708,8 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       </div>
       <div class="txt"><b>1つのGIF / 画像</b>を<br>複数に分割</div>
     </div>
-    <button type="button" class="welcome-more-btn" id="welcomeMoreBtn">もっと見る</button>
+    </div>
+    <button type="button" class="welcome-more-btn" id="welcomeMoreBtn">くわしく見る</button>
     <div class="welcome-more" id="welcomeMore" hidden>
       <div class="guide-step">
         <div class="num">4</div>
@@ -4886,6 +4919,33 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
 </div>
 
 <!-- デスクトップ版チュートリアル -->
+<div id="tutorialDesktopIntro" class="guide-overlay" role="dialog" aria-modal="true">
+  <div class="guide-card tut-card tut-intro-card">
+    <button id="tutDIntroClose" class="guide-close" aria-label="閉じる">×</button>
+    <div class="tut-intro-illust">
+      <svg viewBox="0 0 120 96" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="20" y="14" width="80" height="52" rx="5"/>
+        <path d="M48 78h24M60 66v12"/><rect x="38" y="78" width="44" height="7" rx="3.5" opacity="0.35"/>
+        <rect x="34" y="24" width="22" height="18" rx="2"/><circle cx="41" cy="31" r="2.4" fill="currentColor" stroke="none"/>
+        <path d="M34 42l6-5 5 3 4-3 9 5"/>
+        <path d="M68 34h16M78 28l6 6-6 6" stroke-width="2.6"/>
+      </svg>
+    </div>
+    <h3 class="tut-intro-title">デスクトップモードって？</h3>
+    <p class="tut-intro-lead">
+      このアプリを<b>パソコンにインストール</b>しておくと、<br>
+      サイトを開いていない状態でも、<br>
+      <b>画像をアイコンにドロップするだけ</b>で<br>
+      自動で起動して読み込めるようになります。
+    </p>
+    <p class="tut-intro-sub">これから、その<b>設定の手順</b>を案内します。</p>
+    <div class="tut-intro-btns">
+      <button class="tut-intro-cancel" id="tutDIntroCancel" type="button">やめる</button>
+      <button class="tut-intro-go" id="tutDIntroGo" type="button">進める →</button>
+    </div>
+  </div>
+</div>
+
 <div id="tutorialDesktop" class="guide-overlay" role="dialog" aria-modal="true">
   <div class="guide-card tut-card">
     <button id="tutorialDesktopClose" class="guide-close" aria-label="閉じる">×</button>
@@ -6404,14 +6464,17 @@ const welcomeMoreBtn = document.getElementById('welcomeMoreBtn');
 })();
 const welcomeMore = document.getElementById('welcomeMore');
 if (welcomeMoreBtn) {
+  const _wcard = document.querySelector('.welcome-card');
   welcomeMoreBtn.addEventListener('click', () => {
     if (welcomeMore.hidden) {
       welcomeMore.hidden = false;
-      welcomeMoreBtn.textContent = '閉じる';
+      if (_wcard) _wcard.classList.remove('brief');   // 文字を表示
+      welcomeMoreBtn.textContent = 'とじる';
       setTimeout(() => welcomeMore.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
     } else {
       welcomeMore.hidden = true;
-      welcomeMoreBtn.textContent = 'もっと見る';
+      if (_wcard) _wcard.classList.add('brief');       // イラストのみに戻す
+      welcomeMoreBtn.textContent = 'くわしく見る';
     }
   });
 }
@@ -6533,11 +6596,19 @@ if (_tcDrop) _tcDrop.addEventListener('click', () => { closeOverlay(_tutChoice);
 const _tcDesktop = document.getElementById('tutChoiceDesktop');
 if (_tcDesktop) _tcDesktop.addEventListener('click', () => {
   closeOverlay(_tutChoice);
+  openOverlay(document.getElementById('tutorialDesktopIntro'));   // まず説明画面
+});
+// 説明画面: 進める → これまでの手順 / やめる → 閉じる
+const _tdIntro = document.getElementById('tutorialDesktopIntro');
+const _tdIntroGo = document.getElementById('tutDIntroGo'), _tdIntroCancel = document.getElementById('tutDIntroCancel'), _tdIntroClose = document.getElementById('tutDIntroClose');
+if (_tdIntroGo) _tdIntroGo.addEventListener('click', () => {
+  closeOverlay(_tdIntro);
   showTutDStep(1);
   openOverlay(document.getElementById('tutorialDesktop'));
-  // ドロップ同様、選んだらすぐ公式のインストールを開始
-  if (typeof triggerAppInstall === 'function') triggerAppInstall();
+  if (typeof triggerAppInstall === 'function') triggerAppInstall();   // 進めたら公式インストール開始
 });
+if (_tdIntroCancel) _tdIntroCancel.addEventListener('click', () => closeOverlay(_tdIntro));
+if (_tdIntroClose) _tdIntroClose.addEventListener('click', () => closeOverlay(_tdIntro));
 // ドロップくんボタンをチュートリアル中に押したら: スポット解除 + 説明表示 (起動は既存ハンドラ)
 const _dkForTut = document.getElementById('dropKun');
 if (_dkForTut) _dkForTut.addEventListener('click', () => {
@@ -6995,6 +7066,8 @@ function selectItem(item, el) {
   updateSaveBtn();
   triggerSplitHint();
   dismissSidebarAttention();
+  state._ratioGuideDismissed = true;     // アイテム比を選んだら左バーの暗転を解除
+  updateRatioGuide();
 }
 
 let _splitHintShown = false;
@@ -14634,6 +14707,7 @@ function buildPipEditor(pip, onClose) {
   function peTutGoStage(n) {
     _peTutStage=n; _peTutClear(); _peTutBarSet(n);
     const back=d.getElementById('peTutBack'); if(back) back.style.display=(n>=2&&n<=7)?'flex':'none';
+    const fwd=d.getElementById('peTutFwd'); if(fwd){ fwd.style.display=(n>=2&&n<=7)?'inline-flex':'none'; fwd.textContent=(n===7)?'おわる ✓':'進める →'; }
     if(n===1){
       d.getElementById('peTutCardText').innerHTML='まずは<b>ゲームを起動（表示）</b>してね<br><small style="opacity:.85;font-weight:600">この小窓はゲームの上に浮きます</small>';
       d.getElementById('peTutNext').textContent='次へ';
@@ -14659,7 +14733,7 @@ function buildPipEditor(pip, onClose) {
       _peTut7(true);
     }
   }
-  function peTutEnd(){ _peTutStage=0; _peTutClear(); const bar=d.getElementById('peTutBar'); if(bar) bar.classList.remove('show'); const back=d.getElementById('peTutBack'); if(back) back.style.display='none'; }
+  function peTutEnd(){ _peTutStage=0; _peTutClear(); const bar=d.getElementById('peTutBar'); if(bar) bar.classList.remove('show'); const back=d.getElementById('peTutBack'); if(back) back.style.display='none'; const fwd=d.getElementById('peTutFwd'); if(fwd) fwd.style.display='none'; }
   d.getElementById('peTutNext').addEventListener('click', ()=>{ if(_peTutStage===1) peTutGoStage(2); });
   d.getElementById('peTutBubbleX').addEventListener('click', peTutEnd);
   // 一つ戻るボタン (チュートリアル中のみ・誤タップ対策)
@@ -14668,6 +14742,12 @@ function buildPipEditor(pip, onClose) {
   peTutBack.style.cssText='position:fixed;left:10px;top:7px;z-index:100003;display:none;align-items:center;background:#fff;color:#5b9cb8;border:2px solid #5b9cb8;border-radius:999px;padding:5px 13px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.22);';
   peTutBack.addEventListener('click',()=>{ if(_peTutStage>1) peTutGoStage(_peTutStage-1); });
   d.body.appendChild(peTutBack);
+  // 進めるボタン (戻ると対称・右側) 最後の段階で「おわる」=チュートリアル終了
+  const peTutFwd=d.createElement('button');
+  peTutFwd.id='peTutFwd'; peTutFwd.type='button'; peTutFwd.textContent='進める →'; peTutFwd.title='次へ進む';
+  peTutFwd.style.cssText='position:fixed;right:10px;top:7px;z-index:100003;display:none;align-items:center;background:#5b9cb8;color:#fff;border:2px solid #5b9cb8;border-radius:999px;padding:5px 13px;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.22);';
+  peTutFwd.addEventListener('click',()=>{ if(_peTutStage>=7){ peTutEnd(); } else if(_peTutStage>=1){ peTutGoStage(_peTutStage+1); } });
+  d.body.appendChild(peTutFwd);
   // フック: 画像→2→3、検索→3→4、選択→4→5、枠移動→5→6
   peTut._onImageLoaded = ()=>{ if(_peTutStage===2) peTutGoStage(3); };
   peTut._onSearched = ()=>{ if(_peTutStage===3) peTutGoStage(4); };

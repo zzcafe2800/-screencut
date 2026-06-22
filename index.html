@@ -753,6 +753,15 @@ header.info > .file-info { order: 91; }
 }
 .btn-dropkun { background: #fff !important; color: var(--accent) !important; border: 1.5px solid var(--accent) !important; font-weight: 700; }
 .btn-dropkun:hover { background: var(--accent) !important; color: #fff !important; }
+/* ドロップくんボタン内のピン(起動時に自動で開く)サブボタン */
+.btn-dropkun { display: inline-flex; align-items: center; justify-content: center; gap: 2px; }
+.dk-pin { display: inline-flex; align-items: center; justify-content: center; width: 23px; height: 23px; margin-left: 6px; border-radius: 50%; background: #fff; border: 1.5px solid rgba(91,156,184,.4); cursor: pointer; flex: none; transition: .12s; }
+.dk-pin svg { width: 14px; height: 14px; }
+.dk-pin.off { color: #aab8c1; }
+.dk-pin.off .dk-pin-slash { display: inline; }
+.dk-pin.on { color: #5b9cb8; border-color: #5b9cb8; background: #eaf4f9; }
+.dk-pin.on .dk-pin-slash { display: none; }
+.dk-pin:hover { transform: scale(1.08); }
 /* 設定パネル */
 .settings-gear {
   position: fixed; right: 14px; top: 50%; transform: translateY(-50%);
@@ -2433,8 +2442,8 @@ footer.controls {
 }
 .pattern-toggle .pt-label::before { content: '分割'; }
 .pattern-toggle .pt-label { font-size: 0; line-height: 0; }
-.pattern-toggle .pt-label::before { font-size: 13px; line-height: 1; border-bottom: 2px solid var(--accent); padding-bottom: 2px; }
-.pattern-toggle[aria-pressed="true"] .pt-label::before { border-bottom: none; padding-bottom: 0; }
+.pattern-toggle .pt-label::before { font-size: 13px; line-height: 1; }
+.pattern-toggle[aria-pressed="true"] .pt-label::before { padding-bottom: 0; }
 
 /* ===== 別機能ランチャー (分割の左, 扇状に展開) ===== */
 .sl-launcher-wrap { position: relative; display: inline-flex; align-items: center; margin-right: 4px; }
@@ -2475,7 +2484,7 @@ footer.controls {
 .rk-build[hidden] { display: none; }
 .rk-build:hover { filter: brightness(1.06); }
 /* 作る: ガイド画像 → プロジェクター分割パネル */
-.rkb-panel { position: fixed; inset: 0; z-index: 70; background: rgba(20,40,50,.5); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.rkb-panel { position: fixed; inset: 0; z-index: 4100; background: rgba(20,40,50,.5); display: flex; align-items: center; justify-content: center; padding: 16px; }
 .rkb-panel[hidden] { display: none; }
 .rkb-card { position: relative; width: 344px; max-width: 92%; max-height: 92vh; overflow-y: auto; background: #fff; border-radius: 18px; padding: 18px 18px 16px; box-shadow: 0 18px 50px rgba(0,0,0,.3); scrollbar-width: none; }
 .rkb-card::-webkit-scrollbar { display: none; }
@@ -2535,6 +2544,22 @@ footer.controls {
 .tm-preview { width: min(92vw, 720px); aspect-ratio: 16 / 9; background: #fff; border-radius: 16px; box-shadow: 0 14px 40px rgba(40,90,110,.28); display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .tm-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .tm-empty { color: #8fb3c2; font-size: 13px; font-weight: 600; }
+/* ゲームのマルチルーム風モックアップ */
+.tm-mock { width: min(94vw, 760px); max-height: 100%; overflow-y: auto; background: #1b2733; border: 1px solid rgba(255,255,255,.08); border-radius: 18px; padding: 18px 20px 20px; box-shadow: 0 18px 50px rgba(0,0,0,.4); scrollbar-width: none; }
+.tm-mock::-webkit-scrollbar { display: none; }
+.tm-mock-section { color: #cdd8e0; font-size: 14px; font-weight: 700; margin: 2px 0 12px; }
+.tm-mock-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px 18px; }
+.tm-mock-hint { color: #7d93a4; font-size: 11.5px; margin-top: 14px; line-height: 1.6; }
+.tm-card { min-width: 0; }
+.tm-card-img { width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #2a3744; position: relative; }
+.tm-card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tm-card-name { color: #eef3f7; font-size: 14px; font-weight: 700; margin: 8px 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tm-card-meta { color: #aebcc8; font-size: 12px; display: flex; align-items: center; gap: 5px; margin-bottom: 3px; }
+.tm-card-stat { color: #8b9bab; font-size: 11.5px; display: flex; gap: 12px; }
+.tm-card.mine .tm-card-img { box-shadow: 0 0 0 2.5px #5b9cb8; }
+.tm-card .tm-mine-tag { position: absolute; top: 6px; left: 6px; background: #5b9cb8; color: #fff; font-size: 10px; font-weight: 800; padding: 2px 7px; border-radius: 999px; }
+.tm-reroll { margin-left: 12px; border: 1.5px solid #cddde6; background: #fff; color: #5a7a89; font-weight: 800; font-size: 14px; border-radius: 999px; padding: 12px 22px; cursor: pointer; }
+.tm-reroll[hidden] { display: none; }
 .tm-controls { display: flex; justify-content: center; padding: 22px; }
 .tm-load { display: inline-flex; align-items: center; gap: 8px; padding: 14px 38px; background: #5b9cb8; color: #fff; font-size: 15px; font-weight: 800; border-radius: 999px; cursor: pointer; box-shadow: 0 8px 22px rgba(91,156,184,.5); }
 .tm-load:hover { filter: brightness(1.06); }
@@ -3602,6 +3627,16 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
   gap: 10px 12px;
 }
 .welcome-more[hidden] { display: none !important; }
+/* くわしく見る = 全項目を縦一列の参考画像リストに */
+.welcome-card.expanded .welcome-brief, .welcome-card.expanded .welcome-more { display: flex !important; flex-direction: column; gap: 10px; grid-template-columns: none; }
+.welcome-card.expanded .welcome-brief .guide-step, .welcome-card.expanded .welcome-more .guide-step { flex-direction: row; align-items: center; text-align: left; gap: 13px; padding: 12px 14px 12px 16px; }
+.welcome-card.expanded .welcome-brief .guide-step .illust, .welcome-card.expanded .welcome-more .guide-step .illust { flex: 0 0 92px; width: 92px; height: 54px; }
+.welcome-card.expanded .welcome-brief .guide-step .txt, .welcome-card.expanded .welcome-more .guide-step .txt { display: block !important; font-size: 13px; line-height: 1.6; color: var(--fg-muted); }
+.welcome-card.expanded .welcome-brief .guide-step .txt b, .welcome-card.expanded .welcome-more .guide-step .txt b { color: var(--accent); }
+.welcome-card.expanded .welcome-brief .guide-step .num, .welcome-card.expanded .welcome-more .guide-step .num { top: -8px; left: -8px; }
+.welcome-bottom-close { display: block; width: 100%; margin: 14px 0 2px; border: none; background: var(--accent); color: #fff; font-weight: 800; font-size: 14px; border-radius: 999px; padding: 12px; cursor: pointer; box-shadow: 0 6px 16px rgba(91,156,184,.4); }
+.welcome-bottom-close[hidden] { display: none; }
+.welcome-card.expanded .welcome-more-btn { display: none !important; }   /* 展開中は下線つき「とじる」を消す(下部のボタンで閉じる) */
 .welcome-more .guide-step {
   margin: 0;
   padding: 10px 8px 8px;
@@ -3663,7 +3698,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
   margin: 0 0 18px;
 }
 .brand-row .brand { padding: 0; margin: 0; }
-.brand-row #startupPipToggle { margin-left: auto; }
+.brand-row #shareBtn { margin-left: auto; }
 .icon-btn {
   width: 30px;
   height: 30px;
@@ -3824,12 +3859,6 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
   <div class="sidebar-sticky" id="sidebarSticky">
   <div class="brand-row">
     <div class="brand">便利くん<span class="dot">zz</span></div>
-    <button id="startupPipToggle" class="icon-btn startup-pip-toggle" type="button" title="起動時にドロップ(小窓)を開く" aria-pressed="false">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="4" width="18" height="15" rx="2"/>
-        <rect x="11.5" y="11" width="7.5" height="5.5" rx="1" fill="currentColor" stroke="none"/>
-      </svg>
-    </button>
     <button id="shareBtn" class="icon-btn" aria-label="共有" title="共有">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M17 2l4 4-4 4M21 6H9a4 4 0 00-4 4v2"/>
@@ -4642,6 +4671,12 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     </label>
     <button id="dropKun" class="btn btn-accent btn-dropkun" type="button" title="小窓を浮かせてドロップで読み込み">
       <span class="lk-main">ドロップくん</span>
+      <span class="dk-pin off" id="dropKunPin" role="button" tabindex="0" title="起動時に自動でドロップを開く（青=オン）" aria-pressed="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 16v6M8.5 3.5h7l-1.2 7.2 3 2.3H6.7l3-2.3-1.2-7.2z"/>
+          <line class="dk-pin-slash" x1="4.5" y1="20" x2="19.5" y2="4"/>
+        </svg>
+      </span>
     </button>
     <button id="roomMatch" class="btn btn-accent" hidden style="display:none !important;">加工くん</button>
     <button id="save" class="btn" disabled>保存</button>
@@ -4877,11 +4912,16 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     <button class="tm-close" id="tmClose" type="button" aria-label="閉じる">×</button>
   </div>
   <div class="tm-stage">
-    <div class="tm-preview" id="tmPreview"><span class="tm-empty">「読み込みくん」で画像を入れてね</span></div>
+    <div class="tm-mock" id="tmMock">
+      <div class="tm-mock-section">新着</div>
+      <div class="tm-mock-grid" id="tmGrid"></div>
+      <div class="tm-mock-hint" id="tmHint">「読み込みくん」で画像を入れると、ゲームのカードの中に置いて見え方を確認できます</div>
+    </div>
   </div>
   <div class="tm-controls">
     <label class="tm-load" for="tmFile">読み込みくん</label>
     <input type="file" id="tmFile" accept="image/*" hidden>
+    <button class="tm-reroll" id="tmReroll" type="button" hidden>並びをかえる</button>
   </div>
 </div>
 
@@ -5181,6 +5221,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
         <div class="txt"><b>動き</b><br>たなびき・波などのGIF</div>
       </div>
     </div>
+    <button type="button" class="welcome-bottom-close" id="welcomeBottomClose" hidden>とじる</button>
   </div>
   </div>
   <button type="button" class="welcome-tutorial-btn" id="tutorialBtn">▶ チュートリアル</button>
@@ -6839,21 +6880,25 @@ const welcomeMoreBtn = document.getElementById('welcomeMoreBtn');
   document.addEventListener('DOMContentLoaded', () => setStage(1));
 })();
 const welcomeMore = document.getElementById('welcomeMore');
+const welcomeBottomClose = document.getElementById('welcomeBottomClose');
 if (welcomeMoreBtn) {
   const _wcard = document.querySelector('.welcome-card');
   welcomeMoreBtn.addEventListener('click', () => {
     if (welcomeMore.hidden) {
       welcomeMore.hidden = false;
-      if (_wcard) _wcard.classList.remove('brief');   // 文字を表示
+      if (_wcard){ _wcard.classList.remove('brief'); _wcard.classList.add('expanded'); }   // 全項目を縦一列の参考リストに
+      if (welcomeBottomClose) welcomeBottomClose.hidden = false;
       welcomeMoreBtn.textContent = 'とじる';
       setTimeout(() => welcomeMore.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
     } else {
       welcomeMore.hidden = true;
-      if (_wcard) _wcard.classList.add('brief');       // イラストのみに戻す
+      if (_wcard){ _wcard.classList.add('brief'); _wcard.classList.remove('expanded'); }       // イラストのみに戻す
+      if (welcomeBottomClose) welcomeBottomClose.hidden = true;
       welcomeMoreBtn.textContent = 'くわしく見る';
     }
   });
 }
+if (welcomeBottomClose) welcomeBottomClose.addEventListener('click', () => closeOverlay(welcomeOverlay));
 const shareOverlay = document.getElementById('shareOverlay');
 const shareCloseBtn = document.getElementById('shareClose');
 const shareBtn = document.getElementById('shareBtn');
@@ -10313,17 +10358,43 @@ layerPanelToggle.addEventListener('click', () => {
   function closeFan(){ fan.classList.remove('open'); btn.setAttribute('aria-expanded','false'); layout(false); }
   btn.addEventListener('click', e=>{ e.stopPropagation(); fan.classList.contains('open')?closeFan():openFan(); });
   document.addEventListener('pointerdown', e=>{ if(!fan.classList.contains('open')) return; if(fan.contains(e.target)||btn.contains(e.target)) return; closeFan(); }, true);
-  // サムネくん画面
-  const tmOverlay=document.getElementById('thumbMakerOverlay'), tmClose=document.getElementById('tmClose'), tmFile=document.getElementById('tmFile'), tmPreview=document.getElementById('tmPreview');
+  // サムネくん画面: ゲームのマルチルーム風カードに自分の画像を置いて見え方を確認
+  const tmOverlay=document.getElementById('thumbMakerOverlay'), tmClose=document.getElementById('tmClose'), tmFile=document.getElementById('tmFile');
+  const tmGrid=document.getElementById('tmGrid'), tmHint=document.getElementById('tmHint'), tmReroll=document.getElementById('tmReroll');
+  let tmUserURL=null;
+  const TM_NAMES=['作業部屋','もくもく集中カフェ','おやすみ前のひととき','イラスト練習中','まったり雑談ルーム','勉強カフェ【ZZ】','夜ふかし作業部屋','お花のアトリエ','静かな図書室','コーヒーと作業','深夜の隠れ家','みんなで作業'];
+  const TM_GRAD=['linear-gradient(135deg,#3a4a5a,#222d38)','linear-gradient(135deg,#4a3f55,#2a2433)','linear-gradient(135deg,#3a5550,#22332f)','linear-gradient(135deg,#554a3a,#332e22)','linear-gradient(135deg,#3a4a60,#222b3a)','linear-gradient(135deg,#503a4a,#2f2230)'];
+  function tmRand(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function tmBuild(){
+    if(!tmGrid) return;
+    const mineIdx = tmUserURL ? (1) : -1;   // 自分の画像は2枚目に配置
+    tmGrid.innerHTML='';
+    const used={};
+    for(let i=0;i<6;i++){
+      const card=document.createElement('div'); card.className='tm-card'+(i===mineIdx?' mine':'');
+      const imgBox=document.createElement('div'); imgBox.className='tm-card-img';
+      if(i===mineIdx){ const im=document.createElement('img'); im.src=tmUserURL; imgBox.appendChild(im); const tag=document.createElement('span'); tag.className='tm-mine-tag'; tag.textContent='あなた'; imgBox.appendChild(tag); }
+      else { imgBox.style.background=TM_GRAD[i%TM_GRAD.length]; }
+      let nm; do{ nm=tmRand(TM_NAMES); }while(used[nm]&&Object.keys(used).length<TM_NAMES.length); used[nm]=1;
+      const name=document.createElement('div'); name.className='tm-card-name'; name.textContent=(i===mineIdx?'あなたのお部屋':nm);
+      const cur=1+Math.floor(Math.random()*5), max=[4,5,8,12,16][Math.floor(Math.random()*5)];
+      const meta=document.createElement('div'); meta.className='tm-card-meta'; meta.textContent='👤 '+cur+' / '+(max<cur?cur:max)+'人';
+      const mb=(Math.random()*120+2).toFixed(1), cnt=Math.floor(Math.random()*900+30);
+      const stat=document.createElement('div'); stat.className='tm-card-stat'; stat.innerHTML='<span>📁 '+mb+'MB</span><span>🖼 x'+cnt+'</span>';
+      card.appendChild(imgBox); card.appendChild(name); card.appendChild(meta); card.appendChild(stat);
+      tmGrid.appendChild(card);
+    }
+    if(tmHint) tmHint.textContent = tmUserURL ? '青枠が「あなた」の画像です。このサイズで他のお部屋に並んでも見やすいか確認してみてね' : '「読み込みくん」で画像を入れると、ゲームのカードの中に置いて見え方を確認できます';
+    if(tmReroll) tmReroll.hidden = !tmUserURL;
+  }
   const slThumb=document.getElementById('slThumb'), slRotate=document.getElementById('slRotate');
-  if(slThumb) slThumb.addEventListener('click', ()=>{ closeFan(); if(tmOverlay) tmOverlay.hidden=false; });
+  if(slThumb) slThumb.addEventListener('click', ()=>{ closeFan(); if(tmOverlay){ tmOverlay.hidden=false; tmBuild(); } });
   if(tmClose) tmClose.addEventListener('click', ()=>{ tmOverlay.hidden=true; });
+  if(tmReroll) tmReroll.addEventListener('click', tmBuild);
   if(tmFile) tmFile.addEventListener('change', ()=>{
     const f=tmFile.files&&tmFile.files[0]; if(!f) return;
-    const url=URL.createObjectURL(f);
-    const img=new Image();
-    img.onload=()=>{ tmPreview.innerHTML=''; tmPreview.appendChild(img); };
-    img.src=url;
+    if(tmUserURL){ try{ URL.revokeObjectURL(tmUserURL); }catch(e){} }
+    tmUserURL=URL.createObjectURL(f); tmBuild();
   });
   if(slRotate) slRotate.addEventListener('click', ()=>{ closeFan(); const ov=document.getElementById('rotKunOverlay'); if(ov){ ov.hidden=false; if(window.__rkInit) window.__rkInit(); } });
   layout(false);
@@ -10343,8 +10414,9 @@ layerPanelToggle.addEventListener('click', () => {
   const dim2D=$('rkDim2D'), dim3D=$('rkDim3D'), dimBox=$('rkDim');
   const viewToggle=$('rkViewToggle'), viewTop=$('rkViewTop'), viewSide=$('rkViewSide'), viewPersp=$('rkViewPersp'), viewLabel=$('rkViewLabel');
   function updateViewUI(){
-    const playable = (mode==='play' && dim3d);
+    const playable = (mode==='play');                 // 2Dでも立体を選べるように
     if(viewToggle) viewToggle.hidden = !playable;
+    if(viewSide) viewSide.hidden = !dim3d;             // 真横からは3Dのときだけ(2Dは平らなので無意味)
     if(viewLabel){ if(mode==='play'){ viewLabel.hidden=true; } else { viewLabel.hidden=false; viewLabel.textContent = (view==='side')?'真横から':'上から'; } }
     updateCenterBtn();
   }
@@ -10367,44 +10439,62 @@ layerPanelToggle.addEventListener('click', () => {
   const PJW=2273, PJH=1624;
   const buildPanel=$('rkBuildPanel'), bClose=$('rkbClose'), bGuide=$('rkbGuide'), bSize=$('rkbSize'), bCols=$('rkbCols'), bInfo=$('rkbInfo'), bGo=$('rkbGo');
   function rkJointsAt(t){ let x=center.x,y=center.y; const J=[{x,y}]; for(let i=0;i<epi.length;i++){ const c=epi[i]; let vx,vy; if(c.A){ const th=2*Math.PI*c.freq*t,ct=Math.cos(th),st=Math.sin(th); vx=c.A[0]*ct-c.B[0]*st; vy=c.A[1]*ct-c.B[1]*st; } else { const a=2*Math.PI*c.freq*t+c.phase; vx=c.amp*Math.cos(a); vy=c.amp*Math.sin(a); } x+=vx; y+=vy; J.push({x,y}); } return J; }
-  function rkGuideBBox(){ let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9; const upd=(px,py)=>{ if(px<minx)minx=px; if(py<miny)miny=py; if(px>maxx)maxx=px; if(py>maxy)maxy=py; };
-    for(let s=0;s<=90;s++){ rkJointsAt(s/90).forEach(p=>upd(p.x,p.y)); }
-    if(resampled&&resampled.length) resampled.forEach(p=>upd(p.x,p.y));
+  function rkOrbitPts(i, node){ const c=epi[i], pts=[]; for(let k=0;k<=64;k++){ const al=k/64*2*Math.PI; let vx,vy; if(c.A){ vx=c.A[0]*Math.cos(al)-c.B[0]*Math.sin(al); vy=c.A[1]*Math.cos(al)-c.B[1]*Math.sin(al); } else { vx=c.amp*Math.cos(al); vy=c.amp*Math.sin(al); } pts.push({x:node.x+vx, y:node.y+vy}); } return pts; }
+  function rkGuideBBox(){ const J0=rkJointsAt(0); let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9; const upd=(px,py)=>{ if(!isFinite(px)||!isFinite(py))return; if(px<minx)minx=px; if(py<miny)miny=py; if(px>maxx)maxx=px; if(py>maxy)maxy=py; };
+    const NN=Math.max(1,J0.length-1);
+    for(let i=0;i<NN;i++) upd(J0[i].x, J0[i].y);   // 青の数字(回転くんの位置)がすべて入る最小範囲
     if(minx>maxx){ minx=center.x-100;maxx=center.x+100;miny=center.y-100;maxy=center.y+100; }
+    if(maxx-minx<1){ minx-=50; maxx+=50; } if(maxy-miny<1){ miny-=50; maxy+=50; }
     return {minx,miny,maxx,maxy}; }
-  function rkRenderGuide(cnv, pxW, pxH){ const g=cnv.getContext('2d'); cnv.width=pxW; cnv.height=pxH;
-    g.fillStyle='#ffffff'; g.fillRect(0,0,pxW,pxH);
-    const bb=rkGuideBBox(); const dw=(bb.maxx-bb.minx)||1, dh=(bb.maxy-bb.miny)||1;
-    const pad=Math.min(pxW,pxH)*0.09, s=Math.min((pxW-pad*2)/dw,(pxH-pad*2)/dh);
-    const ox=(pxW-dw*s)/2 - bb.minx*s, oy=(pxH-dh*s)/2 - bb.miny*s;
-    const M=p=>({x:ox+p.x*s, y:oy+p.y*s});
-    const lw=Math.max(1.4, pxW*0.0016);
-    if(resampled&&resampled.length){ g.strokeStyle='rgba(91,156,184,.30)'; g.lineWidth=lw*1.2; g.beginPath(); resampled.forEach((p,i)=>{ const q=M(p); i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }); g.closePath(); g.stroke(); }
-    // 緑の軌道 = 各青ノードが実際に通った場所
-    const paths=[]; for(let q=0;q<=epi.length;q++) paths.push([]);
-    for(let s2=0;s2<=120;s2++){ const J=rkJointsAt(s2/120); for(let i=0;i<J.length;i++) paths[i].push(J[i]); }
-    g.strokeStyle='rgba(60,175,112,.6)'; g.lineWidth=lw;
-    for(let i=1;i<paths.length;i++){ g.beginPath(); paths[i].forEach((p,k)=>{ const q=M(p); k?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }); g.closePath(); g.stroke(); }
-    // チェーン(t=0)＋青い番号ノード(=ゲームで回転くんを置く位置)
+  // ガイドを「論理サイズ gridW×gridH」の図として ctx に描く(呼び出し側で平行移動すればタイル描画になる)
+  function rkDrawGuideInto(g, gridW, gridH, cols, rows, showGrid){
+    g.fillStyle='#ffffff'; g.fillRect(0,0,gridW,gridH);
     const J0=rkJointsAt(0);
-    g.strokeStyle='rgba(70,110,130,.5)'; g.lineWidth=lw; g.beginPath(); J0.forEach((p,i)=>{ const q=M(p); i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }); g.stroke();
-    const nodeR=Math.max(6, pxW*0.012);
-    for(let i=0;i<J0.length-1;i++){ const q=M(J0[i]); g.fillStyle='#5b9cb8'; g.beginPath(); g.arc(q.x,q.y,nodeR,0,Math.PI*2); g.fill(); g.fillStyle='#fff'; g.font='800 '+Math.round(nodeR*1.15)+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(i+1), q.x, q.y); }
+    const bb=rkGuideBBox(); const dw=(bb.maxx-bb.minx)||1, dh=(bb.maxy-bb.miny)||1;
+    const pad=Math.min(gridW,gridH)*0.12, s=Math.min((gridW-pad*2)/dw,(gridH-pad*2)/dh);   // 数字が切れないよう余白
+    const ox=(gridW-dw*s)/2 - bb.minx*s, oy=(gridH-dh*s)/2 - bb.miny*s;
+    const M=p=>({x:ox+p.x*s, y:oy+p.y*s});
+    const lw=Math.max(1.2, gridW*0.0014);
+    // 引いた線(目標) = ごく薄く
+    if(resampled&&resampled.length){ g.save(); g.strokeStyle='rgba(91,156,184,.14)'; g.lineWidth=lw; g.beginPath(); resampled.forEach((p,i)=>{ const q=M(p); i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }); g.closePath(); g.stroke(); g.restore(); }
+    // 緑の軌道 = プレビューと同じ(各番号を中心に、ひとつ上の番号がその周りを回る相対軌道)・薄く
+    g.save(); g.strokeStyle='rgba(60,175,112,.28)'; g.lineWidth=lw;
+    for(let i=0;i<epi.length;i++){ const pts=rkOrbitPts(i, J0[i]); g.beginPath(); pts.forEach((p,k)=>{ const q=M(p); k?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }); g.closePath(); g.stroke(); }
+    g.restore();
+    // チェーン(t=0)
+    g.save(); g.strokeStyle='rgba(70,110,130,.4)'; g.lineWidth=lw; g.beginPath(); J0.forEach((p,i)=>{ const q=M(p); i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }); g.stroke(); g.restore();
+    // 青の番号: 重なるなら自動で小さく
+    const NN=Math.max(1,J0.length-1);
+    let minD=1e9; for(let i=0;i<NN;i++) for(let j=i+1;j<NN;j++){ const a=M(J0[i]),b=M(J0[j]); const d=Math.hypot(a.x-b.x,a.y-b.y); if(d<minD)minD=d; }
+    let nodeR=Math.max(5, gridW*0.013); if(isFinite(minD)) nodeR=Math.min(nodeR, Math.max(3.5, minD*0.46));
+    for(let i=0;i<NN;i++){ const q=M(J0[i]); g.fillStyle='#5b9cb8'; g.beginPath(); g.arc(q.x,q.y,nodeR,0,Math.PI*2); g.fill(); g.fillStyle='#fff'; g.font='800 '+Math.round(nodeR*1.2)+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(i+1), q.x, q.y); }
+    // 分割の黒点線(どう分割されるか一目で・プレビューのみ)
+    if(showGrid && cols && rows){ g.save(); g.strokeStyle='rgba(0,0,0,.55)'; g.lineWidth=Math.max(1, gridW*0.001); g.setLineDash([Math.max(4,gridW*0.012), Math.max(3,gridW*0.008)]);
+      for(let c=1;c<cols;c++){ const x=gridW*c/cols; g.beginPath(); g.moveTo(x,0); g.lineTo(x,gridH); g.stroke(); }
+      for(let r=1;r<rows;r++){ const y=gridH*r/rows; g.beginPath(); g.moveTo(0,y); g.lineTo(gridW,y); g.stroke(); }
+      g.setLineDash([]); g.restore(); }
   }
-  function rkGridDims(cols){ const bb=rkGuideBBox(); const Ag=((bb.maxx-bb.minx)||1)/((bb.maxy-bb.miny)||1), Ap=PJW/PJH; const rows=Math.max(1, Math.round(cols*Ap/Ag)); return {cols,rows}; }
-  function rkUpdateBuild(){ const cols=parseInt(bSize.value)||2; const {rows}=rkGridDims(cols);
+  function rkRenderGuide(cnv, pxW, pxH, cols, rows){ cnv.width=pxW; cnv.height=pxH; const g=cnv.getContext('2d'); g.save(); rkDrawGuideInto(g, pxW, pxH, cols, rows, true); g.restore(); }
+  function rkGridDims(cols){ const bb=rkGuideBBox(); let Ag=((bb.maxx-bb.minx)||1)/((bb.maxy-bb.miny)||1); Ag=Math.max(0.2,Math.min(5,Ag)); const Ap=PJW/PJH; let rows=Math.max(1, Math.min(8, Math.round(cols*Ap/Ag))); return {cols,rows}; }
+  function rkUpdateBuild(){ try{ const cols=parseInt(bSize.value)||2; const {rows}=rkGridDims(cols);
     if(bCols) bCols.textContent=String(cols); if(bInfo) bInfo.textContent='プロジェクター '+cols+'個 × '+rows+'個 （計'+(cols*rows)+'枚）';
-    const gw=cols*PJW, gh=rows*PJH, pw=304, ph=Math.max(120, Math.round(pw*gh/gw)); rkRenderGuide(bGuide, pw, ph); }
-  function rkOpenBuild(){ if(!epi.length) return; buildPanel.hidden=false; rkUpdateBuild(); }
+    const gw=cols*PJW, gh=rows*PJH, pw=304, ph=Math.max(120, Math.round(pw*gh/gw)); rkRenderGuide(bGuide, pw, ph, cols, rows);
+  }catch(e){ if(typeof showToast==='function') showToast('プレビュー失敗: '+(e&&e.message||e)); } }
+  function rkOpenBuild(){ if(!epi.length) return; if(!buildPanel) return; buildPanel.hidden=false; rkUpdateBuild(); }
   async function rkBuildExport(){ if(!epi.length) return; const cols=parseInt(bSize.value)||2; const {rows}=rkGridDims(cols);
     bGo.disabled=true; const orig=bGo.textContent; bGo.textContent='作成中…';
     try{
-      const full=document.createElement('canvas'); rkRenderGuide(full, cols*PJW, rows*PJH);
-      const files=[];
-      for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){ const t=document.createElement('canvas'); t.width=PJW; t.height=PJH; t.getContext('2d').drawImage(full, c*PJW, r*PJH, PJW, PJH, 0,0,PJW,PJH); const b=await new Promise(res=>t.toBlob(res,'image/png')); files.push({name:'guide_r'+(r+1)+'_c'+(c+1)+'.png', data:new Uint8Array(await b.arrayBuffer())}); }
+      const gridW=cols*PJW, gridH=rows*PJH; const files=[];
+      for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+        const t=document.createElement('canvas'); t.width=PJW; t.height=PJH; const g=t.getContext('2d');
+        g.save(); g.translate(-c*PJW, -r*PJH); rkDrawGuideInto(g, gridW, gridH, cols, rows, false); g.restore();   // タイル分だけ描画(出力には分割線を焼き込まない)
+        const b=await new Promise(res=>t.toBlob(res,'image/png'));
+        if(!b) throw new Error('画像化に失敗(サイズ過大?)');
+        files.push({name:'guide_r'+(r+1)+'_c'+(c+1)+'.png', data:new Uint8Array(await b.arrayBuffer())});
+      }
       const zip=makeZip(files); const url=(window.URL||URL).createObjectURL(new Blob([zip],{type:'application/zip'})); const a=document.createElement('a'); a.href=url; a.download='回転くんガイド_'+cols+'x'+rows+'.zip'; document.body.appendChild(a); a.click(); a.remove();
       if(typeof showToast==='function') showToast(cols*rows+'枚のガイドを保存しました');
-    }catch(e){ if(typeof showToast==='function') showToast('保存に失敗しました'); }
+    }catch(e){ if(typeof showToast==='function') showToast('保存失敗: '+(e&&e.message||e)); }
     bGo.disabled=false; bGo.textContent=orig;
   }
   if(buildBtn) buildBtn.addEventListener('click', rkOpenBuild);
@@ -10615,7 +10705,7 @@ layerPanelToggle.addEventListener('click', () => {
     allEpi=coeffs.filter(c=>c.freq!==0).sort((a,b)=>b.amp-a.amp).filter(c=>c.amp>0.05).slice(0,50);
     if(countRange){ countRange.max=String(allEpi.length); if(parseInt(countRange.value)>allEpi.length) countRange.value=String(allEpi.length); } if(countVal) countVal.max=String(allEpi.length);
     applyCount();
-    mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0; showArrows=false;
+    mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0; showArrows=false; view='top'; camAz=-Math.PI/4; camEl=0.5; orbitCenter=0; dirFocus=null; soloCard=null; if(dirBack) dirBack.hidden=true;
     redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true; if(buildBtn) buildBtn.hidden=false;
     if(dimBox){ dimBox.style.pointerEvents='none'; dimBox.style.opacity='0.45'; }   // 生成後は2D/3D切替不可
     if(countBox) countBox.hidden=false; if(zoomBox) zoomBox.hidden=false; if(initBtn) initBtn.hidden=false;
@@ -10667,7 +10757,7 @@ layerPanelToggle.addEventListener('click', () => {
   function drawScene(){
     computeJoints(); numberHits=[]; clear();
     if(dirFocus!=null && mode==='play' && dim3d){ drawDirFocus(); return; }
-    if(view==='persp' && mode==='play' && dim3d){ drawScenePersp(); return; }
+    if(view==='persp' && mode==='play'){ drawScenePersp(); return; }
     if(mode==='play' && dim3d) drawPlatform();   // サイト(台)の背景
     // 3D・横ビュー: 目標の3D経路(xy+高さ)を薄く。チェーン本体は下で描画
     if(mode==='play' && dim3d && view==='side' && resampled.length){
@@ -10676,21 +10766,21 @@ layerPanelToggle.addEventListener('click', () => {
       ctx.closePath(); ctx.stroke();
     }
     if(resampled.length && view==='top'){ ctx.lineWidth=2; ctx.strokeStyle='rgba(91,156,184,.22)'; ctx.beginPath(); const p0=proj({x:resampled[0].x,y:resampled[0].y,z:0}); ctx.moveTo(p0.x,p0.y); for(let i=1;i<resampled.length;i++){ const p=proj({x:resampled[i].x,y:resampled[i].y,z:0}); ctx.lineTo(p.x,p.y); } ctx.closePath(); ctx.stroke(); }
-    // 各青ノードが実際に通る軌道(=本当に通ったところ)を先に計算。上/横はこれを緑線にする(角度差もそのまま反映)
-    const NSAMP=84, nodePaths=[]; for(let q=0;q<=epi.length;q++) nodePaths.push([]);
-    for(let s=0;s<=NSAMP;s++){ const tt=s/NSAMP; let X=center.x,Y=center.y,Z=center.z||0; nodePaths[0].push({x:X,y:Y,z:Z});
-      for(let i=0;i<epi.length;i++){ const c=epi[i]; let vx,vy,vz;
-        if(c.A){ const th=2*Math.PI*c.freq*tt,ct=Math.cos(th),st=Math.sin(th); vx=c.A[0]*ct-c.B[0]*st; vy=c.A[1]*ct-c.B[1]*st; vz=c.A[2]*ct-c.B[2]*st; }
-        else { const ang=2*Math.PI*c.freq*tt+c.phase; vx=c.amp*Math.cos(ang); vy=c.amp*Math.sin(ang); vz=0; }
-        X+=vx; Y+=vy; Z+=vz; nodePaths[i+1].push({x:X,y:Y,z:Z}); } }
     for(let i=0;i<epi.length;i++){
       const a=proj(joints[i]), b=proj(joints[i+1]);
       const dimi=(selJoint!=null && selJoint!==i);     // 選択中以外は薄く
       ctx.save(); if(dimi) ctx.globalAlpha=0.22;
       const seldc=(selJoint===i);
-      // 緑の軌道 = この回転くんの子ノードが実際に通った場所そのもの
+      // 緑の軌道 = この青番号(中心)の「ひとつ上の番号」が、その中心の周りをどう回るか(相対軌道)。傾くと楕円に見える。
       ctx.strokeStyle=seldc?'rgba(26,150,88,.95)':'rgba(60,175,112,.5)'; ctx.lineWidth=seldc?2.6:1.1;
-      ctx.beginPath(); const pp=nodePaths[i+1]; for(let k=0;k<pp.length;k++){ const q=proj(pp[k]); k?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y); } ctx.closePath(); ctx.stroke();
+      const cc=epi[i], jc=joints[i];
+      ctx.beginPath();
+      for(let k=0;k<=64;k++){ const al=k/64*2*Math.PI; let vx,vy,vz;
+        if(cc.A){ vx=cc.A[0]*Math.cos(al)-cc.B[0]*Math.sin(al); vy=cc.A[1]*Math.cos(al)-cc.B[1]*Math.sin(al); vz=cc.A[2]*Math.cos(al)-cc.B[2]*Math.sin(al); }
+        else { vx=cc.amp*Math.cos(al); vy=cc.amp*Math.sin(al); vz=0; }
+        const q=proj({x:jc.x+vx, y:jc.y+vy, z:(jc.z||0)+vz}); k?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y);
+      }
+      ctx.closePath(); ctx.stroke();
       ctx.strokeStyle='rgba(70,110,130,.6)'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke();
       if(i<50){
         const seld=(selJoint===i);
@@ -15915,7 +16005,8 @@ function buildPipEditor(pip, onClose) {
     .pe-reset{width:100%;margin-top:6px;border:none;background:linear-gradient(135deg,#e8f4fa,#d3eaf5);border-radius:9px;padding:6px;font-size:10px;color:#5b9cb8;font-weight:700;cursor:pointer;}
     .pe-coltoggle{position:absolute;left:14px;top:54px;writing-mode:vertical-lr;background:#8fd3ed;color:#fff;border:none;border-radius:10px;padding:9px 4px;font-size:9px;cursor:pointer;display:none;z-index:8;box-shadow:0 3px 8px rgba(91,156,184,.3);}
     .pe-coltoggle{position:absolute;left:10px;bottom:10px;top:auto;writing-mode:horizontal-tb;background:#8fd3ed;color:#fff;border:none;border-radius:12px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;display:block;z-index:11;box-shadow:0 3px 8px rgba(91,156,184,.3);}
-    .pe-filebtn{position:absolute;bottom:14px;right:14px;display:flex;align-items:center;gap:5px;background:#fff;border:2px solid #8fd3ed;color:#5b9cb8;border-radius:12px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;z-index:11;box-shadow:0 3px 8px rgba(91,156,184,.22);}
+    .pe-bottombar{position:absolute;bottom:14px;right:14px;display:flex;align-items:center;gap:8px;z-index:11;}
+    .pe-filebtn{display:flex;align-items:center;gap:5px;background:#fff;border:2px solid #8fd3ed;color:#5b9cb8;border-radius:12px;padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 8px rgba(91,156,184,.22);height:34px;box-sizing:border-box;}
     .pe-filebtn svg{width:16px;height:16px;}
     .pe-filebtn:hover{background:#eef7fb;}
     .pe-color.collapsed{display:none;}
@@ -16078,10 +16169,12 @@ function buildPipEditor(pip, onClose) {
   wrap.innerHTML=`
     <div class="pe-center" id="peCenter">
       <div class="pe-topicons" id="peTopIcons"></div>
-      <button class="pe-filebtn" id="peFileBtn" type="button" title="ファイルを開く">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-        <span>ファイル</span>
-      </button>
+      <div class="pe-bottombar" id="peBottomBar">
+        <button class="pe-filebtn" id="peFileBtn" type="button" title="ファイルを開く">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          <span>ファイル</span>
+        </button>
+      </div>
       <div class="pe-size" id="peSize" style="display:none">0.00 MB</div>
       <div class="pe-color" id="peColor">
         <h4>色調整</h4>
@@ -16313,15 +16406,14 @@ function buildPipEditor(pip, onClose) {
     } else { if(ov){ ov.remove(); } _peRaiseSI(false); }
   }
   peTut._ratioGuide = _peRatioGuide;
-  // 再表示用「？」ボタン → ファイルボタンの左。押すと最初から
+  // 再表示用「？」ボタン → ファイルボタンの左にきれいに並べる
   const peGuideOpen = d.createElement('button');
   peGuideOpen.className = 'pe-guide-open'; peGuideOpen.type = 'button'; peGuideOpen.textContent = '？'; peGuideOpen.title = 'つかいかた';
-  peGuideOpen.style.cssText = 'left:auto;top:auto;bottom:14px;right:96px;width:34px;height:34px';
+  peGuideOpen.style.cssText = 'position:static;width:34px;height:34px;flex:none';
   peGuideOpen.addEventListener('click', () => peTutGoStage(1));
-  const _peStageForGuide = d.getElementById('peStage');
-  if (_peStageForGuide) _peStageForGuide.appendChild(peGuideOpen);
-  // ファイルボタンの幅に合わせて「？」の右位置を調整 (ファイルの左に置く)
-  setTimeout(() => { try { const fb = d.getElementById('peFileBtn'); if (fb) peGuideOpen.style.right = (14 + fb.offsetWidth + 8) + 'px'; } catch (e) {} }, 120);
+  const _peBar = d.getElementById('peBottomBar');
+  if (_peBar) _peBar.insertBefore(peGuideOpen, _peBar.firstChild);   // ファイルの左に配置
+  else { const _peStageForGuide = d.getElementById('peStage'); if (_peStageForGuide) _peStageForGuide.appendChild(peGuideOpen); }
   // ドロップ(チュートリアル)から起動された場合は stage1 から開始
   try { if (window.__pipShowGuide) { peTutGoStage(1); window.__pipShowGuide = false; } } catch (e) {}
 
@@ -16353,27 +16445,31 @@ function buildPipEditor(pip, onClose) {
     {id:'lock',t:'枠に合わせる',svg:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9l-2 0 0 2M15 9l2 0 0 2M9 15l-2 0 0-2M15 15l2 0 0-2"/>'},
   ];
   const PE_LOCK_ICONS={
-    orig:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0"/>',                 // 開いた錠(元)
-    fit:'<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8l8 8M16 8l-8 8" opacity="0"/><path d="M9 9l-2 0 0 2M15 9l2 0 0 2M9 15l-2 0 0-2M15 15l2 0 0-2"/>' // 枠に合わせる
+    orig:'<rect x="6" y="11" width="12" height="9" rx="2"/><path d="M9 11V8a3 3 0 016 0v3"/><circle cx="12" cy="15.5" r="1.3" fill="currentColor" stroke="none"/>',   // 切り抜き(元)
+    lock:'<rect x="2.5" y="11.5" width="11" height="8.5" rx="1.8"/><path d="M5 11.5V9.2a3 3 0 016 0v2.3"/><path d="M16.5 16.5l4.5 4.5M21 16.8v4.2h-4.2"/>',                  // 枠を埋める(比率維持)
+    free:'<rect x="2.5" y="11.5" width="11" height="8.5" rx="1.8"/><path d="M5 11.5V9.2a3 3 0 015.2-2.1"/><path d="M16.5 16.5l4.5 4.5M21 16.8v4.2h-4.2"/>',                 // 枠に収める(比率維持)
+    fit:'<rect x="2.5" y="12" width="9" height="7.5" rx="1.6"/><path d="M4.5 12V9.8a2.5 2.5 0 015 0V12"/><path d="M14.5 5.5h4v4M18.5 5.5l-5 5M21 20.5h-4v-4M17 20.5l4-4"/>'  // 引き伸ばし
   };
   const tiEl=d.getElementById('peTopIcons');
   topIcons.forEach(t=>{
     const b=d.createElement('button'); b.className='pe-ti'; b.title=t.t;
     b.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${t.svg}</svg>`;
     b.addEventListener('click',()=>{
-      if(t.id==='rot'){ st.rot=(st.rot+90)%360; }
+      if(t.id==='rot'){ st.rot=(st.rot+90)%360; if(st.img&&st.ratio) initFrame(); }   // 回転後は枠を画像内に再フィット
       if(t.id==='flipH'){ st.flipH=!st.flipH; b.classList.toggle('active',st.flipH); }
       if(t.id==='flipV'){ st.flipV=!st.flipV; b.classList.toggle('active',st.flipV); }
       if(t.id==='lock'){
-        // 元 ⇄ 枠に合わせる(引き伸ばし)
-        st.lockMode = (st.lockMode==='fit') ? 'orig' : 'fit';
-        b.classList.toggle('active', st.lockMode==='fit');
-        b.title = st.lockMode==='fit' ? '元に戻す' : '枠に合わせる';
+        // 本サイトと同じ4パターン: 切り抜き → 枠を埋める(比率維持) → 枠に収める(比率維持) → 引き伸ばし
+        const order=['orig','lock','free','fit'];
+        st.lockMode = order[(order.indexOf(st.lockMode)+1)%order.length];
+        b.classList.toggle('active', st.lockMode!=='orig');
+        const titles={orig:'切り抜き（元）',lock:'枠を埋める（比率維持）',free:'枠に収める（比率維持）',fit:'引き伸ばし'};
+        b.title = titles[st.lockMode];
         const sv=b.querySelector('svg'); if(sv) sv.innerHTML=PE_LOCK_ICONS[st.lockMode];
       }
       render();
     });
-    if(t.id==='lock'){ const sv=b.querySelector('svg'); if(sv) sv.innerHTML=PE_LOCK_ICONS.orig; }
+    if(t.id==='lock'){ const sv=b.querySelector('svg'); if(sv) sv.innerHTML=PE_LOCK_ICONS.orig; b.title='切り抜き（元）／タップで4段階'; }
     tiEl.appendChild(b);
   });
 
@@ -16453,19 +16549,20 @@ function buildPipEditor(pip, onClose) {
   const peSplitWEl=d.getElementById('peSplitW'), peSplitHEl=d.getElementById('peSplitH');
   const peTabSplit=d.getElementById('peTabSplit'), peTabPattern=d.getElementById('peTabPattern');
   function updateSplitTabs(){ if(peTabSplit)peTabSplit.classList.toggle('active',!st.pattern); if(peTabPattern)peTabPattern.classList.toggle('active',st.pattern); }
-  if(peTabSplit) peTabSplit.addEventListener('click',()=>{ st.pattern=false; updateSplitTabs(); render(); });
-  if(peTabPattern) peTabPattern.addEventListener('click',()=>{ st.pattern=true; updateSplitTabs(); render(); });
+  if(peTabSplit) peTabSplit.addEventListener('click',()=>{ st.pattern=false; updateSplitTabs(); if(st.img&&st.ratio) initFrame(); render(); });
+  if(peTabPattern) peTabPattern.addEventListener('click',()=>{ st.pattern=true; updateSplitTabs(); if(st.img&&st.ratio) initFrame(); render(); });
   d.querySelectorAll('#peCardSplit .pe-step').forEach(b=>{
     b.addEventListener('click',()=>{
       const axis=b.dataset.axis, dd=parseInt(b.dataset.d,10);
       if(axis==='W') st.splitW=Math.max(1,Math.min(8,st.splitW+dd));
       else st.splitH=Math.max(1,Math.min(8,st.splitH+dd));
       if(peSplitWEl)peSplitWEl.textContent=st.splitW; if(peSplitHEl)peSplitHEl.textContent=st.splitH;
+      if(st.img&&st.ratio) initFrame();   // 枠を分割比に合わせ直す → 各わくがアイテム比に
       render();
     });
   });
   const peSplitReset=d.getElementById('peSplitReset');
-  if(peSplitReset) peSplitReset.addEventListener('click',()=>{ st.splitW=1; st.splitH=1; if(peSplitWEl)peSplitWEl.textContent=1; if(peSplitHEl)peSplitHEl.textContent=1; render(); });
+  if(peSplitReset) peSplitReset.addEventListener('click',()=>{ st.splitW=1; st.splitH=1; if(peSplitWEl)peSplitWEl.textContent=1; if(peSplitHEl)peSplitHEl.textContent=1; if(st.img&&st.ratio) initFrame(); render(); });
 
   // 右: アイテム一覧 (CATEGORIES から)
   const allItems=[];
@@ -16527,19 +16624,27 @@ function buildPipEditor(pip, onClose) {
     const o=pdoc.createElement('canvas'); o.width=Math.max(1,Math.round(canvas.width*sc)); o.height=Math.max(1,Math.round(canvas.height*sc));
     o.getContext('2d').drawImage(canvas,0,0,o.width,o.height); return o;
   }
+  function peEffAR(){ if(!st.ratio) return 1; if(st.pattern) return st.ratio.w/st.ratio.h; return (st.ratio.w*st.splitW)/(st.ratio.h*st.splitH); }   // 分割時は各わくがアイテム比になるよう枠全体を調整
+  // 画面に見えている画像の矩形(90度回転で縦横が入れ替わるのも考慮)。枠はこの中に収める。
+  function imgRect(){
+    const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
+    const dw=iw*st.scale, dh=ih*st.scale, cx=st.offX+dw/2, cy=st.offY+dh/2;
+    const rot=((st.rot%360)+360)%360, swap=(rot===90||rot===270);
+    const vw=swap?dh:dw, vh=swap?dw:dh;
+    return {x:cx-vw/2, y:cy-vh/2, w:vw, h:vh};
+  }
   function initFrame(){
     const cw=cv.width,ch=cv.height; let fw,fh;
     if(st.img && st.ratio){
-      // 画像の表示矩形にいっぱい入る枠を作り、画像の端(上下or左右)に合わせる
-      const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
-      const imgW=iw*st.scale, imgH=ih*st.scale, imgL=st.offX, imgT=st.offY;
-      const ar=st.ratio.w/st.ratio.h;
-      if(imgW/imgH > ar){ fh=imgH; fw=fh*ar; }   // 縦が画像にぴったり(上下に合う)
-      else { fw=imgW; fh=fw/ar; }                 // 横が画像にぴったり(左右に合う)
-      st.frameRect={x:imgL+(imgW-fw)/2, y:imgT+(imgH-fh)/2, w:fw, h:fh};
+      // 見えている画像の矩形にぴったり収まる枠を作る(画像の外=白枠にはみ出さない)
+      const ir=imgRect();
+      const ar=peEffAR();
+      if(ir.w/ir.h > ar){ fh=ir.h; fw=fh*ar; }   // 縦が画像にぴったり(上下に合う)
+      else { fw=ir.w; fh=fw/ar; }                 // 横が画像にぴったり(左右に合う)
+      st.frameRect={x:ir.x+(ir.w-fw)/2, y:ir.y+(ir.h-fh)/2, w:fw, h:fh};
       return;
     }
-    if(st.ratio){const ar=st.ratio.w/st.ratio.h; fw=cw*0.7; fh=fw/ar; if(fh>ch*0.8){fh=ch*0.8;fw=fh*ar;}}
+    if(st.ratio){const ar=peEffAR(); fw=cw*0.7; fh=fw/ar; if(fh>ch*0.8){fh=ch*0.8;fw=fh*ar;}}
     else {const s=Math.min(cw,ch)*0.7; fw=s;fh=s;}
     st.frameRect={x:(cw-fw)/2,y:(ch-fh)/2,w:fw,h:fh};
   }
@@ -16553,22 +16658,29 @@ function buildPipEditor(pip, onClose) {
     st.scale=Math.min(cv.width/iw,cv.height/ih);
     st.offX=(cv.width-iw*st.scale)/2; st.offY=(cv.height-ih*st.scale)/2;
   }
+  // ロックモードに応じた画像の描画サイズ・中心(回転で縦横が入れ替わるのも考慮)
+  function peDrawGeom(fr){
+    const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
+    const mode=st.lockMode||'orig';
+    if(mode==='orig' || !fr){ const dw=iw*st.scale, dh=ih*st.scale; return {dw,dh,cx:st.offX+dw/2,cy:st.offY+dh/2,clip:false}; }
+    const rot=((st.rot%360)+360)%360, swap=(rot===90||rot===270);
+    const fw=swap?fr.h:fr.w, fh=swap?fr.w:fr.h;            // 回転後に枠を満たす基準
+    const ar=iw/ih, fAr=fw/fh; let dw,dh;
+    if(mode==='fit'){ dw=fw; dh=fh; }                                                  // 引き伸ばし
+    else if(mode==='lock'){ if(fAr>ar){ dw=fw; dh=fw/ar; } else { dh=fh; dw=fh*ar; } } // 埋める(cover)
+    else { if(fAr>ar){ dh=fh; dw=fh*ar; } else { dw=fw; dh=fw/ar; } }                  // 収める(contain)
+    return {dw,dh,cx:fr.x+fr.w/2,cy:fr.y+fr.h/2,clip:true};
+  }
   function drawImageOnly(c){
     const src=srcForDraw(); if(!src) return;
-    const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
-    let dw, dh, ox, oy;
-    if(st.lockMode==='fit' && st.frameRect){
-      // 枠いっぱいに引き伸ばす(縦横別)
-      ox=st.frameRect.x; oy=st.frameRect.y; dw=st.frameRect.w; dh=st.frameRect.h;
-    } else {
-      dw=iw*st.scale; dh=ih*st.scale; ox=st.offX; oy=st.offY;
-    }
+    const fr=st.frameRect, g=peDrawGeom(fr);
     c.save(); c.filter=filterStr();
     if(st.quality>0) c.imageSmoothingEnabled=false;
-    c.translate(ox+dw/2, oy+dh/2);
+    if(g.clip && fr){ c.beginPath(); c.rect(fr.x,fr.y,fr.w,fr.h); c.clip(); }   // 枠に合わせる系は枠内のみ
+    c.translate(g.cx, g.cy);
     c.rotate(st.rot*Math.PI/180);
     c.scale(st.flipH?-1:1, st.flipV?-1:1);
-    c.drawImage(src,-dw/2,-dh/2,dw,dh);
+    c.drawImage(src,-g.dw/2,-g.dh/2,g.dw,g.dh);
     c.restore(); c.filter='none'; c.imageSmoothingEnabled=true;
   }
   function render(){
@@ -16615,45 +16727,17 @@ function buildPipEditor(pip, onClose) {
     if(!st.dragMode)return;
     const r=cv.getBoundingClientRect(),sc=cv.width/r.width;
     const x=(e.clientX-r.left)*sc,y=(e.clientY-r.top)*sc,dx=x-st.sx,dy=y-st.sy,fr=st.frameRect;
-    // 画像の表示矩形 (スナップ対象)
-    const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
-    const dw=iw*st.scale, dh=ih*st.scale;
-    const imgL=st.offX, imgR=st.offX+dw, imgT=st.offY, imgB=st.offY+dh;
-    const S=Math.max(7, cv.width*0.022); // 吸着のしきい値
-    const vlines=[0, cv.width, cv.width/2, imgL, imgR, (imgL+imgR)/2];
-    const hlines=[0, cv.height, cv.height/2, imgT, imgB, (imgT+imgB)/2];
-    if(st.dragMode==='move'){
-      let nx=Math.max(0,Math.min(cv.width-fr.w,st.fr0.x+dx));
-      let ny=Math.max(0,Math.min(cv.height-fr.h,st.fr0.y+dy));
-      // x: 左/右/中央のいずれかが縦ラインに近づいたら吸着
-      let bestX=null,bX=S;
-      for(const v of vlines){
-        const cands=[[nx,0],[nx+fr.w,fr.w],[nx+fr.w/2,fr.w/2]];
-        for(const [edge,off] of cands){ const dd=Math.abs(edge-v); if(dd<bX){ bX=dd; bestX=v-off; } }
-      }
-      if(bestX!==null) nx=Math.max(0,Math.min(cv.width-fr.w,bestX));
-      let bestY=null,bY=S;
-      for(const v of hlines){
-        const cands=[[ny,0],[ny+fr.h,fr.h],[ny+fr.h/2,fr.h/2]];
-        for(const [edge,off] of cands){ const dd=Math.abs(edge-v); if(dd<bY){ bY=dd; bestY=v-off; } }
-      }
-      if(bestY!==null) ny=Math.max(0,Math.min(cv.height-fr.h,bestY));
-      fr.x=nx; fr.y=ny;
-    } else {
-      let nw=Math.max(24,st.fr0.w+dx),nh;
-      // 右端を縦ラインへ吸着
-      let bestW=null,bW=S;
-      for(const v of [cv.width, cv.width/2, imgR, (imgL+imgR)/2]){ const dd=Math.abs((fr.x+nw)-v); if(dd<bW){ bW=dd; bestW=v-fr.x; } }
-      if(bestW!==null && bestW>=24) nw=bestW;
-      if(st.ratio){ nh=nw*st.ratio.h/st.ratio.w; }
-      else {
-        nh=Math.max(24,st.fr0.h+dy);
-        let bestH=null,bH=S;
-        for(const v of [cv.height, cv.height/2, imgB, (imgT+imgB)/2]){ const dd=Math.abs((fr.y+nh)-v); if(dd<bH){ bH=dd; bestH=v-fr.y; } }
-        if(bestH!==null && bestH>=24) nh=bestH;
-      }
-      nw=Math.min(nw,cv.width-fr.x); nh=Math.min(nh,cv.height-fr.y);
-      fr.w=nw; fr.h=nh;
+    const ir=(st.ratio&&st.img&&(st.lockMode||'orig')==='orig')?imgRect():{x:0,y:0,w:cv.width,h:cv.height};   // 切り抜き時のみ画像内に収める(白枠にはみ出さない)
+    if(st.dragMode==='move'){   // 自由移動(吸着なし)＋画像内にクランプ
+      fr.x=Math.max(ir.x,Math.min(ir.x+ir.w-fr.w,st.fr0.x+dx));
+      fr.y=Math.max(ir.y,Math.min(ir.y+ir.h-fr.h,st.fr0.y+dy));
+    } else {                    // リサイズ: 比率維持、画像の端で止める
+      let nw=Math.max(24,st.fr0.w+dx);
+      nw=Math.min(nw, ir.x+ir.w-fr.x);
+      let nh;
+      if(st.ratio){ nh=nw/peEffAR(); if(fr.y+nh>ir.y+ir.h){ nh=ir.y+ir.h-fr.y; nw=nh*peEffAR(); } }
+      else { nh=Math.max(24,st.fr0.h+dy); nh=Math.min(nh, ir.y+ir.h-fr.y); }
+      fr.w=Math.max(24,nw); fr.h=Math.max(24,nh);
     }
     render();
   });
@@ -16668,15 +16752,12 @@ function buildPipEditor(pip, onClose) {
     out.width=Math.max(1,Math.round(fr.w)); out.height=Math.max(1,Math.round(fr.h));
     const octx=out.getContext('2d');
     octx.filter=filterStr();
-    const iw=st.img.naturalWidth||st.img.width, ih=st.img.naturalHeight||st.img.height;
-    let dw, dh, ox, oy;
-    if(st.lockMode==='fit' && fr){ ox=fr.x; oy=fr.y; dw=fr.w; dh=fr.h; }
-    else { dw=iw*st.scale; dh=ih*st.scale; ox=st.offX; oy=st.offY; }
-    octx.save(); octx.translate(-fr.x,-fr.y);
-    octx.translate(ox+dw/2, oy+dh/2);
+    const g=peDrawGeom(fr);
+    octx.save(); octx.translate(-fr.x,-fr.y);   // 出力原点=枠(プレビューと同じ見た目で切り出す)
+    octx.translate(g.cx, g.cy);
     octx.rotate(st.rot*Math.PI/180);
     octx.scale(st.flipH?-1:1, st.flipV?-1:1);
-    octx.drawImage(src,-dw/2,-dh/2,dw,dh);
+    octx.drawImage(src,-g.dw/2,-g.dh/2,g.dw,g.dh);
     octx.restore();
     return qShrink(out);
   }
@@ -16892,24 +16973,29 @@ function buildPipEditor(pip, onClose) {
   });
 })();
 
-/* 起動時にドロップ(PiP)を開くモードの切り替え (aspect. の右のボタン) */
+/* 起動時にドロップ(PiP)を開く: ドロップくんボタン内の「ピン」で切替 (ピンだけ押してもドロップは起動しない) */
 (function setupStartupPip() {
-  const t = document.getElementById('startupPipToggle');
-  if (!t) return;
+  const pin = document.getElementById('dropKunPin');
+  if (!pin) return;
   let on = false;
   try { on = localStorage.getItem('aspectStartupPip') === '1'; } catch (e) {}
-  const sync = () => { t.classList.toggle('active', on); t.setAttribute('aria-pressed', on ? 'true' : 'false'); };
+  const sync = () => { pin.classList.toggle('on', on); pin.classList.toggle('off', !on); pin.setAttribute('aria-pressed', on ? 'true' : 'false'); pin.title = on ? '起動時に自動でドロップを開く: オン（青）' : '起動時に自動でドロップを開く: オフ'; };
   sync();
-  t.addEventListener('click', () => {
+  const toggle = (e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }   // ピンだけ押してもドロップは起動しない
     on = !on;
-    try { localStorage.setItem('aspectStartupPip', on ? '1' : '0'); } catch (e) {}
+    try { localStorage.setItem('aspectStartupPip', on ? '1' : '0'); } catch (e2) {}
     sync();
-    if (typeof showToast === 'function') showToast(on ? '起動時にドロップを開きます' : '起動時のドロップ表示をオフ');
-  });
-  // ブラウザはPiPにユーザー操作を要求するため、ONなら「最初のクリック」でドロップを開く
+    if (typeof showToast === 'function') showToast(on ? '起動時に自動でドロップを開きます' : '起動時の自動ドロップをオフ');
+  };
+  // pointerdown でも止めて、親ボタン(#dropKun)の起動を確実に防ぐ
+  pin.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); }, true);
+  pin.addEventListener('click', toggle);
+  pin.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') toggle(e); });
+  // ONなら「最初のクリック」でドロップを開く (ブラウザはPiPにユーザー操作を要求するため)
   if (on && ('documentPictureInPicture' in window)) {
     const openOnce = (e) => {
-      if (t.contains(e.target)) return;            // トグル自身のクリックでは開かない
+      if (pin.contains(e.target)) return;            // ピンのクリックでは開かない
       document.removeEventListener('pointerdown', openOnce, true);
       const d = document.getElementById('dropKun');
       if (d) d.click();

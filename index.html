@@ -10562,7 +10562,7 @@ layerPanelToggle.addEventListener('click', () => {
     if(!('documentPictureInPicture' in window)){ if(typeof showToast==='function') showToast('この端末はPiP非対応です'); return; }
     try{
       if(gaugePipWin && !gaugePipWin.closed){ gaugePipWin.focus(); return; }
-      gaugePipWin = await window.documentPictureInPicture.requestWindow({ width: 180, height: 360 });
+      gaugePipWin = await window.documentPictureInPicture.requestWindow({ width: 306, height: 389 });
       const d2=gaugePipWin.document;
       const css=d2.createElement('style');
       css.textContent='*{box-sizing:border-box;}html,body{margin:0;height:100%;background:#eef4f8;font-family:sans-serif;}'
@@ -10575,10 +10575,10 @@ layerPanelToggle.addEventListener('click', () => {
         +'#pipInfo{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:.6vh;text-align:center;}'
         +'.ptitle{font-size:3.4vh;font-weight:800;color:#3f6d80;}.pdir{font-size:4vh;font-weight:800;color:#2c3e50;}'
         +'.pbig{font-size:8vh;font-weight:800;color:#5b9cb8;line-height:1.02;}.psmall{font-size:2.9vh;color:#9bb3c0;font-weight:700;}.pwarn{font-size:2.9vh;color:#e0588f;font-weight:800;}'
-        +'#pipGauge{display:flex;align-items:center;gap:2vw;background:#2b3138;border-radius:999px;padding:1.6vh 3vw;width:100%;flex:none;}'
-        +'.pg-ic{font-size:4.2vh;line-height:1;}'
+        +'#pipGauge{display:flex;align-items:center;gap:2vw;background:#2b3138;border-radius:999px;padding:4vh 3vw;width:100%;flex:none;}'
+        +'.pg-ic{font-size:4.5vh;line-height:1;}'
         +'.pg-track{position:relative;flex:1;height:1.1vh;min-height:4px;background:#5a626b;border-radius:999px;}'
-        +'.pg-dot{position:absolute;top:50%;width:4.2vh;height:4.2vh;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.5);}';
+        +'.pg-dot{position:absolute;top:50%;width:7.6vh;height:7.6vh;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 1px 5px rgba(0,0,0,.55);}';
       d2.head.appendChild(css);
       d2.body.innerHTML='<div id="pipRoot"><div class="plabel">▼ 番号を選ぶ</div><div id="pipNums"></div><div id="pipInfo"></div>'
         +'<div id="pipGauge"><span class="pg-ic">🐢</span><span class="pg-track"><span id="pipDot" class="pg-dot"></span></span><span class="pg-ic">🐇</span></div></div>';
@@ -10853,7 +10853,7 @@ layerPanelToggle.addEventListener('click', () => {
     const note=document.createElement('div'); note.className='rk-side-note';
     note.innerHTML = sameSpeed
       ? '🟰 <b>同じ速さモード</b><br>全部おなじ速さ＆おなじ向き。ゲームのスライダーは<b>1か所にそろえる</b>だけ！<br><span class="rk-spd-sub">形は少しシンプルになります</span>'
-      : '上に重ねるほど<b>下の速さが足し算</b>。反対向きは打ち消し、同じ向きは加速。<br>各<b>モーター速度</b>を、ゲームのスライダーを<b>🐢〜🐇</b>の位置に合わせて設定してね。';
+      : 'ある番号の速さを変えると、<b>下に並ぶ番号すべて</b>の回り方も変わります（足し算）。反対向きは打ち消し、同じ向きは加速。<br>各<b>モーター速度</b>を、🐢〜🐇のスライダー位置に合わせて設定してね。';
     sideEl.appendChild(note);
     const fmtRpm=(r)=> r>=10 ? r.toFixed(0) : (r>=1 ? r.toFixed(1) : r.toFixed(2));
     let prev=0;   // ひとつ下の回転くんの「絶対」速度(=ここまでの合計)

@@ -2469,8 +2469,20 @@ footer.controls {
 .rk-stage { flex: 1; position: relative; background: #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(40,80,100,.18); overflow: hidden; display: flex; }
 #rkCanvas { width: 100%; height: 100%; touch-action: none; display: block; }
 .rk-hint { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); font-size: 12px; color: #8aa6b4; background: rgba(255,255,255,.85); padding: 4px 12px; border-radius: 999px; pointer-events: none; white-space: nowrap; }
-.rk-side { width: 196px; flex-shrink: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px; }
+.rk-sidecol { width: 196px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.rk-speedbar { display: flex; flex-direction: column; gap: 6px; background: rgba(91,156,184,.08); border: 1px solid rgba(91,156,184,.2); border-radius: 10px; padding: 7px 8px; }
+.rk-base-lab { font-size: 11px; font-weight: 700; color: #5a7a89; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.rk-base-lab input { width: 56px; padding: 3px 5px; border: 1.5px solid #cddde6; border-radius: 7px; font-size: 12px; text-align: right; }
+.rk-pip-btn { background: #fff; border: 1.5px solid #8fd3ed; color: #5b9cb8; border-radius: 8px; padding: 6px 8px; font-size: 11.5px; font-weight: 800; cursor: pointer; }
+.rk-pip-btn:hover { background: #eef7fb; }
+.rk-side { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px; min-height: 0; }
 .rk-side:empty { display: none; }
+.rk-side-note { font-size: 10.5px; line-height: 1.55; color: #6b8896; background: rgba(91,156,184,.08); border: 1px solid rgba(91,156,184,.2); border-radius: 10px; padding: 7px 9px; }
+.rk-side-note b { color: #5b9cb8; }
+.rk-item.rk-orient-item { background: rgba(224,88,143,.08); border: 1px solid rgba(224,88,143,.28); }
+.rk-item.rk-orient-item .rk-num { background: #e0588f; }
+#rkOrient.active { background: #5b9cb8; color: #fff; }
+.rk-spd-sub { color: #9bb3c0; font-size: 10px; }
 .rk-item { background: #fff; border-radius: 10px; padding: 8px 10px; box-shadow: 0 2px 8px rgba(40,80,100,.1); font-size: 11.5px; color: #4a6675; display: flex; align-items: center; gap: 8px; }
 .rk-num { width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; background: #5b9cb8; color: #fff; font-weight: 800; font-size: 11px; display: flex; align-items: center; justify-content: center; }
 .rk-item .rk-meta { display: flex; flex-direction: column; gap: 1px; line-height: 1.4; }
@@ -2527,6 +2539,12 @@ footer.controls {
 .rk-zoom { position: absolute; top: 10px; right: 10px; z-index: 5; display: flex; flex-direction: column; gap: 5px; }
 .rk-zoom button { width: 32px; height: 32px; border-radius: 9px; border: 1.5px solid #cddde6; background: #fff; color: #5b9cb8; font-size: 15px; font-weight: 800; cursor: pointer; }
 .rk-zoom button:hover { background: #eef7fb; }
+.rk-room { position: absolute; left: 10px; bottom: 10px; z-index: 5; display: flex; align-items: center; gap: 4px; }
+.rk-room-btn { display: flex; align-items: center; gap: 5px; height: 32px; padding: 0 11px; border-radius: 9px; border: 1.5px solid #cddde6; background: #fff; color: #5b9cb8; font-size: 11.5px; font-weight: 700; cursor: pointer; box-shadow: 0 2px 6px rgba(91,156,184,.16); }
+.rk-room-btn:hover { background: #eef7fb; }
+.rk-room-btn.on { background: #5b9cb8; color: #fff; border-color: #5b9cb8; }
+.rk-room-clear { width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid #e3b6c6; background: #fff; color: #d0608f; font-size: 14px; font-weight: 800; cursor: pointer; line-height: 1; }
+.rk-room-clear:hover { background: #fdeef4; }
 .rk-count { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #5a7a89; background: #fff; padding: 6px 12px; border-radius: 999px; border: 1.5px solid #cddde6; }
 .rk-count input[type=range] { width: 110px; }
 .rk-count input[type=number] { width: 40px; text-align: center; font-size: 12px; font-weight: 800; color: #5b9cb8; border: 1.5px solid #cddde6; border-radius: 8px; padding: 3px 2px; background: #fff; -moz-appearance: textfield; }
@@ -2534,7 +2552,7 @@ footer.controls {
 .rk-btn.rk-icon { min-width: 56px; font-size: 16px; letter-spacing: 2px; }
 .rk-preview { position: absolute; top: 10px; right: 10px; width: 150px; height: 150px; background: #fff; border: 1.5px solid #cddde6; border-radius: 12px; box-shadow: 0 4px 14px rgba(40,80,100,.18); z-index: 6; touch-action: none; }
 .rk-dim button:disabled { opacity: .4; cursor: default; }
-@media (max-width: 640px) { .rk-body { flex-direction: column; } .rk-side { width: auto; max-height: 26vh; flex-direction: row; flex-wrap: wrap; } .rk-side .rk-item { flex: 1 1 44%; } }
+@media (max-width: 640px) { .rk-body { flex-direction: column; } .rk-sidecol { width: auto; } .rk-side { width: auto; max-height: 26vh; flex-direction: row; flex-wrap: wrap; } .rk-side .rk-item { flex: 1 1 44%; } }
 .thumbmaker-overlay[hidden] { display: none; }
 .tm-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; }
 .tm-title { font-size: 19px; font-weight: 800; color: #2c6b85; letter-spacing: .04em; }
@@ -3400,6 +3418,12 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
 .welcome-tutorial-btn:active{ transform: translateY(0) scale(1); }
 #tutorialSpot{ position:fixed; display:none; border-radius:14px; z-index:9000; pointer-events:none; border:3px solid #8fd3ed; animation:tutBlink 0.85s ease-in-out infinite; }
 @keyframes tutBlink{ 0%,100%{ border-color:rgba(143,211,237,1); box-shadow:0 0 0 9999px rgba(20,30,45,0.58), 0 0 18px 5px rgba(143,211,237,.85);} 50%{ border-color:rgba(143,211,237,0.3); box-shadow:0 0 0 9999px rgba(20,30,45,0.58), 0 0 8px 2px rgba(143,211,237,.3);} }
+#tutSpotTip{ position:fixed; display:none; z-index:9001; background:#fff; color:#3f6d80; border:2px solid #8fd3ed; border-radius:12px; padding:8px 14px; font-size:13px; font-weight:800; box-shadow:0 8px 22px rgba(0,0,0,.3); pointer-events:none; max-width:240px; text-align:center; line-height:1.5; }
+#tutSpotTip .tst-sub{ display:block; font-size:11px; font-weight:600; color:#7fa6b6; margin-top:2px; }
+.welcome-tutorial-hint { text-align:center; font-size:12px; font-weight:700; color:#7fa6b6; margin-top:2px; }
+.welcome-card .guide-step { cursor:pointer; transition:transform .12s, box-shadow .12s, background .12s; }
+.welcome-card .guide-step:hover { background:rgba(91,156,184,.12)!important; transform:translateY(-1px); box-shadow:0 4px 12px rgba(91,156,184,.22); }
+.welcome-card .guide-step:active { transform:translateY(0); }
 .tut-card{ max-width:600px; padding:34px 34px 30px; }
 .tut-progress{ display:flex; align-items:center; justify-content:center; margin:14px 0 4px; }
 .tut-pstep{ display:flex; align-items:center; }
@@ -4960,8 +4984,22 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       </div>
       <div class="rk-view-label" id="rkViewLabel" hidden>上から</div>
       <button class="rk-dir-back" id="rkDirBack" type="button" hidden>← もどる</button>
+      <div class="rk-room" id="rkRoom">
+        <button class="rk-room-btn" id="rkRoomBtn" type="button" title="お部屋の写真を薄く下敷きにする（生成前後の上から／立体の床に表示）">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/></svg>
+          <span>お部屋画像</span>
+        </button>
+        <button class="rk-room-clear" id="rkRoomClear" type="button" title="お部屋画像を消す" hidden>×</button>
+        <input type="file" id="rkRoomFile" accept="image/*" hidden>
+      </div>
     </div>
-    <div class="rk-side" id="rkSide"></div>
+    <div class="rk-sidecol">
+      <div class="rk-speedbar" id="rkSpeedBar" hidden>
+        <label class="rk-base-lab">全体の速さ　①=<input type="number" id="rkBaseRpm" min="0.1" max="120" step="0.1" value="1"> rpm</label>
+        <button type="button" id="rkGaugePip" class="rk-pip-btn" title="ゲージを小窓で浮かせて、ゲームを見ながら合わせる">⧉ ゲージをPiPで見る</button>
+      </div>
+      <div class="rk-side" id="rkSide"></div>
+    </div>
   </div>
   <div class="rk-controls">
     <button class="rk-btn rk-ghost" id="rkReset" type="button">リセット</button>
@@ -4974,6 +5012,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     <button class="rk-btn rk-go" id="rkGenerate" type="button">生成</button>
     <button class="rk-btn rk-ghost" id="rkCenter" type="button" hidden>中心①</button>
     <button class="rk-btn rk-build" id="rkBuild" type="button" hidden>作る</button>
+    <button class="rk-btn rk-ghost" id="rkOrient" type="button" hidden title="一番上のアイテムが前を向くように、逆回転の合わせを案内します">向きそろえ</button>
     <button class="rk-btn rk-ghost rk-icon" id="rkPause" type="button" hidden>❚❚</button>
   </div>
 </div>
@@ -4995,12 +5034,13 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
   </div>
 </div>
 
+
 <div id="welcomeOverlay" class="guide-overlay" role="dialog" aria-modal="true">
   <div class="welcome-pair">
     <!-- 「できること」機能一覧のみ -->
     <div class="guide-card welcome-card brief">
     <button id="welcomeClose" class="guide-close" aria-label="閉じる">×</button>
-    <h3>できること</h3>
+    <h3>機能</h3>
     <div class="welcome-brief">
     <div class="guide-step">
       <div class="num">1</div>
@@ -5224,7 +5264,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     <button type="button" class="welcome-bottom-close" id="welcomeBottomClose" hidden>とじる</button>
   </div>
   </div>
-  <button type="button" class="welcome-tutorial-btn" id="tutorialBtn">▶ チュートリアル</button>
+  <div class="welcome-tutorial-hint">使いたい機能を押すと、その場所まで案内します</div>
 </div>
 
 <!-- チュートリアル説明 (ドロップくん起動時に表示) -->
@@ -5327,95 +5367,6 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
   </div>
 </div>
 
-<!-- デスクトップ版チュートリアル -->
-<div id="tutorialDesktopIntro" class="guide-overlay" role="dialog" aria-modal="true">
-  <div class="guide-card tut-card tut-intro-card">
-    <button id="tutDIntroClose" class="guide-close" aria-label="閉じる">×</button>
-    <div class="tut-intro-illust">
-      <svg viewBox="0 0 120 96" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="20" y="14" width="80" height="52" rx="5"/>
-        <path d="M48 78h24M60 66v12"/><rect x="38" y="78" width="44" height="7" rx="3.5" opacity="0.35"/>
-        <rect x="34" y="24" width="22" height="18" rx="2"/><circle cx="41" cy="31" r="2.4" fill="currentColor" stroke="none"/>
-        <path d="M34 42l6-5 5 3 4-3 9 5"/>
-        <path d="M68 34h16M78 28l6 6-6 6" stroke-width="2.6"/>
-      </svg>
-    </div>
-    <h3 class="tut-intro-title">デスクトップモードって？</h3>
-    <p class="tut-intro-lead">
-      このアプリを<b>パソコンにインストール</b>しておくと、<br>
-      サイトを開いていない状態でも、<br>
-      <b>画像をアイコンにドロップするだけ</b>で<br>
-      自動で起動して読み込めるようになります。
-    </p>
-    <p class="tut-intro-sub">これから、その<b>設定の手順</b>を案内します。</p>
-    <div class="tut-intro-btns">
-      <button class="tut-intro-cancel" id="tutDIntroCancel" type="button">やめる</button>
-      <button class="tut-intro-go" id="tutDIntroGo" type="button">進める →</button>
-    </div>
-  </div>
-</div>
-
-<div id="tutorialDesktop" class="guide-overlay" role="dialog" aria-modal="true">
-  <div class="guide-card tut-card">
-    <button id="tutorialDesktopClose" class="guide-close" aria-label="閉じる">×</button>
-    <h3>デスクトップでつかう</h3>
-    <div class="tut-progress" id="tutDProgress">
-      <div class="tut-pstep" data-i="1"><span class="tut-pdot">1</span></div>
-      <div class="tut-pstep" data-i="2"><span class="tut-pdot">2</span></div>
-      <div class="tut-pstep" data-i="3"><span class="tut-pdot">3</span></div>
-      <div class="tut-pstep" data-i="4"><span class="tut-pdot">4</span></div>
-    </div>
-    <div class="tut-main" id="tutDMain">
-      <div class="tut-panel" data-step="1">
-        <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="26" y="16" width="68" height="46" rx="4"/>
-          <path d="M60 28v18M50 38l10 10 10-10"/>
-          <rect x="44" y="70" width="32" height="7" rx="3" opacity="0.4"/>
-        </svg>
-        <div class="tut-text">下の<b>「インストール」</b>を押すだけ</div>
-      </div>
-      <div class="tut-panel" data-step="2">
-        <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="62" y="54" width="48" height="30" rx="5"/>
-          <path d="M70 64h26M70 72h14"/>
-          <rect x="70" y="58" width="3" height="3" rx="1" fill="currentColor" stroke="none"/>
-          <path d="M44 26a8 8 0 1116 0c0 6-8 9-8 9M52 47v-6" stroke-width="2.6"/>
-          <path d="M30 40l-6 6 6 6" opacity="0.5"/>
-        </svg>
-        <div class="tut-text">インストールできたら<br>右下に出るバーの<b>「はい」を選んでピン留め</b></div>
-      </div>
-      <div class="tut-panel" data-step="3">
-        <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="20" y="12" width="32" height="24" rx="3"/>
-          <circle cx="29" cy="21" r="3" fill="currentColor" stroke="none"/>
-          <path d="M20 36l8-7 6 4 5-4 13 7"/>
-          <path d="M52 60v-12a3 3 0 016 0v9m0-6a3 3 0 016 0v6m0-4a3 3 0 016 0v12a13 13 0 01-13 13h-3a11 11 0 01-8-4l-7-8a3 3 0 014.6-4l4 3.6" stroke-width="2.6"/>
-        </svg>
-        <div class="tut-text">使いたい<b>画像ファイルをつかむ</b></div>
-      </div>
-      <div class="tut-panel" data-step="4">
-        <svg viewBox="0 0 120 90" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="10" y="14" width="26" height="20" rx="3"/>
-          <circle cx="18" cy="22" r="2.4" fill="currentColor" stroke="none"/>
-          <path d="M40 24h22M55 18l8 6-8 6"/>
-          <rect x="74" y="12" width="26" height="24" rx="4"/>
-          <path d="M87 18v12M81 24h12" stroke-width="2.4"/>
-          <rect x="36" y="58" width="48" height="22" rx="5"/>
-          <path d="M60 74v-9h-6l6-7 6 7h-6" fill="currentColor" stroke="none"/>
-          <text x="60" y="55" font-size="9" text-anchor="middle" fill="currentColor" stroke="none">Shift</text>
-        </svg>
-        <div class="tut-text">ピン留めしたアイコンまで持っていき<br><b>Shiftを押しながら離す</b><br>→ 起動して読み込み</div>
-      </div>
-    </div>
-    <div class="tut-nav">
-      <button class="tut-arrow" id="tutDPrev" type="button" aria-label="前へ">‹</button>
-      <span class="tut-count" id="tutDCount">1 / 4</span>
-      <button class="tut-arrow" id="tutDNext" type="button" aria-label="次へ">›</button>
-    </div>
-  </div>
-  <button type="button" class="tut-install-btn" id="tutDInstall">⬇ インストール</button>
-  <div class="tut-install-hint" id="tutDInstallHint" hidden></div>
-</div>
 
 <div id="guideOverlay" class="guide-overlay" role="dialog" aria-modal="true">
   <div class="guide-card" style="max-width:340px">
@@ -6976,34 +6927,78 @@ if (sidebarHide) sidebarHide.addEventListener('click', () => {
 });
 
 /* ===== チュートリアル: ドロップくんボタンをスポットライト点滅 → 押すと説明表示 ===== */
-let _tutSpotEl = null, _tutCleanup = null;
-function startTutorialSpot() {
-  const dk = document.getElementById('dropKun');
-  if (!dk) return;
+let _tutSpotEl = null, _tutCleanup = null, _tutTipEl = null;
+// 任意の要素をスポットライト（周囲を暗転）＋「ここを押してね」の吹き出し。次のタップで解除。
+function spotlightEl(el, label, sub) {
+  if (!el) return;
+  // 表示されていない(hidden等)ボタンは、まず読み込みへ誘導
+  const visible = el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length > 0;
+  if (!visible) { const lk = document.getElementById('loadKun'); if (lk && lk !== el) { el = lk; label = 'まず「読み込みくん」'; sub = '画像を読み込むと使えるようになります'; } else return; }
   document.body.classList.add('tutorial-on');
   if (!_tutSpotEl) { _tutSpotEl = document.createElement('div'); _tutSpotEl.id = 'tutorialSpot'; document.body.appendChild(_tutSpotEl); }
+  if (!_tutTipEl) { _tutTipEl = document.createElement('div'); _tutTipEl.id = 'tutSpotTip'; document.body.appendChild(_tutTipEl); }
   _tutSpotEl.style.display = 'block';
+  _tutTipEl.innerHTML = (label || 'ここを押してね') + (sub ? '<span class="tst-sub">' + sub + '</span>' : '');
+  _tutTipEl.style.display = 'block';
   const pos = () => {
-    const r = dk.getBoundingClientRect(), pad = 7;
+    const r = el.getBoundingClientRect(), pad = 7;
     _tutSpotEl.style.left = (r.left - pad) + 'px';
     _tutSpotEl.style.top = (r.top - pad) + 'px';
     _tutSpotEl.style.width = (r.width + pad * 2) + 'px';
     _tutSpotEl.style.height = (r.height + pad * 2) + 'px';
+    // 吹き出しはボタンの下、画面外なら上に
+    _tutTipEl.style.left = Math.max(8, Math.min(window.innerWidth - _tutTipEl.offsetWidth - 8, r.left + r.width / 2 - _tutTipEl.offsetWidth / 2)) + 'px';
+    let ty = r.bottom + 12; if (ty + _tutTipEl.offsetHeight > window.innerHeight - 8) ty = r.top - _tutTipEl.offsetHeight - 12;
+    _tutTipEl.style.top = Math.max(8, ty) + 'px';
   };
   pos();
   const onMove = () => { if (document.body.classList.contains('tutorial-on')) pos(); };
   window.addEventListener('resize', onMove);
   window.addEventListener('scroll', onMove, true);
-  _tutCleanup = () => { window.removeEventListener('resize', onMove); window.removeEventListener('scroll', onMove, true); };
-  // 念のため、視界に入るようボタンへスクロール
-  try { dk.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(pos, 350); } catch (e) {}
+  // 次のタップ(どこでも)で解除。対象ボタンのクリックはそのまま通る。
+  const onTap = () => { endTutorialSpot(); };
+  setTimeout(() => document.addEventListener('pointerdown', onTap, { once: true, capture: true }), 50);
+  _tutCleanup = () => { window.removeEventListener('resize', onMove); window.removeEventListener('scroll', onMove, true); document.removeEventListener('pointerdown', onTap, true); };
+  try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); setTimeout(pos, 350); } catch (e) {}
 }
+function startTutorialSpot() { spotlightEl(document.getElementById('dropKun'), '「ドロップくん」を押してね', '小窓が浮いてドロップで読み込めます'); }
 function endTutorialSpot() {
   document.body.classList.remove('tutorial-on');
   if (_tutSpotEl) _tutSpotEl.style.display = 'none';
+  if (_tutTipEl) _tutTipEl.style.display = 'none';
   if (_tutCleanup) { _tutCleanup(); _tutCleanup = null; }
 }
 const tutorialBtn = document.getElementById('tutorialBtn');
+// 機能カードを押す → その機能の最初のボタンへ誘導(周囲を暗転)
+(function setupFeatureGuide(){
+  const SPOT = {
+    1:['loadKun','「読み込みくん」から','画像/GIFを読み込むと自動でサイズ調節'],
+    2:['loadKun','「読み込みくん」から','動画を読み込むとGIFに変換できます'],
+    3:['patternToggle','「分割」を押してね','1枚を複数に分割できます'],
+    4:['quality','「画質」を押してね','7段階で容量を軽く'],
+    5:['colorAdjustBtn','「色加工」を押してね','お部屋の色に馴染ませる'],
+    6:['simplify','「単純化」を押してね','イラスト風に色数を絞る'],
+    7:['colorAdjustBtn','「色加工」を押してね','明るさ・色温度など細かく'],
+    8:['patternToggle','「分割／パターン」を押してね','タイル状に敷き詰め'],
+    9:['shrink','「背景拡張／変形」を押してね','枠ぴったりに合わせる'],
+    10:['loadKun','「読み込みくん」から','GIFを読み込むと短く切り出せます'],
+    11:['__rotkun','',''],
+    12:['loadKun','「読み込みくん」から','読み込み後に隙間なく並べられます'],
+    13:['loadKun','「読み込みくん」から','読み込み後に文字を追加できます'],
+    14:['loadKun','「読み込みくん」から','読み込み後にレイヤーを四角く切れます'],
+    15:['loadKun','「読み込みくん」から','読み込み後に範囲を色で塗れます'],
+    16:['loadKun','「読み込みくん」から','読み込み後に動きGIFを作れます'],
+  };
+  const wo = document.getElementById('welcomeOverlay'); if (!wo) return;
+  wo.addEventListener('click', (e)=>{
+    const step = e.target.closest('.guide-step'); if (!step || !wo.contains(step)) return;
+    const numEl = step.querySelector('.num'); if (!numEl) return;
+    const n = parseInt(numEl.textContent.trim(), 10), m = SPOT[n]; if (!m) return;
+    if (typeof closeOverlay === 'function') closeOverlay(wo);
+    if (m[0] === '__rotkun') { setTimeout(()=>{ const ov=document.getElementById('rotKunOverlay'); if(ov){ if(window.__hideHome) window.__hideHome(); ov.hidden=false; if(window.__rkInit) window.__rkInit(); } }, 200); return; }
+    setTimeout(()=>{ spotlightEl(document.getElementById(m[0]), m[1], m[2]); }, 260);
+  });
+})();
 if (tutorialBtn) tutorialBtn.addEventListener('click', () => {
   closeOverlay(welcomeOverlay);
   setTimeout(() => openOverlay(document.getElementById('tutorialChoice')), 200);
@@ -7194,6 +7189,7 @@ window.addEventListener('load', () => {
       try { localStorage.setItem('benri.welcomeNoShow', ns.checked ? '1' : '0'); } catch (e) {}
     });
   }
+  // 最初に「機能(できること)」を表示。閉じるとそのまま使えます。
   if (!skip) setTimeout(() => openOverlay(welcomeOverlay), 200);
 });
 
@@ -10397,6 +10393,7 @@ layerPanelToggle.addEventListener('click', () => {
     tmUserURL=URL.createObjectURL(f); tmBuild();
   });
   if(slRotate) slRotate.addEventListener('click', ()=>{ closeFan(); const ov=document.getElementById('rotKunOverlay'); if(ov){ ov.hidden=false; if(window.__rkInit) window.__rkInit(); } });
+
   layout(false);
 })();
 
@@ -10406,7 +10403,19 @@ layerPanelToggle.addEventListener('click', () => {
   if(!ov||!cv) return;
   const ctx=cv.getContext('2d');
   const $=id=>document.getElementById(id);
-  const closeBtn=$('rkClose'), resetBtn=$('rkReset'), redrawBtn=$('rkRedraw'), genBtn=$('rkGenerate'), pauseBtn=$('rkPause'), initBtn=$('rkInitView'), hintEl=$('rkHint'), sideEl=$('rkSide'), centerBtn=$('rkCenter'), buildBtn=$('rkBuild');
+  const closeBtn=$('rkClose'), resetBtn=$('rkReset'), redrawBtn=$('rkRedraw'), genBtn=$('rkGenerate'), pauseBtn=$('rkPause'), initBtn=$('rkInitView'), hintEl=$('rkHint'), sideEl=$('rkSide'), centerBtn=$('rkCenter'), buildBtn=$('rkBuild'), orientBtn=$('rkOrient');
+  let orientLast=false;   // 最後のアイテムを前向きにそろえる案内を出すか
+  let baseRpm=1;          // 「1あたり」のrpm(全体の速さ)。ゲーム速度 rpm=120^x（x=スライダー位置, 最小1〜最大120rpm）
+  const speedBar=$('rkSpeedBar'), baseRpmInput=$('rkBaseRpm'), gaugePipBtn=$('rkGaugePip');
+  function rpmToX(rpm){ if(!(rpm>0)) return 0; return Math.max(0, Math.min(1, Math.log(rpm)/Math.log(120))); }   // ゲームのスライダー位置(0〜1)
+  function rkGaugeHTML(x){ const left=(7.3+x*85.4).toFixed(1);   // 円の中心位置(実測: 4Kで端から32px〜408px / 440px)
+    return '<span style="display:flex;align-items:center;gap:5px;background:#2b3138;border-radius:999px;padding:3px 8px;margin-top:4px;">'
+      +'<span style="font-size:12px;line-height:1;">🐢</span>'
+      +'<span style="position:relative;flex:1;height:3px;background:#5a626b;border-radius:2px;min-width:54px;">'
+        +'<span style="position:absolute;top:50%;left:'+left+'%;width:12px;height:12px;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 1px 3px rgba(0,0,0,.55);"></span>'
+      +'</span>'
+      +'<span style="font-size:12px;line-height:1;">🐇</span></span>';
+  }
   function updateCenterBtn(){ if(!centerBtn) return; const show=(mode==='play'&&dim3d&&view==='persp'); centerBtn.hidden=!show; if(show){ const circ='①②③④⑤⑥⑦⑧⑨⑩⑪⑫'; centerBtn.textContent='中心'+(orbitCenter<12?circ.charAt(orbitCenter):String(orbitCenter+1)); } }
   const modePen=$('rkModePen'), modePoly=$('rkModePoly'), modeToggle=$('rkModeToggle');
   const zoomBox=$('rkZoom'), zoomIn=$('rkZoomIn'), zoomOut=$('rkZoomOut'), zoomReset=$('rkZoomReset');
@@ -10431,6 +10440,7 @@ layerPanelToggle.addEventListener('click', () => {
   let path3d=[], keypts=[], zProfileFn=null, dragKp=null; const PVW=150, PVH=150;
   let allZ=[], zKept=[], zDC=0, lastKp=null, pathMinX=0, pathMaxX=1, orbit3d=[], target3d=[];
   let camAz=-Math.PI/4, camEl=0.5, sceneR=120, orbBox=null, platformBox=null, orbitCenter=0, dirFocus=null, soloCard=null;
+  let rkRoomImg=null, rkRoomRect=null, rkRoomURL=null;   // お部屋画像(下敷き): 上から(生成前後)＆立体の床に同サイズ表示
 
   function fit(){ const r=cv.getBoundingClientRect(); const dpr=Math.min(2,window.devicePixelRatio||1); cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); W=r.width; H=r.height; }
   window.__rkInit=function(){ setTimeout(()=>{ fit(); resetAll(); }, 30); };
@@ -10498,6 +10508,26 @@ layerPanelToggle.addEventListener('click', () => {
     bGo.disabled=false; bGo.textContent=orig;
   }
   if(buildBtn) buildBtn.addEventListener('click', rkOpenBuild);
+  if(orientBtn) orientBtn.addEventListener('click', ()=>{ orientLast=!orientLast; orientBtn.classList.toggle('active', orientLast); buildSide(); computeMatch(); rkUpdateGaugePip(); });
+  if(baseRpmInput) baseRpmInput.addEventListener('input', ()=>{ const v=parseFloat(baseRpmInput.value); if(isFinite(v)&&v>0){ baseRpm=v; buildSide(); rkUpdateGaugePip(); } });
+  // ゲージを小窓(Document PiP)に出して、ゲームを見ながら合わせる
+  let gaugePipWin=null;
+  function rkUpdateGaugePip(){ if(gaugePipWin && !gaugePipWin.closed){ const b=gaugePipWin.document.getElementById('pipBody'); if(b) b.innerHTML=sideEl.innerHTML; } }
+  async function openGaugePip(){
+    if(!('documentPictureInPicture' in window)){ if(typeof showToast==='function') showToast('この端末はPiP非対応です'); return; }
+    try{
+      if(gaugePipWin && !gaugePipWin.closed){ gaugePipWin.focus(); return; }
+      gaugePipWin = await window.documentPictureInPicture.requestWindow({ width: 240, height: 460 });
+      const d2=gaugePipWin.document;
+      d2.body.style.cssText='margin:0;padding:10px;background:#eef4f8;font-family:sans-serif;';
+      const css=d2.createElement('style');
+      css.textContent='.rk-side-note{font-size:10.5px;line-height:1.55;color:#6b8896;background:rgba(91,156,184,.1);border:1px solid rgba(91,156,184,.2);border-radius:10px;padding:7px 9px;margin-bottom:6px;}.rk-side-note b{color:#5b9cb8;}.rk-item{display:flex;gap:8px;background:#fff;border:1px solid #dceaf1;border-radius:10px;padding:8px;margin-bottom:6px;}.rk-num{flex:none;width:22px;height:22px;border-radius:50%;background:#5b9cb8;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;}.rk-meta{display:flex;flex-direction:column;gap:2px;font-size:11px;color:#3f6d80;font-weight:700;}.rk-meta b{color:#2c3e50;}.rk-spd-sub{color:#9bb3c0;font-size:10px;}.rk-item.rk-orient-item{background:rgba(224,88,143,.08);border-color:rgba(224,88,143,.28);}.rk-item.rk-orient-item .rk-num{background:#e0588f;}';
+      d2.head.appendChild(css);
+      const wrap=d2.createElement('div'); wrap.id='pipBody'; wrap.innerHTML=sideEl.innerHTML; d2.body.appendChild(wrap);
+      gaugePipWin.addEventListener('pagehide', ()=>{ gaugePipWin=null; });
+    }catch(e){ if(typeof showToast==='function') showToast('PiPを開けませんでした'); }
+  }
+  if(gaugePipBtn) gaugePipBtn.addEventListener('click', openGaugePip);
   if(bClose) bClose.addEventListener('click', ()=>{ buildPanel.hidden=true; });
   if(bSize) bSize.addEventListener('input', rkUpdateBuild);
   if(bGo) bGo.addEventListener('click', rkBuildExport);
@@ -10506,7 +10536,7 @@ layerPanelToggle.addEventListener('click', () => {
     cancelAnimationFrame(raf); raf=null; mode='draw'; drawPts=[]; polyCursor=null; allEpi=[]; epi=[]; trace=[]; time=0; paused=false; zoom=1; selJoint=null; panX=0; panY=0; orbitCenter=0; dirFocus=null; soloCard=null; if(dirBack) dirBack.hidden=true;
     path3d=[]; keypts=[]; dragKp=null; allZ=[]; zKept=[]; zDC=0; showArrows=false; lastKp=null; pathMinX=0; pathMaxX=1; orbit3d=[]; target3d=[]; if(pv){ pv.hidden=true; pv.classList.remove('rk-pv-bottom'); } if(matchEl) matchEl.hidden=true;
     if(sideEl) sideEl.innerHTML='';
-    redrawBtn.hidden=true; pauseBtn.hidden=true; genBtn.hidden=false; if(initBtn) initBtn.hidden=true; if(resetBtn) resetBtn.hidden=false; if(buildBtn) buildBtn.hidden=true;
+    redrawBtn.hidden=true; pauseBtn.hidden=true; genBtn.hidden=false; if(initBtn) initBtn.hidden=true; if(resetBtn) resetBtn.hidden=false; if(buildBtn) buildBtn.hidden=true; if(orientBtn){ orientBtn.hidden=true; orientLast=false; orientBtn.classList.remove('active'); } if(speedBar) speedBar.hidden=true;
     genBtn.textContent = dim3d ? '上下' : '生成';
     if(dimBox){ dimBox.style.pointerEvents=''; dimBox.style.opacity=''; }
     view='top';   // 描くときは常に上から
@@ -10535,6 +10565,7 @@ layerPanelToggle.addEventListener('click', () => {
 
   function drawCurrent(closed){
     clear();
+    rkDrawRoomTop();   // お部屋画像を下敷きに
     if(dim3d){ const m=18; ctx.save(); ctx.shadowColor='rgba(40,80,100,.10)'; ctx.shadowBlur=14; ctx.shadowOffsetY=6; ctx.fillStyle='rgba(244,247,249,.9)'; rkRoundRect(ctx, m, m, W-2*m, H-2*m, 16); ctx.fill(); ctx.restore(); ctx.strokeStyle='rgba(150,180,195,.35)'; ctx.lineWidth=1; rkRoundRect(ctx, m, m, W-2*m, H-2*m, 16); ctx.stroke(); }
     if(drawPts.length<1) return;
     ctx.lineWidth=3; ctx.strokeStyle='#5b9cb8'; ctx.lineJoin='round'; ctx.lineCap='round';
@@ -10672,22 +10703,47 @@ layerPanelToggle.addEventListener('click', () => {
     if(countVal) countVal.value=String(n);
     computeMatch();
     buildSide();
+    if(typeof rkUpdateGaugePip==='function') rkUpdateGaugePip();
   }
   let matchInfo=null;
   function computeMatch(){
     matchInfo=null; if(!resampled||!resampled.length) return;
-    const M=resampled.length; let sumXY=0,sumSide=0;
-    const spread=Math.max(20, 2*sceneR);
-    for(let i=0;i<M;i++){ const t=i/M, p=tipAt(t);
-      const tg = dim3d ? (target3d[i]||{x:resampled[i].x,y:resampled[i].y,z:0}) : {x:resampled[i].x,y:resampled[i].y,z:0};
-      sumXY += Math.hypot(p.x-tg.x, p.y-tg.y);
-      sumSide += Math.hypot(p.x-tg.x, (p.z||0)-(tg.z||0));
+    const M=resampled.length;
+    // ピンク(再現=tipの軌跡)と灰色(描いた線)の「重なった割合」(IoU)で一致度を出す
+    function overlapPct(grayPts, pinkPts){
+      let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
+      const upd=p=>{ if(p.x<minx)minx=p.x; if(p.y<miny)miny=p.y; if(p.x>maxx)maxx=p.x; if(p.y>maxy)maxy=p.y; };
+      grayPts.forEach(upd); pinkPts.forEach(upd);
+      const w=(maxx-minx)||1, h=(maxy-miny)||1, span=Math.max(w,h); if(span<=0) return 0;
+      const N=140, cell=span/N; const cols=Math.ceil(w/cell)+1, rows=Math.ceil(h/cell)+1;
+      const gG=new Uint8Array(cols*rows), gP=new Uint8Array(cols*rows);
+      const thick=Math.max(1, Math.round(span*0.035/cell));   // 線の太さ ~3.5%(視覚的な重なり感に合わせる)
+      function stamp(grid, pts){
+        for(let i=0;i<pts.length;i++){ const a=pts[i], b=pts[(i+1)%pts.length];
+          const segs=Math.max(1, Math.ceil(Math.hypot(b.x-a.x,b.y-a.y)/(cell*0.6)));
+          for(let s=0;s<=segs;s++){ const x=a.x+(b.x-a.x)*s/segs, y=a.y+(b.y-a.y)*s/segs;
+            const cx=Math.floor((x-minx)/cell), cy=Math.floor((y-miny)/cell);
+            for(let dy=-thick;dy<=thick;dy++)for(let dx=-thick;dx<=thick;dx++){ const xx=cx+dx, yy=cy+dy; if(xx>=0&&xx<cols&&yy>=0&&yy<rows) grid[yy*cols+xx]=1; } } }
+      }
+      stamp(gG,grayPts); stamp(gP,pinkPts);
+      let inter=0,uni=0; for(let k=0;k<gG.length;k++){ const a=gG[k],b=gP[k]; if(a||b)uni++; if(a&&b)inter++; }
+      return uni? 100*inter/uni : 0;
     }
-    const top=Math.max(0,Math.min(100, 100*(1-(sumXY/M)/spread)));
-    const side=Math.max(0,Math.min(100, 100*(1-(sumSide/M)/spread)));
+    const grayXY=[], pinkXY=[];
+    for(let i=0;i<M;i++){ grayXY.push({x:resampled[i].x, y:resampled[i].y}); }
+    const PN=Math.max(M,256); for(let i=0;i<PN;i++){ const p=tipAt(i/PN); pinkXY.push({x:p.x,y:p.y}); }
+    const top=Math.max(0,Math.min(100, overlapPct(grayXY,pinkXY)));
+    let side=top;
+    if(dim3d){
+      const grayXZ=[], pinkXZ=[];
+      for(let i=0;i<M;i++){ const tg=target3d[i]||{x:resampled[i].x,y:resampled[i].y,z:0}; grayXZ.push({x:tg.x, y:tg.z||0}); }
+      for(let i=0;i<PN;i++){ const p=tipAt(i/PN); pinkXZ.push({x:p.x, y:p.z||0}); }
+      side=Math.max(0,Math.min(100, overlapPct(grayXZ,pinkXZ)));
+    }
     matchInfo = dim3d ? {top,side,avg:(top+side)/2} : {avg:top};
     // 必要アイテム数: 回転くん本体に加え、回転くん同士の間にも1個ずつ使う → 回転くん数の約2倍。3Dで傾いた回転くんは+3
     let items=epi.length*2, angled=0;
+    if(orientLast) items+=1;   // 向きそろえ用の1個
     if(dim3d){ epi.forEach(c=>{ if(c.A){ const nx=c.A[1]*c.B[2]-c.A[2]*c.B[1], ny=c.A[2]*c.B[0]-c.A[0]*c.B[2], nz=c.A[0]*c.B[1]-c.A[1]*c.B[0]; const nl=Math.hypot(nx,ny,nz)||1; const tilt=Math.acos(Math.min(1,Math.abs(nz)/nl)); if(tilt>12*Math.PI/180){ angled++; } } }); items+=angled*3; }
     if(matchEl){ matchEl.hidden=false; matchEl.innerHTML = (dim3d
       ? `一致率 <b>${matchInfo.avg.toFixed(0)}%</b> <span class="rk-match-sub">(上${top.toFixed(0)}/横${side.toFixed(0)})</span>`
@@ -10706,7 +10762,7 @@ layerPanelToggle.addEventListener('click', () => {
     if(countRange){ countRange.max=String(allEpi.length); if(parseInt(countRange.value)>allEpi.length) countRange.value=String(allEpi.length); } if(countVal) countVal.max=String(allEpi.length);
     applyCount();
     mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0; showArrows=false; view='top'; camAz=-Math.PI/4; camEl=0.5; orbitCenter=0; dirFocus=null; soloCard=null; if(dirBack) dirBack.hidden=true;
-    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true; if(buildBtn) buildBtn.hidden=false;
+    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true; if(buildBtn) buildBtn.hidden=false; if(orientBtn) orientBtn.hidden=false; if(speedBar) speedBar.hidden=false;
     if(dimBox){ dimBox.style.pointerEvents='none'; dimBox.style.opacity='0.45'; }   // 生成後は2D/3D切替不可
     if(countBox) countBox.hidden=false; if(zoomBox) zoomBox.hidden=false; if(initBtn) initBtn.hidden=false;
     if(modeToggle) modeToggle.hidden=true; updateViewUI();
@@ -10716,23 +10772,48 @@ layerPanelToggle.addEventListener('click', () => {
 
   function buildSide(){
     if(!sideEl) return; sideEl.innerHTML='';
+    if(!epi.length) return;
     const f1=Math.abs(epi[0]?epi[0].freq:1)||1;
+    const note=document.createElement('div'); note.className='rk-side-note';
+    note.innerHTML='上に重ねるほど<b>下の速さが足し算</b>。反対向きは打ち消し、同じ向きは加速。<br>各<b>モーター速度</b>を、ゲームのスライダーを<b>🐢〜🐇</b>の位置に合わせて設定してね。';
+    sideEl.appendChild(note);
+    const fmtRpm=(r)=> r>=10 ? r.toFixed(0) : (r>=1 ? r.toFixed(1) : r.toFixed(2));
+    let prev=0;   // ひとつ下の回転くんの「絶対」速度(=ここまでの合計)
     epi.forEach((c,i)=>{
-      const spd=(Math.abs(c.freq)/f1);
-      let info;
-      if(c.A){ // 3D: 向いている方向(全天) = 回る平面の法線
+      const abs=c.freq, rel=abs-prev; prev=abs;
+      const dirName=(v)=> v>0?'↺ 反時計':'↻ 時計';
+      let info, gauge='';
+      if(Math.abs(rel)<1e-9){
+        info = `モーター <b>回さない（固定）</b>`;
+      } else {
+        const rpm=Math.abs(rel)*baseRpm;
+        const over = rpm>120 ? ' <span class="rk-spd-sub">(最大120超)</span>' : (rpm<1 ? ' <span class="rk-spd-sub">(最小1未満)</span>' : '');
+        info = `モーター <b>${dirName(rel)}</b>・約 <b>${fmtRpm(rpm)}</b> rpm${over}`;
+        gauge = rkGaugeHTML(rpmToX(rpm));
+      }
+      let sub = '';
+      if(c.A){
         const nx=c.A[1]*c.B[2]-c.A[2]*c.B[1], ny=c.A[2]*c.B[0]-c.A[0]*c.B[2], nz=c.A[0]*c.B[1]-c.A[1]*c.B[0];
         const nl=Math.hypot(nx,ny,nz)||1, elev=Math.round(Math.asin(Math.max(-1,Math.min(1,nz/nl)))*180/Math.PI);
-        info = `向き(上下) <b>${elev}°</b>・速さ <b>×${spd.toFixed(2)}</b>`;
-      } else {
-        const dir=c.freq>0?'↺ 反時計':'↻ 時計';
-        info = `${dir}・速さ <b>×${spd.toFixed(2)}</b>`;
+        sub = `<span class="rk-spd-sub">向き(上下) ${elev}°</span>`;
       }
       const item=document.createElement('div'); item.className='rk-item';
-      item.innerHTML=`<span class="rk-num">${i+1}</span><div class="rk-meta"><span>${info}</span><span>下との距離 <b>${Math.round(c.amp)}</b></span></div>`;
+      item.innerHTML=`<span class="rk-num">${i+1}</span><div class="rk-meta"><span>${info}</span>${gauge}${sub}<span>下との距離 <b>${Math.round(c.amp)}</b></span></div>`;
       if(c.A){ item.title='タップで向きを大きく確認'; item.addEventListener('click', ()=>enterDirFocus(i)); }
       sideEl.appendChild(item);
     });
+    // 向きそろえ: 一番上にもう1つ重ね、逆回転×2でアイテムが前を向く(実測の考え方に合わせる)
+    if(orientLast){
+      const lastAbs=epi[epi.length-1].freq;
+      const cDir = (-lastAbs)>0 ? '↺ 反時計' : '↻ 時計';
+      const cRpm = Math.abs(lastAbs)*2*baseRpm;
+      const item=document.createElement('div'); item.className='rk-item rk-orient-item';
+      const txt = Math.abs(lastAbs)<1e-9
+        ? `そのまま前を向きます（追加不要）`
+        : `一番上にもう1つ重ね<br><b>${cDir}（逆回転×2）</b>・約 <b>${fmtRpm(cRpm)}</b> rpm${cRpm>120?' <span class="rk-spd-sub">(最大超)</span>':''}<br>${rkGaugeHTML(rpmToX(cRpm))}<span class="rk-spd-sub">アイテムが前を向きます</span>`;
+      item.innerHTML=`<span class="rk-num">🧭</span><div class="rk-meta"><span>向きそろえ用</span><span>${txt}</span></div>`;
+      sideEl.appendChild(item);
+    }
   }
 
   // 投影: jointの3D位置 → 画面。selJointを画面中央にしてズーム。
@@ -10754,10 +10835,51 @@ layerPanelToggle.addEventListener('click', () => {
   function zoomWorld(){ const j=(selJoint!=null&&joints[selJoint])?joints[selJoint]:{x:center.x,y:center.y,z:center.z||0}; return view==='side'?{x:j.x,y:H/2-j.z}:{x:j.x,y:j.y}; }
   function proj(j){ const wx=j.x, wy=(view==='side')?(H/2-j.z):j.y; const zc=zoomWorld(); return { x:W/2+(wx-zc.x)*zoom+panX, y:H/2+(wy-zc.y)*zoom+panY }; }
 
+  // ===== お部屋画像(下敷き) =====
+  // いま画面いっぱいに見えているワールド矩形(上から)。生成前は world=screen。
+  function rkViewWorldRect(){
+    if(mode!=='play'){ return {x:0,y:0,w:W,h:H}; }
+    const zc={x:center.x,y:center.y};   // 上からビュー基準
+    const x0=(0 - W/2 - panX)/zoom + zc.x, y0=(0 - H/2 - panY)/zoom + zc.y;
+    const x1=(W - W/2 - panX)/zoom + zc.x, y1=(H - H/2 - panY)/zoom + zc.y;
+    return {x:Math.min(x0,x1), y:Math.min(y0,y1), w:Math.abs(x1-x0)||W, h:Math.abs(y1-y0)||H};
+  }
+  function rkSetRoomRect(){ if(!rkRoomImg) return; const vr=rkViewWorldRect(); const iw=rkRoomImg.naturalWidth||1, ih=rkRoomImg.naturalHeight||1, ar=iw/ih; let rw,rh; if(vr.w/vr.h>ar){ rh=vr.h; rw=rh*ar; } else { rw=vr.w; rh=rw/ar; } rkRoomRect={x:vr.x+(vr.w-rw)/2, y:vr.y+(vr.h-rh)/2, w:rw, h:rh}; }
+  // 三角形テクスチャ貼り(アフィン)。立体の床に遠近で貼るため
+  function rkDrawImgTri(img, sA,sB,sC, dA,dB,dC){
+    const x0=sA.x,y0=sA.y,x1=sB.x,y1=sB.y,x2=sC.x,y2=sC.y;
+    const det=x0*(y1-y2)-x1*(y0-y2)+x2*(y0-y1); if(Math.abs(det)<1e-6) return;
+    const a=(dA.x*(y1-y2)+dB.x*(y2-y0)+dC.x*(y0-y1))/det;
+    const b=(dA.y*(y1-y2)+dB.y*(y2-y0)+dC.y*(y0-y1))/det;
+    const c=(dA.x*(x2-x1)+dB.x*(x0-x2)+dC.x*(x1-x0))/det;
+    const dd=(dA.y*(x2-x1)+dB.y*(x0-x2)+dC.y*(x1-x0))/det;
+    const e=(dA.x*(x1*y2-x2*y1)+dB.x*(x2*y0-x0*y2)+dC.x*(x0*y1-x1*y0))/det;
+    const f=(dA.y*(x1*y2-x2*y1)+dB.y*(x2*y0-x0*y2)+dC.y*(x0*y1-x1*y0))/det;
+    ctx.save(); ctx.beginPath(); ctx.moveTo(dA.x,dA.y); ctx.lineTo(dB.x,dB.y); ctx.lineTo(dC.x,dC.y); ctx.closePath(); ctx.clip();
+    ctx.transform(a,b,c,dd,e,f); ctx.drawImage(img,0,0); ctx.restore();
+  }
+  function rkDrawImgQuad(img, P0,P1,P2,P3){ const iw=img.naturalWidth||img.width, ih=img.naturalHeight||img.height; if(!iw||!ih) return; rkDrawImgTri(img,{x:0,y:0},{x:iw,y:0},{x:iw,y:ih}, P0,P1,P2); rkDrawImgTri(img,{x:0,y:0},{x:iw,y:ih},{x:0,y:ih}, P0,P2,P3); }
+  // 上から(2D描画中／生成後の top)に下敷き表示
+  function rkDrawRoomTop(){ if(!rkRoomImg||!rkRoomRect) return; ctx.save(); ctx.globalAlpha=0.32;
+    if(mode!=='play'){ ctx.drawImage(rkRoomImg, rkRoomRect.x, rkRoomRect.y, rkRoomRect.w, rkRoomRect.h); }
+    else { const tl=proj({x:rkRoomRect.x,y:rkRoomRect.y,z:0}); ctx.drawImage(rkRoomImg, tl.x, tl.y, rkRoomRect.w*zoom, rkRoomRect.h*zoom); }
+    ctx.restore(); }
+  // 立体ビューの床(z=gz)に同じワールド矩形で貼る
+  function rkDrawRoomGround(P, gz){ if(!rkRoomImg||!rkRoomRect) return; const r=rkRoomRect;
+    const c0=P({x:r.x,y:r.y,z:gz}), c1=P({x:r.x+r.w,y:r.y,z:gz}), c2=P({x:r.x+r.w,y:r.y+r.h,z:gz}), c3=P({x:r.x,y:r.y+r.h,z:gz});
+    if(!(c0.vis&&c1.vis&&c2.vis&&c3.vis)) return; ctx.save(); ctx.globalAlpha=0.3; rkDrawImgQuad(rkRoomImg, c0,c1,c2,c3); ctx.restore(); }
+  function rkRefresh(){ if(mode==='play'){ drawScene(); } else { drawCurrent(false); } }
+  (function setupRoom(){ const btn=$('rkRoomBtn'), clr=$('rkRoomClear'), fi=$('rkRoomFile'); if(!btn||!fi) return;
+    btn.addEventListener('click', ()=>{ fi.value=''; fi.click(); });
+    fi.addEventListener('change', ()=>{ const f=fi.files&&fi.files[0]; if(!f) return; if(rkRoomURL){ try{URL.revokeObjectURL(rkRoomURL);}catch(e){} } rkRoomURL=URL.createObjectURL(f); const im=new Image(); im.onload=()=>{ rkRoomImg=im; rkSetRoomRect(); btn.classList.add('on'); if(clr) clr.hidden=false; rkRefresh(); }; im.onerror=()=>{ if(typeof showToast==='function') showToast('画像を読み込めませんでした'); }; im.src=rkRoomURL; });
+    if(clr) clr.addEventListener('click', ()=>{ rkRoomImg=null; rkRoomRect=null; if(rkRoomURL){ try{URL.revokeObjectURL(rkRoomURL);}catch(e){} rkRoomURL=null; } btn.classList.remove('on'); clr.hidden=true; rkRefresh(); });
+  })();
+
   function drawScene(){
     computeJoints(); numberHits=[]; clear();
     if(dirFocus!=null && mode==='play' && dim3d){ drawDirFocus(); return; }
     if(view==='persp' && mode==='play'){ drawScenePersp(); return; }
+    if(view==='top') rkDrawRoomTop();   // お部屋画像を下敷きに(上から)
     if(mode==='play' && dim3d) drawPlatform();   // サイト(台)の背景
     // 3D・横ビュー: 目標の3D経路(xy+高さ)を薄く。チェーン本体は下で描画
     if(mode==='play' && dim3d && view==='side' && resampled.length){
@@ -10946,6 +11068,7 @@ layerPanelToggle.addEventListener('click', () => {
           poly3d(P,[{x:X0,y:Y0+(Y1-Y0)*t,z:bz},{x:X1,y:Y0+(Y1-Y0)*t,z:bz}],false);
         }
         drawStickFig3D(P, {x:X0+m*0.5,y:Y1-m*0.5,z:bz}, Math.max(26,sceneR*0.22));
+        rkDrawRoomGround(P, bz);   // お部屋画像を床(板の下)に同サイズで貼る
       }
     }
     // --- 目標の3D経路(薄) ---
@@ -11178,7 +11301,7 @@ layerPanelToggle.addEventListener('click', () => {
     mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0; view='top'; showArrows=false; camAz=-Math.PI/4; camEl=0.5; orbitCenter=0; dirFocus=null; soloCard=null; if(dirBack) dirBack.hidden=true;
     if(pv) pv.hidden=true;
     if(viewTop) viewTop.classList.add('active'); if(viewSide) viewSide.classList.remove('active'); if(viewPersp) viewPersp.classList.remove('active');
-    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true; if(buildBtn) buildBtn.hidden=false;
+    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true; if(buildBtn) buildBtn.hidden=false; if(orientBtn) orientBtn.hidden=false; if(speedBar) speedBar.hidden=false;
     if(countBox) countBox.hidden=false; if(zoomBox) zoomBox.hidden=false; if(initBtn) initBtn.hidden=false; updateViewUI();
     if(hintEl) hintEl.style.display='none';
     cancelAnimationFrame(raf); animate();
@@ -12599,8 +12722,10 @@ async function estimateGifBaseSize() {
 qualityBtn.addEventListener('click', () => {
   if (qualityBtn.disabled) return;
   state.quality = (state.quality + 1) % (QUALITY_MAX + 1);
+  state._qRatioCache = {};   // 画質キャッシュを破棄して即時反映
   updateQualityGauge();
   updateQualityInfo();
+  draw();            // プレビューをその場で更新(枠を動かさなくても反映)
   updateFileSize();  // バッジもリアルタイム更新
 });
 

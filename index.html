@@ -2484,6 +2484,7 @@ footer.controls {
 .rk-item.rk-orient-item { background: rgba(224,88,143,.08); border: 1px solid rgba(224,88,143,.28); }
 .rk-item.rk-orient-item .rk-num { background: #e0588f; }
 #rkOrient.active { background: #5b9cb8; color: #fff; }
+#rkSame.active { background: #e0904a; color: #fff; }
 .rk-spd-sub { color: #9bb3c0; font-size: 10px; }
 .rk-item { background: #fff; border-radius: 10px; padding: 8px 10px; box-shadow: 0 2px 8px rgba(40,80,100,.1); font-size: 11.5px; color: #4a6675; display: flex; align-items: center; gap: 8px; }
 .rk-num { width: 22px; height: 22px; flex-shrink: 0; border-radius: 50%; background: #5b9cb8; color: #fff; font-weight: 800; font-size: 11px; display: flex; align-items: center; justify-content: center; }
@@ -5016,6 +5017,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     <button class="rk-btn rk-ghost" id="rkCenter" type="button" hidden>中心①</button>
     <button class="rk-btn rk-build" id="rkBuild" type="button" hidden>作る</button>
     <button class="rk-btn rk-ghost" id="rkOrient" type="button" hidden title="一番上のアイテムが前を向くように、逆回転の合わせを案内します">向きそろえ</button>
+    <button class="rk-btn rk-ghost" id="rkSame" type="button" hidden title="全部の回転くんを同じ速さにして、スライダーを1か所にそろえるだけで作れるモード（形は少しシンプルに）">同じ速さ</button>
     <button class="rk-btn rk-ghost rk-icon" id="rkPause" type="button" hidden>❚❚</button>
   </div>
 </div>
@@ -10408,6 +10410,8 @@ layerPanelToggle.addEventListener('click', () => {
   const $=id=>document.getElementById(id);
   const closeBtn=$('rkClose'), resetBtn=$('rkReset'), redrawBtn=$('rkRedraw'), genBtn=$('rkGenerate'), pauseBtn=$('rkPause'), initBtn=$('rkInitView'), hintEl=$('rkHint'), sideEl=$('rkSide'), centerBtn=$('rkCenter'), buildBtn=$('rkBuild'), orientBtn=$('rkOrient');
   let orientLast=false;   // 最後のアイテムを前向きにそろえる案内を出すか
+  let sameSpeed=false, _rkCoeffs2d=null;   // 同じ速さモード（全モーターを同速＝連番ハーモニクス）
+  const sameBtn=$('rkSame');
   let baseRpm=6;          // 「①(freq=1)」のrpm(全体の速さ)。プレビューもこの速さで回る。ゲーム速度 rpm=120^x
   const speedBar=$('rkSpeedBar'), baseRpmInput=$('rkBaseRpm'), baseRpmVal=$('rkBaseRpmVal'), gaugePipBtn=$('rkGaugePip');
   function rpmToX(rpm){ if(!(rpm>0)) return 0; return Math.max(0, Math.min(1, Math.log(rpm)/Math.log(120))); }   // ゲームのスライダー位置(0〜1)
@@ -10505,13 +10509,25 @@ layerPanelToggle.addEventListener('click', () => {
         if(!b) throw new Error('画像化に失敗(サイズ過大?)');
         files.push({name:'guide_r'+(r+1)+'_c'+(c+1)+'.png', data:new Uint8Array(await b.arrayBuffer())});
       }
-      const zip=makeZip(files); const url=(window.URL||URL).createObjectURL(new Blob([zip],{type:'application/zip'})); const a=document.createElement('a'); a.href=url; a.download='回転くんガイド_'+cols+'x'+rows+'.zip'; document.body.appendChild(a); a.click(); a.remove();
-      if(typeof showToast==='function') showToast(cols*rows+'枚のガイドを保存しました');
+      if(files.length===1){   // 1枚だけなら ZIP にせず PNG をそのまま保存
+        const url=(window.URL||URL).createObjectURL(new Blob([files[0].data],{type:'image/png'})); const a=document.createElement('a'); a.href=url; a.download='回転くんガイド.png'; document.body.appendChild(a); a.click(); a.remove();
+        if(typeof showToast==='function') showToast('ガイドを保存しました');
+      } else {
+        const zip=makeZip(files); const url=(window.URL||URL).createObjectURL(new Blob([zip],{type:'application/zip'})); const a=document.createElement('a'); a.href=url; a.download='回転くんガイド_'+cols+'x'+rows+'.zip'; document.body.appendChild(a); a.click(); a.remove();
+        if(typeof showToast==='function') showToast(cols*rows+'枚のガイドを保存しました');
+      }
     }catch(e){ if(typeof showToast==='function') showToast('保存失敗: '+(e&&e.message||e)); }
     bGo.disabled=false; bGo.textContent=orig;
   }
   if(buildBtn) buildBtn.addEventListener('click', rkOpenBuild);
   if(orientBtn) orientBtn.addEventListener('click', ()=>{ orientLast=!orientLast; orientBtn.classList.toggle('active', orientLast); buildSide(); computeMatch(); rkUpdateGaugePip(); });
+  if(sameBtn) sameBtn.addEventListener('click', ()=>{
+    if(dim3d){ if(typeof showToast==='function') showToast('「同じ速さ」は平らな絵（2D）のときに使えます'); return; }
+    if(!_rkCoeffs2d) return;
+    sameSpeed=!sameSpeed; sameBtn.classList.toggle('active', sameSpeed);
+    buildAllEpi(); applyCount();
+    if(typeof showToast==='function') showToast(sameSpeed?'全部おなじ速さ！スライダーは1か所にそろえるだけ':'通常モードに戻しました');
+  });
   if(baseRpmInput) baseRpmInput.addEventListener('input', ()=>{ const v=parseFloat(baseRpmInput.value); if(isFinite(v)&&v>0){ baseRpm=v; if(baseRpmVal) baseRpmVal.textContent=(v>=10?v.toFixed(0):v.toFixed(1)); buildSide(); rkUpdateGaugePip(); if(paused) drawScene(); } });
   // ゲージを小窓(Document PiP)に出して、ゲームを見ながら合わせる
   let gaugePipWin=null, gaugePipSel=0;
@@ -10521,38 +10537,51 @@ layerPanelToggle.addEventListener('click', () => {
     epi.forEach((c,i)=>{ const abs=c.freq, rel=abs-prev; prev=abs; let elev=null;
       if(c.A){ const nx=c.A[1]*c.B[2]-c.A[2]*c.B[1],ny=c.A[2]*c.B[0]-c.A[0]*c.B[2],nz=c.A[0]*c.B[1]-c.A[1]*c.B[0]; const nl=Math.hypot(nx,ny,nz)||1; elev=Math.round(Math.asin(Math.max(-1,Math.min(1,nz/nl)))*180/Math.PI); }
       const rpm=Math.abs(rel)*baseRpm;
-      out.push({ label:String(i+1), dir: rel>0?'↺ 反時計':(rel<0?'↻ 時計':'—'), rpm, x:rpmToX(rpm), fixed:Math.abs(rel)<1e-9, elev, orient:false });
+      out.push({ label:String(i+1), dir: rel>0?'➡ 時計':(rel<0?'⬅ 反時計':'—'), rpm, x:rpmToX(rpm), fixed:Math.abs(rel)<1e-9, elev, orient:false });
     });
-    if(orientLast && epi.length){ const la=epi[epi.length-1].freq, r=Math.abs(la)*2*baseRpm; out.push({ label:'🧭', dir:(-la)>0?'↺ 反時計':'↻ 時計', rpm:r, x:rpmToX(r), fixed:Math.abs(la)<1e-9, elev:null, orient:true }); }
+    if(orientLast && epi.length){ const la=epi[epi.length-1].freq, r=Math.abs(la)*2*baseRpm; out.push({ label:'🧭', dir:(-la)>0?'➡ 時計':'⬅ 反時計', rpm:r, x:rpmToX(r), fixed:Math.abs(la)<1e-9, elev:null, orient:true }); }
     return out;
   }
   function renderGaugePip(){
     if(!(gaugePipWin && !gaugePipWin.closed)) return;
     const d2=gaugePipWin.document, data=rkGaugeData();
     if(gaugePipSel>=data.length) gaugePipSel=0;
-    const nums=d2.getElementById('pipNums'), det=d2.getElementById('pipDetail'); if(!nums||!det) return;
+    const nums=d2.getElementById('pipNums'), info=d2.getElementById('pipInfo'), gauge=d2.getElementById('pipGauge'), dot=d2.getElementById('pipDot'); if(!nums||!info||!gauge) return;
     nums.innerHTML='';
     data.forEach((o,i)=>{ const b=d2.createElement('button'); b.className='pnum'+(i===gaugePipSel?' sel':'')+(o.orient?' orient':''); b.textContent=o.label; b.onclick=()=>{ gaugePipSel=i; renderGaugePip(); }; nums.appendChild(b); });
-    const o=data[gaugePipSel]; if(!o){ det.innerHTML=''; return; }
-    const left=(7.3+o.x*85.4).toFixed(1);
-    det.innerHTML = '<div class="pttl">'+(o.orient?'向きそろえ用':('回転くん '+o.label))+'</div>'
-      + (o.fixed ? '<div class="pinfo">回さない（固定）</div>'
-         : '<div class="pinfo">'+o.dir+(o.orient?'（逆回転×2）':'')+'</div><div class="prpm">約 '+(o.rpm>=10?o.rpm.toFixed(0):o.rpm.toFixed(1))+' rpm</div>'+(o.rpm>120?'<div class="psub">(最大120超)</div>':'')
-           + '<div class="pgauge"><span class="pg-ic">🐢</span><span class="pg-track"><span class="pg-dot" style="left:'+left+'%"></span></span><span class="pg-ic">🐇</span></div>')
-      + (o.elev!=null?'<div class="psub">向き(上下) '+o.elev+'°</div>':'');
+    const o=data[gaugePipSel]; if(!o){ info.innerHTML=''; gauge.style.visibility='hidden'; return; }
+    info.innerHTML = '<div class="ptitle">'+(o.orient?'🧭 向きそろえ用':('回転くん '+o.label+'番'))+'</div>'
+      + (o.fixed ? '<div class="pbig">回さない<span class="psmall">（固定）</span></div>'
+         : '<div class="pdir">'+o.dir+(o.orient?'（逆回転×2）':'')+'</div><div class="pbig">'+(o.rpm>=10?o.rpm.toFixed(0):o.rpm.toFixed(1))+'<span class="psmall"> rpm</span></div>'+(o.rpm>120?'<div class="pwarn">⚠ 最大120超</div>':''))
+      + (o.elev!=null?'<div class="psmall">向き(上下) '+o.elev+'°</div>':'');
+    if(o.fixed){ gauge.style.visibility='hidden'; }
+    else { gauge.style.visibility='visible'; if(dot) dot.style.left=(7.3+o.x*85.4).toFixed(1)+'%'; }
   }
   function rkUpdateGaugePip(){ renderGaugePip(); }
   async function openGaugePip(){
     if(!('documentPictureInPicture' in window)){ if(typeof showToast==='function') showToast('この端末はPiP非対応です'); return; }
     try{
       if(gaugePipWin && !gaugePipWin.closed){ gaugePipWin.focus(); return; }
-      gaugePipWin = await window.documentPictureInPicture.requestWindow({ width: 250, height: 300 });
+      gaugePipWin = await window.documentPictureInPicture.requestWindow({ width: 180, height: 360 });
       const d2=gaugePipWin.document;
-      d2.body.style.cssText='margin:0;padding:0;background:#eef4f8;font-family:sans-serif;';
       const css=d2.createElement('style');
-      css.textContent='*{box-sizing:border-box;}#pipRoot{display:flex;flex-direction:column;height:100vh;padding:3vmin;gap:2.5vmin;}#pipNums{display:flex;flex-wrap:wrap;gap:1.5vmin;justify-content:center;}.pnum{min-width:9vmin;height:9vmin;border-radius:50%;border:.4vmin solid #cddde6;background:#fff;color:#5b9cb8;font-size:4.4vmin;font-weight:800;cursor:pointer;padding:0 1vmin;line-height:1;}.pnum.sel{background:#5b9cb8;color:#fff;border-color:#5b9cb8;}.pnum.orient{border-color:#e0588f;color:#e0588f;}.pnum.orient.sel{background:#e0588f;color:#fff;}#pipDetail{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2vmin;text-align:center;background:#fff;border-radius:3vmin;padding:3vmin;}.pttl{font-size:4.6vmin;font-weight:800;color:#3f6d80;}.pinfo{font-size:5vmin;font-weight:800;color:#2c3e50;}.prpm{font-size:7vmin;font-weight:800;color:#5b9cb8;}.psub{font-size:3.6vmin;color:#9bb3c0;font-weight:700;}.pgauge{display:flex;align-items:center;gap:2vmin;background:#2b3138;border-radius:99vmin;padding:2vmin 3vmin;width:100%;margin-top:1vmin;}.pg-ic{font-size:5.5vmin;line-height:1;}.pg-track{position:relative;flex:1;height:1.2vmin;background:#5a626b;border-radius:1vmin;}.pg-dot{position:absolute;top:50%;width:5vmin;height:5vmin;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 .3vmin 1vmin rgba(0,0,0,.5);}';
+      css.textContent='*{box-sizing:border-box;}html,body{margin:0;height:100%;background:#eef4f8;font-family:sans-serif;}'
+        +'#pipRoot{display:flex;flex-direction:column;height:100vh;padding:2vh 3vw;gap:1.4vh;}'
+        +'.plabel{font-size:3.2vh;font-weight:800;color:#5a7a89;text-align:center;}'
+        +'#pipNums{display:flex;flex-wrap:wrap;gap:1.1vh;justify-content:center;}'
+        +'.pnum{min-width:7vh;height:7vh;border-radius:50%;border:.4vh solid #cddde6;background:#fff;color:#5b9cb8;font-size:3.6vh;font-weight:800;cursor:pointer;padding:0 1vh;line-height:1;}'
+        +'.pnum.sel{background:#5b9cb8;color:#fff;border-color:#5b9cb8;transform:scale(1.12);box-shadow:0 .4vh 1.2vh rgba(91,156,184,.4);}'
+        +'.pnum.orient{border-color:#e0588f;color:#e0588f;}.pnum.orient.sel{background:#e0588f;color:#fff;}'
+        +'#pipInfo{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:.6vh;text-align:center;}'
+        +'.ptitle{font-size:3.4vh;font-weight:800;color:#3f6d80;}.pdir{font-size:4vh;font-weight:800;color:#2c3e50;}'
+        +'.pbig{font-size:8vh;font-weight:800;color:#5b9cb8;line-height:1.02;}.psmall{font-size:2.9vh;color:#9bb3c0;font-weight:700;}.pwarn{font-size:2.9vh;color:#e0588f;font-weight:800;}'
+        +'#pipGauge{display:flex;align-items:center;gap:2vw;background:#2b3138;border-radius:999px;padding:1.6vh 3vw;width:100%;flex:none;}'
+        +'.pg-ic{font-size:4.2vh;line-height:1;}'
+        +'.pg-track{position:relative;flex:1;height:1.1vh;min-height:4px;background:#5a626b;border-radius:999px;}'
+        +'.pg-dot{position:absolute;top:50%;width:4.2vh;height:4.2vh;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 1px 4px rgba(0,0,0,.5);}';
       d2.head.appendChild(css);
-      d2.body.innerHTML='<div id="pipRoot"><div id="pipNums"></div><div id="pipDetail"></div></div>';
+      d2.body.innerHTML='<div id="pipRoot"><div class="plabel">▼ 番号を選ぶ</div><div id="pipNums"></div><div id="pipInfo"></div>'
+        +'<div id="pipGauge"><span class="pg-ic">🐢</span><span class="pg-track"><span id="pipDot" class="pg-dot"></span></span><span class="pg-ic">🐇</span></div></div>';
       gaugePipWin.addEventListener('pagehide', ()=>{ gaugePipWin=null; });
       renderGaugePip();
     }catch(e){ if(typeof showToast==='function') showToast('PiPを開けませんでした'); }
@@ -10566,7 +10595,7 @@ layerPanelToggle.addEventListener('click', () => {
     cancelAnimationFrame(raf); raf=null; mode='draw'; drawPts=[]; polyCursor=null; allEpi=[]; epi=[]; trace=[]; time=0; paused=false; zoom=1; selJoint=null; panX=0; panY=0; orbitCenter=0; dirFocus=null; soloCard=null; if(dirBack) dirBack.hidden=true;
     path3d=[]; keypts=[]; dragKp=null; allZ=[]; zKept=[]; zDC=0; showArrows=false; lastKp=null; pathMinX=0; pathMaxX=1; orbit3d=[]; target3d=[]; if(pv){ pv.hidden=true; pv.classList.remove('rk-pv-bottom'); } if(matchEl) matchEl.hidden=true;
     if(sideEl) sideEl.innerHTML='';
-    redrawBtn.hidden=true; pauseBtn.hidden=true; genBtn.hidden=false; if(initBtn) initBtn.hidden=true; if(resetBtn) resetBtn.hidden=false; if(buildBtn) buildBtn.hidden=true; if(orientBtn){ orientBtn.hidden=true; orientLast=false; orientBtn.classList.remove('active'); } if(speedBar) speedBar.hidden=true;
+    redrawBtn.hidden=true; pauseBtn.hidden=true; genBtn.hidden=false; if(initBtn) initBtn.hidden=true; if(resetBtn) resetBtn.hidden=false; if(buildBtn) buildBtn.hidden=true; if(orientBtn){ orientBtn.hidden=true; orientLast=false; orientBtn.classList.remove('active'); } if(speedBar) speedBar.hidden=true; if(sameBtn){ sameBtn.hidden=true; sameSpeed=false; sameBtn.classList.remove('active'); } _rkCoeffs2d=null;
     genBtn.textContent = dim3d ? '上下' : '生成';
     if(dimBox){ dimBox.style.pointerEvents=''; dimBox.style.opacity=''; }
     view='top';   // 描くときは常に上から
@@ -10781,6 +10810,23 @@ layerPanelToggle.addEventListener('click', () => {
       + ` <span class="rk-match-sep">・</span> 必要アイテム 約<b>${items}</b>個`; }
   }
 
+  // allEpiを組み立てる。通常＝振幅順。同じ速さ＝連番ハーモニクス(全モーター同速)。
+  function buildAllEpi(){
+    const coeffs=_rkCoeffs2d; if(!coeffs){ allEpi=[]; return; }
+    if(sameSpeed && !dim3d){
+      // 上に重ねるほど合計が 1,2,3,… になる向きを選ぶ（amp合計が多い側）
+      let sp=0,sn=0; coeffs.forEach(c=>{ if(c.freq>0) sp+=c.amp; else if(c.freq<0) sn+=c.amp; });
+      const s=(sp>=sn)?1:-1, maxK=Math.min(50, Math.floor(resampled.length/2));
+      const byFreq={}; coeffs.forEach(c=>{ byFreq[c.freq]=c; });
+      const arr=[]; for(let k=1;k<=maxK;k++){ const c=byFreq[s*k]; if(c) arr.push(c); }
+      while(arr.length>2 && arr[arr.length-1].amp<0.05) arr.pop();   // 末尾の無駄な小円だけ削る(連番は保つ)
+      allEpi=arr;
+    } else {
+      allEpi=coeffs.filter(c=>c.freq!==0).sort((a,b)=>b.amp-a.amp).filter(c=>c.amp>0.05).slice(0,50);
+    }
+    if(countRange){ countRange.max=String(allEpi.length||1); if(parseInt(countRange.value)>allEpi.length) countRange.value=String(allEpi.length||1); }
+    if(countVal) countVal.max=String(allEpi.length||1);
+  }
   function generate(){
     if(drawPts.length<3){ if(typeof showToast==='function') showToast('もう少し大きく輪を描いてね'); return; }
     resampled=resample(drawPts,128);
@@ -10788,11 +10834,11 @@ layerPanelToggle.addEventListener('click', () => {
     const coeffs=dft(resampled);
     const dc=coeffs.find(c=>c.freq===0)||{re:W/2,im:H/2};
     center={x:dc.re,y:dc.im};
-    allEpi=coeffs.filter(c=>c.freq!==0).sort((a,b)=>b.amp-a.amp).filter(c=>c.amp>0.05).slice(0,50);
-    if(countRange){ countRange.max=String(allEpi.length); if(parseInt(countRange.value)>allEpi.length) countRange.value=String(allEpi.length); } if(countVal) countVal.max=String(allEpi.length);
+    _rkCoeffs2d=coeffs;
+    buildAllEpi();
     applyCount();
     mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0; showArrows=false; view='top'; camAz=-Math.PI/4; camEl=0.5; orbitCenter=0; dirFocus=null; soloCard=null; if(dirBack) dirBack.hidden=true;
-    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true; if(buildBtn) buildBtn.hidden=false; if(orientBtn) orientBtn.hidden=false; if(speedBar) speedBar.hidden=false;
+    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true; if(buildBtn) buildBtn.hidden=false; if(orientBtn) orientBtn.hidden=false; if(speedBar) speedBar.hidden=false; if(sameBtn) sameBtn.hidden=dim3d;
     if(dimBox){ dimBox.style.pointerEvents='none'; dimBox.style.opacity='0.45'; }   // 生成後は2D/3D切替不可
     if(countBox) countBox.hidden=false; if(zoomBox) zoomBox.hidden=false; if(initBtn) initBtn.hidden=false;
     if(modeToggle) modeToggle.hidden=true; updateViewUI();
@@ -10805,13 +10851,15 @@ layerPanelToggle.addEventListener('click', () => {
     if(!epi.length) return;
     const f1=Math.abs(epi[0]?epi[0].freq:1)||1;
     const note=document.createElement('div'); note.className='rk-side-note';
-    note.innerHTML='上に重ねるほど<b>下の速さが足し算</b>。反対向きは打ち消し、同じ向きは加速。<br>各<b>モーター速度</b>を、ゲームのスライダーを<b>🐢〜🐇</b>の位置に合わせて設定してね。';
+    note.innerHTML = sameSpeed
+      ? '🟰 <b>同じ速さモード</b><br>全部おなじ速さ＆おなじ向き。ゲームのスライダーは<b>1か所にそろえる</b>だけ！<br><span class="rk-spd-sub">形は少しシンプルになります</span>'
+      : '上に重ねるほど<b>下の速さが足し算</b>。反対向きは打ち消し、同じ向きは加速。<br>各<b>モーター速度</b>を、ゲームのスライダーを<b>🐢〜🐇</b>の位置に合わせて設定してね。';
     sideEl.appendChild(note);
     const fmtRpm=(r)=> r>=10 ? r.toFixed(0) : (r>=1 ? r.toFixed(1) : r.toFixed(2));
     let prev=0;   // ひとつ下の回転くんの「絶対」速度(=ここまでの合計)
     epi.forEach((c,i)=>{
       const abs=c.freq, rel=abs-prev; prev=abs;
-      const dirName=(v)=> v>0?'↺ 反時計':'↻ 時計';
+      const dirName=(v)=> v>0?'➡ 時計':'⬅ 反時計';
       let info, gauge='';
       if(Math.abs(rel)<1e-9){
         info = `モーター <b>回さない（固定）</b>`;
@@ -10835,7 +10883,7 @@ layerPanelToggle.addEventListener('click', () => {
     // 向きそろえ: 一番上にもう1つ重ね、逆回転×2でアイテムが前を向く(実測の考え方に合わせる)
     if(orientLast){
       const lastAbs=epi[epi.length-1].freq;
-      const cDir = (-lastAbs)>0 ? '↺ 反時計' : '↻ 時計';
+      const cDir = (-lastAbs)>0 ? '➡ 時計' : '⬅ 反時計';
       const cRpm = Math.abs(lastAbs)*2*baseRpm;
       const item=document.createElement('div'); item.className='rk-item rk-orient-item';
       const txt = Math.abs(lastAbs)<1e-9
@@ -11338,7 +11386,7 @@ layerPanelToggle.addEventListener('click', () => {
     mode='play'; time=0; trace=[]; paused=false; zoom=1; selJoint=null; panX=0; panY=0; view='top'; showArrows=false; camAz=-Math.PI/4; camEl=0.5; orbitCenter=0; dirFocus=null; soloCard=null; if(dirBack) dirBack.hidden=true;
     if(pv) pv.hidden=true;
     if(viewTop) viewTop.classList.add('active'); if(viewSide) viewSide.classList.remove('active'); if(viewPersp) viewPersp.classList.remove('active');
-    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true; if(buildBtn) buildBtn.hidden=false; if(orientBtn) orientBtn.hidden=false; if(speedBar) speedBar.hidden=false;
+    redrawBtn.hidden=false; genBtn.hidden=true; pauseBtn.hidden=false; pauseBtn.textContent='❚❚'; if(resetBtn) resetBtn.hidden=true; if(buildBtn) buildBtn.hidden=false; if(orientBtn) orientBtn.hidden=false; if(speedBar) speedBar.hidden=false; if(sameBtn) sameBtn.hidden=dim3d;
     if(countBox) countBox.hidden=false; if(zoomBox) zoomBox.hidden=false; if(initBtn) initBtn.hidden=false; updateViewUI();
     if(hintEl) hintEl.style.display='none';
     cancelAnimationFrame(raf); animate();

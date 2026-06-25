@@ -2470,10 +2470,12 @@ footer.controls {
 #rkCanvas { width: 100%; height: 100%; touch-action: none; display: block; }
 .rk-hint { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); font-size: 12px; color: #8aa6b4; background: rgba(255,255,255,.85); padding: 4px 12px; border-radius: 999px; pointer-events: none; white-space: nowrap; }
 .rk-sidecol { width: 196px; flex-shrink: 0; display: flex; flex-direction: column; gap: 6px; min-height: 0; }
-.rk-speedbar { display: flex; flex-direction: column; gap: 6px; background: rgba(91,156,184,.08); border: 1px solid rgba(91,156,184,.2); border-radius: 10px; padding: 7px 8px; }
-.rk-base-lab { font-size: 11px; font-weight: 700; color: #5a7a89; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-.rk-base-lab input { width: 56px; padding: 3px 5px; border: 1.5px solid #cddde6; border-radius: 7px; font-size: 12px; text-align: right; }
-.rk-pip-btn { background: #fff; border: 1.5px solid #8fd3ed; color: #5b9cb8; border-radius: 8px; padding: 6px 8px; font-size: 11.5px; font-weight: 800; cursor: pointer; }
+.rk-speedbar { display: flex; align-items: center; gap: 12px; background: rgba(91,156,184,.08); border: 1px solid rgba(91,156,184,.2); border-radius: 12px; padding: 8px 14px; margin: 0 auto 8px; max-width: 560px; }
+.rk-speedbar[hidden] { display: none; }
+.rk-base-lab { font-size: 12px; font-weight: 800; color: #5a7a89; white-space: nowrap; }
+.rk-base-lab b { color: #5b9cb8; font-size: 14px; }
+.rk-base-slider { flex: 1 1 auto; min-width: 80px; accent-color: #5b9cb8; cursor: pointer; }
+.rk-pip-btn { background: #fff; border: 1.5px solid #8fd3ed; color: #5b9cb8; border-radius: 8px; padding: 6px 11px; font-size: 11.5px; font-weight: 800; cursor: pointer; white-space: nowrap; }
 .rk-pip-btn:hover { background: #eef7fb; }
 .rk-side { flex: 1 1 auto; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding: 2px; min-height: 0; }
 .rk-side:empty { display: none; }
@@ -4994,12 +4996,13 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       </div>
     </div>
     <div class="rk-sidecol">
-      <div class="rk-speedbar" id="rkSpeedBar" hidden>
-        <label class="rk-base-lab">全体の速さ　①=<input type="number" id="rkBaseRpm" min="0.1" max="120" step="0.1" value="1"> rpm</label>
-        <button type="button" id="rkGaugePip" class="rk-pip-btn" title="ゲージを小窓で浮かせて、ゲームを見ながら合わせる">⧉ ゲージをPiPで見る</button>
-      </div>
       <div class="rk-side" id="rkSide"></div>
     </div>
+  </div>
+  <div class="rk-speedbar" id="rkSpeedBar" hidden>
+    <label class="rk-base-lab">速さ <b id="rkBaseRpmVal">6</b> rpm</label>
+    <input type="range" id="rkBaseRpm" min="1" max="120" step="1" value="6" class="rk-base-slider">
+    <button type="button" id="rkGaugePip" class="rk-pip-btn" title="ゲージを小窓で浮かせて、ゲームを見ながら合わせる">⧉ PiPで見る</button>
   </div>
   <div class="rk-controls">
     <button class="rk-btn rk-ghost" id="rkReset" type="button">リセット</button>
@@ -10405,8 +10408,8 @@ layerPanelToggle.addEventListener('click', () => {
   const $=id=>document.getElementById(id);
   const closeBtn=$('rkClose'), resetBtn=$('rkReset'), redrawBtn=$('rkRedraw'), genBtn=$('rkGenerate'), pauseBtn=$('rkPause'), initBtn=$('rkInitView'), hintEl=$('rkHint'), sideEl=$('rkSide'), centerBtn=$('rkCenter'), buildBtn=$('rkBuild'), orientBtn=$('rkOrient');
   let orientLast=false;   // 最後のアイテムを前向きにそろえる案内を出すか
-  let baseRpm=1;          // 「1あたり」のrpm(全体の速さ)。ゲーム速度 rpm=120^x（x=スライダー位置, 最小1〜最大120rpm）
-  const speedBar=$('rkSpeedBar'), baseRpmInput=$('rkBaseRpm'), gaugePipBtn=$('rkGaugePip');
+  let baseRpm=6;          // 「①(freq=1)」のrpm(全体の速さ)。プレビューもこの速さで回る。ゲーム速度 rpm=120^x
+  const speedBar=$('rkSpeedBar'), baseRpmInput=$('rkBaseRpm'), baseRpmVal=$('rkBaseRpmVal'), gaugePipBtn=$('rkGaugePip');
   function rpmToX(rpm){ if(!(rpm>0)) return 0; return Math.max(0, Math.min(1, Math.log(rpm)/Math.log(120))); }   // ゲームのスライダー位置(0〜1)
   function rkGaugeHTML(x){ const left=(7.3+x*85.4).toFixed(1);   // 円の中心位置(実測: 4Kで端から32px〜408px / 440px)
     return '<span style="display:flex;align-items:center;gap:5px;background:#2b3138;border-radius:999px;padding:3px 8px;margin-top:4px;">'
@@ -10509,22 +10512,49 @@ layerPanelToggle.addEventListener('click', () => {
   }
   if(buildBtn) buildBtn.addEventListener('click', rkOpenBuild);
   if(orientBtn) orientBtn.addEventListener('click', ()=>{ orientLast=!orientLast; orientBtn.classList.toggle('active', orientLast); buildSide(); computeMatch(); rkUpdateGaugePip(); });
-  if(baseRpmInput) baseRpmInput.addEventListener('input', ()=>{ const v=parseFloat(baseRpmInput.value); if(isFinite(v)&&v>0){ baseRpm=v; buildSide(); rkUpdateGaugePip(); } });
+  if(baseRpmInput) baseRpmInput.addEventListener('input', ()=>{ const v=parseFloat(baseRpmInput.value); if(isFinite(v)&&v>0){ baseRpm=v; if(baseRpmVal) baseRpmVal.textContent=(v>=10?v.toFixed(0):v.toFixed(1)); buildSide(); rkUpdateGaugePip(); if(paused) drawScene(); } });
   // ゲージを小窓(Document PiP)に出して、ゲームを見ながら合わせる
-  let gaugePipWin=null;
-  function rkUpdateGaugePip(){ if(gaugePipWin && !gaugePipWin.closed){ const b=gaugePipWin.document.getElementById('pipBody'); if(b) b.innerHTML=sideEl.innerHTML; } }
+  let gaugePipWin=null, gaugePipSel=0;
+  // 各回転くんの「番号・向き・rpm・ゲージ位置」データ
+  function rkGaugeData(){
+    const out=[]; let prev=0;
+    epi.forEach((c,i)=>{ const abs=c.freq, rel=abs-prev; prev=abs; let elev=null;
+      if(c.A){ const nx=c.A[1]*c.B[2]-c.A[2]*c.B[1],ny=c.A[2]*c.B[0]-c.A[0]*c.B[2],nz=c.A[0]*c.B[1]-c.A[1]*c.B[0]; const nl=Math.hypot(nx,ny,nz)||1; elev=Math.round(Math.asin(Math.max(-1,Math.min(1,nz/nl)))*180/Math.PI); }
+      const rpm=Math.abs(rel)*baseRpm;
+      out.push({ label:String(i+1), dir: rel>0?'↺ 反時計':(rel<0?'↻ 時計':'—'), rpm, x:rpmToX(rpm), fixed:Math.abs(rel)<1e-9, elev, orient:false });
+    });
+    if(orientLast && epi.length){ const la=epi[epi.length-1].freq, r=Math.abs(la)*2*baseRpm; out.push({ label:'🧭', dir:(-la)>0?'↺ 反時計':'↻ 時計', rpm:r, x:rpmToX(r), fixed:Math.abs(la)<1e-9, elev:null, orient:true }); }
+    return out;
+  }
+  function renderGaugePip(){
+    if(!(gaugePipWin && !gaugePipWin.closed)) return;
+    const d2=gaugePipWin.document, data=rkGaugeData();
+    if(gaugePipSel>=data.length) gaugePipSel=0;
+    const nums=d2.getElementById('pipNums'), det=d2.getElementById('pipDetail'); if(!nums||!det) return;
+    nums.innerHTML='';
+    data.forEach((o,i)=>{ const b=d2.createElement('button'); b.className='pnum'+(i===gaugePipSel?' sel':'')+(o.orient?' orient':''); b.textContent=o.label; b.onclick=()=>{ gaugePipSel=i; renderGaugePip(); }; nums.appendChild(b); });
+    const o=data[gaugePipSel]; if(!o){ det.innerHTML=''; return; }
+    const left=(7.3+o.x*85.4).toFixed(1);
+    det.innerHTML = '<div class="pttl">'+(o.orient?'向きそろえ用':('回転くん '+o.label))+'</div>'
+      + (o.fixed ? '<div class="pinfo">回さない（固定）</div>'
+         : '<div class="pinfo">'+o.dir+(o.orient?'（逆回転×2）':'')+'</div><div class="prpm">約 '+(o.rpm>=10?o.rpm.toFixed(0):o.rpm.toFixed(1))+' rpm</div>'+(o.rpm>120?'<div class="psub">(最大120超)</div>':'')
+           + '<div class="pgauge"><span class="pg-ic">🐢</span><span class="pg-track"><span class="pg-dot" style="left:'+left+'%"></span></span><span class="pg-ic">🐇</span></div>')
+      + (o.elev!=null?'<div class="psub">向き(上下) '+o.elev+'°</div>':'');
+  }
+  function rkUpdateGaugePip(){ renderGaugePip(); }
   async function openGaugePip(){
     if(!('documentPictureInPicture' in window)){ if(typeof showToast==='function') showToast('この端末はPiP非対応です'); return; }
     try{
       if(gaugePipWin && !gaugePipWin.closed){ gaugePipWin.focus(); return; }
-      gaugePipWin = await window.documentPictureInPicture.requestWindow({ width: 240, height: 460 });
+      gaugePipWin = await window.documentPictureInPicture.requestWindow({ width: 250, height: 300 });
       const d2=gaugePipWin.document;
-      d2.body.style.cssText='margin:0;padding:10px;background:#eef4f8;font-family:sans-serif;';
+      d2.body.style.cssText='margin:0;padding:0;background:#eef4f8;font-family:sans-serif;';
       const css=d2.createElement('style');
-      css.textContent='.rk-side-note{font-size:10.5px;line-height:1.55;color:#6b8896;background:rgba(91,156,184,.1);border:1px solid rgba(91,156,184,.2);border-radius:10px;padding:7px 9px;margin-bottom:6px;}.rk-side-note b{color:#5b9cb8;}.rk-item{display:flex;gap:8px;background:#fff;border:1px solid #dceaf1;border-radius:10px;padding:8px;margin-bottom:6px;}.rk-num{flex:none;width:22px;height:22px;border-radius:50%;background:#5b9cb8;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;}.rk-meta{display:flex;flex-direction:column;gap:2px;font-size:11px;color:#3f6d80;font-weight:700;}.rk-meta b{color:#2c3e50;}.rk-spd-sub{color:#9bb3c0;font-size:10px;}.rk-item.rk-orient-item{background:rgba(224,88,143,.08);border-color:rgba(224,88,143,.28);}.rk-item.rk-orient-item .rk-num{background:#e0588f;}';
+      css.textContent='*{box-sizing:border-box;}#pipRoot{display:flex;flex-direction:column;height:100vh;padding:3vmin;gap:2.5vmin;}#pipNums{display:flex;flex-wrap:wrap;gap:1.5vmin;justify-content:center;}.pnum{min-width:9vmin;height:9vmin;border-radius:50%;border:.4vmin solid #cddde6;background:#fff;color:#5b9cb8;font-size:4.4vmin;font-weight:800;cursor:pointer;padding:0 1vmin;line-height:1;}.pnum.sel{background:#5b9cb8;color:#fff;border-color:#5b9cb8;}.pnum.orient{border-color:#e0588f;color:#e0588f;}.pnum.orient.sel{background:#e0588f;color:#fff;}#pipDetail{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2vmin;text-align:center;background:#fff;border-radius:3vmin;padding:3vmin;}.pttl{font-size:4.6vmin;font-weight:800;color:#3f6d80;}.pinfo{font-size:5vmin;font-weight:800;color:#2c3e50;}.prpm{font-size:7vmin;font-weight:800;color:#5b9cb8;}.psub{font-size:3.6vmin;color:#9bb3c0;font-weight:700;}.pgauge{display:flex;align-items:center;gap:2vmin;background:#2b3138;border-radius:99vmin;padding:2vmin 3vmin;width:100%;margin-top:1vmin;}.pg-ic{font-size:5.5vmin;line-height:1;}.pg-track{position:relative;flex:1;height:1.2vmin;background:#5a626b;border-radius:1vmin;}.pg-dot{position:absolute;top:50%;width:5vmin;height:5vmin;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 .3vmin 1vmin rgba(0,0,0,.5);}';
       d2.head.appendChild(css);
-      const wrap=d2.createElement('div'); wrap.id='pipBody'; wrap.innerHTML=sideEl.innerHTML; d2.body.appendChild(wrap);
+      d2.body.innerHTML='<div id="pipRoot"><div id="pipNums"></div><div id="pipDetail"></div></div>';
       gaugePipWin.addEventListener('pagehide', ()=>{ gaugePipWin=null; });
+      renderGaugePip();
     }catch(e){ if(typeof showToast==='function') showToast('PiPを開けませんでした'); }
   }
   if(gaugePipBtn) gaugePipBtn.addEventListener('click', openGaugePip);
@@ -10798,7 +10828,7 @@ layerPanelToggle.addEventListener('click', () => {
         sub = `<span class="rk-spd-sub">向き(上下) ${elev}°</span>`;
       }
       const item=document.createElement('div'); item.className='rk-item';
-      item.innerHTML=`<span class="rk-num">${i+1}</span><div class="rk-meta"><span>${info}</span>${gauge}${sub}<span>下との距離 <b>${Math.round(c.amp)}</b></span></div>`;
+      item.innerHTML=`<span class="rk-num">${i+1}</span><div class="rk-meta"><span>${info}</span>${gauge}${sub}</div>`;
       if(c.A){ item.title='タップで向きを大きく確認'; item.addEventListener('click', ()=>enterDirFocus(i)); }
       sideEl.appendChild(item);
     });
@@ -10927,8 +10957,15 @@ layerPanelToggle.addEventListener('click', () => {
       else { drawStickFigure(ctx, 34, H-34, 1.9, view, '#5b9cb8'); }
     } else if(mode==='play' && pv) { pv.hidden=true; pv.classList.remove('rk-pv-bottom'); }
   }
-  function step(){ if(paused) return; time+=1/600; if(time>=1){ time-=1; trace=[]; } drawScene(); raf=requestAnimationFrame(step); }
-  function animate(){ cancelAnimationFrame(raf); step(); }
+  let _rkLastTs=null;
+  function step(ts){ if(paused){ _rkLastTs=null; return; }
+    const now = ts || (typeof performance!=='undefined'?performance.now():Date.now());
+    if(_rkLastTs==null) _rkLastTs=now;
+    const dt=Math.min(0.1,(now-_rkLastTs)/1000); _rkLastTs=now;
+    time += (baseRpm/60)*dt;   // ①(freq=1)が baseRpm rpm で回る速さ＝プレビューも同じ速さ
+    if(time>=1){ time-=Math.floor(time); trace=[]; }
+    drawScene(); raf=requestAnimationFrame(step); }
+  function animate(){ cancelAnimationFrame(raf); _rkLastTs=null; step(); }
 
   // 再生中: 反対側のビューを右下にミニ表示
   function projMini(j,tv){ return tv==='side' ? {x:j.x, y:-j.z} : {x:j.x, y:j.y}; }

@@ -5027,7 +5027,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
   <div class="rkb-card">
     <button class="rkb-close" id="rkbClose" type="button" aria-label="閉じる">×</button>
     <div class="rkb-title">ガイド画像を作る</div>
-    <div class="rkb-sub">ゲームのプロジェクターに貼って、青い①〜の位置に回転くんを置けば、距離を測らなくても完成！</div>
+    <div class="rkb-sub">プロジェクターに貼って配置するだけ。<b style="color:#5b9cb8">青の①〜</b>＝回転くんの位置＋<b style="color:#1e965c">緑の矢印</b>＝回す向き、<b style="color:#e0588f">ピンクの線</b>＝通り道（完成イメージ）、<b style="color:#e0588f">ピンクの丸</b>＝アイテムを置く所。</div>
     <canvas id="rkbGuide" class="rkb-guide"></canvas>
     <div class="rkb-scalewrap">
       <div class="rkb-scalelabel">横幅：アバター <b id="rkbCols">2</b> 人分</div>
@@ -10460,6 +10460,7 @@ layerPanelToggle.addEventListener('click', () => {
   function rkGuideBBox(){ const J0=rkJointsAt(0); let minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9; const upd=(px,py)=>{ if(!isFinite(px)||!isFinite(py))return; if(px<minx)minx=px; if(py<miny)miny=py; if(px>maxx)maxx=px; if(py>maxy)maxy=py; };
     const NN=Math.max(1,J0.length-1);
     for(let i=0;i<NN;i++) upd(J0[i].x, J0[i].y);   // 青の数字(回転くんの位置)がすべて入る最小範囲
+    for(let k=0;k<=120;k++){ const p=tipAt(k/120); upd(p.x,p.y); }   // ピンクの通り道も入れる
     if(minx>maxx){ minx=center.x-100;maxx=center.x+100;miny=center.y-100;maxy=center.y+100; }
     if(maxx-minx<1){ minx-=50; maxx+=50; } if(maxy-miny<1){ miny-=50; maxy+=50; }
     return {minx,miny,maxx,maxy}; }
@@ -10472,19 +10473,38 @@ layerPanelToggle.addEventListener('click', () => {
     const ox=(gridW-dw*s)/2 - bb.minx*s, oy=(gridH-dh*s)/2 - bb.miny*s;
     const M=p=>({x:ox+p.x*s, y:oy+p.y*s});
     const lw=Math.max(1.2, gridW*0.0014);
-    // 引いた線(目標) = ごく薄く
-    if(resampled&&resampled.length){ g.save(); g.strokeStyle='rgba(91,156,184,.14)'; g.lineWidth=lw; g.beginPath(); resampled.forEach((p,i)=>{ const q=M(p); i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }); g.closePath(); g.stroke(); g.restore(); }
+    // ピンクの通り道 = 再現される形（ペン先の軌跡）。これが完成イメージ。
+    { g.save(); g.strokeStyle='rgba(224,88,143,.65)'; g.lineWidth=lw*1.9; g.lineJoin='round'; g.lineCap='round'; g.beginPath();
+      const TN=320; for(let k=0;k<=TN;k++){ const q=M(tipAt(k/TN)); k?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }
+      g.closePath(); g.stroke(); g.restore(); }
     // 緑の軌道 = プレビューと同じ(各番号を中心に、ひとつ上の番号がその周りを回る相対軌道)・薄く
-    g.save(); g.strokeStyle='rgba(60,175,112,.28)'; g.lineWidth=lw;
+    g.save(); g.strokeStyle='rgba(60,175,112,.32)'; g.lineWidth=lw;
     for(let i=0;i<epi.length;i++){ const pts=rkOrbitPts(i, J0[i]); g.beginPath(); pts.forEach((p,k)=>{ const q=M(p); k?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }); g.closePath(); g.stroke(); }
     g.restore();
-    // チェーン(t=0)
+    // 緑の円の「回る向き」矢印（＝そのモーターに設定する向き。ゲージの矢印と同じ）
+    g.save(); g.fillStyle='rgba(30,150,92,.9)'; let _pf=0;
+    for(let i=0;i<epi.length;i++){ const c=epi[i]; const rel=c.freq-_pf; _pf=c.freq;
+      if(Math.abs(rel)<1e-9) continue;
+      const cen=M(J0[i]); const pts=rkOrbitPts(i, J0[i]).map(M);
+      let R=0, top=pts[0]; pts.forEach(p=>{ const d=Math.hypot(p.x-cen.x,p.y-cen.y); if(d>R)R=d; if(p.y<top.y)top=p; });
+      if(R < lw*6) continue;   // 小さすぎる円は省略
+      const dir = rel>0 ? 1 : -1;   // 時計まわり=右向き / 反時計まわり=左向き（上の縁の進む向き）
+      const ah=Math.max(4, R*0.22);
+      g.beginPath(); g.moveTo(top.x+dir*ah, top.y); g.lineTo(top.x-dir*ah*0.25, top.y-ah*0.72); g.lineTo(top.x-dir*ah*0.25, top.y+ah*0.72); g.closePath(); g.fill();
+    }
+    g.restore();
     g.save(); g.strokeStyle='rgba(70,110,130,.4)'; g.lineWidth=lw; g.beginPath(); J0.forEach((p,i)=>{ const q=M(p); i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }); g.stroke(); g.restore();
     // 青の番号: 重なるなら自動で小さく
     const NN=Math.max(1,J0.length-1);
     let minD=1e9; for(let i=0;i<NN;i++) for(let j=i+1;j<NN;j++){ const a=M(J0[i]),b=M(J0[j]); const d=Math.hypot(a.x-b.x,a.y-b.y); if(d<minD)minD=d; }
     let nodeR=Math.max(5, gridW*0.013); if(isFinite(minD)) nodeR=Math.min(nodeR, Math.max(3.5, minD*0.46));
     for(let i=0;i<NN;i++){ const q=M(J0[i]); g.fillStyle='#5b9cb8'; g.beginPath(); g.arc(q.x,q.y,nodeR,0,Math.PI*2); g.fill(); g.fillStyle='#fff'; g.font='800 '+Math.round(nodeR*1.2)+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(i+1), q.x, q.y); }
+    // アイテムを置く位置（ペン先＝一番上の回転くんの先）をピンクの丸で
+    { const tip=M(J0[J0.length-1]); const r=nodeR*1.25;
+      g.save(); g.fillStyle='#e0588f'; g.strokeStyle='#fff'; g.lineWidth=Math.max(1.5, nodeR*0.28);
+      g.beginPath(); g.arc(tip.x,tip.y,r,0,Math.PI*2); g.fill(); g.stroke();
+      g.fillStyle='#fff'; g.beginPath(); g.arc(tip.x,tip.y,r*0.4,0,Math.PI*2); g.fill();
+      g.restore(); }
     // 分割の黒点線(どう分割されるか一目で・プレビューのみ)
     if(showGrid && cols && rows){ g.save(); g.strokeStyle='rgba(0,0,0,.55)'; g.lineWidth=Math.max(1, gridW*0.001); g.setLineDash([Math.max(4,gridW*0.012), Math.max(3,gridW*0.008)]);
       for(let c=1;c<cols;c++){ const x=gridW*c/cols; g.beginPath(); g.moveTo(x,0); g.lineTo(x,gridH); g.stroke(); }

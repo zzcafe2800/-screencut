@@ -10557,27 +10557,41 @@ layerPanelToggle.addEventListener('click', () => {
     epi.forEach((c,i)=>{ const abs=c.freq, rel=abs-prev; prev=abs; let elev=null;
       if(c.A){ const nx=c.A[1]*c.B[2]-c.A[2]*c.B[1],ny=c.A[2]*c.B[0]-c.A[0]*c.B[2],nz=c.A[0]*c.B[1]-c.A[1]*c.B[0]; const nl=Math.hypot(nx,ny,nz)||1; elev=Math.round(Math.asin(Math.max(-1,Math.min(1,nz/nl)))*180/Math.PI); }
       const rpm=Math.abs(rel)*baseRpm;
-      out.push({ label:String(i+1), dir: rel>0?'➡ 時計':(rel<0?'⬅ 反時計':'—'), rpm, x:rpmToX(rpm), fixed:Math.abs(rel)<1e-9, elev, orient:false });
+      out.push({ label:String(i+1), dir: rel>0?'➡ 時計':(rel<0?'⬅ 反時計':'—'), dsign: rel>0?1:(rel<0?-1:0), rpm, x:rpmToX(rpm), fixed:Math.abs(rel)<1e-9, elev, orient:false });
     });
-    if(orientLast && epi.length){ const la=epi[epi.length-1].freq, r=Math.abs(la)*2*baseRpm; out.push({ label:'🧭', dir:(-la)>0?'➡ 時計':'⬅ 反時計', rpm:r, x:rpmToX(r), fixed:Math.abs(la)<1e-9, elev:null, orient:true }); }
+    if(orientLast && epi.length){ const la=epi[epi.length-1].freq, r=Math.abs(la)*2*baseRpm; out.push({ label:'🧭', dir:(-la)>0?'➡ 時計':'⬅ 反時計', dsign:(-la)>0?1:-1, rpm:r, x:rpmToX(r), fixed:Math.abs(la)<1e-9, elev:null, orient:true }); }
     return out;
   }
+  // PiP内: 速さを「回るドット＋上(ゴール)通過で音」で可視化（番号ごと）
+  let pipRaf=null, pipAudioCtx=null, pipBeepOn=false, pipPeriod=10, pipDir=1, pipStartT=0, pipNextBeat=0, pipSchedTimer=null, pipFixed=true;
+  function pipClock(){ return pipAudioCtx ? pipAudioCtx.currentTime : (performance.now()/1000); }
+  function pipSetSpeed(rpm, dsign, fixed){ pipFixed = !!fixed || !(rpm>0); pipDir = dsign<0?-1:1; pipPeriod = pipFixed?0:(60/rpm); pipStartT=pipClock(); pipNextBeat = pipStartT + (pipPeriod||1); }
+  function pipBeep(at){ if(!pipAudioCtx) return; const o=pipAudioCtx.createOscillator(), g=pipAudioCtx.createGain(); o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(0.35,at+0.008); g.gain.exponentialRampToValueAtTime(0.0001,at+0.13); o.connect(g); g.connect(pipAudioCtx.destination); o.start(at); o.stop(at+0.15); }
+  function pipSched(){ if(!pipBeepOn||!pipAudioCtx||pipFixed||!(pipPeriod>0)) return; const ahead=pipAudioCtx.currentTime+1.1; let guard=0; while(pipNextBeat<ahead && guard++<400){ pipBeep(pipNextBeat); pipNextBeat+=pipPeriod; } }
+  function pipAnim(){ if(!(gaugePipWin&&!gaugePipWin.closed)){ pipRaf=null; return; }
+    const d2=gaugePipWin.document, dot=d2.getElementById('pipDialDot');
+    if(dot){ if(pipFixed){ dot.style.left='50%'; dot.style.top='50%'; }
+      else { const th=pipDir*2*Math.PI*(pipClock()-pipStartT)/(pipPeriod||1); dot.style.left=(50+Math.sin(th)*40).toFixed(2)+'%'; dot.style.top=(50-Math.cos(th)*40).toFixed(2)+'%'; } }
+    pipRaf=requestAnimationFrame(pipAnim);
+  }
+  function pipStopAll(){ if(pipRaf){ cancelAnimationFrame(pipRaf); pipRaf=null; } if(pipSchedTimer){ clearInterval(pipSchedTimer); pipSchedTimer=null; } pipBeepOn=false; if(pipAudioCtx){ try{ pipAudioCtx.close(); }catch(e){} pipAudioCtx=null; } }
   function renderGaugePip(){
     if(!(gaugePipWin && !gaugePipWin.closed)) return;
     const d2=gaugePipWin.document, data=rkGaugeData();
     if(gaugePipSel>=data.length) gaugePipSel=0;
-    const nums=d2.getElementById('pipNums'), info=d2.getElementById('pipInfo'), gauge=d2.getElementById('pipGauge'), dot=d2.getElementById('pipDot'); if(!nums||!info||!gauge) return;
+    const nums=d2.getElementById('pipNums'), info=d2.getElementById('pipInfo'), gauge=d2.getElementById('pipGauge'), dot=d2.getElementById('pipGaugeDot'), ctr=d2.getElementById('pipDialCtr'); if(!nums||!info||!gauge) return;
     nums.innerHTML='';
     data.forEach((o,i)=>{ const b=d2.createElement('button'); b.className='pnum'+(i===gaugePipSel?' sel':'')+(o.orient?' orient':''); b.textContent=o.label; b.onclick=()=>{ gaugePipSel=i; renderGaugePip(); }; nums.appendChild(b); });
-    const o=data[gaugePipSel]; if(!o){ info.innerHTML=''; gauge.style.visibility='hidden'; return; }
-    info.innerHTML = '<div class="ptitle">'+(o.orient?'🧭 向きそろえ用':('回転くん '+o.label+'番'))+'</div>'
-      + (o.fixed ? '<div class="pbig">回さない<span class="psmall">（固定）</span></div>'
-         : '<div class="pdir">'+o.dir+(o.orient?'（逆回転×2）':'')+'</div><div class="pbig">'+(o.rpm>=10?o.rpm.toFixed(0):o.rpm.toFixed(1))+'<span class="psmall"> rpm</span></div>'+(o.rpm>120?'<div class="pwarn">⚠ 最大120超</div>':''))
-      + (o.elev!=null?'<div class="psmall">向き(上下) '+o.elev+'°</div>':'');
-    if(o.fixed){ gauge.style.visibility='hidden'; }
-    else { gauge.style.visibility='visible'; if(dot) dot.style.left=(7.3+o.x*85.4).toFixed(1)+'%'; }
+    const o=data[gaugePipSel]; if(!o){ info.innerHTML=''; gauge.style.visibility='hidden'; pipSetSpeed(0,1,true); return; }
+    info.innerHTML = '<span class="ptitle">'+(o.orient?'🧭 向きそろえ用':('回転くん '+o.label+'番'))+'</span>'
+      + (o.fixed ? '' : ' <span class="pdir">'+o.dir+(o.orient?'（逆回転×2）':'')+'</span>')
+      + (o.elev!=null?'<br><span class="psmall">向き(上下) '+o.elev+'°</span>':'');
+    if(ctr){ ctr.innerHTML = o.fixed ? '<span class="pfix">固定</span>' : ('<span class="prpm">'+(o.rpm>=10?o.rpm.toFixed(0):o.rpm.toFixed(1))+'</span><span class="psmall">rpm</span>'+(o.rpm>120?'<br><span class="pwarn">最大超</span>':'')); }
+    if(o.fixed){ gauge.style.visibility='hidden'; } else { gauge.style.visibility='visible'; if(dot) dot.style.left=(7.3+o.x*85.4).toFixed(1)+'%'; }
+    pipSetSpeed(o.rpm, o.dsign, o.fixed);
   }
   function rkUpdateGaugePip(){ renderGaugePip(); }
+  function pipUpdateSoundBtn(){ if(!(gaugePipWin&&!gaugePipWin.closed)) return; const b=gaugePipWin.document.getElementById('pipSound'); if(b){ b.textContent= pipBeepOn?'🔊 音オン':'🔇 音オフ'; b.classList.toggle('on', pipBeepOn); } }
   async function openGaugePip(){
     if(!('documentPictureInPicture' in window)){ if(typeof showToast==='function') showToast('この端末はPiP非対応です'); return; }
     try{
@@ -10586,24 +10600,34 @@ layerPanelToggle.addEventListener('click', () => {
       const d2=gaugePipWin.document;
       const css=d2.createElement('style');
       css.textContent='*{box-sizing:border-box;}html,body{margin:0;height:100%;background:#eef4f8;font-family:sans-serif;}'
-        +'#pipRoot{display:flex;flex-direction:column;height:100vh;padding:2vh 3vw;gap:1.4vh;}'
-        +'.plabel{font-size:3.2vh;font-weight:800;color:#5a7a89;text-align:center;}'
-        +'#pipNums{display:flex;flex-wrap:wrap;gap:1.1vh;justify-content:center;}'
-        +'.pnum{min-width:7vh;height:7vh;border-radius:50%;border:.4vh solid #cddde6;background:#fff;color:#5b9cb8;font-size:3.6vh;font-weight:800;cursor:pointer;padding:0 1vh;line-height:1;}'
+        +'#pipRoot{display:flex;flex-direction:column;height:100vh;padding:1.6vh 3vw;gap:1vh;}'
+        +'.plabel{font-size:3vh;font-weight:800;color:#5a7a89;text-align:center;}'
+        +'#pipNums{display:flex;flex-wrap:wrap;gap:1vh;justify-content:center;}'
+        +'.pnum{min-width:6.4vh;height:6.4vh;border-radius:50%;border:.4vh solid #cddde6;background:#fff;color:#5b9cb8;font-size:3.4vh;font-weight:800;cursor:pointer;padding:0 1vh;line-height:1;}'
         +'.pnum.sel{background:#5b9cb8;color:#fff;border-color:#5b9cb8;transform:scale(1.12);box-shadow:0 .4vh 1.2vh rgba(91,156,184,.4);}'
         +'.pnum.orient{border-color:#e0588f;color:#e0588f;}.pnum.orient.sel{background:#e0588f;color:#fff;}'
-        +'#pipInfo{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:.6vh;text-align:center;}'
-        +'.ptitle{font-size:3.4vh;font-weight:800;color:#3f6d80;}.pdir{font-size:4vh;font-weight:800;color:#2c3e50;}'
-        +'.pbig{font-size:8vh;font-weight:800;color:#5b9cb8;line-height:1.02;}.psmall{font-size:2.9vh;color:#9bb3c0;font-weight:700;}.pwarn{font-size:2.9vh;color:#e0588f;font-weight:800;}'
-        +'#pipGauge{display:flex;align-items:center;gap:2vw;background:#2b3138;border-radius:999px;padding:4vh 3vw;width:100%;flex:none;}'
-        +'.pg-ic{font-size:4.5vh;line-height:1;}'
-        +'.pg-track{position:relative;flex:1;height:1.1vh;min-height:4px;background:#5a626b;border-radius:999px;}'
-        +'.pg-dot{position:absolute;top:50%;width:7.6vh;height:7.6vh;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 1px 5px rgba(0,0,0,.55);}';
+        +'#pipInfo{text-align:center;line-height:1.3;}.ptitle{font-size:3.2vh;font-weight:800;color:#3f6d80;}.pdir{font-size:3.2vh;font-weight:800;color:#2c3e50;}'
+        +'#pipDialWrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;}'
+        +'#pipDial{position:relative;width:min(60vw,30vh);aspect-ratio:1;border-radius:50%;border:.9vh solid #d6e6ee;background:#fff;}'
+        +'#pipTop{position:absolute;top:-.5vh;left:50%;transform:translateX(-50%);width:0;height:0;border-left:1.6vh solid transparent;border-right:1.6vh solid transparent;border-top:2.3vh solid #e0588f;}'
+        +'#pipDialDot{position:absolute;left:50%;top:8%;width:5.6vh;height:5.6vh;border-radius:50%;background:#5b9cb8;transform:translate(-50%,-50%);box-shadow:0 1px 5px rgba(0,0,0,.4);}'
+        +'#pipDialCtr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;}'
+        +'.prpm{font-size:6.5vh;font-weight:800;color:#5b9cb8;}.pfix{font-size:4.5vh;font-weight:800;color:#9bb3c0;}.psmall{font-size:2.6vh;color:#9bb3c0;font-weight:700;}.pwarn{font-size:2.6vh;color:#e0588f;font-weight:800;}'
+        +'#pipSound{align-self:center;background:#fff;border:1.8px solid #8fd3ed;color:#5b9cb8;border-radius:99px;padding:.7vh 5vw;font-size:2.9vh;font-weight:800;cursor:pointer;flex:none;}#pipSound.on{background:#5b9cb8;color:#fff;border-color:#5b9cb8;}'
+        +'#pipGauge{display:flex;align-items:center;gap:2vw;background:#2b3138;border-radius:999px;padding:3vh 3vw;width:100%;flex:none;}'
+        +'.pg-ic{font-size:4.2vh;line-height:1;}.pg-track{position:relative;flex:1;height:1.1vh;min-height:4px;background:#5a626b;border-radius:999px;}'
+        +'.pg-dot{position:absolute;top:50%;left:7.3%;width:6.8vh;height:6.8vh;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 1px 5px rgba(0,0,0,.55);}';
       d2.head.appendChild(css);
       d2.body.innerHTML='<div id="pipRoot"><div class="plabel">▼ 番号を選ぶ</div><div id="pipNums"></div><div id="pipInfo"></div>'
-        +'<div id="pipGauge"><span class="pg-ic">🐢</span><span class="pg-track"><span id="pipDot" class="pg-dot"></span></span><span class="pg-ic">🐇</span></div></div>';
-      gaugePipWin.addEventListener('pagehide', ()=>{ gaugePipWin=null; });
-      renderGaugePip();
+        +'<div id="pipDialWrap"><div id="pipDial"><div id="pipTop"></div><div id="pipDialDot"></div><div id="pipDialCtr"></div></div></div>'
+        +'<button id="pipSound" type="button">🔇 音オフ</button>'
+        +'<div id="pipGauge"><span class="pg-ic">🐢</span><span class="pg-track"><span id="pipGaugeDot" class="pg-dot"></span></span><span class="pg-ic">🐇</span></div></div>';
+      const sb=d2.getElementById('pipSound');
+      if(sb) sb.onclick=()=>{ pipBeepOn=!pipBeepOn; if(pipBeepOn){ if(!pipAudioCtx){ try{ pipAudioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(pipAudioCtx&&pipAudioCtx.state==='suspended') pipAudioCtx.resume(); const o=rkGaugeData()[gaugePipSel]; if(o) pipSetSpeed(o.rpm,o.dsign,o.fixed); } pipUpdateSoundBtn(); };
+      gaugePipWin.addEventListener('pagehide', ()=>{ pipStopAll(); gaugePipWin=null; });
+      renderGaugePip(); pipUpdateSoundBtn();
+      if(pipSchedTimer) clearInterval(pipSchedTimer); pipSchedTimer=setInterval(pipSched, 80);
+      if(pipRaf) cancelAnimationFrame(pipRaf); pipAnim();
     }catch(e){ if(typeof showToast==='function') showToast('PiPを開けませんでした'); }
   }
   if(gaugePipBtn) gaugePipBtn.addEventListener('click', openGaugePip);

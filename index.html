@@ -10563,18 +10563,57 @@ layerPanelToggle.addEventListener('click', () => {
     return out;
   }
   // PiP内: 速さを「回るドット＋上(ゴール)通過で音」で可視化（番号ごと）
-  let pipRaf=null, pipAudioCtx=null, pipBeepOn=false, pipPeriod=10, pipDir=1, pipStartT=0, pipNextBeat=0, pipSchedTimer=null, pipFixed=true;
+  let pipRaf=null, pipAudioCtx=null, pipBeepOn=false, pipPeriod=10, pipDir=1, pipStartT=0, pipNextBeat=0, pipSchedTimer=null, pipFixed=true, pipLapPrev=0, pipFlashT=null, pipPreview=false, pipPrevStart=0;
   function pipClock(){ return pipAudioCtx ? pipAudioCtx.currentTime : (performance.now()/1000); }
-  function pipSetSpeed(rpm, dsign, fixed){ pipFixed = !!fixed || !(rpm>0); pipDir = dsign<0?-1:1; pipPeriod = pipFixed?0:(60/rpm); pipStartT=pipClock(); pipNextBeat = pipStartT + (pipPeriod||1); }
+  function pipSetSpeed(rpm, dsign, fixed){ pipFixed = !!fixed || !(rpm>0); pipDir = dsign<0?-1:1; pipPeriod = pipFixed?0:(60/rpm); pipStartT=pipClock(); pipNextBeat = pipStartT + (pipPeriod||1); pipLapPrev=0; }
   function pipBeep(at){ if(!pipAudioCtx) return; const o=pipAudioCtx.createOscillator(), g=pipAudioCtx.createGain(); o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(0.35,at+0.008); g.gain.exponentialRampToValueAtTime(0.0001,at+0.13); o.connect(g); g.connect(pipAudioCtx.destination); o.start(at); o.stop(at+0.15); }
   function pipSched(){ if(!pipBeepOn||!pipAudioCtx||pipFixed||!(pipPeriod>0)) return; const ahead=pipAudioCtx.currentTime+1.1; let guard=0; while(pipNextBeat<ahead && guard++<400){ pipBeep(pipNextBeat); pipNextBeat+=pipPeriod; } }
+  function pipFlash(){ if(!(gaugePipWin&&!gaugePipWin.closed)) return; const r=gaugePipWin.document.getElementById('pipRoot'); if(!r) return; r.classList.add('flash'); if(pipFlashT) clearTimeout(pipFlashT); pipFlashT=setTimeout(()=>{ try{ r.classList.remove('flash'); }catch(e){} }, 80); }
   function pipAnim(){ if(!(gaugePipWin&&!gaugePipWin.closed)){ pipRaf=null; return; }
+    if(pipPreview){ drawPipPreview(); pipRaf=requestAnimationFrame(pipAnim); return; }
     const d2=gaugePipWin.document, dot=d2.getElementById('pipDialDot');
-    if(dot){ if(pipFixed){ dot.style.left='50%'; dot.style.top='50%'; }
-      else { const th=pipDir*2*Math.PI*(pipClock()-pipStartT)/(pipPeriod||1); dot.style.left=(50+Math.sin(th)*40).toFixed(2)+'%'; dot.style.top=(50-Math.cos(th)*40).toFixed(2)+'%'; } }
+    if(pipFixed){ if(dot){ dot.style.left='50%'; dot.style.top='50%'; } }
+    else { const elapsed=pipClock()-pipStartT; const th=pipDir*2*Math.PI*elapsed/(pipPeriod||1);
+      if(dot){ dot.style.left=(50+Math.sin(th)*40).toFixed(2)+'%'; dot.style.top=(50-Math.cos(th)*40).toFixed(2)+'%'; }
+      const lap=Math.floor(elapsed/(pipPeriod||1)); if(lap>pipLapPrev){ pipFlash(); } pipLapPrev=lap;   // 上(ゴール)通過＝音の瞬間に全体を一瞬色変え
+    }
     pipRaf=requestAnimationFrame(pipAnim);
   }
-  function pipStopAll(){ if(pipRaf){ cancelAnimationFrame(pipRaf); pipRaf=null; } if(pipSchedTimer){ clearInterval(pipSchedTimer); pipSchedTimer=null; } pipBeepOn=false; if(pipAudioCtx){ try{ pipAudioCtx.close(); }catch(e){} pipAudioCtx=null; } }
+  function pipStopAll(){ if(pipRaf){ cancelAnimationFrame(pipRaf); pipRaf=null; } if(pipSchedTimer){ clearInterval(pipSchedTimer); pipSchedTimer=null; } pipBeepOn=false; pipPreview=false; if(pipAudioCtx){ try{ pipAudioCtx.close(); }catch(e){} pipAudioCtx=null; } }
+  // 「今の番号まで」の部分チェーン(2D投影)
+  function pipPartialJoints(t, N){ const J=[{x:center.x,y:center.y}]; let x=center.x,y=center.y;
+    for(let i=0;i<N;i++){ const c=epi[i]; if(!c) break;
+      if(c.A){ const th=2*Math.PI*c.freq*t,ct=Math.cos(th),st=Math.sin(th); x+=c.A[0]*ct-c.B[0]*st; y+=c.A[1]*ct-c.B[1]*st; }
+      else { const a=2*Math.PI*c.freq*t+c.phase; x+=c.amp*Math.cos(a); y+=c.amp*Math.sin(a); }
+      J.push({x,y}); }
+    return J;
+  }
+  function drawPipPreview(){
+    if(!(gaugePipWin&&!gaugePipWin.closed)||!pipPreview) return;
+    const d2=gaugePipWin.document, cv=d2.getElementById('pipPrevCanvas'); if(!cv) return;
+    const ctx=cv.getContext('2d'); const dpr=gaugePipWin.devicePixelRatio||1;
+    const W=cv.clientWidth, H=cv.clientHeight; if(!W||!H) return;
+    if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
+    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+    if(!epi.length) return;
+    const data=rkGaugeData(), sel=data[gaugePipSel];
+    let N=(sel&&sel.orient)?epi.length:Math.min(gaugePipSel+1, epi.length); if(N<1)N=1;
+    const TN=240, path=[]; let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+    for(let k=0;k<=TN;k++){ const J=pipPartialJoints(k/TN,N), p=J[N]||J[J.length-1]; path.push(p); if(p.x<minx)minx=p.x;if(p.x>maxx)maxx=p.x;if(p.y<miny)miny=p.y;if(p.y>maxy)maxy=p.y; }
+    const bw=Math.max(1,maxx-minx), bh=Math.max(1,maxy-miny), sc=Math.min(W*0.82/bw, H*0.82/bh), cx=(minx+maxx)/2, cy=(miny+maxy)/2;
+    const map=p=>({ x:W/2+(p.x-cx)*sc, y:H/2+(p.y-cy)*sc });
+    const tc=(((pipClock()-pipPrevStart)*baseRpm/60)%1+1)%1, Jt=pipPartialJoints(tc,N);
+    // ピンクの通り道(完成イメージ)
+    ctx.strokeStyle='rgba(224,88,143,.72)'; ctx.lineWidth=Math.max(2,W*0.007); ctx.lineJoin='round'; ctx.lineCap='round'; ctx.beginPath(); path.forEach((p,i)=>{ const q=map(p); i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y); }); ctx.closePath(); ctx.stroke();
+    // 緑の円
+    ctx.strokeStyle='rgba(60,175,112,.4)'; ctx.lineWidth=Math.max(1,W*0.003);
+    for(let i=0;i<N;i++){ const cc=map(Jt[i]); const r=Math.hypot(Jt[i+1].x-Jt[i].x, Jt[i+1].y-Jt[i].y)*sc; ctx.beginPath(); ctx.arc(cc.x,cc.y,r,0,Math.PI*2); ctx.stroke(); }
+    // チェーン
+    ctx.strokeStyle='rgba(70,110,130,.55)'; ctx.lineWidth=Math.max(1.5,W*0.0045); ctx.beginPath(); Jt.forEach((p,i)=>{ const q=map(p); i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y); }); ctx.stroke();
+    ctx.fillStyle='#5b9cb8'; for(let i=0;i<N;i++){ const q=map(Jt[i]); ctx.beginPath(); ctx.arc(q.x,q.y,Math.max(2.5,W*0.009),0,Math.PI*2); ctx.fill(); }
+    // アイテムを置く位置(ペン先)
+    const tip=map(Jt[N]); ctx.fillStyle='#e0588f'; ctx.strokeStyle='#fff'; ctx.lineWidth=Math.max(1.5,W*0.005); ctx.beginPath(); ctx.arc(tip.x,tip.y,Math.max(5,W*0.026),0,Math.PI*2); ctx.fill(); ctx.stroke();
+  }
   function renderGaugePip(){
     if(!(gaugePipWin && !gaugePipWin.closed)) return;
     const d2=gaugePipWin.document, data=rkGaugeData();
@@ -10591,7 +10630,7 @@ layerPanelToggle.addEventListener('click', () => {
     pipSetSpeed(o.rpm, o.dsign, o.fixed);
   }
   function rkUpdateGaugePip(){ renderGaugePip(); }
-  function pipUpdateSoundBtn(){ if(!(gaugePipWin&&!gaugePipWin.closed)) return; const b=gaugePipWin.document.getElementById('pipSound'); if(b){ b.textContent= pipBeepOn?'🔊 音オン':'🔇 音オフ'; b.classList.toggle('on', pipBeepOn); } }
+  function pipUpdateSoundBtn(){ if(!(gaugePipWin&&!gaugePipWin.closed)) return; const b=gaugePipWin.document.getElementById('pipSound'); if(b){ b.textContent= pipBeepOn?'🔊':'🔇'; b.classList.toggle('on', pipBeepOn); } }
   async function openGaugePip(){
     if(!('documentPictureInPicture' in window)){ if(typeof showToast==='function') showToast('この端末はPiP非対応です'); return; }
     try{
@@ -10600,30 +10639,42 @@ layerPanelToggle.addEventListener('click', () => {
       const d2=gaugePipWin.document;
       const css=d2.createElement('style');
       css.textContent='*{box-sizing:border-box;}html,body{margin:0;height:100%;background:#eef4f8;font-family:sans-serif;}'
-        +'#pipRoot{display:flex;flex-direction:column;height:100vh;padding:1.6vh 3vw;gap:1vh;}'
+        +'#pipRoot{position:relative;display:flex;flex-direction:column;height:100vh;padding:1.6vh 3vw;gap:1vh;background:#eef4f8;transition:background-color .3s ease-out;}'
+        +'#pipRoot.flash{background:#f3dde9;transition:none;}'
         +'.plabel{font-size:3vh;font-weight:800;color:#5a7a89;text-align:center;}'
         +'#pipNums{display:flex;flex-wrap:wrap;gap:1vh;justify-content:center;}'
         +'.pnum{min-width:6.4vh;height:6.4vh;border-radius:50%;border:.4vh solid #cddde6;background:#fff;color:#5b9cb8;font-size:3.4vh;font-weight:800;cursor:pointer;padding:0 1vh;line-height:1;}'
         +'.pnum.sel{background:#5b9cb8;color:#fff;border-color:#5b9cb8;transform:scale(1.12);box-shadow:0 .4vh 1.2vh rgba(91,156,184,.4);}'
         +'.pnum.orient{border-color:#e0588f;color:#e0588f;}.pnum.orient.sel{background:#e0588f;color:#fff;}'
-        +'#pipInfo{text-align:center;line-height:1.3;}.ptitle{font-size:3.2vh;font-weight:800;color:#3f6d80;}.pdir{font-size:3.2vh;font-weight:800;color:#2c3e50;}'
         +'#pipDialWrap{flex:1;display:flex;align-items:center;justify-content:center;min-height:0;}'
         +'#pipDial{position:relative;width:min(60vw,30vh);aspect-ratio:1;border-radius:50%;border:.9vh solid #d6e6ee;background:#fff;}'
         +'#pipTop{position:absolute;top:-.5vh;left:50%;transform:translateX(-50%);width:0;height:0;border-left:1.6vh solid transparent;border-right:1.6vh solid transparent;border-top:2.3vh solid #e0588f;}'
         +'#pipDialDot{position:absolute;left:50%;top:8%;width:5.6vh;height:5.6vh;border-radius:50%;background:#5b9cb8;transform:translate(-50%,-50%);box-shadow:0 1px 5px rgba(0,0,0,.4);}'
         +'#pipDialCtr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1;}'
         +'.prpm{font-size:6.5vh;font-weight:800;color:#5b9cb8;}.pfix{font-size:4.5vh;font-weight:800;color:#9bb3c0;}.psmall{font-size:2.6vh;color:#9bb3c0;font-weight:700;}.pwarn{font-size:2.6vh;color:#e0588f;font-weight:800;}'
-        +'#pipSound{align-self:center;background:#fff;border:1.8px solid #8fd3ed;color:#5b9cb8;border-radius:99px;padding:.7vh 5vw;font-size:2.9vh;font-weight:800;cursor:pointer;flex:none;}#pipSound.on{background:#5b9cb8;color:#fff;border-color:#5b9cb8;}'
+        +'#pipInfo{text-align:center;line-height:1.25;flex:none;}.ptitle{font-size:3vh;font-weight:800;color:#3f6d80;}.pdir{font-size:3vh;font-weight:800;color:#2c3e50;}'
+        +'#pipSound{align-self:center;width:7vh;height:7vh;border-radius:50%;background:#fff;border:.4vh solid #8fd3ed;color:#5b9cb8;font-size:3.4vh;cursor:pointer;flex:none;display:flex;align-items:center;justify-content:center;padding:0;}#pipSound.on{background:#5b9cb8;border-color:#5b9cb8;}'
         +'#pipGauge{display:flex;align-items:center;gap:2vw;background:#2b3138;border-radius:999px;padding:3vh 3vw;width:100%;flex:none;}'
         +'.pg-ic{font-size:4.2vh;line-height:1;}.pg-track{position:relative;flex:1;height:1.1vh;min-height:4px;background:#5a626b;border-radius:999px;}'
-        +'.pg-dot{position:absolute;top:50%;left:7.3%;width:6.8vh;height:6.8vh;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 1px 5px rgba(0,0,0,.55);}';
+        +'.pg-dot{position:absolute;top:50%;left:7.3%;width:6.8vh;height:6.8vh;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 1px 5px rgba(0,0,0,.55);}'
+        +'#pipBtnRow{display:flex;gap:3vw;align-items:center;justify-content:center;flex:none;}'
+        +'#pipPrev{background:#5b9cb8;border:none;color:#fff;border-radius:99px;padding:1vh 5vw;font-size:2.9vh;font-weight:800;cursor:pointer;}'
+        +'#pipPrevWrap{position:absolute;inset:0;background:#eef4f8;display:none;z-index:5;}'
+        +'#pipPrevCanvas{width:100%;height:100%;display:block;}'
+        +'#pipPrevBack{position:absolute;top:2vh;left:3vw;background:#fff;border:.4vh solid #8fd3ed;color:#5b9cb8;border-radius:99px;padding:1vh 4vw;font-size:3vh;font-weight:800;cursor:pointer;z-index:6;}'
+        +'#pipPrevTitle{position:absolute;top:2.6vh;right:3.5vw;font-size:2.9vh;font-weight:800;color:#5a7a89;z-index:6;}';
       d2.head.appendChild(css);
-      d2.body.innerHTML='<div id="pipRoot"><div class="plabel">▼ 番号を選ぶ</div><div id="pipNums"></div><div id="pipInfo"></div>'
+      d2.body.innerHTML='<div id="pipRoot"><div class="plabel">▼ 番号を選ぶ</div><div id="pipNums"></div>'
         +'<div id="pipDialWrap"><div id="pipDial"><div id="pipTop"></div><div id="pipDialDot"></div><div id="pipDialCtr"></div></div></div>'
-        +'<button id="pipSound" type="button">🔇 音オフ</button>'
-        +'<div id="pipGauge"><span class="pg-ic">🐢</span><span class="pg-track"><span id="pipGaugeDot" class="pg-dot"></span></span><span class="pg-ic">🐇</span></div></div>';
+        +'<div id="pipInfo"></div>'
+        +'<div id="pipBtnRow"><button id="pipSound" type="button">🔇</button><button id="pipPrev" type="button">▶ ここまで見る</button></div>'
+        +'<div id="pipGauge"><span class="pg-ic">🐢</span><span class="pg-track"><span id="pipGaugeDot" class="pg-dot"></span></span><span class="pg-ic">🐇</span></div>'
+        +'<div id="pipPrevWrap"><canvas id="pipPrevCanvas"></canvas><div id="pipPrevTitle"></div><button id="pipPrevBack" type="button">← 戻る</button></div></div>';
       const sb=d2.getElementById('pipSound');
       if(sb) sb.onclick=()=>{ pipBeepOn=!pipBeepOn; if(pipBeepOn){ if(!pipAudioCtx){ try{ pipAudioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(pipAudioCtx&&pipAudioCtx.state==='suspended') pipAudioCtx.resume(); const o=rkGaugeData()[gaugePipSel]; if(o) pipSetSpeed(o.rpm,o.dsign,o.fixed); } pipUpdateSoundBtn(); };
+      const pv=d2.getElementById('pipPrev'), pvw=d2.getElementById('pipPrevWrap'), pvb=d2.getElementById('pipPrevBack'), pvt=d2.getElementById('pipPrevTitle');
+      if(pv) pv.onclick=()=>{ if(!epi.length) return; pipPreview=true; pipPrevStart=pipClock(); const data=rkGaugeData(), sel=data[gaugePipSel]; const N=(sel&&sel.orient)?epi.length:Math.min(gaugePipSel+1,epi.length); if(pvt) pvt.textContent='①〜'+N+'番まで'; if(pvw) pvw.style.display='block'; };
+      if(pvb) pvb.onclick=()=>{ pipPreview=false; if(pvw) pvw.style.display='none'; };
       gaugePipWin.addEventListener('pagehide', ()=>{ pipStopAll(); gaugePipWin=null; });
       renderGaugePip(); pipUpdateSoundBtn();
       if(pipSchedTimer) clearInterval(pipSchedTimer); pipSchedTimer=setInterval(pipSched, 80);

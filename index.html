@@ -17474,7 +17474,7 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
 </script>
 <script>
 /* =========================================================================
-   クリエくん（メニュー表メイカー） v1.2
+   クリエくん（メニュー表メイカー） v1.3
    ========================================================================= */
 (function(){
   'use strict';
@@ -17488,8 +17488,8 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     ratioW: 1240, ratioH: 1748,
     pal: null, palBase: null,
     fontScale: 1, font: 'gothic', titleFont: 'theme',
-    align: 'center', cols: 'auto',
-    avatar: null,
+    align: 'center', cols: 'auto', recStyle: 'star', texture: 'none',
+    photo: null, photoPos: 'br', photoSize: 0.22, photoShape: 'circle',
     items: [],
   };
 
@@ -17512,29 +17512,27 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     sand:     { bg:'#f1ece2', ink:'#3e3a30', sub:'#928a78', accent:'#8a7a4a', accent2:'#c4b283', card:'#fffdf6' },
   };
 
+  // 見た目がはっきり違う5書体のみ
   const FONTS = {
-    gothic:    { label:'ゴシック',     stack:"'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP','Helvetica Neue',sans-serif" },
-    mincho:    { label:'明朝',         stack:"'Hiragino Mincho ProN','YuMincho','Noto Serif JP','Times New Roman',serif" },
-    maru:      { label:'丸ゴシック',   stack:"'Hiragino Maru Gothic ProN','Rounded Mplus 1c','Quicksand','M PLUS Rounded 1c',system-ui,sans-serif" },
-    pop:       { label:'ポップ',       stack:"'Hiragino Sans','M PLUS Rounded 1c','Arial Black','Hiragino Maru Gothic ProN',sans-serif" },
-    elegant:   { label:'エレガント',   stack:"'Didot','Bodoni MT','Hiragino Mincho ProN','Noto Serif JP',serif" },
-    hand:      { label:'手書き風',     stack:"'Yomogi','Klee One','Zen Kurenaido','Comic Sans MS','Hiragino Maru Gothic ProN',cursive" },
-    display:   { label:'ディスプレイ', stack:"'Arial Black','Impact','Hiragino Sans','M PLUS Rounded 1c',sans-serif" },
-    condensed: { label:'細長',         stack:"'Arial Narrow','Oswald','Hiragino Sans','Noto Sans JP',sans-serif" },
+    gothic:  { label:'ゴシック',     stack:"'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP','Helvetica Neue',sans-serif" },
+    mincho:  { label:'明朝',         stack:"'Hiragino Mincho ProN','YuMincho','Noto Serif JP','Times New Roman',serif" },
+    maru:    { label:'丸ゴシック',   stack:"'Hiragino Maru Gothic ProN','M PLUS Rounded 1c','Quicksand',system-ui,sans-serif" },
+    elegant: { label:'エレガント',   stack:"'Didot','Bodoni 72','Bodoni MT','Hiragino Mincho ProN',serif" },
+    display: { label:'ディスプレイ', stack:"'Futura','Arial Black','Impact','Hiragino Sans',sans-serif" },
   };
 
   const CATS = {
-    cafe:   { label:'カフェ',     pal:'cream',  tpl:'clean',  font:'gothic',
+    cafe:   { label:'カフェ',     pal:'cream',  tpl:'clean',    font:'gothic',
       samples:[['ブレンドコーヒー','480','円','深煎りのコク','coffee','DRINK',1],['カフェラテ','520','円','','latte','DRINK',0],['紅茶','480','円','','tea','DRINK',0],['オレンジジュース','450','円','','juice','DRINK',0],['チーズケーキ','520','円','自家製','cake','SWEETS',1],['パンケーキ','680','円','ふわふわ','pancake','SWEETS',0]] },
-    resto:  { label:'レストラン', pal:'ocean',  tpl:'frame',  font:'mincho',
+    resto:  { label:'レストラン', pal:'ocean',  tpl:'frame',    font:'mincho',
       samples:[['本日のスープ','480','円','','soup','STARTER',0],['シーザーサラダ','680','円','','salad','STARTER',0],['ハンバーグステーキ','1280','円','デミグラス','steak','MAIN',1],['マルゲリータ','1180','円','','pizza','MAIN',0],['パスタ','1080','円','','noodle','MAIN',0],['グラスワイン','580','円','赤/白','wine','DRINK',0]] },
-    izakaya:{ label:'居酒屋',     pal:'forest', tpl:'pop',    font:'gothic',
+    izakaya:{ label:'居酒屋',     pal:'forest', tpl:'band',     font:'gothic',
       samples:[['生ビール','550','円','','beer','DRINK',1],['ハイボール','480','円','','cola','DRINK',0],['枝豆','380','円','','salad','APPETIZER',0],['唐揚げ','580','円','名物','karaage','APPETIZER',1],['焼き魚','780','円','','fish','MAIN',0],['締めのラーメン','680','円','','noodle','MAIN',0]] },
-    sweets: { label:'スイーツ',   pal:'rose',   tpl:'notecard', font:'maru',
+    sweets: { label:'スイーツ',   pal:'rose',   tpl:'hero',     font:'maru',
       samples:[['ショートケーキ','520','円','苺','shortcake','CAKE',1],['ガトーショコラ','560','円','','cake','CAKE',0],['アイスクリーム','450','円','3種から','icecream','GELATO',0],['ドーナツ','320','円','','donut','GELATO',0],['ミルクティー','480','円','','milktea','DRINK',0],['カフェモカ','520','円','','latte','DRINK',0]] },
-    bakery: { label:'ベーカリー', pal:'matcha', tpl:'clean',  font:'gothic',
+    bakery: { label:'ベーカリー', pal:'matcha', tpl:'notecard', font:'gothic',
       samples:[['食パン','380','円','1斤','bread','BREAD',1],['クロワッサン','260','円','','croissant','BREAD',0],['カレーパン','280','円','','curry','BREAD',0],['サンドイッチ','480','円','','sandwich','LUNCH',0],['コーヒー','350','円','','coffee','DRINK',0]] },
-    bar:    { label:'バー',       pal:'night',  tpl:'pop',    font:'elegant',
+    bar:    { label:'バー',       pal:'night',  tpl:'showcase', font:'elegant',
       samples:[['ジントニック','900','円','','cocktail','COCKTAIL',1],['モヒート','900','円','','cocktail','COCKTAIL',0],['グラスワイン','800','円','','wine','WINE',0],['ウイスキー','1000','円','','cola','WHISKY',0],['チーズ盛り合わせ','1200','円','','salad','FOOD',0]] },
   };
 
@@ -17701,8 +17699,8 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
   // ===================== テキスト・配置 補助 =====================
   function fontStack(key){ return (FONTS[key]||FONTS.gothic).stack; }
   function setFont(c, px, weight){ c.font=(weight||'')+' '+px+'px '+fontStack(cre.font); }
-  function setTitleFont(c, px, weight){ const k=(cre.titleFont&&cre.titleFont!=='theme')?cre.titleFont:cre.font; c.font=(weight||'')+' '+px+'px '+fontStack(k); }
-  function _fit(c, setter, txt, px, weight, maxW){ let p=px; setter(c,p,weight); while(c.measureText(txt).width>maxW && p>8){ p-=1; setter(c,p,weight); } return p; }
+  function setTitleFont(c, px, weight){ const k=(cre.titleFont&&cre.titleFont!=='theme'&&FONTS[cre.titleFont])?cre.titleFont:cre.font; c.font=(weight||'')+' '+px+'px '+fontStack(k); }
+  function _fit(c, setter, txt, px, weight, maxW){ let p=px; setter(c,p,weight); while(c.measureText(txt).width>maxW && p>7){ p-=1; setter(c,p,weight); } return p; }
   function fitText(c, txt, px, weight, maxW){ return _fit(c,setFont,txt,px,weight,maxW); }
   function fitTitle(c, txt, px, weight, maxW){ return _fit(c,setTitleFont,txt,px,weight,maxW); }
   function ellipsize(c, txt, maxW){ if(c.measureText(txt).width<=maxW) return txt; let t=txt; while(t.length>1 && c.measureText(t+'…').width>maxW){ t=t.slice(0,-1); } return t+'…'; }
@@ -17711,13 +17709,13 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
   function grouped(){ const map=new Map(); cre.items.forEach(it=>{ const k=(it.section||'MENU'); if(!map.has(k)) map.set(k,[]); map.get(k).push(it); }); return [...map.entries()].map(([name,items])=>({name,items})); }
   function headAlign(M,W){ if(cre.align==='left') return {x:M,a:'left'}; if(cre.align==='right') return {x:W-M,a:'right'}; return {x:W/2,a:'center'}; }
   function colCount(W,H,th){ if(cre.cols==='1') return 1; if(cre.cols==='2') return 2; return (W/H>(th||1.1))?2:1; }
-  // 見出し（タイトル＋キャッチ＋区切り線）を揃え・タイトル書体つきで描画。content開始Yを返す
+  function recPrefix(){ const s=cre.recStyle; if(s==='none') return ''; if(s==='dot') return '● '; if(s==='heart') return '♥ '; if(s==='label') return '【おすすめ】'; return '★ '; }
   function drawHeading(c,W,topY,cfg){
     const M=cfg.M, ha=headAlign(M,W); c.textAlign=ha.a; c.textBaseline='alphabetic';
     const title=cre.store||cfg.ph||'お店の名前';
     setTitleFont(c,cfg.size,cfg.weight); c.fillStyle=cfg.color; fitTitle(c,title,cfg.size,cfg.weight,W-M*2);
     let y=topY+cfg.size*0.82; c.fillText(title, ha.x, y); y+=cfg.size*0.2;
-    if(cre.tag){ y+=cfg.tagSize*0.8; setFont(c,cfg.tagSize,cfg.tagWeight||''); c.fillStyle=cfg.tagColor; c.fillText(cre.tag, ha.x, y); y+=cfg.tagSize*0.5; }
+    if(cre.tag){ y+=cfg.tagSize*0.8; setFont(c,cfg.tagSize,cfg.tagWeight||''); c.fillStyle=cfg.tagColor; c.fillText(ellipsize(c,cre.tag,W-M*2), ha.x, y); y+=cfg.tagSize*0.5; }
     if(cfg.rule){ y+=W*0.012;
       if(cfg.rule==='barFull'){ c.fillStyle=cfg.ruleColor; c.fillRect(M,y,W-M*2,W*0.008); }
       else if(cfg.rule==='dot'){ c.fillStyle=cfg.ruleColor; const dx=ha.a==='left'?M:(ha.a==='right'?W-M:W/2); c.beginPath(); c.arc(dx,y,W*0.006,0,Math.PI*2); c.fill(); }
@@ -17727,33 +17725,60 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     return y;
   }
 
+  // 質感（テクスチャ）— 決定論的（プレビューと書き出しが一致）
+  function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function drawTexture(c,W,H){
+    const p=cre.pal, t=cre.texture; if(!t||t==='none') return; const rnd=mulberry32(987654321); const ink=p.ink; const unit=Math.max(W,H)/1000; c.save();
+    if(t==='paper'){ const n=Math.min(6000,Math.floor(W*H*0.0009)); c.fillStyle=ink; for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H,r=(0.4+rnd()*1.2)*unit; c.globalAlpha=0.015+rnd()*0.05; c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill(); } }
+    else if(t==='washi'){ const n=Math.min(2200,Math.floor(W*H*0.00035)); c.strokeStyle=ink; c.lineWidth=0.6*unit; for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H,len=(6+rnd()*22)*unit,a=rnd()*Math.PI; c.globalAlpha=0.02+rnd()*0.05; c.beginPath(); c.moveTo(x,y); c.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len); c.stroke(); } }
+    else if(t==='linen'){ c.strokeStyle=ink; c.lineWidth=0.7*unit; c.globalAlpha=0.05; const gap=5*unit; for(let x=0;x<W;x+=gap){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,H); c.stroke(); } for(let y=0;y<H;y+=gap){ c.beginPath(); c.moveTo(0,y); c.lineTo(W,y); c.stroke(); } }
+    else if(t==='noise'){ const n=Math.min(9000,Math.floor(W*H*0.0016)); for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H; c.globalAlpha=0.03+rnd()*0.06; c.fillStyle=rnd()>0.5?ink:'#ffffff'; c.fillRect(x,y,unit*0.9,unit*0.9); } }
+    else if(t==='dots'){ c.fillStyle=ink; c.globalAlpha=0.06; const gap=8*unit,r=1.1*unit; for(let y=gap;y<H;y+=gap){ for(let x=gap;x<W;x+=gap){ c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill(); } } }
+    else if(t==='grid'){ c.strokeStyle=ink; c.lineWidth=0.6*unit; c.globalAlpha=0.05; const gap=14*unit; for(let x=gap;x<W;x+=gap){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,H); c.stroke(); } for(let y=gap;y<H;y+=gap){ c.beginPath(); c.moveTo(0,y); c.lineTo(W,y); c.stroke(); } }
+    c.restore();
+  }
+
+  // お店・スタッフ画像（隅に自動配置）
+  function drawPhoto(c,W,H){
+    const img=cre.photo; if(!img) return; const p=cre.pal;
+    const s=Math.min(W,H)*(cre.photoSize||0.22); const pad=W*0.045; const pos=cre.photoPos||'br';
+    let cx,cy;
+    if(pos==='br'){ cx=W-pad-s/2; cy=H-pad-s/2; } else if(pos==='bl'){ cx=pad+s/2; cy=H-pad-s/2; } else if(pos==='tr'){ cx=W-pad-s/2; cy=pad+s/2; } else { cx=pad+s/2; cy=pad+s/2; }
+    const round=cre.photoShape==='round';
+    c.save();
+    if(round) roundRect(c,cx-s/2,cy-s/2,s,s,s*0.12); else { c.beginPath(); c.arc(cx,cy,s/2,0,Math.PI*2); c.closePath(); }
+    c.fillStyle=p.card; c.fill(); c.save(); c.clip();
+    const ar=img.width/img.height; let dw=s,dh=s; if(ar>1){ dh=s; dw=s*ar; } else { dw=s; dh=s/ar; }
+    c.drawImage(img, cx-dw/2, cy-dh/2, dw, dh); c.restore();
+    c.lineWidth=s*0.035; c.strokeStyle=p.accent;
+    if(round){ roundRect(c,cx-s/2,cy-s/2,s,s,s*0.12); c.stroke(); } else { c.beginPath(); c.arc(cx,cy,s/2,0,Math.PI*2); c.stroke(); }
+    c.restore();
+  }
+  function bg(c,W,H,p){ c.fillStyle=p.bg; c.fillRect(0,0,W,H); }
+
   // ===================== テンプレート =====================
   const TEMPLATES = {
     clean(c,W,H){
-      const p=cre.pal, M=W*0.085, fs=cre.fontScale;
-      c.fillStyle=p.bg; c.fillRect(0,0,W,H);
+      const p=cre.pal, M=W*0.085, fs=cre.fontScale; bg(c,W,H,p);
       let y=drawHeading(c,W,H*0.06,{M, size:W*0.075*fs, weight:'700', color:p.ink, tagSize:W*0.026*fs, tagColor:p.sub, rule:'line', ruleColor:p.accent, ph:'お店の名前'}); y+=H*0.008;
       const groups=grouped(); const cols=colCount(W,H,1.15); const colW=(W-M*2-(cols-1)*W*0.06)/cols;
       let cx=M, cy=y, colTop=y, colIdx=0;
       groups.forEach(g=>{
         if(cy+W*0.1>H*0.93 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+W*0.06); cy=colTop; }
-        setFont(c, W*0.03*fs,'700'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(g.name, cx, cy+W*0.024*fs);
+        setFont(c,W*0.03*fs,'700'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(ellipsize(c,g.name,colW), cx, cy+W*0.024*fs);
         c.strokeStyle=p.accent2; c.lineWidth=W*0.003; c.beginPath(); c.moveTo(cx, cy+W*0.04*fs); c.lineTo(cx+colW, cy+W*0.04*fs); c.stroke();
         cy+=W*0.066*fs;
         g.items.forEach(it=>{
           if(cy+W*0.05>H*0.94 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+W*0.06); cy=colTop; }
-          const hasIcon=it.icon&&it.icon!=='none'&&ICONS[it.icon];
-          if(hasIcon){ ICONS[it.icon](c, cx+W*0.018, cy+W*0.012*fs, W*0.06, p.accent2); }
+          const hasIcon=it.icon&&it.icon!=='none'&&ICONS[it.icon]; if(hasIcon){ ICONS[it.icon](c, cx+W*0.018, cy+W*0.012*fs, W*0.06, p.accent2); }
           const nameX=hasIcon?cx+W*0.05:cx;
-          setFont(c, W*0.032*fs,'600'); c.fillStyle=p.ink; c.textAlign='left';
           const priceStr=it.price?(it.price+(it.unit||'')):'';
-          setFont(c, W*0.032*fs,'700'); const pw=c.measureText(priceStr).width; setFont(c, W*0.032*fs,'600');
-          let nm=ellipsize(c, it.name||'商品名', Math.max(W*0.1, colW-(nameX-cx)-pw-W*0.03-(it.rec?W*0.05:0)));
-          c.fillText(nm, nameX, cy+W*0.024*fs);
-          let afterName=nameX+c.measureText(nm).width;
-          if(it.rec){ const bw=W*0.045,bh=W*0.028; c.fillStyle=p.accent; roundRect(c, afterName+W*0.012, cy+W*0.004*fs, bw, bh, bh/2); c.fill(); setFont(c,W*0.018*fs,'700'); c.fillStyle='#fff'; c.textAlign='center'; c.fillText('おすすめ', afterName+W*0.012+bw/2, cy+W*0.022*fs); c.textAlign='left'; }
-          if(priceStr){ setFont(c, W*0.032*fs,'700'); c.fillStyle=p.ink; c.textAlign='right'; c.fillText(priceStr, cx+colW, cy+W*0.024*fs); c.textAlign='left';
-            const ls=afterName+(it.rec?W*0.06:0)+W*0.02, le=cx+colW-pw-W*0.02; if(le>ls){ c.strokeStyle=p.sub; c.lineWidth=W*0.0016; c.setLineDash([W*0.004,W*0.006]); c.beginPath(); c.moveTo(ls,cy+W*0.02*fs); c.lineTo(le,cy+W*0.02*fs); c.stroke(); c.setLineDash([]); } }
+          setFont(c,W*0.032*fs,'700'); const pw=c.measureText(priceStr).width;
+          setFont(c,W*0.032*fs,'600'); c.fillStyle=p.ink; c.textAlign='left';
+          let nm=ellipsize(c, (it.rec?recPrefix():'')+(it.name||'商品名'), Math.max(W*0.1, colW-(nameX-cx)-pw-W*0.03));
+          const afterName=nameX+c.measureText(nm).width; c.fillText(nm, nameX, cy+W*0.024*fs);
+          if(priceStr){ setFont(c,W*0.032*fs,'700'); c.fillStyle=p.ink; c.textAlign='right'; c.fillText(priceStr, cx+colW, cy+W*0.024*fs); c.textAlign='left';
+            const ls=afterName+W*0.02, le=cx+colW-pw-W*0.02; if(le>ls){ c.strokeStyle=p.sub; c.lineWidth=W*0.0016; c.setLineDash([W*0.004,W*0.006]); c.beginPath(); c.moveTo(ls,cy+W*0.02*fs); c.lineTo(le,cy+W*0.02*fs); c.stroke(); c.setLineDash([]); } }
           cy+=W*0.04*fs;
           if(it.desc){ setFont(c,W*0.022*fs,''); c.fillStyle=p.sub; const dl=wrap(c,it.desc,colW-(nameX-cx)); dl.slice(0,2).forEach(l=>{ c.fillText(l,nameX,cy+W*0.016*fs); cy+=W*0.028*fs; }); }
           cy+=W*0.018*fs;
@@ -17763,27 +17788,24 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     },
 
     pop(c,W,H){
-      const p=cre.pal, M=W*0.07, fs=cre.fontScale;
-      c.fillStyle=p.bg; c.fillRect(0,0,W,H);
+      const p=cre.pal, M=W*0.07, fs=cre.fontScale; bg(c,W,H,p);
       let y=drawHeading(c,W,H*0.04,{M, size:W*0.13*fs, weight:'800', color:p.accent, tagSize:W*0.028*fs, tagWeight:'700', tagColor:p.ink, rule:'barFull', ruleColor:p.accent2, ph:'MENU'}); y+=H*0.008;
       const groups=grouped(); const cols=colCount(W,H); const gap=W*0.05; const colW=(W-M*2-(cols-1)*gap)/cols;
       let colIdx=0, cx=M, cy=y, colTop=y;
       groups.forEach(g=>{
         if(cy+W*0.1>H*0.92 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
-        setFont(c, W*0.042*fs,'800'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(g.name, cx, cy+W*0.034*fs); cy+=W*0.058*fs;
+        setFont(c,W*0.042*fs,'800'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(ellipsize(c,g.name,colW), cx, cy+W*0.034*fs); cy+=W*0.058*fs;
         g.items.forEach(it=>{
           if(cy+W*0.08>H*0.94 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
-          const hasIcon=it.icon&&it.icon!=='none'&&ICONS[it.icon];
-          if(hasIcon){ ICONS[it.icon](c, cx+W*0.025, cy+W*0.012*fs, W*0.07, p.accent2); }
+          const hasIcon=it.icon&&it.icon!=='none'&&ICONS[it.icon]; if(hasIcon){ ICONS[it.icon](c, cx+W*0.025, cy+W*0.012*fs, W*0.07, p.accent2); }
           const nameX=hasIcon?cx+W*0.06:cx;
           const priceStr=it.price?(it.price+(it.unit||'')):'';
-          setFont(c, W*0.034*fs,'800'); const pw=c.measureText(priceStr).width;
-          setFont(c, W*0.034*fs,'700'); c.fillStyle=p.ink; c.textAlign='left';
-          let nm=ellipsize(c, it.name||'商品名', colW-(nameX-cx)-pw-W*0.03);
+          setFont(c,W*0.034*fs,'800'); const pw=c.measureText(priceStr).width;
+          setFont(c,W*0.034*fs,'700'); c.fillStyle=p.ink; c.textAlign='left';
+          let nm=ellipsize(c, (it.rec?recPrefix():'')+(it.name||'商品名'), colW-(nameX-cx)-pw-W*0.03);
           c.fillText(nm, nameX, cy+W*0.026*fs);
           if(priceStr){ setFont(c,W*0.034*fs,'800'); c.fillStyle=p.accent; c.textAlign='right'; c.fillText(priceStr, cx+colW, cy+W*0.026*fs); c.textAlign='left'; }
           let by=cy+W*0.04*fs;
-          if(it.rec){ setFont(c,W*0.02*fs,'800'); c.fillStyle=p.accent2; c.fillText('★おすすめ', nameX, by+W*0.012*fs); by+=W*0.026*fs; }
           if(it.desc){ setFont(c,W*0.022*fs,''); c.fillStyle=p.sub; const dl=wrap(c,it.desc,colW-(nameX-cx)); dl.slice(0,2).forEach(l=>{ c.fillText(l,nameX,by+W*0.014*fs); by+=W*0.026*fs; }); }
           cy=by+W*0.022*fs;
         });
@@ -17792,8 +17814,7 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     },
 
     frame(c,W,H){
-      const p=cre.pal, M=W*0.1, fs=cre.fontScale;
-      c.fillStyle=p.bg; c.fillRect(0,0,W,H);
+      const p=cre.pal, M=W*0.1, fs=cre.fontScale; bg(c,W,H,p);
       c.strokeStyle=p.accent; c.lineWidth=W*0.004; c.strokeRect(W*0.045,W*0.045,W-W*0.09,H-W*0.09);
       c.lineWidth=W*0.0015; c.strokeRect(W*0.06,W*0.06,W-W*0.12,H-W*0.12);
       let y=drawHeading(c,W,H*0.075,{M, size:W*0.07*fs, weight:'400', color:p.ink, tagSize:W*0.026*fs, tagColor:p.sub, rule:'dot', ruleColor:p.accent, ph:'MENU'}); y+=H*0.006;
@@ -17801,14 +17822,14 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
       let colIdx=0,cx=M,cy=y,colTop=y;
       groups.forEach(g=>{
         if(cy+W*0.1>H*0.9 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
-        setFont(c,W*0.032*fs,'600'); c.fillStyle=p.ink; c.textAlign='center'; c.fillText(g.name, cx+colW/2, cy+W*0.026*fs); cy+=W*0.04*fs;
+        setFont(c,W*0.032*fs,'600'); c.fillStyle=p.ink; c.textAlign='center'; c.fillText(ellipsize(c,g.name,colW), cx+colW/2, cy+W*0.026*fs); cy+=W*0.04*fs;
         c.strokeStyle=p.accent2; c.lineWidth=W*0.0014; c.beginPath(); c.moveTo(cx+colW*0.2,cy); c.lineTo(cx+colW*0.8,cy); c.stroke(); cy+=W*0.04*fs;
         g.items.forEach(it=>{
           if(cy+W*0.07>H*0.92 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
           const priceStr=it.price?(it.price+(it.unit||'')):'';
           setFont(c,W*0.03*fs,'500'); c.fillStyle=p.ink; c.textAlign='left';
           const pw=(()=>{ setFont(c,W*0.03*fs,'600'); const w=c.measureText(priceStr).width; setFont(c,W*0.03*fs,'500'); return w; })();
-          let nm=ellipsize(c, (it.rec?'◆ ':'')+(it.name||'商品名'), colW-pw-W*0.04);
+          let nm=ellipsize(c, (it.rec?recPrefix():'')+(it.name||'商品名'), colW-pw-W*0.04);
           c.fillText(nm, cx, cy+W*0.024*fs);
           if(priceStr){ setFont(c,W*0.03*fs,'600'); c.fillStyle=p.accent; c.textAlign='right'; c.fillText(priceStr, cx+colW, cy+W*0.024*fs); c.textAlign='left'; }
           cy+=W*0.038*fs;
@@ -17820,49 +17841,48 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     },
 
     grid(c,W,H){
-      const p=cre.pal, M=W*0.06, fs=cre.fontScale;
-      c.fillStyle=p.bg; c.fillRect(0,0,W,H);
+      const p=cre.pal, M=W*0.06, fs=cre.fontScale; bg(c,W,H,p);
       let y=drawHeading(c,W,H*0.05,{M, size:W*0.08*fs, weight:'800', color:p.accent, tagSize:W*0.026*fs, tagWeight:'600', tagColor:p.sub, rule:null, ph:'お店の名前'}); y+=H*0.006;
       const groups=grouped(); const cols=colCount(W,H,0.9); const gap=W*0.035; const cardW=(W-M*2-(cols-1)*gap)/cols;
       let colH=new Array(cols).fill(y);
       groups.forEach(g=>{
         let ci=0; for(let i=1;i<cols;i++) if(colH[i]<colH[ci]) ci=i;
         const cx=M+ci*(cardW+gap); let cy=colH[ci];
-        let est=W*0.06*fs + g.items.length*(W*0.05*fs);
+        let est=W*0.06*fs + g.items.length*(W*0.052*fs);
         c.fillStyle=p.card; roundRect(c,cx,cy,cardW,est,W*0.02); c.fill();
         c.strokeStyle=p.accent2; c.lineWidth=W*0.002; roundRect(c,cx,cy,cardW,est,W*0.02); c.stroke();
+        c.save(); roundRect(c,cx,cy,cardW,est,W*0.02); c.clip();
         cy+=W*0.028;
-        setFont(c,W*0.034*fs,'800'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(g.name, cx+W*0.025, cy+W*0.028*fs); cy+=W*0.05*fs;
+        setFont(c,W*0.034*fs,'800'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(ellipsize(c,g.name,cardW-W*0.05), cx+W*0.025, cy+W*0.028*fs); cy+=W*0.05*fs;
         g.items.forEach(it=>{
-          const hasIcon=it.icon&&it.icon!=='none'&&ICONS[it.icon];
-          if(hasIcon){ ICONS[it.icon](c, cx+W*0.045, cy+W*0.01*fs, W*0.055, p.accent2); }
+          const hasIcon=it.icon&&it.icon!=='none'&&ICONS[it.icon]; if(hasIcon){ ICONS[it.icon](c, cx+W*0.045, cy+W*0.01*fs, W*0.055, p.accent2); }
           const nameX=hasIcon?cx+W*0.075:cx+W*0.025;
           const priceStr=it.price?(it.price+(it.unit||'')):'';
           setFont(c,W*0.03*fs,'700'); const pw=c.measureText(priceStr).width;
           setFont(c,W*0.03*fs,'700'); c.fillStyle=p.ink; c.textAlign='left';
-          let nm=ellipsize(c,(it.rec?'★':'')+(it.name||'商品名'), cardW-(nameX-cx)-pw-W*0.05);
+          let nm=ellipsize(c,(it.rec?recPrefix():'')+(it.name||'商品名'), cardW-(nameX-cx)-pw-W*0.05);
           c.fillText(nm,nameX,cy+W*0.024*fs);
           if(priceStr){ c.fillStyle=p.accent; c.textAlign='right'; c.fillText(priceStr, cx+cardW-W*0.025, cy+W*0.024*fs); c.textAlign='left'; }
           cy+=W*0.038*fs;
           if(it.desc){ setFont(c,W*0.02*fs,''); c.fillStyle=p.sub; let d=ellipsize(c,it.desc,cardW-(nameX-cx)-W*0.03); c.fillText(d,nameX,cy+W*0.012*fs); cy+=W*0.03*fs; }
           cy+=W*0.01*fs;
         });
+        c.restore();
         colH[ci]=cy+W*0.03;
       });
     },
 
     minimal(c,W,H){
-      const p=cre.pal, M=W*0.12, fs=cre.fontScale;
-      c.fillStyle=p.bg; c.fillRect(0,0,W,H);
+      const p=cre.pal, M=W*0.12, fs=cre.fontScale; bg(c,W,H,p);
       let y=drawHeading(c,W,H*0.08,{M, size:W*0.055*fs, weight:'300', color:p.ink, tagSize:W*0.022*fs, tagColor:p.sub, rule:null, ph:'menu'}); y+=H*0.01;
       const groups=grouped(); const colW=W-M*2;
       groups.forEach(g=>{
-        setFont(c, W*0.026*fs,'500'); c.fillStyle=p.accent; c.textAlign='center'; c.fillText(g.name.toUpperCase().split('').join(' '), W/2, y); y+=W*0.022*fs;
+        setFont(c,W*0.026*fs,'500'); c.fillStyle=p.accent; c.textAlign='center'; c.fillText(ellipsize(c,g.name.toUpperCase().split('').join(' '),colW), W/2, y); y+=W*0.022*fs;
         c.strokeStyle=p.sub; c.lineWidth=W*0.001; c.beginPath(); c.moveTo(M,y); c.lineTo(W-M,y); c.stroke(); y+=W*0.04*fs;
         g.items.forEach(it=>{
           const priceStr=it.price?(it.price+(it.unit||'')):'';
           setFont(c,W*0.028*fs,'400'); c.fillStyle=p.ink; c.textAlign='left'; const pw=c.measureText(priceStr).width;
-          let nm=ellipsize(c,(it.name||'商品名')+(it.rec?' ・おすすめ':''), colW-pw-W*0.03);
+          let nm=ellipsize(c,(it.rec?recPrefix():'')+(it.name||'商品名'), colW-pw-W*0.03);
           c.fillText(nm,M,y);
           if(priceStr){ c.textAlign='right'; c.fillStyle=p.sub; c.fillText(priceStr,W-M,y); c.textAlign='left'; }
           y+=W*0.034*fs;
@@ -17874,27 +17894,25 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     },
 
     bistro(c,W,H){
-      const p=cre.pal, M=W*0.09, fs=cre.fontScale;
-      c.fillStyle=p.bg; c.fillRect(0,0,W,H);
+      const p=cre.pal, M=W*0.09, fs=cre.fontScale; bg(c,W,H,p);
       const bandH=H*0.14; c.fillStyle=p.accent; c.fillRect(0,0,W,bandH);
-      const ha=headAlign(M,W); setTitleFont(c, W*0.06*fs,'800'); c.fillStyle=p.bg; c.textAlign=ha.a; c.textBaseline='middle';
+      const ha=headAlign(M,W); setTitleFont(c,W*0.06*fs,'800'); c.fillStyle=p.bg; c.textAlign=ha.a; c.textBaseline='middle';
       let title=cre.store||'BISTRO'; fitTitle(c,title,W*0.06*fs,'800',W-M*2); c.fillText(title, ha.x, bandH*0.5); c.textBaseline='alphabetic';
       let y=bandH+H*0.05;
-      if(cre.tag){ setFont(c,W*0.024*fs,'600'); c.fillStyle=p.sub; c.textAlign=ha.a; c.fillText(cre.tag, ha.x, y); y+=W*0.045*fs; }
+      if(cre.tag){ setFont(c,W*0.024*fs,'600'); c.fillStyle=p.sub; c.textAlign=ha.a; c.fillText(ellipsize(c,cre.tag,W-M*2), ha.x, y); y+=W*0.045*fs; }
       const groups=grouped(); const cols=colCount(W,H,1.05); const gap=W*0.06; const colW=(W-M*2-(cols-1)*gap)/cols;
       let colIdx=0,cx=M,cy=y,colTop=y, bottomLimit=H-bandH-H*0.03;
       groups.forEach(g=>{
         if(cy+W*0.1>bottomLimit && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
-        setFont(c,W*0.034*fs,'800'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(g.name, cx, cy+W*0.028*fs); cy+=W*0.05*fs;
+        setFont(c,W*0.034*fs,'800'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(ellipsize(c,g.name,colW), cx, cy+W*0.028*fs); cy+=W*0.05*fs;
         g.items.forEach(it=>{
           if(cy+W*0.06>bottomLimit && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
-          const hasIcon=it.icon&&it.icon!=='none'&&ICONS[it.icon];
-          if(hasIcon){ ICONS[it.icon](c, cx+W*0.02, cy+W*0.01*fs, W*0.058, p.accent2); }
+          const hasIcon=it.icon&&it.icon!=='none'&&ICONS[it.icon]; if(hasIcon){ ICONS[it.icon](c, cx+W*0.02, cy+W*0.01*fs, W*0.058, p.accent2); }
           const nameX=hasIcon?cx+W*0.052:cx;
           const priceStr=it.price?(it.price+(it.unit||'')):'';
           setFont(c,W*0.03*fs,'700'); const pw=c.measureText(priceStr).width;
           setFont(c,W*0.03*fs,'600'); c.fillStyle=p.ink; c.textAlign='left';
-          let nm=ellipsize(c,(it.rec?'● ':'')+(it.name||'商品名'), colW-(nameX-cx)-pw-W*0.03);
+          let nm=ellipsize(c,(it.rec?recPrefix():'')+(it.name||'商品名'), colW-(nameX-cx)-pw-W*0.03);
           c.fillText(nm,nameX,cy+W*0.024*fs);
           if(priceStr){ setFont(c,W*0.03*fs,'700'); c.fillStyle=p.accent; c.textAlign='right'; c.fillText(priceStr, cx+colW, cy+W*0.024*fs); c.textAlign='left'; }
           cy+=W*0.04*fs;
@@ -17907,25 +17925,23 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     },
 
     banner(c,W,H){
-      const p=cre.pal, fs=cre.fontScale; const stripeW=W*0.14; const M=stripeW+W*0.07;
-      c.fillStyle=p.bg; c.fillRect(0,0,W,H);
+      const p=cre.pal, fs=cre.fontScale; const stripeW=W*0.14; const M=stripeW+W*0.07; bg(c,W,H,p);
       c.fillStyle=p.accent; c.fillRect(0,0,stripeW,H);
       const ha=headAlign(M,W); let y=H*0.09;
-      setTitleFont(c, W*0.07*fs,'800'); c.fillStyle=p.ink; c.textAlign=ha.a; c.textBaseline='alphabetic';
+      setTitleFont(c,W*0.07*fs,'800'); c.fillStyle=p.ink; c.textAlign=ha.a; c.textBaseline='alphabetic';
       let title=cre.store||'お店の名前'; fitTitle(c,title,W*0.07*fs,'800',W-M-W*0.06); c.fillText(title, ha.x, y+W*0.05*fs); y+=W*0.09*fs;
-      if(cre.tag){ setFont(c,W*0.024*fs,'600'); c.fillStyle=p.sub; c.textAlign=ha.a; c.fillText(cre.tag, ha.x, y); y+=W*0.04*fs; }
+      if(cre.tag){ setFont(c,W*0.024*fs,'600'); c.fillStyle=p.sub; c.textAlign=ha.a; c.fillText(ellipsize(c,cre.tag,W-M-W*0.06), ha.x, y); y+=W*0.04*fs; }
       c.fillStyle=p.accent2; c.fillRect(M, y, W*0.1, W*0.008); y+=H*0.022;
       const groups=grouped(); const colW=W-M-W*0.06;
       groups.forEach(g=>{
-        setFont(c,W*0.034*fs,'800'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(g.name, M, y+W*0.028*fs); y+=W*0.052*fs;
+        setFont(c,W*0.034*fs,'800'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(ellipsize(c,g.name,colW), M, y+W*0.028*fs); y+=W*0.052*fs;
         g.items.forEach(it=>{
-          const hasIcon=it.icon&&it.icon!=='none'&&ICONS[it.icon];
-          if(hasIcon){ ICONS[it.icon](c, M+W*0.02, y+W*0.01*fs, W*0.058, p.accent2); }
+          const hasIcon=it.icon&&it.icon!=='none'&&ICONS[it.icon]; if(hasIcon){ ICONS[it.icon](c, M+W*0.02, y+W*0.01*fs, W*0.058, p.accent2); }
           const nameX=hasIcon?M+W*0.052:M;
           const priceStr=it.price?(it.price+(it.unit||'')):'';
           setFont(c,W*0.032*fs,'700'); const pw=c.measureText(priceStr).width;
           setFont(c,W*0.032*fs,'600'); c.fillStyle=p.ink; c.textAlign='left';
-          let nm=ellipsize(c,(it.rec?'★ ':'')+(it.name||'商品名'), colW-(nameX-M)-pw-W*0.03);
+          let nm=ellipsize(c,(it.rec?recPrefix():'')+(it.name||'商品名'), colW-(nameX-M)-pw-W*0.03);
           c.fillText(nm,nameX,y+W*0.024*fs);
           if(priceStr){ setFont(c,W*0.032*fs,'700'); c.fillStyle=p.accent; c.textAlign='right'; c.fillText(priceStr, M+colW, y+W*0.024*fs); c.textAlign='left'; }
           y+=W*0.04*fs;
@@ -17936,27 +17952,24 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
       });
     },
 
-    // --- バンド（番号付き帯・交互色） ---
     band(c,W,H){
-      const p=cre.pal, M=W*0.07, fs=cre.fontScale;
-      c.fillStyle=p.bg; c.fillRect(0,0,W,H);
+      const p=cre.pal, M=W*0.07, fs=cre.fontScale; bg(c,W,H,p);
       let y=drawHeading(c,W,H*0.045,{M, size:W*0.075*fs, weight:'800', color:p.accent, tagSize:W*0.026*fs, tagWeight:'600', tagColor:p.sub, rule:null, ph:'MENU'}); y+=H*0.006;
       const groups=grouped(); let idx=1; const colW=W-M*2;
       groups.forEach(g=>{
-        setFont(c,W*0.03*fs,'700'); c.fillStyle=p.sub; c.textAlign='left'; c.fillText(g.name, M, y+W*0.024*fs); y+=W*0.05*fs;
+        setFont(c,W*0.03*fs,'700'); c.fillStyle=p.sub; c.textAlign='left'; c.fillText(ellipsize(c,g.name,colW), M, y+W*0.024*fs); y+=W*0.05*fs;
         g.items.forEach((it,i)=>{
           const rowH=W*0.072*fs + (it.desc?W*0.03*fs:0);
           c.fillStyle=(i%2===0)?p.card:p.bg; roundRect(c, M, y, colW, rowH, W*0.018); c.fill();
           c.fillStyle=p.accent; c.beginPath(); c.arc(M+W*0.045, y+rowH/2, W*0.028, 0, Math.PI*2); c.fill();
           setFont(c,W*0.026*fs,'800'); c.fillStyle=p.card; c.textAlign='center'; c.textBaseline='middle'; c.fillText(String(idx), M+W*0.045, y+rowH/2); c.textBaseline='alphabetic';
-          const hasIcon=it.icon&&it.icon!=='none'&&ICONS[it.icon];
-          if(hasIcon){ ICONS[it.icon](c, M+W*0.11, y+rowH/2-(it.desc?W*0.012:0), W*0.05, p.accent2); }
+          const hasIcon=it.icon&&it.icon!=='none'&&ICONS[it.icon]; if(hasIcon){ ICONS[it.icon](c, M+W*0.11, y+rowH/2-(it.desc?W*0.012:0), W*0.05, p.accent2); }
           const nameX=hasIcon?M+W*0.14:M+W*0.09;
           const priceStr=it.price?(it.price+(it.unit||'')):'';
           setFont(c,W*0.034*fs,'800'); const pw=c.measureText(priceStr).width;
           const ny=y+(it.desc?rowH*0.42:rowH*0.62);
           setFont(c,W*0.032*fs,'700'); c.fillStyle=p.ink; c.textAlign='left';
-          let nm=ellipsize(c,(it.rec?'★ ':'')+(it.name||'商品名'), colW-(nameX-M)-pw-W*0.05);
+          let nm=ellipsize(c,(it.rec?recPrefix():'')+(it.name||'商品名'), colW-(nameX-M)-pw-W*0.05);
           c.fillText(nm, nameX, ny);
           if(priceStr){ setFont(c,W*0.034*fs,'800'); c.fillStyle=p.accent; c.textAlign='right'; c.fillText(priceStr, M+colW-W*0.04, ny); c.textAlign='left'; }
           if(it.desc){ setFont(c,W*0.02*fs,''); c.fillStyle=p.sub; let d=ellipsize(c,it.desc,colW-(nameX-M)-W*0.05); c.fillText(d, nameX, ny+W*0.028*fs); }
@@ -17966,19 +17979,17 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
       });
     },
 
-    // --- 縦ライン（大きな縦文字の区切り） ---
     vertical(c,W,H){
-      const p=cre.pal, M=W*0.08, fs=cre.fontScale, rightW=W*0.16;
-      c.fillStyle=p.bg; c.fillRect(0,0,W,H);
+      const p=cre.pal, M=W*0.08, fs=cre.fontScale, rightW=W*0.16; bg(c,W,H,p);
       let y=drawHeading(c,W,H*0.05,{M, size:W*0.07*fs, weight:'700', color:p.ink, tagSize:W*0.024*fs, tagColor:p.sub, rule:'line', ruleColor:p.accent, ph:'menu'}); y+=H*0.006;
       const groups=grouped(); const colW=W-M-rightW;
       groups.forEach(g=>{
         const secTop=y;
-        setFont(c,W*0.03*fs,'700'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(g.name.toUpperCase(), M, y+W*0.024*fs); y+=W*0.05*fs;
+        setFont(c,W*0.03*fs,'700'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(ellipsize(c,g.name.toUpperCase(),colW), M, y+W*0.024*fs); y+=W*0.05*fs;
         g.items.forEach(it=>{
           const priceStr=it.price?(it.price+(it.unit||'')):'';
           setFont(c,W*0.03*fs,'500'); c.fillStyle=p.ink; c.textAlign='left'; const pw=c.measureText(priceStr).width;
-          let nm=ellipsize(c,(it.rec?'● ':'')+(it.name||'商品名'), colW-pw-W*0.04);
+          let nm=ellipsize(c,(it.rec?recPrefix():'')+(it.name||'商品名'), colW-pw-W*0.04);
           c.fillText(nm, M, y+W*0.022*fs);
           if(priceStr){ c.fillStyle=p.sub; c.textAlign='right'; c.fillText(priceStr, M+colW, y+W*0.022*fs); c.textAlign='left'; }
           y+=W*0.036*fs;
@@ -17989,15 +18000,13 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
         c.save(); c.translate(W-rightW*0.42, cyMid); c.rotate(Math.PI/2);
         const vSize=Math.min(W*0.075*fs, Math.max(W*0.03,(y-secTop)*0.85));
         setTitleFont(c, vSize, '800'); c.fillStyle=p.accent2; c.textAlign='center'; c.textBaseline='middle'; c.globalAlpha=0.85;
-        c.fillText(g.name.toLowerCase(), 0, 0); c.globalAlpha=1; c.restore(); c.textBaseline='alphabetic';
+        c.fillText(ellipsize(c,g.name.toLowerCase(),H*0.5), 0, 0); c.globalAlpha=1; c.restore(); c.textBaseline='alphabetic';
         y+=W*0.03;
       });
     },
 
-    // --- クラフト（ヴィンテージ太字・色タブ） ---
     kraft(c,W,H){
-      const p=cre.pal, M=W*0.07, fs=cre.fontScale;
-      c.fillStyle=p.bg; c.fillRect(0,0,W,H);
+      const p=cre.pal, M=W*0.07, fs=cre.fontScale; bg(c,W,H,p);
       let y=drawHeading(c,W,H*0.04,{M, size:W*0.1*fs, weight:'800', color:p.ink, tagSize:W*0.026*fs, tagWeight:'700', tagColor:p.accent, rule:'barFull', ruleColor:p.ink, ph:'MENU'}); y+=H*0.006;
       const groups=grouped(); const cols=colCount(W,H); const gap=W*0.05; const colW=(W-M*2-(cols-1)*gap)/cols;
       let colIdx=0,cx=M,cy=y,colTop=y;
@@ -18005,15 +18014,14 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
         if(cy+W*0.12>H*0.93 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
         setFont(c,W*0.032*fs,'800'); const tw=Math.min(c.measureText(g.name).width+W*0.04, colW);
         c.fillStyle=p.accent; c.fillRect(cx, cy, tw, W*0.05*fs);
-        c.fillStyle=p.bg; c.textAlign='left'; c.fillText(g.name, cx+W*0.02, cy+W*0.036*fs); cy+=W*0.072*fs;
+        c.fillStyle=p.bg; c.textAlign='left'; c.fillText(ellipsize(c,g.name,tw-W*0.03), cx+W*0.02, cy+W*0.036*fs); cy+=W*0.072*fs;
         g.items.forEach(it=>{
           if(cy+W*0.05>H*0.95 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
           const priceStr=it.price?(it.price+(it.unit||'')):'';
           setFont(c,W*0.03*fs,'800'); const pw=c.measureText(priceStr).width;
           setFont(c,W*0.03*fs,'700'); c.fillStyle=p.ink; c.textAlign='left';
-          let nm=ellipsize(c,(it.rec?'■ ':'')+(it.name||'商品名'), colW-pw-W*0.04);
-          const afterName=cx+c.measureText(nm).width;
-          c.fillText(nm, cx, cy+W*0.024*fs);
+          let nm=ellipsize(c,(it.rec?recPrefix():'')+(it.name||'商品名'), colW-pw-W*0.04);
+          const afterName=cx+c.measureText(nm).width; c.fillText(nm, cx, cy+W*0.024*fs);
           if(priceStr){ setFont(c,W*0.03*fs,'800'); c.fillStyle=p.accent; c.textAlign='right'; c.fillText(priceStr, cx+colW, cy+W*0.024*fs); c.textAlign='left';
             const ls=afterName+W*0.02, le=cx+colW-pw-W*0.02; if(le>ls){ c.strokeStyle=p.sub; c.lineWidth=W*0.0016; c.setLineDash([W*0.004,W*0.005]); c.beginPath(); c.moveTo(ls,cy+W*0.02*fs); c.lineTo(le,cy+W*0.02*fs); c.stroke(); c.setLineDash([]); } }
           cy+=W*0.04*fs;
@@ -18024,10 +18032,8 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
       });
     },
 
-    // --- 3カラム ---
     tri(c,W,H){
-      const p=cre.pal, M=W*0.06, fs=cre.fontScale;
-      c.fillStyle=p.bg; c.fillRect(0,0,W,H);
+      const p=cre.pal, M=W*0.06, fs=cre.fontScale; bg(c,W,H,p);
       let top=drawHeading(c,W,H*0.05,{M, size:W*0.06*fs, weight:'600', color:p.ink, tagSize:W*0.024*fs, tagColor:p.sub, rule:'dot', ruleColor:p.accent, ph:'MENU'}); top+=H*0.006;
       const cols=3; const gap=W*0.04; const colW=(W-M*2-(cols-1)*gap)/cols;
       let colH=[top,top,top]; const groups=grouped();
@@ -18039,7 +18045,7 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
         g.items.forEach(it=>{
           const priceStr=it.price?(it.price+(it.unit||'')):'';
           setFont(c,W*0.024*fs,'500'); c.fillStyle=p.ink; c.textAlign='left'; const pw=c.measureText(priceStr).width;
-          let nm=ellipsize(c,(it.rec?'◆':'')+(it.name||'商品名'), colW-pw-W*0.02);
+          let nm=ellipsize(c,(it.rec?recPrefix():'')+(it.name||'商品名'), colW-pw-W*0.02);
           c.fillText(nm, cx, cy+W*0.02*fs);
           if(priceStr){ c.fillStyle=p.accent; c.textAlign='right'; c.fillText(priceStr, cx+colW, cy+W*0.02*fs); c.textAlign='left'; }
           cy+=W*0.032*fs;
@@ -18050,48 +18056,116 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
       });
     },
 
-    // --- ノートカード（付箋ヘッダーのカード） ---
     notecard(c,W,H){
-      const p=cre.pal, M=W*0.06, fs=cre.fontScale;
-      c.fillStyle=p.bg; c.fillRect(0,0,W,H);
+      const p=cre.pal, M=W*0.06, fs=cre.fontScale; bg(c,W,H,p);
       let top=drawHeading(c,W,H*0.05,{M, size:W*0.06*fs, weight:'700', color:p.ink, tagSize:W*0.024*fs, tagColor:p.sub, rule:'line', ruleColor:p.accent, ph:'MENU'}); top+=H*0.012;
       const cols=(W/H>0.85)?2:1; const gap=W*0.035; const cardW=(W-M*2-(cols-1)*gap)/cols; const cardH=W*0.135*fs;
       let i=0;
       cre.items.forEach(it=>{
-        const col=i%cols, row=Math.floor(i/cols);
-        const cx=M+col*(cardW+gap), cy=top+row*(cardH+gap+W*0.018);
+        const col=i%cols, row=Math.floor(i/cols); const cx=M+col*(cardW+gap), cy=top+row*(cardH+gap+W*0.018);
         if(cy+cardH>H*0.97){ i++; return; }
         c.fillStyle=p.card; roundRect(c,cx,cy,cardW,cardH,W*0.018); c.fill();
         c.strokeStyle=p.accent2; c.lineWidth=W*0.0016; roundRect(c,cx,cy,cardW,cardH,W*0.018); c.stroke();
         setFont(c,W*0.026*fs,'800'); const tw=Math.min(c.measureText(it.name||'商品名').width+W*0.04, cardW*0.85);
         c.fillStyle=p.accent; roundRect(c, cx+W*0.02, cy-W*0.012, tw, W*0.045*fs, W*0.01); c.fill();
         c.fillStyle='#fff'; c.textAlign='left'; c.fillText(ellipsize(c,it.name||'商品名',tw-W*0.025), cx+W*0.04, cy+W*0.024*fs);
+        c.save(); roundRect(c,cx,cy,cardW,cardH,W*0.018); c.clip();
         if(it.icon&&it.icon!=='none'&&ICONS[it.icon]){ ICONS[it.icon](c, cx+cardW-W*0.055, cy+cardH*0.46, W*0.06, p.accent2); }
         if(it.desc){ setFont(c,W*0.02*fs,''); c.fillStyle=p.sub; c.textAlign='left'; const dl=wrap(c,it.desc,cardW-W*0.16); dl.slice(0,2).forEach((l,k)=>c.fillText(l, cx+W*0.03, cy+W*0.062*fs+k*W*0.028*fs)); }
         const priceStr=it.price?(it.price+(it.unit||'')):'';
         if(priceStr){ setFont(c,W*0.038*fs,'800'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(priceStr, cx+W*0.03, cy+cardH-W*0.022*fs); }
-        if(it.rec){ setFont(c,W*0.022*fs,'800'); c.fillStyle=p.accent2; c.textAlign='right'; c.fillText('★', cx+cardW-W*0.03, cy+cardH-W*0.022*fs); }
+        if(it.rec && cre.recStyle!=='none'){ setFont(c,W*0.022*fs,'800'); c.fillStyle=p.accent2; c.textAlign='right'; c.fillText('★', cx+cardW-W*0.03, cy+cardH-W*0.022*fs); }
+        c.restore();
         i++;
+      });
+    },
+
+    // === 大きいイラスト・小さい文字（参考: ドリンク/アイス系） ===
+    hero(c,W,H){
+      const p=cre.pal, M=W*0.06, fs=cre.fontScale; bg(c,W,H,p);
+      let y=drawHeading(c,W,H*0.05,{M, size:W*0.078*fs, weight:'800', color:p.accent, tagSize:W*0.026*fs, tagWeight:'600', tagColor:p.sub, rule:null, ph:'MENU'}); y+=H*0.012;
+      const items=cre.items; const cols=(W/H>0.95)?3:2; const gap=W*0.04; const cellW=(W-M*2-(cols-1)*gap)/cols; const cellH=cellW*1.18;
+      let i=0;
+      items.forEach(it=>{
+        const col=i%cols, row=Math.floor(i/cols); const cx=M+col*(cellW+gap)+cellW/2, cyTop=y+row*(cellH+gap);
+        if(cyTop+cellH>H*0.98){ i++; return; }
+        const iconY=cyTop+cellH*0.34;
+        if(it.icon&&it.icon!=='none'&&ICONS[it.icon]){ ICONS[it.icon](c, cx, iconY, cellW*0.62, p.accent2); }
+        else { c.fillStyle=p.card; c.beginPath(); c.arc(cx,iconY,cellW*0.3,0,Math.PI*2); c.fill(); c.strokeStyle=p.accent2; c.lineWidth=W*0.002; c.stroke(); }
+        const priceStr=it.price?(it.price+(it.unit||'')):'';
+        if(priceStr){ const br=cellW*0.17, bx=cx+cellW*0.24, by=iconY-cellW*0.16; c.fillStyle=p.accent; c.beginPath(); c.arc(bx,by,br,0,Math.PI*2); c.fill(); setFont(c,br*0.5,'800'); c.fillStyle='#fff'; c.textAlign='center'; c.textBaseline='middle'; c.fillText(ellipsize(c,priceStr,br*1.7), bx, by); c.textBaseline='alphabetic'; }
+        setFont(c,W*0.03*fs,'700'); c.fillStyle=p.ink; c.textAlign='center';
+        let nm=ellipsize(c,(it.rec?recPrefix():'')+(it.name||'商品名'), cellW*0.96); c.fillText(nm, cx, cyTop+cellH*0.78);
+        if(it.desc){ setFont(c,W*0.02*fs,''); c.fillStyle=p.sub; let d=ellipsize(c,it.desc,cellW*0.96); c.fillText(d, cx, cyTop+cellH*0.88); }
+        i++;
+      });
+    },
+
+    // === エディトリアル（左に大きいイラスト・右に大きい文字） ===
+    showcase(c,W,H){
+      const p=cre.pal, M=W*0.08, fs=cre.fontScale; bg(c,W,H,p);
+      let y=drawHeading(c,W,H*0.05,{M, size:W*0.08*fs, weight:'800', color:p.ink, tagSize:W*0.026*fs, tagColor:p.sub, rule:'line', ruleColor:p.accent, ph:'MENU'}); y+=H*0.015;
+      const items=cre.items; const rowH=W*0.155*fs; const iconBox=W*0.14;
+      items.forEach(it=>{
+        if(y+rowH>H*0.97) return; const cyMid=y+rowH/2;
+        if(it.icon&&it.icon!=='none'&&ICONS[it.icon]){ ICONS[it.icon](c, M+iconBox/2, cyMid, iconBox*0.92, p.accent2); }
+        const tx=M+iconBox+W*0.04;
+        const priceStr=it.price?(it.price+(it.unit||'')):'';
+        setFont(c,W*0.042*fs,'800'); const pw=c.measureText(priceStr).width;
+        setFont(c,W*0.042*fs,'700'); c.fillStyle=p.accent; c.textAlign='left';
+        let nm=ellipsize(c,(it.rec?recPrefix():'')+(it.name||'商品名'), W-M-tx-pw-W*0.04);
+        c.fillText(nm, tx, cyMid-W*0.008*fs);
+        if(priceStr){ setFont(c,W*0.042*fs,'800'); c.fillStyle=p.ink; c.textAlign='right'; c.fillText(priceStr, W-M, cyMid-W*0.008*fs); c.textAlign='left'; }
+        if(it.desc){ setFont(c,W*0.024*fs,''); c.fillStyle=p.sub; const dl=wrap(c,it.desc, W-M-tx); dl.slice(0,2).forEach((l,k)=>c.fillText(l, tx, cyMid+W*0.03*fs+k*W*0.03*fs)); }
+        y+=rowH; c.strokeStyle=p.accent2; c.lineWidth=W*0.001; c.beginPath(); c.moveTo(M,y-W*0.01); c.lineTo(W-M,y-W*0.01); c.stroke();
+      });
+    },
+
+    // === スプリット（上部パネルに店名／写真、下に2カラム） ===
+    split(c,W,H){
+      const p=cre.pal, fs=cre.fontScale; bg(c,W,H,p);
+      const panelH=H*0.26;
+      c.save(); c.beginPath(); c.rect(0,0,W,panelH); c.clip();
+      if(cre.photo){ const img=cre.photo; const ar=img.width/img.height; let dw=W,dh=W/ar; if(dh<panelH){ dh=panelH; dw=panelH*ar; } c.drawImage(img,(W-dw)/2,(panelH-dh)/2,dw,dh); c.fillStyle='rgba(0,0,0,0.4)'; c.fillRect(0,0,W,panelH); }
+      else { c.fillStyle=p.accent; c.fillRect(0,0,W,panelH); }
+      c.restore();
+      const M=W*0.07; const ha=headAlign(M,W);
+      setTitleFont(c,W*0.07*fs,'800'); c.fillStyle=cre.photo?'#fff':p.bg; c.textAlign=ha.a; c.textBaseline='alphabetic';
+      let title=cre.store||'お店の名前'; fitTitle(c,title,W*0.07*fs,'800',W-M*2); c.fillText(title, ha.x, panelH*0.5);
+      if(cre.tag){ setFont(c,W*0.026*fs,'600'); c.fillStyle=cre.photo?'rgba(255,255,255,0.85)':p.card; c.fillText(ellipsize(c,cre.tag,W-M*2), ha.x, panelH*0.5+W*0.05*fs); }
+      let y=panelH+H*0.04; const cols=colCount(W,H,0.72); const gap=W*0.06; const colW=(W-M*2-(cols-1)*gap)/cols;
+      let colIdx=0,cx=M,cy=y,colTop=y; const groups=grouped();
+      groups.forEach(g=>{
+        if(cy+W*0.1>H*0.95 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+        setFont(c,W*0.032*fs,'800'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(ellipsize(c,g.name,colW), cx, cy+W*0.026*fs);
+        c.strokeStyle=p.accent2; c.lineWidth=W*0.0025; c.beginPath(); c.moveTo(cx,cy+W*0.04*fs); c.lineTo(cx+colW,cy+W*0.04*fs); c.stroke(); cy+=W*0.064*fs;
+        g.items.forEach(it=>{
+          if(cy+W*0.05>H*0.96 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+          const hasIcon=it.icon&&it.icon!=='none'&&ICONS[it.icon]; if(hasIcon){ ICONS[it.icon](c, cx+W*0.018, cy+W*0.012*fs, W*0.058, p.accent2); }
+          const nameX=hasIcon?cx+W*0.05:cx;
+          const priceStr=it.price?(it.price+(it.unit||'')):'';
+          setFont(c,W*0.03*fs,'700'); const pw=c.measureText(priceStr).width;
+          setFont(c,W*0.03*fs,'600'); c.fillStyle=p.ink; c.textAlign='left';
+          let nm=ellipsize(c,(it.rec?recPrefix():'')+(it.name||'商品名'), colW-(nameX-cx)-pw-W*0.03);
+          c.fillText(nm, nameX, cy+W*0.024*fs);
+          if(priceStr){ setFont(c,W*0.03*fs,'700'); c.fillStyle=p.accent; c.textAlign='right'; c.fillText(priceStr, cx+colW, cy+W*0.024*fs); c.textAlign='left'; }
+          cy+=W*0.04*fs;
+          if(it.desc){ setFont(c,W*0.02*fs,''); c.fillStyle=p.sub; let d=ellipsize(c,it.desc,colW-(nameX-cx)); c.fillText(d,nameX,cy+W*0.012*fs); cy+=W*0.028*fs; }
+          cy+=W*0.012*fs;
+        });
+        cy+=W*0.018*fs;
       });
     }
   };
-  const TEMPLATE_LIST=[['clean','クリーン'],['pop','ポップ'],['frame','フレーム'],['grid','グリッド'],['minimal','ミニマル'],['bistro','ビストロ'],['banner','バナー'],['band','バンド'],['vertical','縦ライン'],['kraft','クラフト'],['tri','3カラム'],['notecard','ノートカード']];
+  const TEMPLATE_LIST=[['clean','クリーン'],['hero','大きい絵'],['showcase','エディトリアル'],['split','スプリット'],['pop','ポップ'],['band','バンド'],['notecard','ノートカード'],['grid','グリッド'],['frame','フレーム'],['minimal','ミニマル'],['bistro','ビストロ'],['banner','バナー'],['vertical','縦ライン'],['kraft','クラフト'],['tri','3カラム']];
 
   // ===================== レンダリング =====================
   const previewCv = $('crePreview');
   function renderTo(canvas, W, H){
-    canvas.width=W; canvas.height=H;
-    const c=canvas.getContext('2d'); c.clearRect(0,0,W,H);
+    canvas.width=W; canvas.height=H; const c=canvas.getContext('2d'); c.clearRect(0,0,W,H);
     (TEMPLATES[cre.template]||TEMPLATES.clean)(c,W,H);
-    if(cre.avatar){ drawAvatar(c,W,H); }
-  }
-  function drawAvatar(c,W,H){
-    const p=cre.pal; const s=Math.min(W,H)*0.16; const cx=W- s*0.7 - W*0.04, cy=H - s*0.7 - W*0.04;
-    c.save(); c.beginPath(); c.arc(cx,cy,s/2,0,Math.PI*2); c.closePath(); c.fillStyle=p.card; c.fill();
-    c.save(); c.clip();
-    const img=cre.avatar; const ar=img.width/img.height; let dw=s,dh=s; if(ar>1){ dh=s; dw=s*ar; } else { dw=s; dh=s/ar; }
-    c.drawImage(img, cx-dw/2, cy-dh/2, dw, dh); c.restore();
-    c.lineWidth=s*0.04; c.strokeStyle=p.accent; c.beginPath(); c.arc(cx,cy,s/2,0,Math.PI*2); c.stroke(); c.restore();
+    if(cre.photo && cre.template!=='split'){ drawPhoto(c,W,H); }
+    if(cre.texture && cre.texture!=='none'){ drawTexture(c,W,H); }
   }
   function renderPreview(){ if(!previewCv) return; const long=Math.max(cre.ratioW,cre.ratioH); const sc=Math.min(1, 1100/long); renderTo(previewCv, Math.round(cre.ratioW*sc), Math.round(cre.ratioH*sc)); }
 
@@ -18106,10 +18180,8 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     if(!cre.items.length || cre._fromSample){ cre.items=ct.samples.map(s=>({name:s[0],price:s[1],unit:s[2],desc:s[3],icon:s[4],section:s[5],rec:!!s[6]})); cre._fromSample=true; }
   }
   function renderStepBar(){ if(!stepBar) return; stepBar.innerHTML=''; STEPS.forEach((s,i)=>{ const b=document.createElement('button'); b.className='cre-step'+(i===cre.step?' active':'')+(i<cre.step?' done':''); b.innerHTML='<span class="cre-step-n">'+(i+1)+'</span><span class="cre-step-l">'+s.label+'</span>'; b.addEventListener('click',()=>{ cre.step=i; renderStep(); }); stepBar.appendChild(b); }); }
-
   function renderStep(){
-    renderStepBar(); renderPreview();
-    if(!panel) return; panel.innerHTML='';
+    renderStepBar(); renderPreview(); if(!panel) return; panel.innerHTML='';
     const k=STEPS[cre.step].key;
     if(k==='store') stepStore(); else if(k==='tpl') stepTpl(); else if(k==='ratio') stepRatio(); else if(k==='items') stepItems(); else if(k==='style') stepStyle();
     const nav=document.createElement('div'); nav.className='cre-nav';
@@ -18136,43 +18208,37 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     const grid=document.createElement('div'); grid.className='cre-tplgrid';
     TEMPLATE_LIST.forEach(([id,label])=>{ const card=document.createElement('button'); card.className='cre-tplcard'+(cre.template===id?' on':''); const cv=document.createElement('canvas'); cv.className='cre-tplthumb'; const prevT=cre.template; cre.template=id; renderTo(cv,240,320); cre.template=prevT; card.appendChild(cv); const lb=document.createElement('span'); lb.className='cre-tpllabel'; lb.textContent=label; card.appendChild(lb); card.addEventListener('click',()=>{ cre.template=id; grid.querySelectorAll('.cre-tplcard').forEach(x=>x.classList.remove('on')); card.classList.add('on'); renderPreview(); }); grid.appendChild(card); });
     panel.appendChild(grid);
-    // 見出しフォント
     const th=document.createElement('div'); th.className='cre-h sub'; th.textContent='見出しのフォント（タイトル）'; panel.appendChild(th);
     const tg=document.createElement('div'); tg.className='cre-chips';
     [['theme','本文と同じ']].concat(Object.entries(FONTS).map(([k,f])=>[k,f.label])).forEach(([key,lab])=>{ const b=document.createElement('button'); b.className='cre-chip'+(cre.titleFont===key?' on':''); b.textContent=lab; if(FONTS[key]) b.style.fontFamily=FONTS[key].stack; b.addEventListener('click',()=>{ cre.titleFont=key; tg.querySelectorAll('.cre-chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderPreview(); }); tg.appendChild(b); });
     panel.appendChild(tg);
-    // 本文フォント
     const fh=document.createElement('div'); fh.className='cre-h sub'; fh.textContent='本文のフォント'; panel.appendChild(fh);
     const fg=document.createElement('div'); fg.className='cre-chips';
     Object.entries(FONTS).forEach(([key,f])=>{ const b=document.createElement('button'); b.className='cre-chip'+(cre.font===key?' on':''); b.textContent=f.label; b.style.fontFamily=f.stack; b.addEventListener('click',()=>{ cre.font=key; fg.querySelectorAll('.cre-chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderPreview(); }); fg.appendChild(b); });
     panel.appendChild(fg);
-    // 文字の揃え + 段組
     const ah=document.createElement('div'); ah.className='cre-h sub'; ah.textContent='文字の揃え・配置'; panel.appendChild(ah);
     panel.appendChild(field('タイトルの揃え', segBtns([['left','左'],['center','中央'],['right','右']], ()=>cre.align, v=>cre.align=v)));
     panel.appendChild(field('段組（列の数）', segBtns([['auto','おまかせ'],['1','1列'],['2','2列']], ()=>cre.cols, v=>cre.cols=v)));
-    // パレット
+    panel.appendChild(field('おすすめの表示', segBtns([['star','★'],['heart','♥'],['dot','●'],['label','【おすすめ】'],['none','なし']], ()=>cre.recStyle, v=>cre.recStyle=v)));
     const ph=document.createElement('div'); ph.className='cre-h sub'; ph.textContent='色のテーマ'; panel.appendChild(ph);
     const pg=document.createElement('div'); pg.className='cre-palrow';
     Object.entries(PALETTES).forEach(([key,p])=>{ const b=document.createElement('button'); b.className='cre-palchip'; b.title=key; b.style.background=p.bg; b.innerHTML='<i style="background:'+p.accent+'"></i><i style="background:'+p.accent2+'"></i><i style="background:'+p.ink+'"></i>'; if(cre.pal&&cre.pal.accent===p.accent&&cre.pal.bg===p.bg) b.classList.add('on'); b.addEventListener('click',()=>{ cre.pal=Object.assign({},p); cre.palBase=Object.assign({},p); pg.querySelectorAll('.cre-palchip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderPreview(); }); pg.appendChild(b); });
     panel.appendChild(pg);
   }
 
-  const RATIO_PICKS=['テレビ','壁掛けテレビ','液タブ','タブレットスタンド','スマホ','学校の黒板','ホワイトボード','カレンダー','モニタ一体型PC','プロジェクタースクリーン'];
-  const PRINT_RATIOS=[['A4 縦',1240,1748],['A4 横',1748,1240],['正方形',1080,1080],['ストーリー',1080,1920],['長尺',1000,2200]];
+  const RATIO_PICKS=['ポスター枠M','ポスター枠S','ポスター枠SS','掛け軸','張り紙','スマホ','名刺','単行本・平','文庫・平'];
   function ratioCard(nm,w,hh,onpick){ const b=document.createElement('button'); b.className='cre-ratiocard'+(cre.ratioW===w&&cre.ratioH===hh?' on':''); const box=document.createElement('div'); box.className='cre-ratiobox'; const ar=w/hh; box.style.width=(ar>=1?'46px':(46*ar)+'px'); box.style.height=(ar>=1?(46/ar)+'px':'46px'); b.appendChild(box); const lb=document.createElement('span'); lb.textContent=nm; b.appendChild(lb); b.addEventListener('click',()=>{ onpick(); document.querySelectorAll('#crePanel .cre-ratiocard,#crePanel .cre-searchitem').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderPreview(); }); return b; }
   function stepRatio(){
     const h=document.createElement('div'); h.className='cre-h'; h.textContent='サイズ・比率'; panel.appendChild(h);
-    const note=document.createElement('p'); note.className='cre-note'; note.textContent='飾る場所（アイテム）の比率に合わせるのが基本。下の検索で便利くんの一覧から細かく探せます。'; panel.appendChild(note);
+    const note=document.createElement('p'); note.className='cre-note'; note.textContent='飾る場所（アイテム）の比率に合わせるのが基本。ポスターなど縦長を中心に並べています。下の検索で一覧から細かく探せます。'; panel.appendChild(note);
     const ALL=(window.__CRE_CATS||[]); const findItem=(name)=>{ for(const cat of ALL){ for(const it of (cat.items||[])){ if(it.name===name) return it; } } return null; };
     const qg=document.createElement('div'); qg.className='cre-ratiogrid'; let any=false;
     RATIO_PICKS.forEach(name=>{ const it=findItem(name); if(it){ any=true; const base=Math.max(it.w,it.h), sc=1400/base; qg.appendChild(ratioCard(it.name, Math.round(it.w*sc), Math.round(it.h*sc), ()=>{ cre.ratioW=Math.round(it.w*sc); cre.ratioH=Math.round(it.h*sc); })); } });
-    if(any){ const lab=document.createElement('div'); lab.className='cre-flabel'; lab.textContent='アイテム比（よく使う）'; panel.appendChild(lab); panel.appendChild(qg); }
-    const sin=document.createElement('input'); sin.className='cre-in'; sin.placeholder='例）テレビ / スマホ / 黒板 / 液タブ';
+    if(any){ const lab=document.createElement('div'); lab.className='cre-flabel'; lab.textContent='アイテム比（ポスター・縦長）'; panel.appendChild(lab); panel.appendChild(qg); }
+    const sin=document.createElement('input'); sin.className='cre-in'; sin.placeholder='例）ポスター / 黒板 / テレビ / スマホ';
     const res=document.createElement('div'); res.className='cre-searchres';
     function doSearch(){ const q=sin.value.trim(); res.innerHTML=''; if(!q) return; const hits=[]; ALL.forEach(cat=> (cat.items||[]).forEach(it=>{ if(it.name.includes(q)) hits.push(it); })); hits.slice(0,30).forEach(it=>{ const b=document.createElement('button'); b.className='cre-searchitem'; b.innerHTML='<span>'+it.name+'</span><em>'+it.w+' : '+it.h+'</em>'; b.addEventListener('click',()=>{ const base=Math.max(it.w,it.h), sc=1400/base; cre.ratioW=Math.round(it.w*sc); cre.ratioH=Math.round(it.h*sc); document.querySelectorAll('#crePanel .cre-ratiocard,#crePanel .cre-searchitem').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderPreview(); }); res.appendChild(b); }); if(!hits.length){ const e=document.createElement('div'); e.className='cre-note'; e.textContent='見つかりませんでした'; res.appendChild(e); } }
     sin.addEventListener('input',doSearch); panel.appendChild(field('アイテム比を検索', sin)); panel.appendChild(res);
-    const ph=document.createElement('div'); ph.className='cre-h sub'; ph.textContent='印刷・汎用サイズ'; panel.appendChild(ph);
-    const pg=document.createElement('div'); pg.className='cre-ratiogrid'; PRINT_RATIOS.forEach(([nm,w,hh])=> pg.appendChild(ratioCard(nm,w,hh,()=>{ cre.ratioW=w; cre.ratioH=hh; })) ); panel.appendChild(pg);
   }
 
   function stepItems(){
@@ -18213,25 +18279,35 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     const fsWrap=document.createElement('div'); fsWrap.className='cre-slider';
     const fsIn=document.createElement('input'); fsIn.type='range'; fsIn.min='0.8'; fsIn.max='1.3'; fsIn.step='0.02'; fsIn.value=String(cre.fontScale);
     const fsVal=document.createElement('span'); fsVal.className='cre-sval'; fsVal.textContent=Math.round(cre.fontScale*100)+'%';
-    fsIn.addEventListener('input',()=>{ cre.fontScale=parseFloat(fsIn.value); fsVal.textContent=Math.round(cre.fontScale*100)+'%'; renderPreview(); }); fsWrap.appendChild(fsIn); fsWrap.appendChild(fsVal); panel.appendChild(field('文字の大きさ', fsWrap));
+    fsIn.addEventListener('input',()=>{ cre.fontScale=parseFloat(fsIn.value); fsVal.textContent=Math.round(cre.fontScale*100)+'%'; renderPreview(); }); fsWrap.appendChild(fsIn); fsWrap.appendChild(fsVal); panel.appendChild(field('文字の大きさ（自動で枠内に収まります）', fsWrap));
+    // 質感
+    const txh=document.createElement('div'); txh.className='cre-h sub'; txh.textContent='質感（テクスチャ）'; panel.appendChild(txh);
+    panel.appendChild(segBtns([['none','なし'],['paper','紙'],['washi','和紙'],['linen','リネン'],['noise','ノイズ'],['dots','ドット'],['grid','方眼']], ()=>cre.texture, v=>cre.texture=v));
+    // 色
     const colRow=document.createElement('div'); colRow.className='cre-colrow';
     [['bg','背景'],['card','カード'],['ink','文字'],['sub','補助'],['accent','アクセント'],['accent2','サブ']].forEach(([key,lb])=>{ const w=document.createElement('label'); w.className='cre-colcell'; const ci=document.createElement('input'); ci.type='color'; ci.value=toHex(cre.pal[key]); ci.addEventListener('input',()=>{ cre.pal[key]=ci.value; renderPreview(); }); const s=document.createElement('span'); s.textContent=lb; w.appendChild(ci); w.appendChild(s); colRow.appendChild(w); });
     panel.appendChild(field('色を細かく調整（6色）', colRow));
     const reset=document.createElement('button'); reset.className='cre-btn link small'; reset.textContent='↺ テーマの色に戻す'; reset.addEventListener('click',()=>{ if(cre.palBase){ cre.pal=Object.assign({},cre.palBase); renderStep(); } }); panel.appendChild(reset);
-    const avBtn=document.createElement('button'); avBtn.className='cre-btn ghost full'; avBtn.textContent=cre.avatar?'アバターを変更':'アバター画像を貼る（隅に配置）'; const avFile=document.createElement('input'); avFile.type='file'; avFile.accept='image/*'; avFile.style.display='none'; avBtn.addEventListener('click',()=>avFile.click()); avFile.addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return; const img=new Image(); img.onload=()=>{ cre.avatar=img; avBtn.textContent='アバターを変更'; renderPreview(); }; img.src=URL.createObjectURL(f); }); panel.appendChild(avBtn); panel.appendChild(avFile);
-    if(cre.avatar){ const rm=document.createElement('button'); rm.className='cre-btn link small'; rm.textContent='アバターを外す'; rm.addEventListener('click',()=>{ cre.avatar=null; renderStep(); }); panel.appendChild(rm); }
+    // お店・スタッフ画像
+    const ph=document.createElement('div'); ph.className='cre-h sub'; ph.textContent='お店・スタッフ画像'; panel.appendChild(ph);
+    const pnote=document.createElement('p'); pnote.className='cre-note'; pnote.textContent='読み込むとメニューに合わせて自動配置します（スプリットは上部に大きく、その他は隅に丸く）。'; panel.appendChild(pnote);
+    const avBtn=document.createElement('button'); avBtn.className='cre-btn ghost full'; avBtn.textContent=cre.photo?'画像を変更':'画像を読み込む'; const avFile=document.createElement('input'); avFile.type='file'; avFile.accept='image/*'; avFile.style.display='none'; avBtn.addEventListener('click',()=>avFile.click()); avFile.addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return; const img=new Image(); img.onload=()=>{ cre.photo=img; renderStep(); }; img.src=URL.createObjectURL(f); }); panel.appendChild(avBtn); panel.appendChild(avFile);
+    if(cre.photo){
+      panel.appendChild(field('位置', segBtns([['br','右下'],['bl','左下'],['tr','右上'],['tl','左上']], ()=>cre.photoPos, v=>cre.photoPos=v)));
+      panel.appendChild(field('形', segBtns([['circle','丸'],['round','角丸']], ()=>cre.photoShape, v=>cre.photoShape=v)));
+      const szWrap=document.createElement('div'); szWrap.className='cre-slider'; const szIn=document.createElement('input'); szIn.type='range'; szIn.min='0.14'; szIn.max='0.34'; szIn.step='0.01'; szIn.value=String(cre.photoSize); const szVal=document.createElement('span'); szVal.className='cre-sval'; szVal.textContent=Math.round(cre.photoSize*100)+'%'; szIn.addEventListener('input',()=>{ cre.photoSize=parseFloat(szIn.value); szVal.textContent=Math.round(cre.photoSize*100)+'%'; renderPreview(); }); szWrap.appendChild(szIn); szWrap.appendChild(szVal); panel.appendChild(field('大きさ', szWrap));
+      const rm=document.createElement('button'); rm.className='cre-btn link small'; rm.textContent='↩ 戻す（画像を外す）'; rm.addEventListener('click',()=>{ cre.photo=null; cre.photoPos='br'; cre.photoSize=0.22; cre.photoShape='circle'; renderStep(); }); panel.appendChild(rm);
+    }
     const exp=document.createElement('button'); exp.className='cre-btn full big'; exp.textContent='⬇ PNGで書き出す'; exp.addEventListener('click',exportImage); panel.appendChild(exp);
   }
 
   function toHex(col){ if(!col) return '#000000'; if(col[0]==='#'){ if(col.length===4) return '#'+col[1]+col[1]+col[2]+col[2]+col[3]+col[3]; return col.slice(0,7); } const m=col.match(/\d+/g); if(m){ return '#'+m.slice(0,3).map(n=>(+n).toString(16).padStart(2,'0')).join(''); } return '#000000'; }
-
   function exportImage(){
     const long=Math.max(cre.ratioW,cre.ratioH); const sc=Math.min(2.4, 2000/long);
     const W=Math.round(cre.ratioW*sc), H=Math.round(cre.ratioH*sc);
     const cv=document.createElement('canvas'); renderTo(cv,W,H);
     cv.toBlob(b=>{ if(!b) return; const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=(cre.store||'メニュー表')+'.png'; document.body.appendChild(a); a.click(); a.remove(); if(typeof window.showToast==='function') window.showToast('メニュー表を書き出しました'); setTimeout(()=>URL.revokeObjectURL(a.href),4000); },'image/png');
   }
-
   function init(){ if(!cre.pal){ applyCat('cafe'); } cre.step=0; renderStep(); }
   window.__creInit=init;
   const closeBtn=$('creClose'); if(closeBtn) closeBtn.addEventListener('click',()=>{ ov.hidden=true; });

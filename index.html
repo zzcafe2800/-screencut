@@ -10465,7 +10465,7 @@ layerPanelToggle.addEventListener('click', () => {
     if(maxx-minx<1){ minx-=50; maxx+=50; } if(maxy-miny<1){ miny-=50; maxy+=50; }
     return {minx,miny,maxx,maxy}; }
   // ガイドを「論理サイズ gridW×gridH」の図として ctx に描く(呼び出し側で平行移動すればタイル描画になる)
-  function rkDrawGuideInto(g, gridW, gridH, cols, rows, showGrid){
+  function rkDrawGuideInto(g, gridW, gridH, cols, rows, showGrid, hi){
     g.fillStyle='#ffffff'; g.fillRect(0,0,gridW,gridH);
     const J0=rkJointsAt(0);
     const bb=rkGuideBBox(); const dw=(bb.maxx-bb.minx)||1, dh=(bb.maxy-bb.miny)||1;
@@ -10499,6 +10499,14 @@ layerPanelToggle.addEventListener('click', () => {
     let minD=1e9; for(let i=0;i<NN;i++) for(let j=i+1;j<NN;j++){ const a=M(J0[i]),b=M(J0[j]); const d=Math.hypot(a.x-b.x,a.y-b.y); if(d<minD)minD=d; }
     let nodeR=Math.max(5, gridW*0.013); if(isFinite(minD)) nodeR=Math.min(nodeR, Math.max(3.5, minD*0.46));
     for(let i=0;i<NN;i++){ const q=M(J0[i]); g.fillStyle='#5b9cb8'; g.beginPath(); g.arc(q.x,q.y,nodeR,0,Math.PI*2); g.fill(); g.fillStyle='#fff'; g.font='800 '+Math.round(nodeR*1.2)+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(i+1), q.x, q.y); }
+    // 選択中の番号を強調（PiPプレビューで「今どこか」が分かるように）
+    if(typeof hi==='number' && hi>=0 && hi<NN){
+      g.save();
+      const pts=rkOrbitPts(hi, J0[hi]); g.strokeStyle='#e0904a'; g.lineWidth=lw*2.6; g.beginPath(); pts.forEach((p,k)=>{ const q=M(p); k?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y); }); g.closePath(); g.stroke();
+      const q=M(J0[hi]); g.strokeStyle='#e0904a'; g.lineWidth=Math.max(2,nodeR*0.4); g.beginPath(); g.arc(q.x,q.y,nodeR*1.7,0,Math.PI*2); g.stroke();
+      g.fillStyle='#e0904a'; g.beginPath(); g.arc(q.x,q.y,nodeR,0,Math.PI*2); g.fill(); g.fillStyle='#fff'; g.font='800 '+Math.round(nodeR*1.2)+'px sans-serif'; g.textAlign='center'; g.textBaseline='middle'; g.fillText(String(hi+1), q.x, q.y);
+      g.restore();
+    }
     // アイテムを置く位置（ペン先＝一番上の回転くんの先）をピンクの丸で
     { const tip=M(J0[J0.length-1]); const r=nodeR*1.25;
       g.save(); g.fillStyle='#e0588f'; g.strokeStyle='#fff'; g.lineWidth=Math.max(1.5, nodeR*0.28);
@@ -10545,8 +10553,9 @@ layerPanelToggle.addEventListener('click', () => {
     if(dim3d){ if(typeof showToast==='function') showToast('「同じ速さ」は平らな絵（2D）のときに使えます'); return; }
     if(!_rkCoeffs2d) return;
     sameSpeed=!sameSpeed; sameBtn.classList.toggle('active', sameSpeed);
+    if(sameSpeed){ baseRpm=1; if(baseRpmInput) baseRpmInput.value='1'; if(baseRpmVal) baseRpmVal.textContent='1'; }   // 全部「最小(🐢)」＝重ねると正確な1:2:3…比になりズレない
     buildAllEpi(); applyCount();
-    if(typeof showToast==='function') showToast(sameSpeed?'全部おなじ速さ！スライダーは1か所にそろえるだけ':'通常モードに戻しました');
+    if(typeof showToast==='function') showToast(sameSpeed?'全部のスライダーを一番左(🐢)にそろえるだけ！これならズレません':'通常モードに戻しました');
   });
   if(baseRpmInput) baseRpmInput.addEventListener('input', ()=>{ const v=parseFloat(baseRpmInput.value); if(isFinite(v)&&v>0){ baseRpm=v; if(baseRpmVal) baseRpmVal.textContent=(v>=10?v.toFixed(0):v.toFixed(1)); buildSide(); rkUpdateGaugePip(); if(paused) drawScene(); } });
   // ゲージを小窓(Document PiP)に出して、ゲームを見ながら合わせる
@@ -10563,14 +10572,14 @@ layerPanelToggle.addEventListener('click', () => {
     return out;
   }
   // PiP内: 速さを「回るドット＋上(ゴール)通過で音」で可視化（番号ごと）
-  let pipRaf=null, pipAudioCtx=null, pipBeepOn=false, pipPeriod=10, pipDir=1, pipStartT=0, pipNextBeat=0, pipSchedTimer=null, pipFixed=true, pipLapPrev=0, pipFlashT=null, pipPreview=false, pipPrevStart=0;
+  let pipRaf=null, pipAudioCtx=null, pipBeepOn=false, pipPeriod=10, pipDir=1, pipStartT=0, pipNextBeat=0, pipSchedTimer=null, pipFixed=true, pipLapPrev=0, pipFlashT=null, pipPreview=false, pipPrevStart=0, pipPrevDirty=false, pipPrevW=0, pipPrevH=0;
   function pipClock(){ return pipAudioCtx ? pipAudioCtx.currentTime : (performance.now()/1000); }
   function pipSetSpeed(rpm, dsign, fixed){ pipFixed = !!fixed || !(rpm>0); pipDir = dsign<0?-1:1; pipPeriod = pipFixed?0:(60/rpm); pipStartT=pipClock(); pipNextBeat = pipStartT + (pipPeriod||1); pipLapPrev=0; }
   function pipBeep(at){ if(!pipAudioCtx) return; const o=pipAudioCtx.createOscillator(), g=pipAudioCtx.createGain(); o.type='sine'; o.frequency.value=880; g.gain.setValueAtTime(0.0001,at); g.gain.exponentialRampToValueAtTime(0.35,at+0.008); g.gain.exponentialRampToValueAtTime(0.0001,at+0.13); o.connect(g); g.connect(pipAudioCtx.destination); o.start(at); o.stop(at+0.15); }
   function pipSched(){ if(!pipBeepOn||!pipAudioCtx||pipFixed||!(pipPeriod>0)) return; const ahead=pipAudioCtx.currentTime+1.1; let guard=0; while(pipNextBeat<ahead && guard++<400){ pipBeep(pipNextBeat); pipNextBeat+=pipPeriod; } }
   function pipFlash(){ if(!(gaugePipWin&&!gaugePipWin.closed)) return; const r=gaugePipWin.document.getElementById('pipRoot'); if(!r) return; r.classList.add('flash'); if(pipFlashT) clearTimeout(pipFlashT); pipFlashT=setTimeout(()=>{ try{ r.classList.remove('flash'); }catch(e){} }, 80); }
   function pipAnim(){ if(!(gaugePipWin&&!gaugePipWin.closed)){ pipRaf=null; return; }
-    if(pipPreview){ drawPipPreview(); pipRaf=requestAnimationFrame(pipAnim); return; }
+    if(pipPreview){ const cv=gaugePipWin.document.getElementById('pipPrevCanvas'); const W=cv?cv.clientWidth:0, H=cv?cv.clientHeight:0; if(pipPrevDirty||W!==pipPrevW||H!==pipPrevH){ drawPipPreview(); pipPrevDirty=false; pipPrevW=W; pipPrevH=H; } pipRaf=requestAnimationFrame(pipAnim); return; }
     const d2=gaugePipWin.document, dot=d2.getElementById('pipDialDot');
     if(pipFixed){ if(dot){ dot.style.left='50%'; dot.style.top='50%'; } }
     else { const elapsed=pipClock()-pipStartT; const th=pipDir*2*Math.PI*elapsed/(pipPeriod||1);
@@ -10591,28 +10600,13 @@ layerPanelToggle.addEventListener('click', () => {
   function drawPipPreview(){
     if(!(gaugePipWin&&!gaugePipWin.closed)||!pipPreview) return;
     const d2=gaugePipWin.document, cv=d2.getElementById('pipPrevCanvas'); if(!cv) return;
-    const ctx=cv.getContext('2d'); const dpr=gaugePipWin.devicePixelRatio||1;
-    const W=cv.clientWidth, H=cv.clientHeight; if(!W||!H) return;
+    const dpr=gaugePipWin.devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight; if(!W||!H) return;
     if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){ cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr); }
-    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+    const ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
     if(!epi.length) return;
     const data=rkGaugeData(), sel=data[gaugePipSel];
-    let N=(sel&&sel.orient)?epi.length:Math.min(gaugePipSel+1, epi.length); if(N<1)N=1;
-    const TN=240, path=[]; let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
-    for(let k=0;k<=TN;k++){ const J=pipPartialJoints(k/TN,N), p=J[N]||J[J.length-1]; path.push(p); if(p.x<minx)minx=p.x;if(p.x>maxx)maxx=p.x;if(p.y<miny)miny=p.y;if(p.y>maxy)maxy=p.y; }
-    const bw=Math.max(1,maxx-minx), bh=Math.max(1,maxy-miny), sc=Math.min(W*0.82/bw, H*0.82/bh), cx=(minx+maxx)/2, cy=(miny+maxy)/2;
-    const map=p=>({ x:W/2+(p.x-cx)*sc, y:H/2+(p.y-cy)*sc });
-    const tc=(((pipClock()-pipPrevStart)*baseRpm/60)%1+1)%1, Jt=pipPartialJoints(tc,N);
-    // ピンクの通り道(完成イメージ)
-    ctx.strokeStyle='rgba(224,88,143,.72)'; ctx.lineWidth=Math.max(2,W*0.007); ctx.lineJoin='round'; ctx.lineCap='round'; ctx.beginPath(); path.forEach((p,i)=>{ const q=map(p); i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y); }); ctx.closePath(); ctx.stroke();
-    // 緑の円
-    ctx.strokeStyle='rgba(60,175,112,.4)'; ctx.lineWidth=Math.max(1,W*0.003);
-    for(let i=0;i<N;i++){ const cc=map(Jt[i]); const r=Math.hypot(Jt[i+1].x-Jt[i].x, Jt[i+1].y-Jt[i].y)*sc; ctx.beginPath(); ctx.arc(cc.x,cc.y,r,0,Math.PI*2); ctx.stroke(); }
-    // チェーン
-    ctx.strokeStyle='rgba(70,110,130,.55)'; ctx.lineWidth=Math.max(1.5,W*0.0045); ctx.beginPath(); Jt.forEach((p,i)=>{ const q=map(p); i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y); }); ctx.stroke();
-    ctx.fillStyle='#5b9cb8'; for(let i=0;i<N;i++){ const q=map(Jt[i]); ctx.beginPath(); ctx.arc(q.x,q.y,Math.max(2.5,W*0.009),0,Math.PI*2); ctx.fill(); }
-    // アイテムを置く位置(ペン先)
-    const tip=map(Jt[N]); ctx.fillStyle='#e0588f'; ctx.strokeStyle='#fff'; ctx.lineWidth=Math.max(1.5,W*0.005); ctx.beginPath(); ctx.arc(tip.x,tip.y,Math.max(5,W*0.026),0,Math.PI*2); ctx.fill(); ctx.stroke();
+    const hi=(sel&&sel.orient)? -1 : Math.max(0, Math.min(epi.length-1, gaugePipSel));
+    try{ rkDrawGuideInto(ctx, W, H, 1, 1, false, hi); }catch(e){}
   }
   function renderGaugePip(){
     if(!(gaugePipWin && !gaugePipWin.closed)) return;
@@ -10673,7 +10667,7 @@ layerPanelToggle.addEventListener('click', () => {
       const sb=d2.getElementById('pipSound');
       if(sb) sb.onclick=()=>{ pipBeepOn=!pipBeepOn; if(pipBeepOn){ if(!pipAudioCtx){ try{ pipAudioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(pipAudioCtx&&pipAudioCtx.state==='suspended') pipAudioCtx.resume(); const o=rkGaugeData()[gaugePipSel]; if(o) pipSetSpeed(o.rpm,o.dsign,o.fixed); } pipUpdateSoundBtn(); };
       const pv=d2.getElementById('pipPrev'), pvw=d2.getElementById('pipPrevWrap'), pvb=d2.getElementById('pipPrevBack'), pvt=d2.getElementById('pipPrevTitle');
-      if(pv) pv.onclick=()=>{ if(!epi.length) return; pipPreview=true; pipPrevStart=pipClock(); const data=rkGaugeData(), sel=data[gaugePipSel]; const N=(sel&&sel.orient)?epi.length:Math.min(gaugePipSel+1,epi.length); if(pvt) pvt.textContent='①〜'+N+'番まで'; if(pvw) pvw.style.display='block'; };
+      if(pv) pv.onclick=()=>{ if(!epi.length) return; pipPreview=true; pipPrevDirty=true; pipPrevW=0; pipPrevH=0; const data=rkGaugeData(), sel=data[gaugePipSel]; const N=(sel&&sel.orient)?epi.length:Math.min(gaugePipSel+1,epi.length); if(pvt) pvt.textContent='①〜'+epi.length+'番（橙＝今の'+N+'番）'; if(pvw) pvw.style.display='block'; };
       if(pvb) pvb.onclick=()=>{ pipPreview=false; if(pvw) pvw.style.display='none'; };
       gaugePipWin.addEventListener('pagehide', ()=>{ pipStopAll(); gaugePipWin=null; });
       renderGaugePip(); pipUpdateSoundBtn();
@@ -10947,7 +10941,7 @@ layerPanelToggle.addEventListener('click', () => {
     const f1=Math.abs(epi[0]?epi[0].freq:1)||1;
     const note=document.createElement('div'); note.className='rk-side-note';
     note.innerHTML = sameSpeed
-      ? '🟰 <b>同じ速さモード</b><br>全部おなじ速さ＆おなじ向き。ゲームのスライダーは<b>1か所にそろえる</b>だけ！<br><span class="rk-spd-sub">形は少しシンプルになります</span>'
+      ? '🟰 <b>同じ速さモード（ズレない）</b><br>全部のスライダーを<b>一番左（🐢・最小）</b>にそろえるだけ。重ねると自動で<b>正確な比（1:2:3…）</b>になるので、何周しても<b>ズレません</b>。<br><span class="rk-spd-sub">形は少しシンプルになります</span>'
       : 'ある番号の速さを変えると、<b>下に並ぶ番号すべて</b>の回り方も変わります（足し算）。反対向きは打ち消し、同じ向きは加速。<br>各<b>モーター速度</b>を、🐢〜🐇のスライダー位置に合わせて設定してね。';
     sideEl.appendChild(note);
     const fmtRpm=(r)=> r>=10 ? r.toFixed(0) : (r>=1 ? r.toFixed(1) : r.toFixed(2));

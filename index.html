@@ -273,41 +273,55 @@ aside::-webkit-scrollbar { width: 0; height: 0; display: none; }
 .item.active .item-label { color: var(--accent); font-weight: 700; }
 .item-note { grid-area: note; font-size: 9.5px; color: var(--fg-faint); margin-top: 2px; line-height: 1.3; }
 
-/* ピンボタン */
+/* ピンボタン（お気に入りハート） */
 .pin-btn {
   grid-area: pin;
   background: transparent;
   border: none;
-  padding: 2px;
+  padding: 0;
   cursor: pointer;
-  color: #c95a8a;
-  opacity: 0.55;
-  transition: opacity 0.15s, color 0.15s, transform 0.12s;
+  color: #d473a3;
+  opacity: 0.4;
+  transition: opacity 0.18s ease, color 0.18s ease, transform 0.18s cubic-bezier(.34,1.56,.64,1), background 0.18s ease;
   display: flex; align-items: center; justify-content: center;
-  width: 22px; height: 22px;
-  border-radius: 4px;
+  width: 24px; height: 24px;
+  border-radius: 50%;
   flex-shrink: 0;
 }
-.pin-btn:hover { opacity: 1 !important; transform: scale(1.15); color: #c95a8a; }
-.item:hover .pin-btn { opacity: 0.85; }
-.pin-btn.pinned { opacity: 1; color: #d669a0; }
-.pin-btn.pinned:hover { color: #b94e85; }
-
-/* ピンアイテム カテゴリ (薄いピンク背景) */
-.pinned-category {
-  background: rgba(238, 169, 200, 0.13);
-  border-radius: 6px;
+.pin-btn svg { transition: transform 0.18s cubic-bezier(.34,1.56,.64,1); }
+.pin-btn:hover { opacity: 1 !important; background: rgba(224,140,180,0.16); transform: scale(1.06); color: #d05a93; }
+.pin-btn:hover svg { transform: scale(1.12); }
+.item:hover .pin-btn { opacity: 0.68; }
+.pin-btn.pinned { opacity: 1; color: #e0588f; animation: pin-pop 0.42s cubic-bezier(.34,1.56,.64,1); }
+.pin-btn.pinned svg { filter: drop-shadow(0 1px 2px rgba(224,88,143,0.4)); }
+.pin-btn.pinned:hover { color: #c64a7e; background: rgba(224,88,143,0.18); }
+@keyframes pin-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.45); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
 }
-.pinned-category > .category-header { color: #b94e85; }
+
+/* お気に入りカテゴリ（やわらかいピンクのカード） */
+.pinned-category {
+  background: linear-gradient(180deg, rgba(245,200,222,0.32) 0%, rgba(238,169,200,0.10) 100%);
+  border: 1px solid rgba(224,140,180,0.32);
+  border-radius: 12px;
+  margin: 2px 6px 10px;
+  box-shadow: 0 2px 12px rgba(224,140,180,0.16);
+  overflow: hidden;
+}
+.pinned-category > .category-header { color: #c64a7e; font-weight: 700; background: transparent; }
+.pinned-category > .category-header .cat-icon { display: none; }
 .pinned-category > .category-header::before {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23d669a0' stroke='%23d669a0' stroke-width='1.5'><path d='M12 21s-7-4.5-9-9.5C1.5 7 5 4 8 5c2 .5 3 2 4 3 1-1 2-2.5 4-3 3-1 6.5 2 5 6.5-2 5-9 9.5-9 9.5z'/></svg>");
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23e0588f' stroke='%23e0588f' stroke-width='1.5'><path d='M12 21s-7-4.5-9-9.5C1.5 7 5 4 8 5c2 .5 3 2 4 3 1-1 2-2.5 4-3 3-1 6.5 2 5 6.5-2 5-9 9.5-9 9.5z'/></svg>");
   opacity: 1;
 }
-.pinned-category > .category-header .arrow { color: #d669a0; }
-.pinned-category .item:hover { background: rgba(238, 169, 200, 0.20); }
-.pinned-category .item.active { box-shadow: inset 3px 0 0 #d669a0; background: rgba(214,105,160,0.12); }
-.pinned-category .item.active .item-ratio { background: #d669a0; }
-.pinned-category .item.active .item-label { color: #b94e85; }
+.pinned-category > .category-header .arrow { color: #e0588f; }
+.pinned-category .item:hover { background: rgba(238, 169, 200, 0.22); }
+.pinned-category .item.active { box-shadow: inset 3px 0 0 #e0588f; background: rgba(224,88,143,0.14); }
+.pinned-category .item.active .item-ratio { background: #e0588f; }
+.pinned-category .item.active .item-label { color: #c64a7e; }
 
 /* 画像読み込み後 アイテム未選択時のサイドバー強調 */
 @keyframes sidebar-pulse {
@@ -7461,8 +7475,7 @@ function buildItemRow(it) {
   const pinned = isPinned(it);
   const pinBtn = `<button class="pin-btn ${pinned ? 'pinned' : ''}" title="${pinned ? 'ピンを外す' : 'ピン留め'}">
     <svg width="13" height="13" viewBox="0 0 24 24" fill="${pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 17v5"/>
-      <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>
+      <path d="M12 21s-7-4.5-9-9.5C1.5 7 5 4 8 5c2 .5 3 2 4 3 1-1 2-2.5 4-3 3-1 6.5 2 5 6.5-2 5-9 9.5-9 9.5z"/>
     </svg>
   </button>`;
   el.innerHTML = `${ic}<span class="item-label">${it.name}</span><span class="item-ratio">${it.w} : ${it.h}</span>${nt}${pinBtn}`;
@@ -7592,7 +7605,7 @@ function renderSidebar() {
       : `<span class="sr-icon">${itemIconSvg(it.name)}</span>`;
     const pinned = isPinned(it);
     const pinBtn = `<button class="pin-btn sr-pin ${pinned ? 'pinned' : ''}" title="${pinned ? 'ピンを外す' : 'ピン留め'}">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="${pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="${pinned ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-9-9.5C1.5 7 5 4 8 5c2 .5 3 2 4 3 1-1 2-2.5 4-3 3-1 6.5 2 5 6.5-2 5-9 9.5-9 9.5z"/></svg>
     </button>`;
     card.innerHTML = `${ic}<span class="sr-name">${it.name}</span><span class="sr-ratio">${it.w} : ${it.h}</span>${pinBtn}`;
     card.addEventListener('click', () => selectItem(it, null));
@@ -17488,7 +17501,7 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     ratioW: 1240, ratioH: 1748,
     pal: null, palBase: null,
     fontScale: 1, font: 'gothic', titleFont: 'theme',
-    align: 'center', cols: 'auto', recStyle: 'star', texture: 'none', textureStrength: 0.9, frame: 'none', roomImage: null,
+    align: 'center', cols: 'auto', recStyle: 'star', texture: 'none', textureStrength: 0.9, frame: 'none', roomImage: null, itemPhotoBorder: true, roomSize: 1, roomPosY: 0, roomOpacity: 0.2,
     photo: null, photoPos: 'br', photoSize: 0.22, photoShape: 'circle',
     items: [],
   };
@@ -17755,7 +17768,7 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
   function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
   function drawTexture(c,W,H){
     const p=cre.pal, t=cre.texture; if(!t||t==='none') return; const S=cre.textureStrength||1; const rnd=mulberry32(987654321); const ink=p.ink; const unit=Math.max(W,H)/1000; const A=(a)=>Math.min(0.6,a*S); c.save();
-    if(t==='paper'){ const n=Math.min(7000,Math.floor(W*H*0.001)); c.fillStyle=ink; for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H,r=(0.4+rnd()*1.2)*unit; c.globalAlpha=A(0.015+rnd()*0.05); c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill(); } }
+    if(t==='paper'){ const n=Math.min(9000,Math.floor(W*H*0.0016)); c.fillStyle=ink; for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H,r=(0.45+rnd()*1.4)*unit; c.globalAlpha=A(0.03+rnd()*0.08); c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill(); } }
     else if(t==='kraft'){ const n=Math.min(6000,Math.floor(W*H*0.0009)); c.fillStyle=ink; for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H,r=(0.5+rnd()*1.6)*unit; c.globalAlpha=A(0.02+rnd()*0.06); c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill(); } c.strokeStyle=ink; c.lineWidth=0.6*unit; const fn=Math.min(700,Math.floor(W*H*0.0001)); for(let i=0;i<fn;i++){ const x=rnd()*W,y=rnd()*H,len=(10+rnd()*30)*unit,a=(rnd()-0.5)*0.6; c.globalAlpha=A(0.03); c.beginPath(); c.moveTo(x,y); c.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len); c.stroke(); } }
     else if(t==='washi'){ const n=Math.min(2400,Math.floor(W*H*0.00035)); c.strokeStyle=ink; c.lineWidth=0.6*unit; for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H,len=(6+rnd()*22)*unit,a=rnd()*Math.PI; c.globalAlpha=A(0.02+rnd()*0.05); c.beginPath(); c.moveTo(x,y); c.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len); c.stroke(); } }
     else if(t==='linen'){ c.strokeStyle=ink; c.lineWidth=0.7*unit; c.globalAlpha=A(0.05); const gap=5*unit; for(let x=0;x<W;x+=gap){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,H); c.stroke(); } for(let y=0;y<H;y+=gap){ c.beginPath(); c.moveTo(0,y); c.lineTo(W,y); c.stroke(); } }
@@ -17786,7 +17799,7 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
   }
   function bg(c,W,H,p){ if(cre.roomImage) return; c.fillStyle=p.bg; c.fillRect(0,0,W,H); }
   function hexA(hex,a){ const x=toHex(hex); const n=parseInt(x.slice(1),16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
-  function drawCircImg(c,cx,cy,size,img,shape,p){ const s=size; c.save(); if(shape==='square'){ roundRect(c,cx-s/2,cy-s/2,s,s,s*0.14); } else { c.beginPath(); c.arc(cx,cy,s/2,0,Math.PI*2); c.closePath(); } c.fillStyle=p.card; c.fill(); c.save(); c.clip(); const ar=img.width/img.height; let dw=s,dh=s; if(ar>1){ dh=s; dw=s*ar; } else { dw=s; dh=s/ar; } c.drawImage(img,cx-dw/2,cy-dh/2,dw,dh); c.restore(); c.lineWidth=s*0.04; c.strokeStyle=p.accent2; if(shape==='square'){ roundRect(c,cx-s/2,cy-s/2,s,s,s*0.14); c.stroke(); } else { c.beginPath(); c.arc(cx,cy,s/2,0,Math.PI*2); c.stroke(); } c.restore(); }
+  function drawCircImg(c,cx,cy,size,img,shape,p){ const s=size; c.save(); if(shape==='square'){ roundRect(c,cx-s/2,cy-s/2,s,s,s*0.14); } else { c.beginPath(); c.arc(cx,cy,s/2,0,Math.PI*2); c.closePath(); } c.fillStyle=p.card; c.fill(); c.save(); c.clip(); const ar=img.width/img.height; let dw=s,dh=s; if(ar>1){ dh=s; dw=s*ar; } else { dw=s; dh=s/ar; } c.drawImage(img,cx-dw/2,cy-dh/2,dw,dh); c.restore(); if(cre.itemPhotoBorder!==false){ c.lineWidth=s*0.04; c.strokeStyle=p.accent2; if(shape==='square'){ roundRect(c,cx-s/2,cy-s/2,s,s,s*0.14); c.stroke(); } else { c.beginPath(); c.arc(cx,cy,s/2,0,Math.PI*2); c.stroke(); } } c.restore(); }
   function drawItemVisual(c,cx,cy,size,it,p,shape){ c.save(); c.lineCap='round'; c.lineJoin='round'; if(it.photo){ drawCircImg(c,cx,cy,size,it.photo,shape,p); } else if(it.icon && it.icon!=='none' && ICONS[it.icon]){ ICONS[it.icon](c,cx,cy,size,p.accent2); } c.restore(); }
   function drawFrame(c,W,H,pad){ const p=cre.pal; const m=pad*0.5, col=p.accent, lw=Math.max(1,W*0.004); const x=m,y=m,w=W-2*m,h=H-2*m; const f=cre.frame; c.save(); c.strokeStyle=col; c.fillStyle=col; c.lineWidth=lw;
     if(f==='line'){ c.strokeRect(x,y,w,h); }
@@ -18197,16 +18210,75 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
         });
         cy+=W*0.018*fs;
       });
+    },
+
+    // === 写真カード（商品写真を大きく・参考: ドリンク/フォトメニュー） ===
+    photo(c,W,H){
+      const p=cre.pal, M=W*0.06, fs=cre.fontScale; bg(c,W,H,p);
+      let y=drawHeading(c,W,H*0.05,{M, size:W*0.072*fs, weight:'800', color:p.ink, tagSize:W*0.026*fs, tagWeight:'600', tagColor:p.sub, rule:'line', ruleColor:p.accent, ph:'MENU'}); y+=H*0.012;
+      const items=cre.items; const cols=(W/H>0.95)?3:2; const gap=W*0.035; const cardW=(W-M*2-(cols-1)*gap)/cols; const imgH=cardW*0.8; const cardH=imgH+W*0.088*fs;
+      let i=0;
+      items.forEach(it=>{
+        const col=i%cols, row=Math.floor(i/cols); const cx=M+col*(cardW+gap), cy=y+row*(cardH+gap);
+        if(cy+cardH>H*0.98){ i++; return; }
+        c.fillStyle=p.card; roundRect(c,cx,cy,cardW,cardH,W*0.016); c.fill();
+        c.save(); roundRect(c,cx,cy,cardW,imgH,W*0.016); c.clip();
+        if(it.photo){ const img=it.photo; const ar=img.width/img.height; let dw=cardW,dh=cardW/ar; if(dh<imgH){ dh=imgH; dw=imgH*ar; } c.drawImage(img,cx+(cardW-dw)/2,cy+(imgH-dh)/2,dw,dh); }
+        else { c.fillStyle=hexA(p.accent2,0.16); c.fillRect(cx,cy,cardW,imgH); if(it.icon&&it.icon!=='none'&&ICONS[it.icon]){ c.lineCap='round'; c.lineJoin='round'; ICONS[it.icon](c, cx+cardW/2, cy+imgH/2, Math.min(cardW,imgH)*0.5, p.accent2); } }
+        c.restore();
+        const priceStr=it.price?(it.price+(it.unit||'')):'';
+        setFont(c,W*0.03*fs,'800'); const pw=c.measureText(priceStr).width;
+        setFont(c,W*0.028*fs,'700'); c.fillStyle=p.ink; c.textAlign='left';
+        let nm=ellipsize(c,(it.rec?recPrefix():'')+(it.name||'商品名'), cardW-W*0.05-pw);
+        c.fillText(nm, cx+W*0.025, cy+imgH+W*0.042*fs);
+        if(priceStr){ setFont(c,W*0.03*fs,'800'); c.fillStyle=p.accent; c.textAlign='right'; c.fillText(priceStr, cx+cardW-W*0.025, cy+imgH+W*0.042*fs); c.textAlign='left'; }
+        if(it.desc){ setFont(c,W*0.019*fs,''); c.fillStyle=p.sub; let d=ellipsize(c,it.desc,cardW-W*0.05); c.fillText(d, cx+W*0.025, cy+imgH+W*0.068*fs); }
+        i++;
+      });
+    },
+
+    // === マガジン（上に大きな店舗写真＋下にリスト・スプリットの拡張） ===
+    magazine(c,W,H){
+      const p=cre.pal, fs=cre.fontScale; bg(c,W,H,p);
+      const panelH=H*0.4;
+      c.save(); c.beginPath(); c.rect(0,0,W,panelH); c.clip();
+      if(cre.photo){ const img=cre.photo; const ar=img.width/img.height; let dw=W,dh=W/ar; if(dh<panelH){ dh=panelH; dw=panelH*ar; } c.drawImage(img,(W-dw)/2,(panelH-dh)/2,dw,dh); const g=c.createLinearGradient(0,0,0,panelH); g.addColorStop(0,'rgba(0,0,0,0.12)'); g.addColorStop(1,'rgba(0,0,0,0.6)'); c.fillStyle=g; c.fillRect(0,0,W,panelH); }
+      else { c.fillStyle=p.accent; c.fillRect(0,0,W,panelH); c.fillStyle=hexA(p.ink,0.12); c.fillRect(0,panelH*0.72,W,panelH*0.28); }
+      c.restore();
+      const M=W*0.08; const ha=headAlign(M,W);
+      setTitleFont(c,W*0.085*fs,'800'); c.fillStyle=cre.photo?'#fff':p.bg; c.textAlign=ha.a; c.textBaseline='alphabetic';
+      let title=cre.store||'お店の名前'; fitTitle(c,title,W*0.085*fs,'800',W-M*2); c.fillText(title, ha.x, panelH-W*0.07);
+      if(cre.tag){ setFont(c,W*0.028*fs,'600'); c.fillStyle=cre.photo?'rgba(255,255,255,0.9)':p.card; c.fillText(ellipsize(c,cre.tag,W-M*2), ha.x, panelH-W*0.03); }
+      let y=panelH+H*0.05; const colW=W-M*2; const groups=grouped();
+      groups.forEach(g=>{
+        if(y+W*0.06>H*0.96) return;
+        setFont(c,W*0.032*fs,'800'); c.fillStyle=p.accent; c.textAlign='left'; c.fillText(ellipsize(c,g.name,colW), M, y+W*0.026*fs); y+=W*0.05*fs;
+        g.items.forEach(it=>{
+          if(y+W*0.05>H*0.97) return;
+          const hasVis=!!(it.photo||(it.icon&&it.icon!=='none'&&ICONS[it.icon])); if(hasVis){ drawItemVisual(c, M+W*0.03, y+W*0.008*fs, W*0.05, it, p, 'circle'); }
+          const nameX=hasVis?M+W*0.07:M;
+          const priceStr=it.price?(it.price+(it.unit||'')):'';
+          setFont(c,W*0.03*fs,'700'); const pw=c.measureText(priceStr).width;
+          setFont(c,W*0.03*fs,'600'); c.fillStyle=p.ink; c.textAlign='left';
+          let nm=ellipsize(c,(it.rec?recPrefix():'')+(it.name||'商品名'), colW-(nameX-M)-pw-W*0.03);
+          c.fillText(nm, nameX, y+W*0.024*fs);
+          if(priceStr){ setFont(c,W*0.03*fs,'800'); c.fillStyle=p.accent; c.textAlign='right'; c.fillText(priceStr, M+colW, y+W*0.024*fs); c.textAlign='left'; }
+          y+=W*0.042*fs;
+          if(it.desc){ setFont(c,W*0.019*fs,''); c.fillStyle=p.sub; let d=ellipsize(c,it.desc,colW-(nameX-M)); c.fillText(d, nameX, y+W*0.01*fs); y+=W*0.026*fs; }
+          y+=W*0.012*fs;
+        });
+        y+=W*0.016*fs;
+      });
     }
   };
-  const TEMPLATE_LIST=[['clean','クリーン'],['hero','大きい絵'],['showcase','エディトリアル'],['split','スプリット'],['pop','ポップ'],['band','バンド'],['notecard','ノートカード'],['grid','グリッド'],['frame','フレーム'],['minimal','ミニマル'],['bistro','ビストロ'],['banner','バナー'],['vertical','縦ライン'],['kraft','クラフト'],['tri','3カラム']];
+  const TEMPLATE_LIST=[['clean','クリーン'],['hero','大きい絵'],['showcase','エディトリアル'],['split','スプリット'],['photo','写真カード'],['magazine','マガジン'],['pop','ポップ'],['band','バンド'],['notecard','ノートカード'],['grid','グリッド'],['frame','フレーム'],['minimal','ミニマル'],['bistro','ビストロ'],['banner','バナー'],['vertical','縦ライン'],['kraft','クラフト'],['tri','3カラム']];
   const FRAME_LIST=[['none','なし'],['line','線'],['double','二重'],['rounded','角丸'],['dots','点線'],['corners','コーナー'],['deco','装飾'],['ticks','ティック']];
 
   // ===================== レンダリング =====================
   const previewCv = $('crePreview');
   function renderTo(canvas, W, H){
     canvas.width=W; canvas.height=H; const c=canvas.getContext('2d'); c.clearRect(0,0,W,H);
-    if(cre.roomImage){ const img=cre.roomImage; const ar=img.width/img.height; let dw=W,dh=W/ar; if(dh<H){ dh=H; dw=H*ar; } c.drawImage(img,(W-dw)/2,(H-dh)/2,dw,dh); c.fillStyle=hexA(cre.pal.bg,0.80); c.fillRect(0,0,W,H); }
+    if(cre.roomImage){ const img=cre.roomImage; const ar=img.width/img.height; const z=cre.roomSize||1; let dw=W,dh=W/ar; if(dh<H){ dh=H; dw=H*ar; } dw*=z; dh*=z; const ox=(W-dw)/2; const oy=(H-dh)/2 + (cre.roomPosY||0)*Math.max(0,(dh-H)/2); c.drawImage(img,ox,oy,dw,dh); c.fillStyle=hexA(cre.pal.bg, Math.max(0.06, 1-(cre.roomOpacity||0.2))); c.fillRect(0,0,W,H); }
     else { c.fillStyle=cre.pal.bg; c.fillRect(0,0,W,H); }
     const framed=cre.frame&&cre.frame!=='none'; const pad=framed?Math.min(W,H)*0.05:0;
     c.save(); if(pad){ c.translate(pad,pad); c.scale((W-2*pad)/W,(H-2*pad)/H); }
@@ -18235,7 +18307,7 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     if(k==='store') stepStore(); else if(k==='tpl') stepTpl(); else if(k==='ratio') stepRatio(); else if(k==='items') stepItems(); else if(k==='style') stepStyle();
     const nav=document.createElement('div'); nav.className='cre-nav';
     const back=document.createElement('button'); back.className='cre-btn ghost'; back.textContent='← 戻る'; back.disabled=cre.step===0; back.addEventListener('click',()=>{ if(cre.step>0){ cre.step--; renderStep(); } });
-    const next=document.createElement('button'); next.className='cre-btn'; next.textContent=cre.step<STEPS.length-1?'次へ →':'画像を書き出す'; next.addEventListener('click',()=>{ if(cre.step<STEPS.length-1){ cre.step++; renderStep(); } else exportImage(); });
+    const next=document.createElement('button'); next.className='cre-btn'; next.textContent=cre.step<STEPS.length-1?'次へ →':'画像をダウンロード'; next.addEventListener('click',()=>{ if(cre.step<STEPS.length-1){ cre.step++; renderStep(); } else exportImage(); });
     const skip=document.createElement('button'); skip.className='cre-btn link'; skip.textContent='スキップ'; skip.style.display=cre.step<STEPS.length-1?'':'none'; skip.addEventListener('click',()=>{ cre.step++; renderStep(); });
     nav.appendChild(back); nav.appendChild(skip); nav.appendChild(next); panel.appendChild(nav);
   }
@@ -18318,7 +18390,7 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     const tabs=document.createElement('div'); tabs.className='cre-icontabs'; const grid=document.createElement('div'); grid.className='cre-iconpick';
     let curGenre=genreOf(it.icon)||'drink';
     ['food','drink','dessert'].forEach(g=>{ const tb=document.createElement('button'); tb.className='cre-icontab'+(g===curGenre?' on':''); tb.textContent=GENRE_LABEL[g]; tb.addEventListener('click',()=>{ curGenre=g; tabs.querySelectorAll('.cre-icontab').forEach(x=>x.classList.remove('on')); tb.classList.add('on'); fillIcons(); }); tabs.appendChild(tb); });
-    function fillIcons(){ grid.innerHTML=''; ICON_GENRE[curGenre].concat(['none']).forEach(name=>{ const b=document.createElement('button'); b.className='cre-iconopt'+(it.icon===name?' on':''); b.title=ICON_LABEL[name]||name; const cv=document.createElement('canvas'); cv.width=34; cv.height=34; const cc=cv.getContext('2d'); cc.lineCap='round'; cc.lineJoin='round'; if(ICONS[name]) ICONS[name](cc,17,17,30,cre.pal?cre.pal.accent:'#c2410c'); b.appendChild(cv); b.addEventListener('click',()=>{ it.icon=name; grid.querySelectorAll('.cre-iconopt').forEach(x=>x.classList.remove('on')); b.classList.add('on'); drawMini(); renderPreview(); }); grid.appendChild(b); }); }
+    function fillIcons(){ grid.innerHTML=''; ICON_GENRE[curGenre].concat(['none']).forEach(name=>{ const b=document.createElement('button'); b.className='cre-iconopt'+(it.icon===name?' on':''); b.title=ICON_LABEL[name]||name; const cv=document.createElement('canvas'); cv.width=34; cv.height=34; const cc=cv.getContext('2d'); cc.lineCap='round'; cc.lineJoin='round'; if(ICONS[name]) ICONS[name](cc,17,17,30,cre.pal?cre.pal.accent:'#c2410c'); b.appendChild(cv); const lb=document.createElement('span'); lb.textContent=(name==='none'?'なし':(ICON_LABEL[name]||name)); lb.style.cssText='font-size:9px;line-height:1.1;margin-top:2px;max-width:46px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--cre-sub,#8a7f6b)'; b.style.cssText='display:flex;flex-direction:column;align-items:center;height:auto;padding:5px 3px'; b.appendChild(lb); b.addEventListener('click',()=>{ it.icon=name; grid.querySelectorAll('.cre-iconopt').forEach(x=>x.classList.remove('on')); b.classList.add('on'); drawMini(); renderPreview(); }); grid.appendChild(b); }); }
     fillIcons(); wrapEl.appendChild(tabs); wrapEl.appendChild(grid);
     icBtn.addEventListener('click',()=>{ wrapEl.style.display=wrapEl.style.display==='none'?'block':'none'; });
     row.appendChild(icBtn); row.appendChild(wrapEl);
@@ -18339,10 +18411,17 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     const txh=document.createElement('div'); txh.className='cre-h sub'; txh.textContent='質感（テクスチャ）'; panel.appendChild(txh);
     panel.appendChild(segBtns([['none','なし'],['paper','紙'],['kraft','クラフト紙'],['washi','和紙'],['linen','リネン'],['canvas','キャンバス'],['wood','木目'],['stone','石・コンクリ'],['noise','ノイズ'],['dots','ドット'],['grid','方眼']], ()=>cre.texture, v=>cre.texture=v));
     const tsWrap=document.createElement('div'); tsWrap.className='cre-slider'; const tsIn=document.createElement('input'); tsIn.type='range'; tsIn.min='0.3'; tsIn.max='1.8'; tsIn.step='0.05'; tsIn.value=String(cre.textureStrength); const tsVal=document.createElement('span'); tsVal.className='cre-sval'; tsVal.textContent=Math.round(cre.textureStrength*100)+'%'; tsIn.addEventListener('input',()=>{ cre.textureStrength=parseFloat(tsIn.value); tsVal.textContent=Math.round(cre.textureStrength*100)+'%'; renderPreview(); }); tsWrap.appendChild(tsIn); tsWrap.appendChild(tsVal); panel.appendChild(field('質感の強さ', tsWrap));
+    panel.appendChild(field('商品画像のふち（枠線）', segBtns([['on','あり'],['off','なし']], ()=>cre.itemPhotoBorder===false?'off':'on', v=>cre.itemPhotoBorder=(v==='on'))));
     const rh=document.createElement('div'); rh.className='cre-h sub'; rh.textContent='お部屋・背景の画像'; panel.appendChild(rh);
     const rnote=document.createElement('p'); rnote.className='cre-note'; rnote.textContent='背景に敷いて、文字が読めるように自動でなじませます（うっすら透ける配置）。'; panel.appendChild(rnote);
     const rmBtn=document.createElement('button'); rmBtn.className='cre-btn ghost full'; rmBtn.textContent=cre.roomImage?'背景を変更':'背景画像を読み込む'; const rmFile=document.createElement('input'); rmFile.type='file'; rmFile.accept='image/*'; rmFile.style.display='none'; rmBtn.addEventListener('click',()=>rmFile.click()); rmFile.addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return; const img=new Image(); img.onload=()=>{ cre.roomImage=img; renderStep(); }; img.src=URL.createObjectURL(f); }); panel.appendChild(rmBtn); panel.appendChild(rmFile);
-    if(cre.roomImage){ const rrm=document.createElement('button'); rrm.className='cre-btn link small'; rrm.textContent='↩ 背景を外す'; rrm.addEventListener('click',()=>{ cre.roomImage=null; renderStep(); }); panel.appendChild(rrm); }
+    if(cre.roomImage){
+      const mkSlider=(label,mn,mx,st,get,set,fmt)=>{ const wrap=document.createElement('div'); wrap.className='cre-slider'; const inp=document.createElement('input'); inp.type='range'; inp.min=mn; inp.max=mx; inp.step=st; inp.value=String(get()); const val=document.createElement('span'); val.className='cre-sval'; val.textContent=fmt(get()); inp.addEventListener('input',()=>{ set(parseFloat(inp.value)); val.textContent=fmt(get()); renderPreview(); }); wrap.appendChild(inp); wrap.appendChild(val); return field(label,wrap); };
+      panel.appendChild(mkSlider('画像の大きさ',1,2.2,0.05,()=>cre.roomSize,v=>cre.roomSize=v,v=>Math.round(v*100)+'%'));
+      panel.appendChild(mkSlider('上下の位置',-1,1,0.05,()=>cre.roomPosY,v=>cre.roomPosY=v,v=>(v>0.02?'下':(v<-0.02?'上':'中央'))));
+      panel.appendChild(mkSlider('画像の濃さ（不透明度）',0.05,0.9,0.05,()=>cre.roomOpacity,v=>cre.roomOpacity=v,v=>Math.round(v*100)+'%'));
+      const rrm=document.createElement('button'); rrm.className='cre-btn link small'; rrm.textContent='↩ 背景を外す'; rrm.addEventListener('click',()=>{ cre.roomImage=null; cre.roomSize=1; cre.roomPosY=0; cre.roomOpacity=0.2; renderStep(); }); panel.appendChild(rrm);
+    }
     // 色
     const colRow=document.createElement('div'); colRow.className='cre-colrow';
     [['bg','背景'],['card','カード'],['ink','文字'],['sub','補助'],['accent','アクセント'],['accent2','サブ']].forEach(([key,lb])=>{ const w=document.createElement('label'); w.className='cre-colcell'; const ci=document.createElement('input'); ci.type='color'; ci.value=toHex(cre.pal[key]); ci.addEventListener('input',()=>{ cre.pal[key]=ci.value; renderPreview(); }); const s=document.createElement('span'); s.textContent=lb; w.appendChild(ci); w.appendChild(s); colRow.appendChild(w); });
@@ -18358,7 +18437,7 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
       const szWrap=document.createElement('div'); szWrap.className='cre-slider'; const szIn=document.createElement('input'); szIn.type='range'; szIn.min='0.14'; szIn.max='0.34'; szIn.step='0.01'; szIn.value=String(cre.photoSize); const szVal=document.createElement('span'); szVal.className='cre-sval'; szVal.textContent=Math.round(cre.photoSize*100)+'%'; szIn.addEventListener('input',()=>{ cre.photoSize=parseFloat(szIn.value); szVal.textContent=Math.round(cre.photoSize*100)+'%'; renderPreview(); }); szWrap.appendChild(szIn); szWrap.appendChild(szVal); panel.appendChild(field('大きさ', szWrap));
       const rm=document.createElement('button'); rm.className='cre-btn link small'; rm.textContent='↩ 戻す（画像を外す）'; rm.addEventListener('click',()=>{ cre.photo=null; cre.photoPos='br'; cre.photoSize=0.22; cre.photoShape='circle'; renderStep(); }); panel.appendChild(rm);
     }
-    const exp=document.createElement('button'); exp.className='cre-btn full big'; exp.textContent='⬇ PNGで書き出す'; exp.addEventListener('click',exportImage); panel.appendChild(exp);
+    const exp=document.createElement('button'); exp.className='cre-btn full big'; exp.textContent='⬇ 画像をダウンロード'; exp.addEventListener('click',exportImage); panel.appendChild(exp);
   }
 
   function toHex(col){ if(!col) return '#000000'; if(col[0]==='#'){ if(col.length===4) return '#'+col[1]+col[1]+col[2]+col[2]+col[3]+col[3]; return col.slice(0,7); } const m=col.match(/\d+/g); if(m){ return '#'+m.slice(0,3).map(n=>(+n).toString(16).padStart(2,'0')).join(''); } return '#000000'; }
@@ -18366,7 +18445,7 @@ if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
     const long=Math.max(cre.ratioW,cre.ratioH); const sc=Math.min(2.4, 2000/long);
     const W=Math.round(cre.ratioW*sc), H=Math.round(cre.ratioH*sc);
     const cv=document.createElement('canvas'); renderTo(cv,W,H);
-    cv.toBlob(b=>{ if(!b) return; const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=(cre.store||'メニュー表')+'.png'; document.body.appendChild(a); a.click(); a.remove(); if(typeof window.showToast==='function') window.showToast('メニュー表を書き出しました'); setTimeout(()=>URL.revokeObjectURL(a.href),4000); },'image/png');
+    cv.toBlob(b=>{ if(!b) return; const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=(cre.store||'メニュー表')+'.png'; document.body.appendChild(a); a.click(); a.remove(); if(typeof window.showToast==='function') window.showToast('画像をダウンロードしました'); setTimeout(()=>URL.revokeObjectURL(a.href),4000); },'image/png');
   }
   function init(){ if(!cre.pal){ applyCat('cafe'); } cre.step=0; renderStep(); }
   window.__creInit=init;

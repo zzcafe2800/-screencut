@@ -10903,28 +10903,17 @@ layerPanelToggle.addEventListener('click', () => {
   function buildAllEpi(){
     const coeffs=_rkCoeffs2d; if(!coeffs){ allEpi=[]; return; }
     if(sameSpeed && !dim3d){
-      // 同じ速さ＋「向きを変える」で直線や複雑な形を作る（画像の直進くん方式）。
-      // 重ねると合計の周波数が ±1ずつ動く。0を通って負方向にも行けるので、ただの楕円じゃなく
-      // 引かれた線そのものを再現できる。腕なし(amp0)の円は「向きを変えるための連結」。
-      const sig=coeffs.filter(c=>c.freq!==0 && c.amp>0.04).sort((a,b)=>b.amp-a.amp).slice(0,10);
-      if(!sig.length){ allEpi=[]; }
-      else {
-        let maxPos=0,maxNeg=0; sig.forEach(c=>{ if(c.freq>0)maxPos=Math.max(maxPos,c.freq); else maxNeg=Math.max(maxNeg,-c.freq); });
-        const cap=6; maxPos=Math.min(maxPos,cap); maxNeg=Math.min(maxNeg,cap);
-        const byFreq={}; coeffs.forEach(c=>{ byFreq[c.freq]=c; });
-        // ±1ウォーク：+1..+maxPos と上がって、+maxPos-1..-maxNeg と下がる（0を通過して負へ）
-        const seq=[];
-        if(maxPos>=1){ for(let k=1;k<=maxPos;k++) seq.push(k); if(maxNeg>=1){ for(let k=maxPos-1;k>=-maxNeg;k--) seq.push(k); } }
-        else if(maxNeg>=1){ for(let k=-1;k>=-maxNeg;k--) seq.push(k); }
-        const used={}; const arr=[];
-        seq.forEach(f=>{
-          const c=byFreq[f];
-          if(f!==0 && c && c.amp>0.04 && !used[f]){ used[f]=1; arr.push(c); }
-          else arr.push({re:0,im:0,freq:f,amp:0,phase:0, _link:true});   // 向き変え用の連結（腕0）
-        });
-        while(arr.length>1 && arr[arr.length-1].amp<1e-9) arr.pop();
-        allEpi=arr;
+      // 同じ速さ＝「直進くん」。基本の ±1 だけで 線/楕円/円 を作る（ボードの方法そのもの）。
+      // +1 と -1 を同じ速さ＆逆向きで重ねると、振幅が等しいとき直線になる。0を通る連結で-1へ。
+      // 複雑な形は「同じ速さ」では作れない（通常モードで各速さを使う）。
+      const c1=coeffs.find(c=>c.freq===1), cm1=coeffs.find(c=>c.freq===-1);
+      const arr=[];
+      if(c1 && c1.amp>0.04) arr.push(c1);
+      if(cm1 && cm1.amp>0.04){
+        if(arr.length) arr.push({re:0,im:0,freq:0,amp:0,phase:0, _link:true});   // 同じ速さで向きを反転するための連結
+        arr.push(cm1);
       }
+      allEpi=arr;
     } else {
       allEpi=coeffs.filter(c=>c.freq!==0).sort((a,b)=>b.amp-a.amp).filter(c=>c.amp>0.05).slice(0,50);
     }
@@ -10956,7 +10945,7 @@ layerPanelToggle.addEventListener('click', () => {
     const f1=Math.abs(epi[0]?epi[0].freq:1)||1;
     const note=document.createElement('div'); note.className='rk-side-note';
     note.innerHTML = sameSpeed
-      ? '🟰 <b>同じ速さモード（直進くん方式）</b><br>全部のスライダーを<b>一番左（🐢・最小）</b>にそろえ、<b>向きだけ表示どおり</b>に変えます。重ねると足し算で、楕円じゃなく<b>引かれた線や複雑な形</b>を再現できます。<br><span class="rk-spd-sub">「連結」は向きを変えるための“腕なし”の円。何周してもズレません</span>'
+      ? '🟰 <b>同じ速さモード＝直進くん</b><br>基本の <b>+1 と −1</b> を同じ速さ・逆向きで重ねるだけ（数個）。振幅が等しいと<b>まっすぐな線</b>、違うと楕円、片方だけなら円。<br><span class="rk-spd-sub">複雑な形は「通常モード」で（各速さを使います）</span>'
       : 'ある番号の速さを変えると、<b>下に並ぶ番号すべて</b>の回り方も変わります（足し算）。反対向きは打ち消し、同じ向きは加速。<br>各<b>モーター速度</b>を、🐢〜🐇のスライダー位置に合わせて設定してね。';
     sideEl.appendChild(note);
     const fmtRpm=(r)=> r>=10 ? r.toFixed(0) : (r>=1 ? r.toFixed(1) : r.toFixed(2));

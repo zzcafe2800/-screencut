@@ -3911,7 +3911,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
 /* rail (dark & clearly visible, like the reference) */
 .hh-rail{width:84px;flex-shrink:0;position:relative;display:flex;flex-direction:column;align-items:center;padding:16px 0 14px;gap:6px;background:linear-gradient(180deg,rgba(44,51,66,.93) 0%,rgba(35,42,55,.94) 100%);box-shadow:2px 0 14px rgba(20,30,45,.16);z-index:2;}
 .hh-spring{display:none;}
-.hh-cat{width:52px;height:52px;border-radius:16px;background:#fff;border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;color:#48526e;cursor:pointer;text-decoration:none;transition:transform .18s cubic-bezier(.34,1.56,.64,1);margin-bottom:6px;box-shadow:0 3px 10px rgba(0,0,0,.28);}
+.hh-cat{width:54px;height:54px;border-radius:14px;background:transparent;border:none;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;text-decoration:none;transition:transform .18s cubic-bezier(.34,1.56,.64,1);margin-bottom:6px;}
 .hh-cat:hover{transform:translateY(-2px) rotate(-4deg);color:#e0588f;}
 .hh-cat svg{width:33px;height:33px;}
 .hh-railsep{width:44px;height:2px;background:rgba(255,255,255,.14);border-radius:2px;margin:2px 0 6px;}
@@ -3950,7 +3950,13 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
 .hh-win-body{position:relative;min-height:130px;background-color:#fffdf7;display:flex;align-items:center;justify-content:center;padding:22px;}
 .hh-shot .hh-win-body{background-image:linear-gradient(rgba(150,170,205,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(150,170,205,.16) 1px,transparent 1px);background-size:20px 20px;}
 .hh-shot{aspect-ratio:5/2;min-height:132px;}
-.hh-shot-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
+.hh-hero2{position:relative;width:100%;aspect-ratio:21/9;min-height:230px;border-radius:18px;overflow:hidden;background:linear-gradient(140deg,color-mix(in srgb,var(--sec) 55%,#222),#20242e);border:2.5px solid #3a4252;box-shadow:0 8px 24px rgba(30,40,60,.18);}
+.hh-hero2-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
+.hh-hero2-scrim{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,18,26,.32) 0%,rgba(15,18,26,.06) 38%,rgba(15,18,26,.62) 100%),linear-gradient(90deg,rgba(15,18,26,.5) 0%,transparent 55%);}
+.hh-hero2-name{position:absolute;left:26px;top:20px;font-size:30px;font-weight:900;color:#fff;letter-spacing:.03em;text-shadow:0 2px 10px rgba(0,0,0,.55),0 1px 2px rgba(0,0,0,.6);}
+.hh-hero2-start{position:absolute;left:26px;bottom:20px;margin:0;padding:12px 34px;font-size:15px;border:none;box-shadow:0 6px 18px rgba(0,0,0,.45),0 2px 5px rgba(0,0,0,.35);}
+.hh-hero2-start:hover{box-shadow:0 9px 22px rgba(0,0,0,.5);}
+@media (max-width:680px){.hh-hero2{aspect-ratio:16/9;min-height:180px;}.hh-hero2-name{font-size:22px;left:16px;top:13px;}.hh-hero2-start{left:16px;bottom:14px;padding:10px 26px;}}
 .hh-shot-ph{font-weight:800;font-size:13px;color:#7b8398;background:#fff;padding:8px 18px;border-radius:999px;border:2px solid #cdd4e0;position:relative;z-index:2;}
 .hh-cursor{position:absolute;right:26%;bottom:24%;color:var(--sec);z-index:1;}
 .hh-cursor svg{width:27px;height:27px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15));}
@@ -4059,7 +4065,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
   const S=(p,ex)=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'+(ex||'')+'>'+p+'</svg>';
   const ICN={
     catface:'<path d="M5 3.4l3.3 3.6M19 3.4l-3.3 3.6"/><path d="M6.2 6.6C4.9 8.1 4.2 10.1 4.2 12.3c0 4.3 3.3 7.2 7.8 7.2s7.8-2.9 7.8-7.2c0-2.2-.7-4.2-2-5.7"/><circle cx="9.3" cy="12" r=".8" fill="currentColor" stroke="none"/><circle cx="14.7" cy="12" r=".8" fill="currentColor" stroke="none"/><path d="M12 13.5v1.1M10.5 15.4c.5.4 2.5.4 3 0"/><path d="M4.7 13.1l-2.2-.5M4.8 14.6l-2 .6M19.3 13.1l2.2-.5M19.2 14.6l2 .6"/>',
-    home:'<path fill="#fff" fill-rule="evenodd" d="M3.3 11.5L12 3.9L20.7 11.5L20.7 20.6L3.3 20.6Z M10.1 20.6L10.1 16.3A1.9 1.9 0 0 1 13.9 16.3L13.9 20.6Z"/>',
+    home:'<path fill="currentColor" stroke="none" fill-rule="evenodd" d="M12 3L2.8 10.6L4.6 10.6L4.6 21L10 21L10 15.2A2 2 0 0 1 14 15.2L14 21L19.4 21L19.4 10.6L21.2 10.6Z"/>',
     edit:'<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>',
     make:'<path d="M17 3a2.85 2.85 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/><path d="M13.5 6.5l4 4"/>',
     rotate:'<path d="M20.5 12a8.5 8.5 0 11-2.6-6.1"/><path d="M20.5 3.5v5h-5"/>',
@@ -4084,7 +4090,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     +'<path d="M38 46l-12-2M38 51l-12 3M82 46l12-2M82 51l12 3" stroke="#48526e" stroke-width="2.2" stroke-linecap="round"/>'
     +'</svg>';
 
-  document.getElementById('hhCat').innerHTML='<img src="icon1.png" alt="home" style="width:100%;height:100%;object-fit:cover;border-radius:13px;display:block;">';
+  document.getElementById('hhCat').innerHTML='<img src="icon1.png" alt="" style="width:100%;height:100%;object-fit:contain;display:block;">';
   document.getElementById('hhReturnIc').innerHTML=S(ICN.home,' stroke-width="1.9"');
   document.getElementById('hhSpring').innerHTML='<i></i>'.repeat(11);
 
@@ -4106,7 +4112,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
   const content=document.getElementById('hhContent'), title=document.getElementById('hhTitle');
 
   function win(sec,ttl,body,cls){ return '<div class="hh-win '+(cls||'')+'" style="--sec:'+sec+'"><div class="hh-win-bar"><span class="hh-dots"><i></i><i></i></span><span class="hh-wt">'+ttl+'</span><span class="hh-x">×</span></div><div class="hh-win-body">'+body+'</div></div>'; }
-  function shot(sec,act,img){ return '<div class="hh-win hh-shot" style="--sec:'+sec+'"><div class="hh-win-bar"><span class="hh-dots"><i></i><i></i></span><span class="hh-wt">preview</span><span class="hh-x">×</span></div><div class="hh-win-body">'+(img?'<img class="hh-shot-img" src="'+img+'" alt="">':'<span class="hh-shot-ph">イメージ画像は準備中</span><span class="hh-cursor">'+S(ICN.cursor,' stroke-width="0"')+'</span><span class="hh-resize">'+S(ICN.resize)+'</span>')+(act?'<button class="hh-start hh-start-corner" style="--sec:'+sec+'" data-act="'+act+'">はじめる</button>':'')+'</div></div>'; }
+  function shot(sec,act,img,name){ return '<div class="hh-hero2" style="--sec:'+sec+'">'+(img?'<img class="hh-hero2-img" src="'+img+'" alt="">':'')+'<div class="hh-hero2-scrim"></div><div class="hh-hero2-name">'+(name||'')+'</div>'+(act?'<button class="hh-start hh-hero2-start" style="--sec:'+sec+'" data-act="'+act+'">はじめる</button>':'')+'</div>'; }
   function pad(sec,ttl,body){ return '<div class="hh-pad" style="--sec:'+sec+'"><div class="hh-spiral"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><h3 class="hh-h">'+ttl+'</h3>'+body+'</div>'; }
   function sticky(ttl,body,st,tg){ return '<div class="hh-sticky" style="--st:'+(st||'#fff3d9')+';--sec:'+(tg||'#e0a24a')+'"><span class="hh-tape"></span><h3 class="hh-h">'+ttl+'</h3>'+body+'</div>'; }
   function news(items){ return '<ul class="hh-news">'+items.map(i=>'<li><span class="hh-tag" style="--tg:'+i[2]+'">'+i[0]+'</span>'+i[1]+'</li>').join('')+'</ul>'; }
@@ -4130,7 +4136,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       +'</div>';
     }
     if(id==='edit'){
-      return shot(C,'edit','pre1.png')
+      return shot(C,'edit','pre1.png','加工くん')
       +'<div class="hh-lead"><h2>加工くん</h2><p>読み込んだ画像・動画・GIFを、ゲームやアイテムの枠にぴったり合わせて仕上げるメインの画面です。アイテムのサイズに合わせた自動調節から、切り抜き・お部屋の色合わせまで、ここでまとめて行えます。</p></div>'
       +'<div class="hh-grid2">'
         +pad(C,'できること（ざっくり）',dolist(['アイテムの比率に自動でフィット（サイズ合わせ）','切り抜き・回転・反転・複数分割','お部屋の色に合わせる色補正','動画・GIFの読み込み／GIF書き出し']))
@@ -4138,7 +4144,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       +'</div>';
     }
     if(id==='make'){
-      return shot(C,'menu','pre2.png')
+      return shot(C,'menu','pre2.png','作るくん')
       +'<div class="hh-lead"><h2>作るくん</h2><p>テンプレートを選んで、画像をゼロから作るツールです。メニュー表・サムネイルなどを、色や書体を選ぶだけでサッと作れます。いまは3種類、これから少しずつ増やしていきます。</p></div>'
       +'<div class="hh-tools">'
         +'<button class="hh-tool" style="--c:#e0588f" data-act="menu"><span class="hh-tool-ic">'+S(ICN.menu)+'</span><div><div class="hh-tool-name">メニュー画像</div><div class="hh-muted" style="font-size:12px">クリエくん：カフェ・お品書き風のメニュー表を、色・書体・アイコンを選んで作成</div></div><span class="hh-tool-go">ひらく</span></button>'
@@ -4148,7 +4154,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       +sticky('お知らせ', news([['NEW','メニュー画像にデザイン追加（全20種＋グループ表示）','#e0588f']]),'#ffe6f0','#e0588f');
     }
     if(id==='rotate'){
-      return shot(C,'rotate','pre3.png')
+      return shot(C,'rotate','pre3.png','回転くん')
       +'<div class="hh-lead"><h2>回転くん</h2><p>同じ向き・同じ速さで回るパーツを積み重ねて作るときの、組み立てガイドです。パーツの形をなぞって、どう重ねればいいかの手順を確認できます。サイトにあるあの画面が開きます。</p></div>'
       +'<div class="hh-grid2">'
         +pad(C,'できること（ざっくり）',dolist(['回転パーツの形をなぞって確認','同じ速さでの重ね方をチェック','積み重ねの組み立て手順を表示']))

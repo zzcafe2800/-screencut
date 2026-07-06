@@ -375,6 +375,19 @@ main {
   grid-template-rows: auto 1fr auto auto;
   overflow: hidden;
   min-width: 0;
+  position: relative;
+  isolation: isolate;
+}
+main::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: linear-gradient(rgba(100,140,190,.17) 1px, transparent 1px), linear-gradient(90deg, rgba(100,140,190,.17) 1px, transparent 1px);
+  background-size: 27px 27px;
+  -webkit-mask-image: radial-gradient(140% 118% at 100% 0%, #000 0%, transparent 66%);
+  mask-image: radial-gradient(140% 118% at 100% 0%, #000 0%, transparent 66%);
 }
 
 header.info {
@@ -2426,6 +2439,10 @@ footer.controls {
 .split-reset:hover { color: var(--accent); border-color: var(--accent); }
 
 /* パターン切替トグル: 分割=青、パターン=オレンジ */
+.hub-home-btn{background:#4b5568;border:1px solid #3a4252;border-radius:9px;width:34px;height:34px;padding:0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;transition:all .15s;flex-shrink:0;margin-right:7px;}
+.hub-home-btn:hover{background:#5a6579;transform:translateY(-1px);}
+.hub-home-btn svg{width:18px;height:18px;}
+body.thumb-mode .hub-home-btn{display:none;}
 .pattern-toggle {
   background: rgba(91,156,184,0.10);
   border: 1px solid var(--accent);
@@ -2460,7 +2477,7 @@ footer.controls {
 .pattern-toggle[aria-pressed="true"] .pt-label::before { padding-bottom: 0; }
 
 /* ===== 別機能ランチャー (分割の左, 扇状に展開) ===== */
-.sl-launcher-wrap { position: relative; display: inline-flex; align-items: center; margin-right: 4px; }
+.sl-launcher-wrap { position: relative; display: none; align-items: center; margin-right: 4px; }
 .sl-launcher { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid var(--accent); background: #fff; color: var(--accent); border-radius: 9px; cursor: pointer; transition: background .15s, transform .15s; }
 .sl-launcher:hover { background: rgba(91,156,184,.12); }
 .sl-launcher[aria-expanded="true"] { background: var(--accent); color: #fff; transform: scale(1.05); }
@@ -3886,6 +3903,286 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
 </style>
 </head>
 <body>
+<!-- ============ ホーム（ランチャー）============ -->
+<style>
+#homeHub{--ln:#c3cad9;--ink:#3a4256;--mut:#98a2b4;--paper:#fffdf8;position:fixed;inset:0;z-index:3000;display:flex;font-family:'Hiragino Maru Gothic ProN','Zen Maru Gothic','Quicksand',system-ui,sans-serif;color:var(--ink);background-color:#faf9f3;background-image:linear-gradient(rgba(150,170,205,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(150,170,205,.10) 1px,transparent 1px);background-size:26px 26px;-webkit-font-smoothing:antialiased;}
+#homeHub[hidden]{display:none;}
+#homeHub *{box-sizing:border-box;}
+/* rail (dark & clearly visible, like the reference) */
+.hh-rail{width:84px;flex-shrink:0;position:relative;display:flex;flex-direction:column;align-items:center;padding:16px 0 14px;gap:6px;background:linear-gradient(180deg,rgba(44,51,66,.93) 0%,rgba(35,42,55,.94) 100%);box-shadow:2px 0 14px rgba(20,30,45,.16);z-index:2;}
+.hh-spring{display:none;}
+.hh-cat{width:52px;height:52px;border-radius:16px;background:#fff;border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;color:#48526e;cursor:pointer;text-decoration:none;transition:transform .18s cubic-bezier(.34,1.56,.64,1);margin-bottom:6px;box-shadow:0 3px 10px rgba(0,0,0,.28);}
+.hh-cat:hover{transform:translateY(-2px) rotate(-4deg);color:#e0588f;}
+.hh-cat svg{width:33px;height:33px;}
+.hh-railsep{width:44px;height:2px;background:rgba(255,255,255,.14);border-radius:2px;margin:2px 0 6px;}
+.hh-nav{display:flex;flex-direction:column;gap:5px;width:100%;align-items:center;}
+.hh-tab{position:relative;width:66px;height:60px;border:none;background:transparent;border-radius:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#9098ac;cursor:pointer;transition:color .16s,background .16s,transform .16s;}
+.hh-tab svg{width:25px;height:25px;color:var(--c);transition:transform .18s cubic-bezier(.34,1.56,.64,1),color .16s;}
+.hh-tab .hh-tl{font-size:10px;font-weight:800;}
+.hh-tab:hover{color:#ccd3e0;background:rgba(255,255,255,.07);transform:translateY(-1px);}
+.hh-tab:hover svg{transform:scale(1.12) rotate(-3deg);}
+.hh-tab.on{color:#fff;background:color-mix(in srgb,var(--c) 30%,transparent);}
+.hh-tab.on::before{content:"";position:absolute;left:-1px;top:50%;transform:translateY(-50%);width:4px;height:28px;border-radius:0 4px 4px 0;background:var(--c);}
+.hh-tab.on::after{content:"";position:absolute;left:14px;right:14px;bottom:7px;height:3.5px;border-radius:4px;background:var(--c);}
+.hh-tab.on svg{transform:scale(1.05);color:var(--c);}
+.hh-tabsep{width:40px;height:2px;background:rgba(255,255,255,.20);border-radius:2px;margin:5px 0;}
+.hh-railsp{flex:1;}
+.hh-ver{font-size:9.5px;color:#6b7488;font-weight:800;transform:rotate(-6deg);}
+/* main */
+.hh-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.hh-top{display:flex;align-items:center;justify-content:space-between;padding:20px 30px 8px;gap:14px;}
+.hh-title{font-size:27px;font-weight:800;margin:0;color:#38414f;position:relative;display:inline-block;letter-spacing:.02em;}
+.hh-title::after{content:"";position:absolute;left:-2px;right:-4px;bottom:2px;height:9px;background:var(--tc,#8ab0d6);opacity:.32;border-radius:6px;z-index:-1;}
+.hh-acct{display:inline-flex;align-items:center;gap:8px;background:#fff;padding:5px 15px 5px 6px;text-decoration:none;color:#48526a;font-weight:800;font-size:12.5px;border:2px solid #dde2ec;border-radius:999px;transition:transform .16s,box-shadow .16s;box-shadow:0 2px 7px rgba(70,110,150,.06);}
+.hh-acct:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(70,110,150,.13);}
+.hh-acct-av{width:27px;height:27px;border-radius:50%;background:#ffe3ef;display:flex;align-items:center;justify-content:center;color:#e0588f;border:2px solid #48526e;}
+.hh-acct-av svg{width:16px;height:16px;}
+.hh-content{flex:1;overflow-y:auto;padding:14px 30px 44px;}
+.hh-inner{max-width:1060px;margin:0 auto;display:flex;flex-direction:column;gap:20px;}
+.hh-grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+/* window card */
+.hh-win{background:var(--paper);border:2.5px solid #48526e;border-radius:18px;overflow:hidden;position:relative;box-shadow:0 5px 18px rgba(70,100,140,.10);}
+.hh-win-bar{display:flex;align-items:center;gap:8px;padding:9px 15px;background:var(--sec);border-bottom:2.5px solid #48526e;}
+.hh-win-bar .hh-dots{display:flex;gap:5px;}
+.hh-win-bar .hh-dots i{width:9px;height:9px;border-radius:50%;background:rgba(255,255,255,.7);}
+.hh-win-bar .hh-wt{font-weight:800;font-size:12.5px;color:#fff;flex:1;}
+.hh-win-bar .hh-x{color:#fff;font-weight:900;font-size:16px;line-height:1;}
+.hh-win-body{position:relative;min-height:130px;background-color:#fffdf7;display:flex;align-items:center;justify-content:center;padding:22px;}
+.hh-shot .hh-win-body{background-image:linear-gradient(rgba(150,170,205,.16) 1px,transparent 1px),linear-gradient(90deg,rgba(150,170,205,.16) 1px,transparent 1px);background-size:20px 20px;}
+.hh-shot{aspect-ratio:5/2;min-height:132px;}
+.hh-shot-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
+.hh-shot-ph{font-weight:800;font-size:13px;color:#7b8398;background:#fff;padding:8px 18px;border-radius:999px;border:2px solid #cdd4e0;position:relative;z-index:2;}
+.hh-cursor{position:absolute;right:26%;bottom:24%;color:var(--sec);z-index:1;}
+.hh-cursor svg{width:27px;height:27px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.15));}
+.hh-resize{position:absolute;right:9px;bottom:7px;color:#aab2c2;}
+.hh-resize svg{width:16px;height:16px;}
+/* notepad */
+.hh-pad{background:var(--paper);padding:26px 20px 18px;position:relative;border:2.5px solid #48526e;border-radius:6px 6px 18px 18px;background-color:#fffdf7;box-shadow:0 5px 16px rgba(70,100,140,.08);}
+.hh-spiral{position:absolute;top:-8px;left:16px;right:16px;height:13px;display:flex;justify-content:space-between;z-index:2;}
+.hh-spiral i{width:9px;height:13px;border:2px solid #48526e;border-radius:9px;background:#fbf9f1;}
+/* sticky note */
+.hh-sticky{background:var(--st,#fff3d9);padding:20px 18px 16px;position:relative;border-radius:4px;transform:rotate(-1.4deg);box-shadow:0 5px 14px rgba(120,110,60,.14);border:1.5px solid rgba(0,0,0,.04);}
+.hh-tape{position:absolute;top:-11px;left:50%;transform:translateX(-50%) rotate(-4deg);width:72px;height:22px;background:repeating-linear-gradient(45deg,rgba(150,152,234,.55),rgba(150,152,234,.55) 5px,rgba(150,152,234,.33) 5px,rgba(150,152,234,.33) 10px);border:1.5px solid rgba(120,122,210,.5);}
+/* headings */
+.hh-h{font-size:14.5px;font-weight:800;margin:0 0 12px;color:#3f475c;position:relative;display:inline-block;}
+.hh-h::after{content:"";position:absolute;left:-2px;right:-3px;bottom:0;height:7px;background:var(--sec,#8ab0d6);opacity:.34;border-radius:5px;z-index:-1;}
+.hh-news{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px;}
+.hh-news li{font-size:12.5px;color:#525a70;line-height:1.5;display:flex;gap:9px;align-items:flex-start;}
+.hh-tag{flex-shrink:0;font-size:9.5px;font-weight:900;color:#fff;padding:2px 9px;border-radius:7px;background:var(--tg,#8ab0d6);margin-top:1px;}
+.hh-do{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;}
+.hh-do li{font-size:12.5px;color:#525a70;padding-left:23px;position:relative;line-height:1.5;}
+.hh-do li::before{content:"✓";position:absolute;left:2px;top:-1px;color:var(--sec,#5b9cb8);font-weight:900;}
+.hh-credit{margin:0 0 7px;font-size:12.5px;color:#525a70;}
+.hh-credit b{color:#3f475c;}
+.hh-muted{color:#9aa2b2;}
+/* home hero + cat */
+.hh-hero .hh-win-body{min-height:190px;display:block;padding:26px 26px 22px;}
+.hh-cat-illust{position:absolute;right:22px;top:-6px;z-index:3;transform:rotate(6deg);}
+.hh-cat-illust svg{width:118px;height:118px;filter:drop-shadow(0 3px 5px rgba(80,90,120,.15));}
+.hh-bubbles{display:flex;flex-direction:column;gap:9px;align-items:flex-start;margin-bottom:14px;}
+.hh-bubble{display:inline-block;background:#fff;padding:8px 20px;font-weight:800;font-size:16px;color:#3f475c;border:2.5px solid #48526e;border-radius:999px;}
+.hh-bubble.sm{font-size:12px;font-weight:700;padding:5px 15px;color:#5a6278;border-width:2px;}
+.hh-bubble b{color:#e0588f;}
+.hh-welcome{font-size:13px;color:#5a6278;line-height:1.7;max-width:640px;}
+.hh-pin{position:absolute;color:#e0588f;z-index:3;}
+.hh-pin svg{width:22px;height:22px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.12));}
+.hh-spark{position:absolute;color:#c9b6f0;}
+.hh-spark svg{width:21px;height:21px;}
+/* lead */
+.hh-lead h2{font-size:20px;font-weight:800;margin:0 0 6px;color:#38414f;}
+.hh-lead p{margin:0;color:#5a6278;font-size:13px;line-height:1.7;max-width:740px;}
+/* start button */
+.hh-start{align-self:flex-start;margin-top:2px;border:2.5px solid #48526e;cursor:pointer;background:var(--sec);color:#fff;font-weight:800;font-size:15px;padding:13px 30px;border-radius:16px;transition:transform .16s,box-shadow .16s;text-shadow:0 1px 1px rgba(0,0,0,.12);box-shadow:0 5px 14px color-mix(in srgb,var(--sec) 40%,transparent);}
+.hh-start:hover{transform:translateY(-2px) rotate(-1deg);box-shadow:0 8px 18px color-mix(in srgb,var(--sec) 48%,transparent);}
+.hh-start:active{transform:translateY(0);}
+.hh-start-corner{position:absolute;left:14px;bottom:12px;margin:0;padding:9px 24px;font-size:14px;z-index:3;}
+/* tools */
+.hh-tools{display:flex;flex-direction:column;gap:14px;}
+.hh-tool{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:var(--paper);padding:14px 16px;cursor:pointer;border:2.5px solid #48526e;border-radius:16px;transition:transform .16s,box-shadow .16s;box-shadow:0 4px 12px rgba(70,100,140,.07);}
+.hh-tool:hover{transform:translateY(-2px) rotate(-.4deg);box-shadow:0 9px 20px rgba(70,100,140,.14);}
+.hh-tool-ic{width:48px;height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;background:var(--c);border:2.5px solid #48526e;border-radius:14px;}
+.hh-tool-ic svg{width:26px;height:26px;}
+.hh-tool>div{flex:1;min-width:0;}
+.hh-tool-name{font-weight:800;font-size:14.5px;color:#38414f;margin-bottom:2px;}
+.hh-tool-go{flex-shrink:0;font-size:12px;font-weight:800;color:#fff;background:var(--c);padding:6px 15px;border:2px solid #48526e;border-radius:999px;}
+.hh-tool.is-wip{opacity:.55;cursor:default;}
+.hh-tool.is-wip:hover{transform:none;box-shadow:0 4px 12px rgba(70,100,140,.07);}
+.hh-tool.is-wip .hh-tool-ic,.hh-tool.is-wip .hh-tool-go{background:#aeb4c2;}
+.hh-btn{border:2px solid #48526e;cursor:pointer;font-weight:800;font-size:12px;padding:7px 15px;text-decoration:none;display:inline-flex;color:#48526a;background:#fff;border-radius:999px;transition:transform .16s;}
+.hh-btn:hover{transform:translateY(-1px);}
+.hh-acc-row{display:flex;align-items:center;gap:13px;}
+.hh-acc-av2{width:44px;height:44px;flex-shrink:0;border-radius:50%;background:#ffe3ef;display:flex;align-items:center;justify-content:center;color:#e0588f;border:2.5px solid #48526e;}
+.hh-acc-av2 svg{width:25px;height:25px;}
+.hh-acc-name{font-weight:800;font-size:14px;color:#38414f;}
+/* floating return */
+#homeReturn{position:fixed;left:14px;top:14px;z-index:8500;display:none;width:48px;height:48px;background:#fff;color:#48526e;cursor:pointer;border:2.5px solid #48526e;align-items:center;justify-content:center;border-radius:15px;transition:transform .18s cubic-bezier(.34,1.56,.64,1);box-shadow:0 4px 14px rgba(70,90,120,.2);}
+#homeReturn:hover{transform:scale(1.08) rotate(-4deg);color:#e0588f;border-color:#e0588f;}
+#homeReturn svg{width:25px;height:25px;}
+#homeReturn .hh-rl{position:absolute;bottom:-15px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;color:#5b9cb8;white-space:nowrap;background:#fff;padding:1px 7px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,.1);}
+@media (max-width:680px){
+  .hh-rail{width:66px;}
+  .hh-tab{width:54px;height:56px;}
+  .hh-tab .hh-tl{font-size:9px;}
+  .hh-cat{width:46px;height:46px;}
+  .hh-top{padding:14px 15px 4px;}
+  .hh-title{font-size:22px;}
+  .hh-content{padding:12px 15px 36px;}
+  .hh-grid2{grid-template-columns:1fr;}
+  .hh-welcome{max-width:100%;}
+  .hh-cat-illust svg{width:90px;height:90px;}
+  .hh-acct-txt{display:none;}.hh-acct{padding:5px;}
+}
+</style>
+
+<div id="homeHub">
+  <div class="hh-rail">
+    <div class="hh-spring" id="hhSpring"></div>
+    <a class="hh-cat" href="https://x.com/zzcafe_280" target="_blank" rel="noopener" title="作者のXへ (@zzcafe_280)" id="hhCat"></a>
+    <div class="hh-railsep"></div>
+    <div class="hh-nav" id="hhNav"></div>
+    <div class="hh-railsp"></div>
+    <div class="hh-ver">zz</div>
+  </div>
+  <div class="hh-main">
+    <div class="hh-top">
+      <h1 class="hh-title" id="hhTitle">ホーム</h1>
+    </div>
+    <div class="hh-content"><div class="hh-inner" id="hhContent"></div></div>
+  </div>
+</div>
+<button id="homeReturn" title="ホームへ戻る"><span id="hhReturnIc"></span><span class="hh-rl">ホーム</span></button>
+
+<script>
+(function(){
+  'use strict';
+  const hub=document.getElementById('homeHub'); if(!hub) return;
+  const S=(p,ex)=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"'+(ex||'')+'>'+p+'</svg>';
+  const ICN={
+    catface:'<path d="M5 3.4l3.3 3.6M19 3.4l-3.3 3.6"/><path d="M6.2 6.6C4.9 8.1 4.2 10.1 4.2 12.3c0 4.3 3.3 7.2 7.8 7.2s7.8-2.9 7.8-7.2c0-2.2-.7-4.2-2-5.7"/><circle cx="9.3" cy="12" r=".8" fill="currentColor" stroke="none"/><circle cx="14.7" cy="12" r=".8" fill="currentColor" stroke="none"/><path d="M12 13.5v1.1M10.5 15.4c.5.4 2.5.4 3 0"/><path d="M4.7 13.1l-2.2-.5M4.8 14.6l-2 .6M19.3 13.1l2.2-.5M19.2 14.6l2 .6"/>',
+    home:'<path fill="#fff" fill-rule="evenodd" d="M3.3 11.5L12 3.9L20.7 11.5L20.7 20.6L3.3 20.6Z M10.1 20.6L10.1 16.3A1.9 1.9 0 0 1 13.9 16.3L13.9 20.6Z"/>',
+    edit:'<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>',
+    make:'<path d="M17 3a2.85 2.85 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/><path d="M13.5 6.5l4 4"/>',
+    rotate:'<path d="M20.5 12a8.5 8.5 0 11-2.6-6.1"/><path d="M20.5 3.5v5h-5"/>',
+    menu:'<path d="M6 3v7.5a2 2 0 004 0V3M8 10.5V21"/><path d="M16.5 3c-1.6 0-2.3 2.2-2.3 4.3s.7 4.2 2.3 4.2V21"/>',
+    thumb:'<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="8.8" cy="10" r="1.7"/><path d="M4 17.5l4.6-3.8 3.4 2.6 3-2 5 3.6"/>',
+    room:'<path d="M4 11l8-6 8 6"/><path d="M6 10v9h12v-9"/><path d="M10 19v-5h4v5"/>',
+    user:'<circle cx="12" cy="8" r="3.6"/><path d="M5 20c0-3.6 3.1-5.6 7-5.6s7 2 7 5.6"/>',
+    cursor:'<path d="M5 3l14 8-6 1.6 3.4 6.4-3 1.5-3.4-6.5L5 20z" fill="currentColor" stroke="#48526e" stroke-width="1"/>',
+    resize:'<path d="M6 18L18 6M13 6h5v5M6 13v5h5"/>',
+    pin:'<path d="M9 12h6l-1-2V4h-4v6z" fill="currentColor" stroke="#48526e" stroke-width="1"/><path d="M12 15v6" stroke="#48526e" stroke-width="1.6" fill="none"/>',
+    spark:'<path d="M12 2l1.6 7.4L21 12l-7.4 1.6L12 21l-1.6-7.4L3 12l7.4-1.6z" fill="currentColor" stroke="none"/>'
+  };
+  const CAT='<svg viewBox="0 0 120 120" fill="none">'
+    +'<path d="M92 96c14-2 20-16 15-30-3-9-13-9-16-2" stroke="#48526e" stroke-width="3.4" stroke-linecap="round" fill="#fff"/>'
+    +'<path d="M34 100c-10-6-14-40 2-58 12-13 32-13 44 2 14 18 8 50-2 56z" fill="#fff" stroke="#48526e" stroke-width="3.4" stroke-linejoin="round"/>'
+    +'<path d="M50 52c9-5 20-2 24 6 4 14-1 30-8 36-9 3-20-2-24-10-4-13 0-27 8-32z" fill="#d7dbe6"/>'
+    +'<ellipse cx="60" cy="45" rx="24" ry="20" fill="#fff" stroke="#48526e" stroke-width="3.4"/>'
+    +'<path d="M42 32l-5-16 17 8z" fill="#fff" stroke="#48526e" stroke-width="3.4" stroke-linejoin="round"/>'
+    +'<path d="M78 32l5-16-17 8z" fill="#d7dbe6" stroke="#48526e" stroke-width="3.4" stroke-linejoin="round"/>'
+    +'<circle cx="51" cy="45" r="3" fill="#48526e"/><circle cx="69" cy="45" r="3" fill="#48526e"/>'
+    +'<path d="M60 50v3M55 55c3 2.5 7 2.5 10 0" stroke="#48526e" stroke-width="2.6" stroke-linecap="round"/>'
+    +'<path d="M38 46l-12-2M38 51l-12 3M82 46l12-2M82 51l12 3" stroke="#48526e" stroke-width="2.2" stroke-linecap="round"/>'
+    +'</svg>';
+
+  document.getElementById('hhCat').innerHTML='<img src="icon1.png" alt="home" style="width:100%;height:100%;object-fit:cover;border-radius:13px;display:block;">';
+  document.getElementById('hhReturnIc').innerHTML=S(ICN.home,' stroke-width="1.9"');
+  document.getElementById('hhSpring').innerHTML='<i></i>'.repeat(11);
+
+  const SECTIONS=[
+    {id:'home',label:'ホーム',color:'#e2e7ef',icon:ICN.home},
+    {id:'edit',label:'加工くん',color:'#5b9cb8',icon:ICN.edit},
+    {id:'make',label:'作るくん',color:'#e0588f',icon:ICN.make},
+    {id:'rotate',label:'回転くん',color:'#a78bfa',icon:ICN.rotate},
+  ];
+  const nav=document.getElementById('hhNav');
+  SECTIONS.forEach(s=>{
+    const b=document.createElement('button'); b.className='hh-tab'+(s.id==='home'?' hh-tab-home':''); b.dataset.sec=s.id; b.style.setProperty('--c',s.color);
+    b.innerHTML=S(s.icon)+(s.id==='home'?'':'<span class="hh-tl">'+s.label+'</span>');
+    b.title=s.label;
+    b.addEventListener('click',()=>select(s.id));
+    nav.appendChild(b);
+    if(s.id==='home'){ const sp=document.createElement('div'); sp.className='hh-tabsep'; nav.appendChild(sp); }
+  });
+  const content=document.getElementById('hhContent'), title=document.getElementById('hhTitle');
+
+  function win(sec,ttl,body,cls){ return '<div class="hh-win '+(cls||'')+'" style="--sec:'+sec+'"><div class="hh-win-bar"><span class="hh-dots"><i></i><i></i></span><span class="hh-wt">'+ttl+'</span><span class="hh-x">×</span></div><div class="hh-win-body">'+body+'</div></div>'; }
+  function shot(sec,act,img){ return '<div class="hh-win hh-shot" style="--sec:'+sec+'"><div class="hh-win-bar"><span class="hh-dots"><i></i><i></i></span><span class="hh-wt">preview</span><span class="hh-x">×</span></div><div class="hh-win-body">'+(img?'<img class="hh-shot-img" src="'+img+'" alt="">':'<span class="hh-shot-ph">イメージ画像は準備中</span><span class="hh-cursor">'+S(ICN.cursor,' stroke-width="0"')+'</span><span class="hh-resize">'+S(ICN.resize)+'</span>')+(act?'<button class="hh-start hh-start-corner" style="--sec:'+sec+'" data-act="'+act+'">はじめる</button>':'')+'</div></div>'; }
+  function pad(sec,ttl,body){ return '<div class="hh-pad" style="--sec:'+sec+'"><div class="hh-spiral"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><h3 class="hh-h">'+ttl+'</h3>'+body+'</div>'; }
+  function sticky(ttl,body,st,tg){ return '<div class="hh-sticky" style="--st:'+(st||'#fff3d9')+';--sec:'+(tg||'#e0a24a')+'"><span class="hh-tape"></span><h3 class="hh-h">'+ttl+'</h3>'+body+'</div>'; }
+  function news(items){ return '<ul class="hh-news">'+items.map(i=>'<li><span class="hh-tag" style="--tg:'+i[2]+'">'+i[0]+'</span>'+i[1]+'</li>').join('')+'</ul>'; }
+  function dolist(items){ return '<ul class="hh-do">'+items.map(t=>'<li>'+t+'</li>').join('')+'</ul>'; }
+
+  function render(id){
+    const sec=SECTIONS.find(s=>s.id===id), C=sec.color;
+    if(id==='home'){
+      return ''
+      +'<div class="hh-win hh-hero" style="--sec:#7d8798">'
+        +'<div class="hh-win-bar"><span class="hh-dots"><i></i><i></i></span><span class="hh-wt">welcome</span><span class="hh-x">×</span></div>'
+        +'<div class="hh-win-body">'
+          +'<span class="hh-spark" style="left:-4px;bottom:20px">'+S(ICN.spark,' stroke-width="0"')+'</span>'
+          +'<div class="hh-bubbles"><div class="hh-bubble">便利くん<b> zz</b></div><div class="hh-bubble sm">配信・コミュニティの画像づくり道具箱</div></div>'
+          +'<p class="hh-welcome">左のアイコンからツールを選べます。ノートに貼るみたいに、気軽に作ってみてね。</p>'
+        +'</div>'
+      +'</div>'
+      +'<div class="hh-grid2">'
+        +sticky('お知らせ', news([['NEW','メニュー画像に新デザイン（写真カード/マガジン/黒板ほか全20種）','#e0588f'],['UP','サムネくん・回転くん 稼働中','#5b9cb8'],['INFO','要望や不具合は X（@zzcafe_280）へ','#9aa2b2']]), '#fff3d9','#e0a24a')
+        +pad('#7d8798','クレジット・協力','<p class="hh-credit">制作・イラスト： <b>ゆめ</b>（@zzcafe_280）</p><p class="hh-credit">協力： コミュニティのみなさん</p><p class="hh-credit hh-muted">© zzcafe ・ 非公式のファンツールです</p>')
+      +'</div>';
+    }
+    if(id==='edit'){
+      return shot(C,'edit','pre1.png')
+      +'<div class="hh-lead"><h2>加工くん</h2><p>読み込んだ画像・動画・GIFを、ゲームやアイテムの枠にぴったり合わせて仕上げるメインの画面です。アイテムのサイズに合わせた自動調節から、切り抜き・お部屋の色合わせまで、ここでまとめて行えます。</p></div>'
+      +'<div class="hh-grid2">'
+        +pad(C,'できること（ざっくり）',dolist(['アイテムの比率に自動でフィット（サイズ合わせ）','切り抜き・回転・反転・複数分割','お部屋の色に合わせる色補正','動画・GIFの読み込み／GIF書き出し']))
+        +sticky('お知らせ', news([['TIP','まずは画像を1枚読み込んでみて','#5b9cb8']]),'#dff0f6','#5b9cb8')
+      +'</div>';
+    }
+    if(id==='make'){
+      return shot(C,'menu','pre2.png')
+      +'<div class="hh-lead"><h2>作るくん</h2><p>テンプレートを選んで、画像をゼロから作るツールです。メニュー表・サムネイルなどを、色や書体を選ぶだけでサッと作れます。いまは3種類、これから少しずつ増やしていきます。</p></div>'
+      +'<div class="hh-tools">'
+        +'<button class="hh-tool" style="--c:#e0588f" data-act="menu"><span class="hh-tool-ic">'+S(ICN.menu)+'</span><div><div class="hh-tool-name">メニュー画像</div><div class="hh-muted" style="font-size:12px">クリエくん：カフェ・お品書き風のメニュー表を、色・書体・アイコンを選んで作成</div></div><span class="hh-tool-go">ひらく</span></button>'
+        +'<button class="hh-tool" style="--c:#5b9cb8" data-act="thumb"><span class="hh-tool-ic">'+S(ICN.thumb)+'</span><div><div class="hh-tool-name">サムネ画像</div><div class="hh-muted" style="font-size:12px">サムネくん：配信・紹介用の16:9サムネイル（部屋サムネ）を作成</div></div><span class="hh-tool-go">ひらく</span></button>'
+        +'<button class="hh-tool is-wip" style="--c:#9aa6b2" disabled><span class="hh-tool-ic">'+S(ICN.room)+'</span><div><div class="hh-tool-name">ルーム紹介画像</div><div class="hh-muted" style="font-size:12px">準備中</div></div><span class="hh-tool-go">準備中</span></button>'
+      +'</div>'
+      +sticky('お知らせ', news([['NEW','メニュー画像にデザイン追加（全20種＋グループ表示）','#e0588f']]),'#ffe6f0','#e0588f');
+    }
+    if(id==='rotate'){
+      return shot(C,'rotate','pre3.png')
+      +'<div class="hh-lead"><h2>回転くん</h2><p>同じ向き・同じ速さで回るパーツを積み重ねて作るときの、組み立てガイドです。パーツの形をなぞって、どう重ねればいいかの手順を確認できます。サイトにあるあの画面が開きます。</p></div>'
+      +'<div class="hh-grid2">'
+        +pad(C,'できること（ざっくり）',dolist(['回転パーツの形をなぞって確認','同じ速さでの重ね方をチェック','積み重ねの組み立て手順を表示']))
+        +sticky('お知らせ', news([['INFO','同じ速さモードを調整中','#a78bfa']]),'#efe8fb','#a78bfa')
+      +'</div>';
+    }
+    return '';
+  }
+
+  function bindActions(){
+    content.querySelectorAll('[data-act]').forEach(el=>{ if(el.disabled) return;
+      el.addEventListener('click',()=>{ const a=el.dataset.act;
+        if(a==='edit'){ hideHome(); return; }
+        if(a==='menu'){ const b=document.getElementById('slCreate'); if(b) b.click(); return; }
+        if(a==='thumb'){ const b=document.getElementById('slThumb'); if(b) b.click(); return; }
+        if(a==='rotate'){ const b=document.getElementById('slRotate'); if(b) b.click(); return; }
+      });
+    });
+  }
+  function select(id){
+    const sec=SECTIONS.find(s=>s.id===id);
+    document.querySelectorAll('#hhNav .hh-tab').forEach(t=>t.classList.toggle('on',t.dataset.sec===id));
+    title.textContent=sec.label; title.style.setProperty('--tc',sec.color);
+    content.innerHTML=render(id); bindActions(); content.parentElement.scrollTop=0;
+  }
+  function hideHome(){ hub.hidden=true; }
+  function showHome(){ hub.hidden=false; }
+  window.__hideHome=hideHome; window.__showHome=showHome;
+  const ret=document.getElementById('homeReturn'); if(ret) ret.addEventListener('click',showHome);
+  select('home');
+})();
+</script>
+<!-- ============ /ホーム ============ -->
+
 <!-- 初期ローディング画面 -->
 <div id="initLoader" class="init-loader">
   <div class="init-loader-inner">
@@ -4743,6 +5040,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
           </button>
         </div>
       </div>
+      <button class="hub-home-btn" id="homeToHub" type="button" title="ホームに戻る" onclick="window.__showHome&&window.__showHome()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v9a1 1 0 001 1h12a1 1 0 001-1v-9"/><path d="M9 20v-6h6v6"/></svg></button>
       <button class="pattern-toggle" id="patternToggle" type="button" title="分割 / パターン切替" aria-pressed="false">
         <svg class="ic-split" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="3" width="18" height="18" rx="1.5"/>

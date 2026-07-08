@@ -4176,11 +4176,11 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     }
     if(id==='make'){
       return shot(C,'pick','pre2.png','作るくん')
-      +'<div class="hh-lead"><h2>作るくん</h2><p>テンプレートを選んで、画像をゼロから作るツールです。色や書体を選ぶだけでサッと作れます。いまは3種類、これから少しずつ増えていきます。</p></div>'
+      +'<div class="hh-lead"><h2>作るくん</h2><p>画像をゼロから作るツール集です。下の3つから、作りたいものを選んでください。それぞれ何ができるかは各カードの説明を見てね。</p></div>'
       +'<div class="hh-mk3">'
-        +'<button class="hh-mk" style="--c:#e0588f" data-act="menu"><span class="hh-mk-top">'+S(ICN.menu)+'</span><span class="hh-mk-body"><span class="hh-mk-name">メニュー</span><span class="hh-mk-desc">カフェ・お品書き風のメニュー表を色と書体を選んで作成</span></span><span class="hh-mk-go">ひらく →</span></button>'
-        +'<button class="hh-mk" style="--c:#5b9cb8" data-act="thumb"><span class="hh-mk-top">'+S(ICN.thumb)+'</span><span class="hh-mk-body"><span class="hh-mk-name">サムネ</span><span class="hh-mk-desc">配信・紹介用の16:9部屋サムネをテンプレから作成</span></span><span class="hh-mk-go">ひらく →</span></button>'
-        +'<button class="hh-mk" style="--c:#7aa87f" data-act="room"><span class="hh-mk-top">'+S(ICN.room)+'</span><span class="hh-mk-body"><span class="hh-mk-name">ルーム紹介</span><span class="hh-mk-desc">訪問したお部屋を紹介する画像を作成</span></span><span class="hh-mk-go">ひらく →</span></button>'
+        +'<button class="hh-mk" style="--c:#e0588f" data-act="menu"><span class="hh-mk-top">'+S(ICN.menu)+'</span><span class="hh-mk-body"><span class="hh-mk-name">メニュー</span><span class="hh-mk-desc">飲食店風のメニュー表を作る。色・書体・アイコン・写真を選んで、全20デザインから作成できます。</span></span><span class="hh-mk-go">ひらく →</span></button>'
+        +'<button class="hh-mk" style="--c:#5b9cb8" data-act="thumb"><span class="hh-mk-top">'+S(ICN.thumb)+'</span><span class="hh-mk-body"><span class="hh-mk-name">サムネ</span><span class="hh-mk-desc">配信・紹介用の16:9サムネイル（部屋サムネ）を、テンプレートに画像を入れて作成します。</span></span><span class="hh-mk-go">ひらく →</span></button>'
+        +'<button class="hh-mk" style="--c:#7aa87f" data-act="room"><span class="hh-mk-top">'+S(ICN.room)+'</span><span class="hh-mk-body"><span class="hh-mk-name">ルーム紹介</span><span class="hh-mk-desc">訪問したお部屋を紹介する画像カードを作成します。</span></span><span class="hh-mk-go">ひらく →</span></button>'
       +'</div>'
       +sticky('お知らせ', news([['NEW','メニュー画像にデザイン追加（全20種＋グループ表示）','#e0588f']]),'#ffe6f0','#e0588f');
     }
@@ -4202,7 +4202,7 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
         if(a==='pick'){ const g=content.querySelector('.hh-mk3'); if(g){ g.scrollIntoView({behavior:'smooth',block:'center'}); g.classList.remove('hh-pick'); void g.offsetWidth; g.classList.add('hh-pick'); } return; }
         if(a==='menu'){ location.href='menu.html'; return; }
         if(a==='thumb'){ location.href='heyasamune.html'; return; }
-        if(a==='room'){ location.href='Houmon.html'; return; }
+        if(a==='room'){ location.href='houmon.html'; return; }
         if(a==='rotate'){ const b=document.getElementById('slRotate'); if(b) b.click(); return; }
       });
     });

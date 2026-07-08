@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>クリエくん - メニュー表メイカー | 便利くんzz</title>
+<meta name="theme-color" content="#5b9cb8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700;900&family=Shippori+Mincho:wght@500;700;800&family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,600&family=M+PLUS+Rounded+1c:wght@500;800&family=RocknRoll+One&family=Hachi+Maru+Pop&family=Yomogi&family=Caveat:wght@700&display=swap" rel="stylesheet">
+<style>html,body{margin:0;padding:0;background:#eef3f5;} .crekun-back{position:fixed;left:12px;bottom:12px;z-index:6100;}</style>
+</head>
+<body>
+<style>
+/* ===== クリエくん（メニュー表メイカー） ===== */
+.crekun-overlay{ position:fixed; inset:0; z-index:6000; background:#eef3f5; display:flex; flex-direction:column; }
+.crekun-overlay[hidden]{ display:none; }
+.cre-head{ display:flex; align-items:center; gap:10px; padding:10px 14px; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.06); flex-shrink:0; }
+.cre-head .cre-title{ font-weight:800; color:#2c3e50; font-size:15px; letter-spacing:.04em; }
+.cre-head .cre-sub{ font-size:11px; color:#8aa0ac; font-weight:600; }
+.cre-close{ margin-left:auto; width:34px; height:34px; border:none; background:#f0f4f6; border-radius:10px; font-size:20px; color:#5b6b76; cursor:pointer; }
+.cre-close:hover{ background:#e3eaed; }
+
+/* ステップバー */
+.cre-stepbar{ display:flex; gap:6px; padding:8px 12px; background:#fff; overflow-x:auto; flex-shrink:0; border-top:1px solid #eef2f4; }
+.cre-step{ display:flex; align-items:center; gap:6px; border:none; background:#f1f5f7; color:#7f939f; border-radius:20px; padding:6px 12px; font-size:12px; font-weight:700; white-space:nowrap; cursor:pointer; flex-shrink:0; }
+.cre-step .cre-step-n{ width:18px; height:18px; border-radius:50%; background:#cdd9df; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; }
+.cre-step.active{ background:#5b9cb8; color:#fff; }
+.cre-step.active .cre-step-n{ background:#fff; color:#5b9cb8; }
+.cre-step.done .cre-step-n{ background:#7fb89c; }
+
+/* 本体: プレビュー + パネル */
+.cre-body{ flex:1; display:flex; min-height:0; }
+.cre-stage{ flex:1.1; display:flex; align-items:center; justify-content:center; padding:16px; background:#dde7eb; min-width:0; }
+.cre-stage canvas{ max-width:100%; max-height:100%; box-shadow:0 8px 30px rgba(0,0,0,.18); border-radius:4px; background:#fff; }
+.cre-panel{ flex:1; max-width:430px; background:#f7fafb; overflow-y:auto; padding:14px 16px 30px; box-shadow:-2px 0 12px rgba(0,0,0,.05); }
+
+@media (max-width:760px){
+  .cre-body{ flex-direction:column; }
+  .cre-stage{ flex:none; height:34vh; padding:10px; position:sticky; top:0; }
+  .cre-panel{ max-width:none; flex:1; box-shadow:0 -2px 12px rgba(0,0,0,.05); }
+}
+
+/* パネル内部品 */
+.cre-h{ font-size:15px; font-weight:800; color:#2c3e50; margin:4px 0 10px; }
+.cre-h.sub{ font-size:13px; margin-top:18px; color:#5b6b76; }
+.cre-note{ font-size:11.5px; color:#8aa0ac; line-height:1.5; margin:-4px 0 12px; }
+.cre-field{ display:block; margin-bottom:12px; }
+.cre-flabel{ display:block; font-size:11.5px; font-weight:700; color:#6b7d88; margin-bottom:5px; }
+.cre-in{ width:100%; box-sizing:border-box; border:1.5px solid #dde6ea; border-radius:10px; padding:9px 11px; font-size:14px; background:#fff; color:#2c3e50; outline:none; }
+.cre-in:focus{ border-color:#5b9cb8; }
+.cre-in.tight{ padding:7px 9px; font-size:13px; }
+.cre-in.num{ width:72px; } .cre-in.unit{ width:48px; } .cre-in.sec{ width:74px; }
+
+.cre-chips,.cre-palrow,.cre-ratiogrid{ display:flex; flex-wrap:wrap; gap:8px; }
+.cre-chip{ border:1.5px solid #dde6ea; background:#fff; color:#5b6b76; border-radius:20px; padding:7px 14px; font-size:13px; font-weight:700; cursor:pointer; }
+.cre-chip.on{ background:#5b9cb8; color:#fff; border-color:#5b9cb8; }
+
+/* テンプレ */
+.cre-tplgrid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.cre-tplcard{ border:2px solid #e2eaee; border-radius:12px; background:#fff; padding:8px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:6px; }
+.cre-tplcard.on{ border-color:#5b9cb8; box-shadow:0 0 0 3px rgba(91,156,184,.16); }
+.cre-tplthumb{ width:100%; height:auto; border-radius:6px; background:#fff; }
+.cre-tpllabel{ font-size:12px; font-weight:700; color:#5b6b76; }
+
+/* パレット */
+.cre-palchip{ width:46px; height:38px; border-radius:10px; border:2px solid #e2eaee; cursor:pointer; display:flex; align-items:flex-end; justify-content:center; gap:2px; padding-bottom:4px; overflow:hidden; }
+.cre-palchip.on{ border-color:#5b9cb8; box-shadow:0 0 0 3px rgba(91,156,184,.16); }
+.cre-palchip i{ width:8px; height:8px; border-radius:50%; display:block; }
+
+/* 比率 */
+.cre-ratiocard{ border:2px solid #e2eaee; border-radius:10px; background:#fff; cursor:pointer; padding:8px; display:flex; flex-direction:column; align-items:center; gap:6px; width:86px; }
+.cre-ratiocard.on{ border-color:#5b9cb8; box-shadow:0 0 0 3px rgba(91,156,184,.16); }
+.cre-ratiocard span{ font-size:10.5px; font-weight:700; color:#5b6b76; text-align:center; }
+.cre-ratiobox{ background:#cfe0e7; border-radius:3px; height:46px; max-width:46px; }
+.cre-searchres{ display:flex; flex-direction:column; gap:4px; margin-top:8px; max-height:230px; overflow-y:auto; }
+.cre-searchitem{ display:flex; justify-content:space-between; align-items:center; border:1.5px solid #e6edf0; background:#fff; border-radius:8px; padding:8px 11px; cursor:pointer; font-size:13px; color:#3a4a54; }
+.cre-searchitem.on{ border-color:#5b9cb8; background:#eef6f9; }
+.cre-searchitem em{ font-style:italic; color:#9aacb6; font-size:12px; }
+
+/* 商品リスト */
+.cre-itemlist{ display:flex; flex-direction:column; gap:10px; margin-bottom:10px; }
+.cre-itemrow{ border:1.5px solid #e6edf0; border-radius:12px; background:#fff; padding:10px; display:flex; flex-direction:column; gap:7px; }
+.cre-itemhead{ display:flex; align-items:center; gap:8px; }
+.cre-itemicon{ width:38px; height:38px; flex-shrink:0; background:#f4f8fa; border-radius:8px; }
+.cre-itemr2{ display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.cre-x{ width:28px; height:28px; border:none; background:#f4f0f2; color:#c06b8a; border-radius:8px; font-size:17px; cursor:pointer; flex-shrink:0; }
+.cre-rec{ border:1.5px solid #e6c6d4; background:#fff; color:#c06b8a; border-radius:18px; padding:5px 10px; font-size:11.5px; font-weight:700; cursor:pointer; margin-left:auto; }
+.cre-rec.on{ background:#e0588f; color:#fff; border-color:#e0588f; }
+.cre-iconwrap{ padding-top:6px; }
+.cre-icontabs{ display:flex; gap:6px; margin-bottom:7px; }
+.cre-icontab{ flex:1; border:1.5px solid #e6edf0; background:#fff; color:#7f939f; border-radius:8px; padding:6px 4px; font-size:12px; font-weight:700; cursor:pointer; }
+.cre-icontab.on{ background:#5b9cb8; color:#fff; border-color:#5b9cb8; }
+.cre-seg{ display:flex; gap:0; border:1.5px solid #dde6ea; border-radius:10px; overflow:hidden; }
+.cre-segbtn{ flex:1; border:none; background:#fff; color:#6b7d88; padding:9px 4px; font-size:13px; font-weight:700; cursor:pointer; border-right:1px solid #eef2f4; }
+.cre-segbtn:last-child{ border-right:none; }
+.cre-segbtn.on{ background:#5b9cb8; color:#fff; }
+.cre-iconpick{ display:flex; flex-wrap:wrap; gap:5px; padding-top:0; }
+.cre-iconopt{ width:40px; height:40px; border:1.5px solid #e6edf0; border-radius:9px; background:#fff; cursor:pointer; padding:3px; }
+.cre-iconopt.on{ border-color:#5b9cb8; background:#eef6f9; }
+
+/* 仕上げ */
+.cre-slider{ display:flex; align-items:center; gap:10px; }
+.cre-slider input[type=range]{ flex:1; accent-color:#5b9cb8; }
+.cre-sval{ font-size:12px; font-weight:700; color:#5b6b76; width:42px; text-align:right; }
+.cre-toggle{ border:1.5px solid #dde6ea; background:#fff; color:#5b6b76; border-radius:10px; padding:8px 16px; font-size:13px; font-weight:700; cursor:pointer; }
+.cre-toggle.on{ background:#5b9cb8; color:#fff; border-color:#5b9cb8; }
+.cre-colrow{ display:flex; gap:10px; flex-wrap:wrap; }
+.cre-colcell{ display:flex; flex-direction:column; align-items:center; gap:3px; font-size:10.5px; color:#6b7d88; font-weight:700; }
+.cre-colcell input[type=color]{ width:42px; height:34px; border:1.5px solid #dde6ea; border-radius:8px; background:#fff; cursor:pointer; padding:2px; }
+
+/* ボタン */
+.cre-btn{ border:none; background:#5b9cb8; color:#fff; border-radius:11px; padding:11px 18px; font-size:14px; font-weight:800; cursor:pointer; }
+.cre-btn:hover{ background:#4f8aa3; }
+.cre-btn.ghost{ background:#fff; color:#5b9cb8; border:1.5px solid #c6dbe4; }
+.cre-btn.link{ background:transparent; color:#8aa0ac; padding:11px 8px; }
+.cre-btn.small{ padding:7px 4px; font-size:12px; }
+.cre-btn.full{ width:100%; margin-top:4px; }
+.cre-btn.big{ padding:14px; font-size:15px; margin-top:14px; }
+.cre-btn:disabled{ opacity:.4; cursor:default; }
+.cre-nav{ display:flex; align-items:center; gap:8px; margin-top:20px; padding-top:14px; border-top:1px solid #e6edf0; }
+.cre-nav .cre-btn:last-child{ margin-left:auto; }
+</style>
+<div id="creKunOverlay" class="crekun-overlay">
+  <div class="cre-head">
+    <span class="cre-title">クリエくん</span>
+    <span class="cre-sub">メニュー表メイカー</span>
+    <button class="cre-close" id="creClose" type="button" aria-label="閉じる">×</button>
+  </div>
+  <div class="cre-stepbar" id="creStepBar"></div>
+  <div class="cre-body">
+    <div class="cre-stage"><canvas id="crePreview"></canvas></div>
+    <div class="cre-panel" id="crePanel"></div>
+  </div>
+</div>
+
+<script>
+window.__CRE_CATS=[{name:"アイテム",items:[{"name": "学校の黒板", "w": 1729, "h": 1136}, {"name": "ホワイトボード", "w": 1147, "h": 828}, {"name": "ネオン時計", "w": 1, "h": 1}, {"name": "カレンダー", "w": 50, "h": 39}, {"name": "冷蔵ショーケース", "w": 293, "h": 126}, {"name": "レコードプレーヤー", "w": 1, "h": 1}, {"name": "ノートPC", "w": 150, "h": 101}, {"name": "モニタ一体型PC", "w": 262, "h": 157}, {"name": "スケルトンPC", "w": 262, "h": 247}, {"name": "28インチワイドモニタ", "w": 733, "h": 349}, {"name": "24インチモニタ", "w": 521, "h": 282}, {"name": "スマホ", "w": 61, "h": 133}, {"name": "スマホスタンド A", "w": 61, "h": 136}, {"name": "スマホスタンド B", "w": 5, "h": 11}, {"name": "タブレットスタンド", "w": 51, "h": 55}, {"name": "液タブ", "w": 459, "h": 262}, {"name": "ガラケー", "w": 5, "h": 7}, {"name": "テレビ", "w": 367, "h": 253}, {"name": "壁掛けテレビL", "w": 113, "h": 78}, {"name": "壁掛けテレビL 16:9", "w": 16, "h": 9}, {"name": "壁掛けテレビ", "w": 734, "h": 507}, {"name": "壁掛けテレビ 16:9", "w": 16, "h": 9}, {"name": "プロジェクタースクリーン", "w": 2273, "h": 1624}, {"name": "プロジェクタースクリーン 16:9", "w": 16, "h": 9}, {"name": "ブラウン管", "w": 201, "h": 152}, {"name": "goghスマホスタンド", "w": 59, "h": 129}, {"name": "ゲーム機C", "w": 81, "h": 52}, {"name": "ゲーム機F", "w": 12, "h": 11}, {"name": "ポスターXL", "w": 29, "h": 41}, {"name": "ポスターLL", "w": 594, "h": 841}, {"name": "ポスターL", "w": 539, "h": 747}, {"name": "ポスターM", "w": 99, "h": 70}, {"name": "ポスターS", "w": 500, "h": 353}, {"name": "ポスターSS", "w": 313, "h": 438}, {"name": "ポスター枠XL", "w": 403, "h": 579}, {"name": "ポスター枠LL", "w": 562, "h": 809}, {"name": "ポスター枠L", "w": 161, "h": 232}, {"name": "ポスター枠M", "w": 194, "h": 281}, {"name": "ポスター枠S", "w": 107, "h": 156}, {"name": "ポスター枠SS", "w": 265, "h": 388}, {"name": "ポスター枠XL (立て掛け)", "w": 71, "h": 101}, {"name": "ポスター枠LL (立て掛け)", "w": 116, "h": 163}, {"name": "ポスター枠L (立て掛け)", "w": 73, "h": 102}, {"name": "ポスター枠M (立て掛け)", "w": 203, "h": 286}, {"name": "ポスター枠S (立て掛け)", "w": 113, "h": 160}, {"name": "ポスター枠SS (立て掛け)", "w": 283, "h": 401}, {"name": "スクロールポスター", "w": 584, "h": 841}, {"name": "チラシ", "w": 70, "h": 99}, {"name": "ポストカード", "w": 37, "h": 25}, {"name": "名刺", "w": 55, "h": 91}, {"name": "積みチラシ", "w": 213, "h": 301}, {"name": "大色紙スタンド", "w": 242, "h": 267}, {"name": "小色紙スタンド", "w": 7, "h": 8}, {"name": "ミニ色紙スタンド", "w": 120, "h": 133}, {"name": "雑な貼り紙", "w": 212, "h": 299}, {"name": "アート額LL", "w": 255, "h": 217}, {"name": "アート額L", "w": 195, "h": 149}, {"name": "アート額M", "w": 222, "h": 313}, {"name": "アート額S", "w": 22, "h": 17}, {"name": "アート額SS", "w": 3, "h": 4}, {"name": "アート正方形額L", "w": 1, "h": 1}, {"name": "アート正方形額M", "w": 1, "h": 1}, {"name": "アート正方形額S", "w": 1, "h": 1}, {"name": "掛け軸", "w": 275, "h": 736}, {"name": "キャンバスF30", "w": 303, "h": 242}, {"name": "キャンバスF20", "w": 121, "h": 101}, {"name": "キャンバスF10", "w": 529, "h": 455}, {"name": "キャンバスF6", "w": 409, "h": 318}, {"name": "キャンバスF4", "w": 166, "h": 121}, {"name": "キャンバスF30 (立て掛け)", "w": 727, "h": 896}, {"name": "キャンバスF20 (立て掛け)", "w": 606, "h": 715}, {"name": "キャンバスF10 (立て掛け)", "w": 455, "h": 521}, {"name": "キャンバスF6 (立て掛け)", "w": 318, "h": 403}, {"name": "キャンバスF4 (立て掛け)", "w": 242, "h": 327}, {"name": "イーゼルL", "w": 363, "h": 445}, {"name": "イーゼルM", "w": 227, "h": 259}, {"name": "イーゼルS", "w": 140, "h": 177}, {"name": "額入り賞状", "w": 391, "h": 273}, {"name": "アート装飾額LL", "w": 29, "h": 34}, {"name": "アート装飾額L", "w": 149, "h": 195}, {"name": "アート装飾額M", "w": 37, "h": 52}, {"name": "アート装飾額S", "w": 22, "h": 17}, {"name": "アート装飾額SS", "w": 119, "h": 160}, {"name": "音楽CD平・立", "w": 131, "h": 124}, {"name": "積み音楽CD", "w": 131, "h": 124}, {"name": "紙ジャケCD・平", "w": 1, "h": 1}, {"name": "紙ジャケCD・立", "w": 128, "h": 127}, {"name": "レコード・平", "w": 1, "h": 1}, {"name": "レコード・立", "w": 315, "h": 313}, {"name": "PCソフト", "w": 187, "h": 291}, {"name": "PCソフト・立", "w": 1, "h": 1}, {"name": "ゲームソフト・平", "w": 102, "h": 163}, {"name": "ゲームソフト・立", "w": 102, "h": 163}, {"name": "積みゲームソフト", "w": 103, "h": 164}, {"name": "L判スナップ", "w": 89, "h": 127}, {"name": "2L判スナップ", "w": 42, "h": 59}, {"name": "ポラロイド", "w": 77, "h": 78}, {"name": "フォトフレーム", "w": 89, "h": 125}, {"name": "写真立て・横", "w": 60, "h": 37}, {"name": "写真立て・縦", "w": 77, "h": 115}, {"name": "透明フォトフレーム", "w": 44, "h": 63}, {"name": "透明写真立て・横", "w": 127, "h": 87}, {"name": "透明写真立て・縦", "w": 89, "h": 125}, {"name": "お花フォトフレーム", "w": 127, "h": 178}, {"name": "お花写真立て・横", "w": 178, "h": 125}, {"name": "お花写真立て・縦", "w": 127, "h": 175}, {"name": "三角写真立て", "w": 57, "h": 82}, {"name": "文庫・平", "w": 51, "h": 74}, {"name": "文庫・立", "w": 34, "h": 49}, {"name": "積み文庫", "w": 80, "h": 103}, {"name": "単行本・平", "w": 121, "h": 188}, {"name": "単行本・立", "w": 121, "h": 184}, {"name": "洋書・平", "w": 124, "h": 187}, {"name": "洋書・立", "w": 124, "h": 187}, {"name": "積み洋書", "w": 124, "h": 187}, {"name": "文庫版マンガ・平", "w": 51, "h": 74}, {"name": "文庫版マンガ・立", "w": 34, "h": 49}, {"name": "少年少女マンガ・平", "w": 125, "h": 182}, {"name": "少年少女マンガ・立", "w": 122, "h": 181}, {"name": "積み少年少女マンガ", "w": 123, "h": 182}, {"name": "青年マンガ・平", "w": 51, "h": 74}, {"name": "青年マンガ・立", "w": 144, "h": 209}, {"name": "A5版マンガ・平", "w": 70, "h": 109}, {"name": "A5版マンガ・立", "w": 20, "h": 31}, {"name": "B5版マンガ・平", "w": 179, "h": 257}, {"name": "B5版マンガ・立", "w": 179, "h": 256}, {"name": "透明スタンドL", "w": 21, "h": 43}, {"name": "透明スタンドM", "w": 43, "h": 89}, {"name": "透明スタンドS", "w": 25, "h": 52}, {"name": "キーホルダーL", "w": 1, "h": 1}, {"name": "キーホルダーS", "w": 1, "h": 1}, {"name": "コースター", "w": 1, "h": 1}, {"name": "缶バッジL", "w": 1, "h": 1}, {"name": "缶バッジM", "w": 1, "h": 1}, {"name": "缶バッジ立て", "w": 38, "h": 33}, {"name": "いぬぬい", "w": 215, "h": 187}, {"name": "ねこぬい", "w": 215, "h": 187}, {"name": "うさぬい", "w": 215, "h": 187}, {"name": "ねずぬい", "w": 215, "h": 187}, {"name": "フィギュア箱M", "w": 34, "h": 41}, {"name": "カプセルマシーン", "w": 171, "h": 188}, {"name": "マフラータオル", "w": 1099, "h": 239}, {"name": "クリアポーチ", "w": 23, "h": 32}, {"name": "飾り皿", "w": 441, "h": 436}, {"name": "張り紙", "w": 87, "h": 154}, {"name": "バスケゴール", "w": 331, "h": 206}, {"name": "スケートボード", "w": 21243, "h": 82330}, {"name": "350ml缶", "w": 66, "h": 113}, {"name": "500ml缶", "w": 66, "h": 157}, {"name": "PETボトル", "w": 1, "h": 1}, {"name": "サイダー瓶", "w": 47, "h": 91}, {"name": "瓶ビール", "w": 61, "h": 91}, {"name": "ワインボトル", "w": 74, "h": 81}, {"name": "シャンパンボトル", "w": 85, "h": 64}, {"name": "日本酒四合瓶", "w": 5, "h": 8}, {"name": "日本酒一升瓶", "w": 5, "h": 8}, {"name": "ウィスキーボトル", "w": 55, "h": 41}]}];
+window.showToast = window.showToast || function(msg){ var d=document.createElement('div'); d.textContent=msg; d.style.cssText='position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#3a4252;color:#fff;font:700 13px/1.4 -apple-system,"Hiragino Sans",sans-serif;padding:10px 20px;border-radius:999px;z-index:9000;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0;transition:opacity .25s;'; document.body.appendChild(d); (window.requestAnimationFrame||function(f){setTimeout(f,16)})(function(){ d.style.opacity='1'; }); setTimeout(function(){ d.style.opacity='0'; setTimeout(function(){ d.remove(); },300); },2200); };
+</script>
+<script>
+
+/* =========================================================================
+   クリエくん（メニュー表メイカー） v1.3
+   ========================================================================= */
+(function(){
+  'use strict';
+  const $ = (id)=>document.getElementById(id);
+  const ov = $('creKunOverlay');
+  if(!ov) return;
+
+  const cre = {
+    step: 0, store: '', cat: 'cafe', tag: '',
+    template: 'clean',
+    ratioW: 1240, ratioH: 1748,
+    pal: null, palBase: null,
+    fontScale: 1, font: 'gothic', titleFont: 'theme',
+    align: 'center', cols: 'auto', recStyle: 'star', texture: 'none', textureStrength: 0.9, frame: 'none', roomImage: null, itemPhotoBorder: true, roomSize: 1, roomPosY: 0, roomOpacity: 0.2,
+    photo: null, photoPos: 'br', photoSize: 0.22, photoShape: 'circle',
+    items: [],
+  };
+
+  const PALETTES = {
+    cream:    { bg:'#f7f3e9', ink:'#3a3327', sub:'#8a7f6b', accent:'#c2410c', accent2:'#e0904a', card:'#fffdf7' },
+    forest:   { bg:'#eef3ee', ink:'#22392c', sub:'#6b7d70', accent:'#2f6b46', accent2:'#7fae8c', card:'#ffffff' },
+    ocean:    { bg:'#f3f1ea', ink:'#1f3a63', sub:'#6e7e94', accent:'#1f4e9b', accent2:'#e2553a', card:'#ffffff' },
+    rose:     { bg:'#fdf6f3', ink:'#6b2438', sub:'#a8788a', accent:'#c0395f', accent2:'#e58aa6', card:'#fffafa' },
+    pop:      { bg:'#fffef8', ink:'#222222', sub:'#7a7a7a', accent:'#ff5a1f', accent2:'#1f6fff', card:'#ffffff' },
+    mono:     { bg:'#faf9f7', ink:'#1c1c1c', sub:'#7a7a7a', accent:'#1c1c1c', accent2:'#8a8a8a', card:'#ffffff' },
+    matcha:   { bg:'#f4f0e1', ink:'#3b3a1f', sub:'#857f5f', accent:'#6e7c2b', accent2:'#b7c06a', card:'#fffef5' },
+    night:    { bg:'#23252b', ink:'#f2efe9', sub:'#b9b5ad', accent:'#e0a04a', accent2:'#7fa7c8', card:'#2e3138' },
+    sakura:   { bg:'#fdeef2', ink:'#5b3a45', sub:'#b08495', accent:'#e2799a', accent2:'#f4b6cb', card:'#fffafc' },
+    charcoal: { bg:'#2b2d33', ink:'#eceae6', sub:'#a7a39b', accent:'#6cc1b6', accent2:'#d98c6a', card:'#34373e' },
+    terra:    { bg:'#f6ede4', ink:'#4a3328', sub:'#9b7d6c', accent:'#b5562e', accent2:'#d99a6c', card:'#fffaf4' },
+    mint:     { bg:'#eef6f2', ink:'#234039', sub:'#6f8c83', accent:'#1f8a6e', accent2:'#83cbb4', card:'#ffffff' },
+    lavender: { bg:'#f2eef8', ink:'#3a2e52', sub:'#8a7da8', accent:'#7a4fc0', accent2:'#b89be0', card:'#fffcff' },
+    mustard:  { bg:'#f8f2e3', ink:'#43391e', sub:'#9a8a5e', accent:'#c79018', accent2:'#e0bb63', card:'#fffdf3' },
+    navy:     { bg:'#eef1f6', ink:'#1b2a47', sub:'#6c7790', accent:'#23386b', accent2:'#c89a3e', card:'#ffffff' },
+    sand:     { bg:'#f1ece2', ink:'#3e3a30', sub:'#928a78', accent:'#8a7a4a', accent2:'#c4b283', card:'#fffdf6' },
+  };
+
+  // 書体（Webフォント優先＋端末フォールバック）
+  const FONTS = {
+    gothic:  { label:'ゴシック',     stack:"'Hiragino Sans','Hiragino Kaku Gothic ProN','Noto Sans JP','Helvetica Neue',sans-serif" },
+    mincho:  { label:'明朝',         stack:"'Shippori Mincho','Hiragino Mincho ProN','YuMincho','Noto Serif JP',serif" },
+    maru:    { label:'丸ゴシック',   stack:"'Zen Maru Gothic','M PLUS Rounded 1c','Hiragino Maru Gothic ProN',sans-serif" },
+    cute:    { label:'ゆるかわ',     stack:"'Hachi Maru Pop','Zen Maru Gothic','Hiragino Maru Gothic ProN',cursive" },
+    elegant: { label:'エレガント',   stack:"'Playfair Display','Shippori Mincho','Didot','Bodoni 72',serif" },
+    display: { label:'ディスプレイ', stack:"'RocknRoll One','Futura','Arial Black','Hiragino Sans',sans-serif" },
+    hand:    { label:'手書き',     stack:"'Yomogi','Hachi Maru Pop','Marker Felt','Comic Sans MS',cursive" },
+    brush:   { label:'筆記体',     stack:"'Caveat','Snell Roundhand','Apple Chancery','Yomogi',cursive" },
+    type:    { label:'タイプ',     stack:"'American Typewriter','Courier New','Hiragino Kaku Gothic ProN',monospace" },
+    chalk:   { label:'チョーク',   stack:"'Yomogi','Chalkboard SE','Comic Sans MS','Hiragino Maru Gothic ProN',sans-serif" },
+  };
+
+  const CATS = {
+    cafe:   { label:'カフェ',     pal:'cream',  tpl:'clean',    font:'gothic',
+      samples:[['ブレンドコーヒー','480','円','深煎りのコク','coffee','DRINK',1],['カフェラテ','520','円','','latte','DRINK',0],['紅茶','480','円','','tea','DRINK',0],['オレンジジュース','450','円','','juice','DRINK',0],['チーズケーキ','520','円','自家製','cake','SWEETS',1],['パンケーキ','680','円','ふわふわ','pancake','SWEETS',0]] },
+    resto:  { label:'レストラン', pal:'ocean',  tpl:'frame',    font:'mincho',
+      samples:[['本日のスープ','480','円','','soup','STARTER',0],['シーザーサラダ','680','円','','salad','STARTER',0],['ハンバーグステーキ','1280','円','デミグラス','steak','MAIN',1],['マルゲリータ','1180','円','','pizza','MAIN',0],['パスタ','1080','円','','noodle','MAIN',0],['グラスワイン','580','円','赤/白','wine','DRINK',0]] },
+    izakaya:{ label:'居酒屋',     pal:'forest', tpl:'leaders',  font:'mincho',
+      samples:[['生ビール','550','円','','beer','DRINK',1],['ハイボール','480','円','','cola','DRINK',0],['枝豆','380','円','','salad','APPETIZER',0],['唐揚げ','580','円','名物','karaage','APPETIZER',1],['焼き魚','780','円','','fish','MAIN',0],['締めのラーメン','680','円','','noodle','MAIN',0]] },
+    sweets: { label:'スイーツ',   pal:'rose',   tpl:'hero',     font:'maru',
+      samples:[['ショートケーキ','520','円','苺','shortcake','CAKE',1],['ガトーショコラ','560','円','','cake','CAKE',0],['アイスクリーム','450','円','3種から','icecream','GELATO',0],['ドーナツ','320','円','','donut','GELATO',0],['ミルクティー','480','円','','milktea','DRINK',0],['カフェモカ','520','円','','latte','DRINK',0]] },
+    bakery: { label:'ベーカリー', pal:'matcha', tpl:'kraft',    font:'maru',
+      samples:[['食パン','380','円','1斤','bread','BREAD',1],['クロワッサン','260','円','','croissant','BREAD',0],['カレーパン','280','円','','curry','BREAD',0],['サンドイッチ','480','円','','sandwich','LUNCH',0],['コーヒー','350','円','','coffee','DRINK',0]] },
+    bar:    { label:'バー',       pal:'night',  tpl:'showcase', font:'elegant',
+      samples:[['ジントニック','900','円','','cocktail','COCKTAIL',1],['モヒート','900','円','','cocktail','COCKTAIL',0],['グラスワイン','800','円','','wine','WINE',0],['ウイスキー','1000','円','','cola','WHISKY',0],['チーズ盛り合わせ','1200','円','','salad','FOOD',0]] },
+  };
+
+  const ICONS = {
+    // --- 飲み物 ---
+    coffee(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      const w=s*0.5,h=s*0.42; c.beginPath();c.moveTo(x-w/2,y-h/2);c.lineTo(x-w/2,y+h/2-s*0.06);c.quadraticCurveTo(x-w/2,y+h/2,x-w/2+s*0.06,y+h/2);c.lineTo(x+w/2-s*0.06,y+h/2);c.quadraticCurveTo(x+w/2,y+h/2,x+w/2,y+h/2-s*0.06);c.lineTo(x+w/2,y-h/2);c.stroke();
+      c.beginPath();c.arc(x+w/2+s*0.06,y-h/2+s*0.12,s*0.1,-Math.PI*0.5,Math.PI*0.5);c.stroke();
+      c.beginPath();c.moveTo(x-w/2,y-h/2);c.lineTo(x+w/2,y-h/2);c.stroke();
+      c.lineWidth=s*0.035;c.beginPath();c.moveTo(x-s*0.08,y-h/2-s*0.16);c.quadraticCurveTo(x-s*0.02,y-h/2-s*0.1,x-s*0.08,y-h/2-s*0.04);c.moveTo(x+s*0.06,y-h/2-s*0.16);c.quadraticCurveTo(x+s*0.12,y-h/2-s*0.1,x+s*0.06,y-h/2-s*0.04);c.stroke();c.restore(); },
+    latte(c,x,y,s,col){ ICONS.coffee(c,x,y,s,col); c.save();c.strokeStyle=col;c.lineWidth=s*0.03;c.beginPath();c.arc(x,y+s*0.02,s*0.08,0,Math.PI*2);c.moveTo(x-s*0.08,y+s*0.02);c.lineTo(x+s*0.08,y+s*0.02);c.stroke();c.restore(); },
+    cappuccino(c,x,y,s,col){ ICONS.coffee(c,x,y,s,col); c.save();c.strokeStyle=col;c.lineWidth=s*0.03;c.beginPath();c.moveTo(x,y+s*0.08);c.quadraticCurveTo(x-s*0.09,y-s*0.02,x,y-s*0.05);c.quadraticCurveTo(x+s*0.09,y-s*0.02,x,y+s*0.08);c.stroke();c.restore(); },
+    espresso(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      const w=s*0.32,h=s*0.26; c.beginPath();c.moveTo(x-w/2,y-h/2);c.lineTo(x-w/2,y+h/2-s*0.05);c.quadraticCurveTo(x-w/2,y+h/2,x-w/2+s*0.05,y+h/2);c.lineTo(x+w/2-s*0.05,y+h/2);c.quadraticCurveTo(x+w/2,y+h/2,x+w/2,y+h/2-s*0.05);c.lineTo(x+w/2,y-h/2);c.closePath();c.stroke();
+      c.beginPath();c.arc(x+w/2+s*0.05,y,s*0.08,-Math.PI*0.5,Math.PI*0.5);c.stroke();
+      c.lineWidth=s*0.04;c.beginPath();c.moveTo(x-w/2-s*0.04,y+h/2+s*0.06);c.lineTo(x+w/2+s*0.04,y+h/2+s*0.06);c.stroke();c.restore(); },
+    tea(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      const w=s*0.5,h=s*0.34; c.beginPath();c.moveTo(x-w/2,y-h/2);c.quadraticCurveTo(x,y+h*0.9,x+w/2,y-h/2);c.closePath();c.stroke();
+      c.beginPath();c.arc(x+w/2+s*0.04,y-h/4,s*0.09,-Math.PI*0.5,Math.PI*0.5);c.stroke();
+      c.lineWidth=s*0.035;c.beginPath();c.moveTo(x-s*0.22,y+h*0.6);c.lineTo(x+s*0.22,y+h*0.6);c.stroke();c.restore(); },
+    matcha(c,x,y,s,col){ ICONS.tea(c,x,y,s,col); c.save();c.strokeStyle=col;c.lineWidth=s*0.03;c.beginPath();c.arc(x,y-s*0.06,s*0.06,0,Math.PI*2);c.stroke();c.restore(); },
+    milktea(c,x,y,s,col){ ICONS.juice(c,x,y,s,col); c.save();c.fillStyle=col;[[-0.07,0.22],[0,0.25],[0.07,0.22],[-0.03,0.18],[0.04,0.18]].forEach(p=>{c.beginPath();c.arc(x+s*p[0],y+s*p[1],s*0.028,0,Math.PI*2);c.fill();});c.restore(); },
+    juice(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      const w=s*0.4,h=s*0.6; c.beginPath();c.moveTo(x-w/2,y-h/2);c.lineTo(x-w*0.34,y+h/2);c.lineTo(x+w*0.34,y+h/2);c.lineTo(x+w/2,y-h/2);c.closePath();c.stroke();
+      c.beginPath();c.moveTo(x+s*0.05,y-h/2-s*0.14);c.lineTo(x+s*0.16,y+h*0.1);c.stroke();
+      c.beginPath();c.moveTo(x-w*0.42,y-h*0.18);c.lineTo(x+w*0.42,y-h*0.18);c.stroke();c.restore(); },
+    soda(c,x,y,s,col){ ICONS.juice(c,x,y,s,col); c.save();c.fillStyle=col;[[-0.08,0.1],[0.04,0.2],[-0.02,0.3],[0.1,0.15]].forEach(p=>{c.beginPath();c.arc(x+s*p[0],y+s*p[1],s*0.025,0,Math.PI*2);c.fill();});c.restore(); },
+    cola(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      const w=s*0.36,h=s*0.62; c.beginPath();c.moveTo(x-w/2,y-h/2);c.lineTo(x-w*0.36,y+h/2);c.lineTo(x+w*0.36,y+h/2);c.lineTo(x+w/2,y-h/2);c.closePath();c.stroke();
+      c.beginPath();c.moveTo(x-w*0.44,y-h*0.2);c.lineTo(x+w*0.44,y-h*0.2);c.stroke();
+      c.lineWidth=s*0.035;c.beginPath();c.moveTo(x+s*0.02,y-h/2-s*0.16);c.lineTo(x+s*0.02,y+h*0.1);c.moveTo(x+s*0.02,y-h/2-s*0.16);c.lineTo(x+s*0.12,y-h/2-s*0.12);c.stroke();
+      c.fillStyle=col;[[-0.06,0.04],[0.05,0.14],[-0.02,0.24]].forEach(p=>{c.beginPath();c.arc(x+s*p[0],y+s*p[1],s*0.02,0,Math.PI*2);c.fill();});c.restore(); },
+    beer(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      const w=s*0.42,h=s*0.56; c.beginPath();c.rect(x-w/2,y-h/2+s*0.08,w,h-s*0.08);c.stroke();
+      c.beginPath();c.arc(x+w/2+s*0.1,y,s*0.13,-Math.PI*0.5,Math.PI*0.5);c.stroke();
+      c.lineWidth=s*0.04;c.beginPath();c.moveTo(x-w/2,y-h/2+s*0.08);c.quadraticCurveTo(x-w*0.25,y-h/2-s*0.06,x,y-h/2+s*0.04);c.quadraticCurveTo(x+w*0.25,y-h/2-s*0.08,x+w/2,y-h/2+s*0.08);c.stroke();c.restore(); },
+    wine(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.2,y-s*0.28);c.quadraticCurveTo(x,y+s*0.14,x+s*0.2,y-s*0.28);c.closePath();c.stroke();
+      c.beginPath();c.moveTo(x,y+s*0.08);c.lineTo(x,y+s*0.3);c.moveTo(x-s*0.13,y+s*0.3);c.lineTo(x+s*0.13,y+s*0.3);c.stroke();c.restore(); },
+    cocktail(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.26,y-s*0.26);c.lineTo(x+s*0.26,y-s*0.26);c.lineTo(x,y+s*0.04);c.closePath();c.stroke();
+      c.beginPath();c.moveTo(x,y+s*0.04);c.lineTo(x,y+s*0.28);c.moveTo(x-s*0.13,y+s*0.28);c.lineTo(x+s*0.13,y+s*0.28);c.stroke();
+      c.beginPath();c.arc(x+s*0.16,y-s*0.22,s*0.05,0,Math.PI*2);c.stroke();c.restore(); },
+    water(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      const w=s*0.3,h=s*0.62; c.beginPath();c.moveTo(x-s*0.06,y-h/2);c.lineTo(x+s*0.06,y-h/2);c.lineTo(x+s*0.06,y-h/2+s*0.08);c.lineTo(x+w/2,y-h/2+s*0.2);c.lineTo(x+w/2,y+h/2);c.lineTo(x-w/2,y+h/2);c.lineTo(x-w/2,y-h/2+s*0.2);c.lineTo(x-s*0.06,y-h/2+s*0.08);c.closePath();c.stroke();c.restore(); },
+    milk(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      const w=s*0.4,h=s*0.6; c.beginPath();c.moveTo(x-w/2,y+h/2);c.lineTo(x-w/2,y-h*0.18);c.lineTo(x-w*0.26,y-h/2);c.lineTo(x+w*0.26,y-h/2);c.lineTo(x+w/2,y-h*0.18);c.lineTo(x+w/2,y+h/2);c.closePath();c.stroke();
+      c.beginPath();c.moveTo(x-w*0.26,y-h/2);c.lineTo(x,y-h*0.62);c.lineTo(x+w*0.26,y-h/2);c.stroke();
+      c.lineWidth=s*0.035;c.beginPath();c.moveTo(x-w*0.3,y-h*0.02);c.lineTo(x+w*0.3,y-h*0.02);c.stroke();c.restore(); },
+    // --- 食べ物 ---
+    burger(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      const w=s*0.6; c.beginPath();c.moveTo(x-w/2,y-s*0.06);c.quadraticCurveTo(x-w/2,y-s*0.3,x,y-s*0.3);c.quadraticCurveTo(x+w/2,y-s*0.3,x+w/2,y-s*0.06);c.closePath();c.stroke();
+      c.beginPath();c.moveTo(x-w/2,y+s*0.02);c.lineTo(x+w/2,y+s*0.02);c.stroke();
+      c.beginPath();c.moveTo(x-w/2,y+s*0.1);c.quadraticCurveTo(x,y+s*0.18,x+w/2,y+s*0.1);c.lineTo(x+w/2,y+s*0.12);c.quadraticCurveTo(x,y+s*0.26,x-w/2,y+s*0.12);c.closePath();c.stroke();c.restore(); },
+    pizza(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x,y-s*0.3);c.lineTo(x-s*0.26,y+s*0.28);c.quadraticCurveTo(x,y+s*0.34,x+s*0.26,y+s*0.28);c.closePath();c.stroke();
+      c.fillStyle=col;[[-0.06,0.05],[0.08,0.02],[0,0.18],[-0.1,0.18]].forEach(p=>{c.beginPath();c.arc(x+s*p[0],y+s*p[1],s*0.03,0,Math.PI*2);c.fill();});c.restore(); },
+    sandwich(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.26,y+s*0.22);c.lineTo(x+s*0.26,y+s*0.22);c.lineTo(x,y-s*0.26);c.closePath();c.stroke();
+      c.lineWidth=s*0.03;c.beginPath();c.moveTo(x-s*0.13,y+s*0.0);c.lineTo(x+s*0.13,y+s*0.0);c.stroke();c.restore(); },
+    hotdog(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.3,y+s*0.06);c.quadraticCurveTo(x-s*0.34,y-s*0.1,x-s*0.18,y-s*0.12);c.lineTo(x+s*0.18,y-s*0.12);c.quadraticCurveTo(x+s*0.34,y-s*0.1,x+s*0.3,y+s*0.06);c.quadraticCurveTo(x+s*0.18,y+s*0.16,x,y+s*0.16);c.quadraticCurveTo(x-s*0.18,y+s*0.16,x-s*0.3,y+s*0.06);c.stroke();
+      c.lineWidth=s*0.035;c.beginPath();c.moveTo(x-s*0.18,y-s*0.04);c.quadraticCurveTo(x-s*0.06,y-s*0.12,x+s*0.04,y-s*0.02);c.quadraticCurveTo(x+s*0.14,y+s*0.06,x+s*0.22,y-s*0.02);c.stroke();c.restore(); },
+    fries(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.2,y+s*0.04);c.lineTo(x-s*0.16,y+s*0.28);c.lineTo(x+s*0.16,y+s*0.28);c.lineTo(x+s*0.2,y+s*0.04);c.closePath();c.stroke();
+      c.lineWidth=s*0.04;[-0.12,-0.04,0.04,0.12].forEach((dx,i)=>{c.beginPath();c.moveTo(x+s*dx,y+s*0.04);c.lineTo(x+s*dx,y-s*(0.18+(i%2)*0.06));c.stroke();});c.restore(); },
+    salad(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.3,y-s*0.02);c.quadraticCurveTo(x,y+s*0.34,x+s*0.3,y-s*0.02);c.stroke();
+      c.lineWidth=s*0.035;[[-0.14,-0.08],[0,-0.12],[0.14,-0.08]].forEach(p=>{c.beginPath();c.ellipse(x+s*p[0],y+s*p[1],s*0.08,s*0.05,0.4,0,Math.PI*2);c.stroke();});c.restore(); },
+    soup(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.arc(x,y,s*0.28,0.15*Math.PI,0.85*Math.PI,false);c.stroke();
+      c.beginPath();c.ellipse(x,y-s*0.04,s*0.3,s*0.1,0,0,Math.PI*2);c.stroke();
+      c.lineWidth=s*0.03;c.beginPath();c.moveTo(x-s*0.06,y-s*0.18);c.quadraticCurveTo(x,y-s*0.24,x-s*0.06,y-s*0.3);c.moveTo(x+s*0.06,y-s*0.18);c.quadraticCurveTo(x+s*0.12,y-s*0.24,x+s*0.06,y-s*0.3);c.stroke();c.restore(); },
+    noodle(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.arc(x,y+s*0.02,s*0.28,0.1*Math.PI,0.9*Math.PI,false);c.stroke();
+      c.beginPath();c.ellipse(x,y-s*0.04,s*0.3,s*0.09,0,0,Math.PI*2);c.stroke();
+      c.lineWidth=s*0.035;c.beginPath();c.moveTo(x+s*0.06,y-s*0.04);c.lineTo(x+s*0.3,y-s*0.26);c.moveTo(x+s*0.12,y-s*0.04);c.lineTo(x+s*0.34,y-s*0.22);c.stroke();c.restore(); },
+    steak(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.ellipse(x,y,s*0.28,s*0.2,0.2,0,Math.PI*2);c.stroke();
+      c.lineWidth=s*0.035;c.beginPath();c.ellipse(x-s*0.04,y-s*0.02,s*0.12,s*0.07,0.2,0,Math.PI*2);c.stroke();c.restore(); },
+    fish(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.22,y);c.quadraticCurveTo(x,y-s*0.2,x+s*0.18,y);c.quadraticCurveTo(x,y+s*0.2,x-s*0.22,y);c.stroke();
+      c.beginPath();c.moveTo(x+s*0.18,y);c.lineTo(x+s*0.3,y-s*0.1);c.lineTo(x+s*0.3,y+s*0.1);c.closePath();c.stroke();
+      c.beginPath();c.arc(x-s*0.12,y-s*0.03,s*0.02,0,Math.PI*2);c.stroke();c.restore(); },
+    sushi(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.ellipse(x,y+s*0.1,s*0.28,s*0.12,0,0,Math.PI*2);c.stroke();
+      c.beginPath();c.moveTo(x-s*0.26,y-s*0.02);c.quadraticCurveTo(x,y-s*0.16,x+s*0.26,y-s*0.02);c.quadraticCurveTo(x+s*0.26,y+s*0.04,x,y+s*0.02);c.quadraticCurveTo(x-s*0.26,y+s*0.04,x-s*0.26,y-s*0.02);c.stroke();c.restore(); },
+    rice(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.arc(x,y+s*0.04,s*0.26,0.1*Math.PI,0.9*Math.PI,false);c.stroke();
+      c.beginPath();c.moveTo(x-s*0.28,y-s*0.02);c.quadraticCurveTo(x,y-s*0.26,x+s*0.28,y-s*0.02);c.stroke();c.restore(); },
+    curry(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.ellipse(x,y,s*0.32,s*0.16,0,0,Math.PI*2);c.stroke();
+      c.lineWidth=s*0.035;c.beginPath();c.moveTo(x,y-s*0.14);c.quadraticCurveTo(x-s*0.06,y,x,y+s*0.14);c.stroke();
+      c.beginPath();c.arc(x+s*0.14,y,s*0.07,0.5*Math.PI,1.5*Math.PI,true);c.stroke();c.restore(); },
+    karaage(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.045;c.lineCap='round';c.lineJoin='round';
+      [[-0.13,-0.04,0.13],[0.12,-0.06,0.12],[0,0.12,0.14]].forEach(p=>{ c.beginPath();c.moveTo(x+s*p[0]-s*p[2],y+s*p[1]); for(let a=0;a<=8;a++){ const t=a/8*Math.PI*2, rr=s*p[2]*(0.85+0.15*Math.sin(a*1.7)); c.lineTo(x+s*p[0]+Math.cos(t)*rr, y+s*p[1]+Math.sin(t)*rr); } c.closePath();c.stroke(); });c.restore(); },
+    bread(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.26,y+s*0.2);c.lineTo(x-s*0.26,y-s*0.02);c.quadraticCurveTo(x-s*0.26,y-s*0.22,x-s*0.04,y-s*0.22);c.quadraticCurveTo(x+s*0.26,y-s*0.22,x+s*0.26,y-s*0.02);c.lineTo(x+s*0.26,y+s*0.2);c.closePath();c.stroke();
+      c.lineWidth=s*0.03;c.beginPath();c.moveTo(x-s*0.04,y-s*0.2);c.lineTo(x-s*0.04,y+s*0.2);c.stroke();c.restore(); },
+    croissant(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.28,y+s*0.06);c.quadraticCurveTo(x-s*0.1,y-s*0.22,x+s*0.06,y-s*0.14);c.quadraticCurveTo(x+s*0.26,y-s*0.04,x+s*0.28,y+s*0.12);c.quadraticCurveTo(x+s*0.12,y+s*0.04,x-s*0.04,y+s*0.12);c.quadraticCurveTo(x-s*0.18,y+s*0.18,x-s*0.28,y+s*0.06);c.stroke();
+      c.lineWidth=s*0.03;c.beginPath();c.moveTo(x-s*0.1,y+s*0.0);c.lineTo(x-s*0.04,y-s*0.06);c.moveTo(x+s*0.04,y+s*0.02);c.lineTo(x+s*0.1,y-s*0.04);c.stroke();c.restore(); },
+    egg(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.045;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.18,y+s*0.06);c.bezierCurveTo(x-s*0.32,y-s*0.1,x-s*0.1,y-s*0.22,x+s*0.04,y-s*0.16);c.bezierCurveTo(x+s*0.2,y-s*0.22,x+s*0.32,y-s*0.02,x+s*0.2,y+s*0.1);c.bezierCurveTo(x+s*0.1,y+s*0.2,x-s*0.08,y+s*0.18,x-s*0.18,y+s*0.06);c.closePath();c.stroke();
+      c.beginPath();c.arc(x+s*0.02,y-s*0.02,s*0.08,0,Math.PI*2);c.stroke();c.restore(); },
+    // --- デザート ---
+    cake(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.26,y-s*0.04);c.lineTo(x-s*0.26,y+s*0.2);c.lineTo(x+s*0.26,y+s*0.2);c.lineTo(x+s*0.26,y-s*0.04);c.stroke();
+      c.beginPath();c.moveTo(x-s*0.26,y-s*0.04);c.quadraticCurveTo(x,y-s*0.16,x+s*0.26,y-s*0.04);c.stroke();
+      c.beginPath();c.arc(x,y-s*0.16,s*0.05,0,Math.PI*2);c.stroke();c.restore(); },
+    shortcake(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.24,y+s*0.0);c.lineTo(x-s*0.24,y+s*0.22);c.lineTo(x+s*0.24,y+s*0.22);c.lineTo(x+s*0.24,y+s*0.0);c.stroke();
+      c.beginPath();c.moveTo(x-s*0.24,y+s*0.0);c.quadraticCurveTo(x,y-s*0.12,x+s*0.24,y+s*0.0);c.stroke();
+      c.lineWidth=s*0.03;c.beginPath();c.moveTo(x-s*0.24,y+s*0.1);c.lineTo(x+s*0.24,y+s*0.1);c.stroke();
+      c.lineWidth=s*0.045;c.beginPath();c.moveTo(x,y-s*0.08);c.lineTo(x-s*0.05,y-s*0.2);c.lineTo(x+s*0.05,y-s*0.2);c.closePath();c.stroke();c.restore(); },
+    icecream(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.16,y-s*0.02);c.lineTo(x,y+s*0.32);c.lineTo(x+s*0.16,y-s*0.02);c.stroke();
+      c.beginPath();c.moveTo(x-s*0.18,y-s*0.02);c.quadraticCurveTo(x-s*0.22,y-s*0.26,x,y-s*0.26);c.quadraticCurveTo(x+s*0.22,y-s*0.26,x+s*0.18,y-s*0.02);c.stroke();
+      c.lineWidth=s*0.03;c.beginPath();c.moveTo(x-s*0.1,y+s*0.04);c.lineTo(x-s*0.04,y+s*0.16);c.moveTo(x+s*0.02,y+s*0.04);c.lineTo(x-s*0.0,y+s*0.16);c.stroke();c.restore(); },
+    softcream(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.13,y+s*0.04);c.lineTo(x-s*0.1,y+s*0.3);c.lineTo(x+s*0.1,y+s*0.3);c.lineTo(x+s*0.13,y+s*0.04);c.closePath();c.stroke();
+      c.beginPath();c.moveTo(x-s*0.16,y+s*0.04);
+      c.quadraticCurveTo(x-s*0.18,y-s*0.04,x-s*0.08,y-s*0.06);c.quadraticCurveTo(x-s*0.16,y-s*0.12,x-s*0.02,y-s*0.14);c.quadraticCurveTo(x-s*0.1,y-s*0.22,x,y-s*0.24);c.quadraticCurveTo(x+s*0.1,y-s*0.22,x+s*0.02,y-s*0.14);c.quadraticCurveTo(x+s*0.16,y-s*0.12,x+s*0.08,y-s*0.06);c.quadraticCurveTo(x+s*0.18,y-s*0.04,x+s*0.16,y+s*0.04);c.stroke();c.restore(); },
+    parfait(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.16,y-s*0.08);c.lineTo(x-s*0.1,y+s*0.26);c.lineTo(x+s*0.1,y+s*0.26);c.lineTo(x+s*0.16,y-s*0.08);c.closePath();c.stroke();
+      c.lineWidth=s*0.035;c.beginPath();c.moveTo(x-s*0.14,y+s*0.06);c.lineTo(x+s*0.14,y+s*0.06);c.stroke();
+      c.lineWidth=s*0.045;c.beginPath();c.moveTo(x-s*0.16,y-s*0.08);c.quadraticCurveTo(x,y-s*0.28,x+s*0.16,y-s*0.08);c.stroke();
+      c.beginPath();c.arc(x,y-s*0.2,s*0.05,0,Math.PI*2);c.stroke();c.restore(); },
+    pancake(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      for(let i=0;i<3;i++){ const yy=y+s*0.12-i*s*0.13; c.beginPath();c.ellipse(x,yy,s*0.26,s*0.08,0,0,Math.PI*2);c.stroke(); }
+      c.lineWidth=s*0.035;c.beginPath();c.arc(x,y-s*0.28,s*0.05,0,Math.PI*2);c.stroke();c.restore(); },
+    donut(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.arc(x,y,s*0.27,0,Math.PI*2);c.moveTo(x+s*0.1,y);c.arc(x,y,s*0.1,0,Math.PI*2);c.stroke();
+      c.lineWidth=s*0.03;c.beginPath();c.moveTo(x-s*0.2,y-s*0.1);c.lineTo(x-s*0.12,y-s*0.04);c.moveTo(x+s*0.04,y-s*0.22);c.lineTo(x+s*0.1,y-s*0.14);c.stroke();c.restore(); },
+    cookie(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.arc(x,y,s*0.26,0,Math.PI*2);c.stroke();
+      c.fillStyle=col;[[-0.08,-0.06],[0.1,-0.02],[-0.02,0.1],[0.08,0.12],[-0.12,0.06]].forEach(p=>{c.beginPath();c.arc(x+s*p[0],y+s*p[1],s*0.028,0,Math.PI*2);c.fill();});c.restore(); },
+    pudding(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.22,y+s*0.16);c.lineTo(x-s*0.14,y-s*0.06);c.quadraticCurveTo(x,y-s*0.16,x+s*0.14,y-s*0.06);c.lineTo(x+s*0.22,y+s*0.16);c.closePath();c.stroke();
+      c.lineWidth=s*0.035;c.beginPath();c.moveTo(x-s*0.14,y-s*0.06);c.quadraticCurveTo(x,y+s*0.0,x+s*0.14,y-s*0.06);c.stroke();
+      c.beginPath();c.moveTo(x-s*0.22,y+s*0.18);c.lineTo(x+s*0.22,y+s*0.18);c.stroke();c.restore(); },
+    crepe(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.moveTo(x-s*0.16,y-s*0.18);c.lineTo(x,y+s*0.3);c.lineTo(x+s*0.16,y-s*0.18);c.stroke();
+      c.beginPath();c.moveTo(x-s*0.18,y-s*0.18);c.quadraticCurveTo(x-s*0.08,y-s*0.1,x,y-s*0.18);c.quadraticCurveTo(x+s*0.08,y-s*0.1,x+s*0.18,y-s*0.18);c.stroke();
+      c.lineWidth=s*0.035;c.beginPath();c.arc(x,y-s*0.16,s*0.045,0,Math.PI*2);c.stroke();c.restore(); },
+    macaron(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.05;c.lineCap='round';c.lineJoin='round';
+      c.beginPath();c.ellipse(x,y-s*0.1,s*0.24,s*0.12,0,Math.PI,0);c.stroke();
+      c.beginPath();c.ellipse(x,y+s*0.1,s*0.24,s*0.12,0,0,Math.PI);c.stroke();
+      c.lineWidth=s*0.035;c.beginPath();c.moveTo(x-s*0.22,y-s*0.02);c.lineTo(x+s*0.22,y-s*0.02);c.moveTo(x-s*0.22,y+s*0.04);c.lineTo(x+s*0.22,y+s*0.04);c.stroke();c.restore(); },
+    waffle(c,x,y,s,col){ c.save();c.strokeStyle=col;c.lineWidth=s*0.045;c.lineCap='round';c.lineJoin='round';
+      roundRect(c, x-s*0.26, y-s*0.26, s*0.52, s*0.52, s*0.08); c.stroke();
+      c.lineWidth=s*0.03;[-0.09,0.09].forEach(d=>{ c.beginPath();c.moveTo(x+s*d,y-s*0.26);c.lineTo(x+s*d,y+s*0.26);c.moveTo(x-s*0.26,y+s*d);c.lineTo(x+s*0.26,y+s*d);c.stroke(); });c.restore(); },
+    none(){}
+  };
+  const ICON_GENRE = {
+    drink:   ['coffee','latte','cappuccino','espresso','tea','matcha','milktea','juice','soda','cola','beer','wine','cocktail','water','milk'],
+    food:    ['burger','pizza','sandwich','hotdog','fries','salad','soup','noodle','steak','fish','sushi','rice','curry','karaage','bread','croissant','egg'],
+    dessert: ['cake','shortcake','icecream','softcream','parfait','pancake','donut','cookie','pudding','crepe','macaron','waffle'],
+  };
+  const GENRE_LABEL = { food:'食べ物', drink:'飲み物', dessert:'デザート' };
+  const ICON_LABEL = {coffee:'コーヒー',latte:'ラテ',cappuccino:'カプチーノ',espresso:'エスプレッソ',tea:'ティー',matcha:'抹茶',milktea:'タピオカ',juice:'ジュース',soda:'ソーダ',cola:'コーラ',beer:'ビール',wine:'ワイン',cocktail:'カクテル',water:'水',milk:'牛乳',burger:'バーガー',pizza:'ピザ',sandwich:'サンド',hotdog:'ホットドッグ',fries:'ポテト',salad:'サラダ',soup:'スープ',noodle:'麺',steak:'肉',fish:'魚',sushi:'寿司',rice:'ごはん',curry:'カレー',karaage:'唐揚げ',bread:'パン',croissant:'クロワッサン',egg:'たまご',cake:'ケーキ',shortcake:'ショートケーキ',icecream:'アイス',softcream:'ソフトクリーム',parfait:'パフェ',pancake:'パンケーキ',donut:'ドーナツ',cookie:'クッキー',pudding:'プリン',crepe:'クレープ',macaron:'マカロン',waffle:'ワッフル',none:'なし'};
+  function genreOf(name){ for(const g of Object.keys(ICON_GENRE)){ if(ICON_GENRE[g].includes(name)) return g; } return 'drink'; }
+
+  // --- 追加アイコン（食べ物・飲み物・デザート） ---
+  Object.assign(ICONS, {
+    onigiri(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.06; const w=s*0.7; c.beginPath(); c.moveTo(x,y-s*0.36); c.quadraticCurveTo(x+w*0.55,y+s*0.28,x+w*0.5,y+s*0.34); c.lineTo(x-w*0.5,y+s*0.34); c.quadraticCurveTo(x-w*0.55,y+s*0.28,x,y-s*0.36); c.closePath(); c.stroke(); c.fillStyle=col; c.fillRect(x-s*0.18,y+s*0.12,s*0.36,s*0.18); c.restore(); },
+    sushi(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.055; c.beginPath(); c.ellipse(x,y+s*0.12,s*0.42,s*0.2,0,0,Math.PI*2); c.stroke(); c.beginPath(); c.ellipse(x,y-s*0.12,s*0.4,s*0.16,0,0,Math.PI*2); c.stroke(); c.beginPath(); c.moveTo(x-s*0.3,y-s*0.12); c.lineTo(x+s*0.3,y-s*0.12); c.stroke(); c.restore(); },
+    hotdog(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.055; c.beginPath(); c.ellipse(x,y,s*0.46,s*0.2,0,0,Math.PI*2); c.stroke(); c.beginPath(); c.ellipse(x,y-s*0.02,s*0.34,s*0.1,0,0,Math.PI*2); c.stroke(); c.lineWidth=s*0.035; c.beginPath(); for(let i=-3;i<=3;i++){ const xx=x+i*s*0.09; const yy=y-s*0.02+((Math.abs(i)%2)?s*0.05:-s*0.05); if(i===-3)c.moveTo(xx,yy); else c.lineTo(xx,yy); } c.stroke(); c.restore(); },
+    fries(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.05; c.beginPath(); c.moveTo(x-s*0.28,y-s*0.05); c.lineTo(x-s*0.22,y+s*0.36); c.lineTo(x+s*0.22,y+s*0.36); c.lineTo(x+s*0.28,y-s*0.05); c.stroke(); for(let i=-2;i<=2;i++){ c.beginPath(); c.moveTo(x+i*s*0.12,y-s*0.05); c.lineTo(x+i*s*0.12,y-s*0.36); c.stroke(); } c.restore(); },
+    taco(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.055; c.beginPath(); c.arc(x,y+s*0.05,s*0.4,Math.PI,0); c.stroke(); c.beginPath(); c.moveTo(x-s*0.4,y+s*0.05); c.quadraticCurveTo(x,y-s*0.18,x+s*0.4,y+s*0.05); c.stroke(); c.fillStyle=col; [-0.18,0,0.18].forEach(o=>{ c.beginPath(); c.arc(x+o*s,y-s*0.02,s*0.05,0,Math.PI*2); c.fill(); }); c.restore(); },
+    omurice(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.055; c.beginPath(); c.ellipse(x,y+s*0.05,s*0.42,s*0.26,0,0,Math.PI*2); c.stroke(); c.lineWidth=s*0.045; c.beginPath(); c.moveTo(x-s*0.16,y-s*0.18); c.quadraticCurveTo(x+s*0.12,y+s*0.12,x+s*0.18,y+s*0.22); c.stroke(); c.restore(); },
+    smoothie(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.055; c.beginPath(); c.moveTo(x-s*0.26,y-s*0.1); c.lineTo(x-s*0.2,y+s*0.36); c.lineTo(x+s*0.2,y+s*0.36); c.lineTo(x+s*0.26,y-s*0.1); c.stroke(); c.beginPath(); c.arc(x,y-s*0.1,s*0.26,Math.PI,0,true); c.stroke(); c.beginPath(); c.moveTo(x+s*0.08,y-s*0.3); c.lineTo(x+s*0.16,y-s*0.05); c.stroke(); c.restore(); },
+    martini(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.05; c.beginPath(); c.moveTo(x-s*0.34,y-s*0.3); c.lineTo(x,y+s*0.06); c.lineTo(x+s*0.34,y-s*0.3); c.stroke(); c.beginPath(); c.moveTo(x,y+s*0.06); c.lineTo(x,y+s*0.32); c.moveTo(x-s*0.18,y+s*0.34); c.lineTo(x+s*0.18,y+s*0.34); c.stroke(); c.fillStyle=col; c.beginPath(); c.arc(x+s*0.1,y-s*0.12,s*0.05,0,Math.PI*2); c.fill(); c.restore(); },
+    soda(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.05; c.beginPath(); c.moveTo(x-s*0.22,y-s*0.28); c.lineTo(x-s*0.16,y+s*0.34); c.lineTo(x+s*0.16,y+s*0.34); c.lineTo(x+s*0.22,y-s*0.28); c.closePath(); c.stroke(); c.fillStyle=col; [[-0.05,0.1],[0.06,0],[-0.02,-0.12],[0.08,0.18]].forEach(([a,b])=>{ c.beginPath(); c.arc(x+a*s,y+b*s,s*0.03,0,Math.PI*2); c.fill(); }); c.beginPath(); c.moveTo(x+s*0.04,y-s*0.4); c.lineTo(x+s*0.1,y-s*0.05); c.stroke(); c.restore(); },
+    pudding(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.055; c.beginPath(); c.moveTo(x-s*0.3,y-s*0.12); c.lineTo(x-s*0.38,y+s*0.26); c.lineTo(x+s*0.38,y+s*0.26); c.lineTo(x+s*0.3,y-s*0.12); c.closePath(); c.stroke(); c.beginPath(); c.ellipse(x,y-s*0.12,s*0.3,s*0.1,0,0,Math.PI*2); c.stroke(); c.lineWidth=s*0.045; c.beginPath(); c.arc(x,y-s*0.16,s*0.16,Math.PI,0); c.stroke(); c.restore(); },
+    macaron(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.05; c.beginPath(); c.arc(x,y-s*0.12,s*0.32,Math.PI,0); c.lineTo(x+s*0.32,y-s*0.04); c.lineTo(x-s*0.32,y-s*0.04); c.closePath(); c.stroke(); c.beginPath(); c.arc(x,y+s*0.16,s*0.32,0,Math.PI); c.lineTo(x-s*0.32,y+s*0.08); c.lineTo(x+s*0.32,y+s*0.08); c.closePath(); c.stroke(); c.lineWidth=s*0.06; c.beginPath(); c.moveTo(x-s*0.3,y+s*0.02); c.lineTo(x+s*0.3,y+s*0.02); c.stroke(); c.restore(); },
+    parfait(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.05; c.beginPath(); c.moveTo(x-s*0.2,y-s*0.32); c.lineTo(x-s*0.12,y+s*0.28); c.lineTo(x+s*0.12,y+s*0.28); c.lineTo(x+s*0.2,y-s*0.32); c.stroke(); c.beginPath(); c.moveTo(x,y+s*0.28); c.lineTo(x,y+s*0.36); c.stroke(); c.lineWidth=s*0.04; for(let i=0;i<2;i++){ c.beginPath(); c.arc(x,y-s*0.04+i*s*0.14,s*0.16,Math.PI,0,true); c.stroke(); } c.fillStyle=col; c.beginPath(); c.arc(x,y-s*0.34,s*0.06,0,Math.PI*2); c.fill(); c.restore(); },
+    waffle(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.05; const r=s*0.34; c.strokeRect(x-r,y-r,r*2,r*2); c.lineWidth=s*0.03; for(let i=-1;i<=1;i++){ c.beginPath(); c.moveTo(x-r,y+i*r*0.6); c.lineTo(x+r,y+i*r*0.6); c.moveTo(x+i*r*0.6,y-r); c.lineTo(x+i*r*0.6,y+r); c.stroke(); } c.restore(); },
+    matchadrink(c,x,y,s,col){ c.save(); c.lineCap='round'; c.lineJoin='round'; c.strokeStyle=col; c.lineWidth=s*0.055; c.beginPath(); c.moveTo(x-s*0.24,y-s*0.22); c.lineTo(x-s*0.18,y+s*0.34); c.lineTo(x+s*0.18,y+s*0.34); c.lineTo(x+s*0.24,y-s*0.22); c.closePath(); c.stroke(); c.lineWidth=s*0.04; c.beginPath(); c.moveTo(x-s*0.22,y-s*0.08); c.quadraticCurveTo(x,y+s*0.04,x+s*0.22,y-s*0.08); c.stroke(); c.restore(); }
+  });
+  ICON_GENRE.food.push('onigiri','taco','omurice');
+  ICON_GENRE.drink.push('smoothie','martini','matchadrink');
+  /* dessert: pudding/macaron/parfait/waffle are already in the base list */
+  Object.assign(ICON_LABEL,{ onigiri:'おにぎり', sushi:'寿司', hotdog:'ホットドッグ', fries:'ポテト', taco:'タコス', omurice:'オムライス', smoothie:'スムージー', martini:'マティーニ', soda:'ソーダ', matchadrink:'抹茶ラテ', pudding:'プリン', macaron:'マカロン', parfait:'パフェ', waffle:'ワッフル' });
+
+  // ===================== テキスト・配置 補助 =====================
+  function fontStack(key){ return (FONTS[key]||FONTS.gothic).stack; }
+  function setFont(c, px, weight){ c.font=(weight||'')+' '+px+'px '+fontStack(cre.font); }
+  function setTitleFont(c, px, weight){ const k=(cre.titleFont&&cre.titleFont!=='theme'&&FONTS[cre.titleFont])?cre.titleFont:cre.font; c.font=(weight||'')+' '+px+'px '+fontStack(k); }
+  function _fit(c, setter, txt, px, weight, maxW){ let p=px; setter(c,p,weight); while(c.measureText(txt).width>maxW && p>7){ p-=1; setter(c,p,weight); } return p; }
+  function fitText(c, txt, px, weight, maxW){ return _fit(c,setFont,txt,px,weight,maxW); }
+  function fitTitle(c, txt, px, weight, maxW){ return _fit(c,setTitleFont,txt,px,weight,maxW); }
+  function ellipsize(c, txt, maxW){ if(c.measureText(txt).width<=maxW) return txt; let t=txt; while(t.length>1 && c.measureText(t+'…').width>maxW){ t=t.slice(0,-1); } return t+'…'; }
+  function wrap(c, txt, maxW){ const words=(txt||'').split(''); const lines=[]; let cur=''; for(const ch of words){ if(c.measureText(cur+ch).width>maxW && cur){ lines.push(cur); cur=ch; } else cur+=ch; } if(cur) lines.push(cur); return lines; }
+  function roundRect(c,x,y,w,h,r){ r=Math.min(r,w/2,h/2); c.beginPath(); c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r); c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath(); }
+  function grouped(){ const map=new Map(); cre.items.forEach(it=>{ const k=(it.section||'MENU'); if(!map.has(k)) map.set(k,[]); map.get(k).push(it); }); return [...map.entries()].map(([name,items])=>({name,items})); }
+  function headAlign(M,W){ if(cre.align==='left') return {x:M,a:'left'}; if(cre.align==='right') return {x:W-M,a:'right'}; return {x:W/2,a:'center'}; }
+  function colCount(W,H,th){ if(cre.cols==='1') return 1; if(cre.cols==='2') return 2; return (W/H>(th||1.1))?2:1; }
+  function recPrefix(){ const s=cre.recStyle; if(s==='none') return ''; if(s==='dot') return '● '; if(s==='heart') return '♥ '; if(s==='label') return '【おすすめ】'; return '★ '; }
+  function drawHeading(c,W,topY,cfg){
+    const M=cfg.M, ha=headAlign(M,W); c.textAlign=ha.a; c.textBaseline='alphabetic';
+    const title=cre.store||cfg.ph||'お店の名前';
+    setTitleFont(c,cfg.size,cfg.weight); c.fillStyle=cfg.color; fitTitle(c,title,cfg.size,cfg.weight,W-M*2);
+    let y=topY+cfg.size*0.82; c.fillText(title, ha.x, y); y+=cfg.size*0.2;
+    if(cre.tag){ y+=cfg.tagSize*0.8; setFont(c,cfg.tagSize,cfg.tagWeight||''); c.fillStyle=cfg.tagColor; c.fillText(ellipsize(c,cre.tag,W-M*2), ha.x, y); y+=cfg.tagSize*0.5; }
+    if(cfg.rule){ y+=W*0.012;
+      if(cfg.rule==='barFull'){ c.fillStyle=cfg.ruleColor; c.fillRect(M,y,W-M*2,W*0.008); }
+      else if(cfg.rule==='dot'){ c.fillStyle=cfg.ruleColor; const dx=ha.a==='left'?M:(ha.a==='right'?W-M:W/2); c.beginPath(); c.arc(dx,y,W*0.006,0,Math.PI*2); c.fill(); }
+      else { let x0,x1; const half=W*0.06; if(ha.a==='left'){ x0=M; x1=M+half*2; } else if(ha.a==='right'){ x0=W-M-half*2; x1=W-M; } else { x0=W/2-half; x1=W/2+half; } c.strokeStyle=cfg.ruleColor; c.lineWidth=W*0.006; c.beginPath(); c.moveTo(x0,y); c.lineTo(x1,y); c.stroke(); }
+      y+=W*0.018;
+    }
+    return y;
+  }
+
+  // 質感（テクスチャ）— 決定論的（プレビューと書き出しが一致）
+  function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+  function drawTexture(c,W,H){
+    const p=cre.pal, t=cre.texture; if(!t||t==='none') return; const S=cre.textureStrength||1; const rnd=mulberry32(987654321); const ink=p.ink; const unit=Math.max(W,H)/1000; const A=(a)=>Math.min(0.6,a*S); c.save();
+    if(t==='paper'){ const n=Math.min(9000,Math.floor(W*H*0.0016)); c.fillStyle=ink; for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H,r=(0.45+rnd()*1.4)*unit; c.globalAlpha=A(0.03+rnd()*0.08); c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill(); } }
+    else if(t==='kraft'){ const n=Math.min(6000,Math.floor(W*H*0.0009)); c.fillStyle=ink; for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H,r=(0.5+rnd()*1.6)*unit; c.globalAlpha=A(0.02+rnd()*0.06); c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill(); } c.strokeStyle=ink; c.lineWidth=0.6*unit; const fn=Math.min(700,Math.floor(W*H*0.0001)); for(let i=0;i<fn;i++){ const x=rnd()*W,y=rnd()*H,len=(10+rnd()*30)*unit,a=(rnd()-0.5)*0.6; c.globalAlpha=A(0.03); c.beginPath(); c.moveTo(x,y); c.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len); c.stroke(); } }
+    else if(t==='washi'){ const n=Math.min(2400,Math.floor(W*H*0.00035)); c.strokeStyle=ink; c.lineWidth=0.6*unit; for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H,len=(6+rnd()*22)*unit,a=rnd()*Math.PI; c.globalAlpha=A(0.02+rnd()*0.05); c.beginPath(); c.moveTo(x,y); c.lineTo(x+Math.cos(a)*len,y+Math.sin(a)*len); c.stroke(); } }
+    else if(t==='linen'){ c.strokeStyle=ink; c.lineWidth=0.7*unit; c.globalAlpha=A(0.05); const gap=5*unit; for(let x=0;x<W;x+=gap){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,H); c.stroke(); } for(let y=0;y<H;y+=gap){ c.beginPath(); c.moveTo(0,y); c.lineTo(W,y); c.stroke(); } }
+    else if(t==='canvas'){ c.strokeStyle=ink; c.lineWidth=1.1*unit; c.globalAlpha=A(0.06); const gap=9*unit; for(let x=0;x<W;x+=gap){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,H); c.stroke(); } for(let y=0;y<H;y+=gap){ c.beginPath(); c.moveTo(0,y); c.lineTo(W,y); c.stroke(); } }
+    else if(t==='wood'){ c.strokeStyle=ink; c.lineWidth=1.0*unit; const rows=Math.floor(H/(10*unit)); for(let i=0;i<rows;i++){ const baseY=i*10*unit+rnd()*4*unit; c.globalAlpha=A(0.035+rnd()*0.03); c.beginPath(); for(let x=0;x<=W;x+=6*unit){ const yy=baseY+Math.sin(x/(60*unit)+i)*2*unit; if(x===0)c.moveTo(x,yy); else c.lineTo(x,yy); } c.stroke(); } }
+    else if(t==='stone'){ const n=Math.min(3000,Math.floor(W*H*0.0005)); c.fillStyle=ink; for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H,r=(0.6+rnd()*3.2)*unit; c.globalAlpha=A(0.015+rnd()*0.045); c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill(); } }
+    else if(t==='noise'){ const n=Math.min(10000,Math.floor(W*H*0.0018)); for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H; c.globalAlpha=A(0.03+rnd()*0.06); c.fillStyle=rnd()>0.5?ink:'#ffffff'; c.fillRect(x,y,unit*0.9,unit*0.9); } }
+    else if(t==='dots'){ c.fillStyle=ink; c.globalAlpha=A(0.06); const gap=8*unit,r=1.1*unit; for(let y=gap;y<H;y+=gap){ for(let x=gap;x<W;x+=gap){ c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill(); } } }
+    else if(t==='grid'){ c.strokeStyle=ink; c.lineWidth=0.6*unit; c.globalAlpha=A(0.05); const gap=14*unit; for(let x=gap;x<W;x+=gap){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,H); c.stroke(); } for(let y=gap;y<H;y+=gap){ c.beginPath(); c.moveTo(0,y); c.lineTo(W,y); c.stroke(); } }
+    c.restore();
+  }
+
+  // お店・スタッフ画像（隅に自動配置）
+  function drawPhoto(c,W,H){
+    const img=cre.photo; if(!img) return; const p=cre.pal;
+    const s=Math.min(W,H)*(cre.photoSize||0.22); const pad=W*0.045; const pos=cre.photoPos||'br';
+    let cx,cy;
+    if(pos==='br'){ cx=W-pad-s/2; cy=H-pad-s/2; } else if(pos==='bl'){ cx=pad+s/2; cy=H-pad-s/2; } else if(pos==='tr'){ cx=W-pad-s/2; cy=pad+s/2; } else { cx=pad+s/2; cy=pad+s/2; }
+    const round=cre.photoShape==='round';
+    c.save();
+    if(round) roundRect(c,cx-s/2,cy-s/2,s,s,s*0.12); else { c.beginPath(); c.arc(cx,cy,s/2,0,Math.PI*2); c.closePath(); }
+    c.fillStyle=p.card; c.fill(); c.save(); c.clip();
+    const ar=img.width/img.height; let dw=s,dh=s; if(ar>1){ dh=s; dw=s*ar; } else { dw=s; dh=s/ar; }
+    c.drawImage(img, cx-dw/2, cy-dh/2, dw, dh); c.restore();
+    c.lineWidth=s*0.035; c.strokeStyle=p.accent;
+    if(round){ roundRect(c,cx-s/2,cy-s/2,s,s,s*0.12); c.stroke(); } else { c.beginPath(); c.arc(cx,cy,s/2,0,Math.PI*2); c.stroke(); }
+    c.restore();
+  }
+  function bg(c,W,H,p){ if(cre.roomImage) return; c.fillStyle=p.bg; c.fillRect(0,0,W,H); }
+  function hexA(hex,a){ const x=toHex(hex); const n=parseInt(x.slice(1),16); return 'rgba('+((n>>16)&255)+','+((n>>8)&255)+','+(n&255)+','+a+')'; }
+  function drawCircImg(c,cx,cy,size,img,shape,p){ const s=size; c.save(); if(shape==='square'){ roundRect(c,cx-s/2,cy-s/2,s,s,s*0.14); } else { c.beginPath(); c.arc(cx,cy,s/2,0,Math.PI*2); c.closePath(); } c.fillStyle=p.card; c.fill(); c.save(); c.clip(); const ar=img.width/img.height; let dw=s,dh=s; if(ar>1){ dh=s; dw=s*ar; } else { dw=s; dh=s/ar; } c.drawImage(img,cx-dw/2,cy-dh/2,dw,dh); c.restore(); if(cre.itemPhotoBorder!==false){ c.lineWidth=s*0.04; c.strokeStyle=p.accent2; if(shape==='square'){ roundRect(c,cx-s/2,cy-s/2,s,s,s*0.14); c.stroke(); } else { c.beginPath(); c.arc(cx,cy,s/2,0,Math.PI*2); c.stroke(); } } c.restore(); }
+  function drawItemVisual(c,cx,cy,size,it,p,shape,o){ o=o||{}; c.save(); c.lineCap='round'; c.lineJoin='round';
+    if(it.photo){ drawCircImg(c,cx,cy,size,it.photo,shape,p); }
+    else if(it.icon && it.icon!=='none' && ICONS[it.icon]){
+      if(o.plate){ c.fillStyle=o.plateFill||hexA(p.accent2,0.16); c.beginPath(); if(shape==='square'){ roundRect(c,cx-size/2,cy-size/2,size,size,size*0.24); } else { c.arc(cx,cy,size/2,0,Math.PI*2); } c.fill();
+        if(o.ring){ c.strokeStyle=o.ringCol||hexA(p.accent2,0.7); c.lineWidth=size*0.045; if(o.ringDash) c.setLineDash([size*0.09,size*0.1]); c.beginPath(); c.arc(cx,cy,size/2+(o.ringOut?size*0.1:0),0,Math.PI*2); c.stroke(); c.setLineDash([]); } }
+      ICONS[it.icon](c,cx,cy,size*(o.plate?0.64:1),o.iconCol||p.accent2);
+    }
+    c.restore(); }
+  function drawFrame(c,W,H,pad){ const p=cre.pal; const m=pad*0.5, col=p.accent, lw=Math.max(1,W*0.004); const x=m,y=m,w=W-2*m,h=H-2*m; const f=cre.frame; c.save(); c.strokeStyle=col; c.fillStyle=col; c.lineWidth=lw;
+    if(f==='line'){ c.strokeRect(x,y,w,h); }
+    else if(f==='double'){ c.strokeRect(x,y,w,h); c.lineWidth=lw*0.5; const g=pad*0.18; c.strokeRect(x+g,y+g,w-2*g,h-2*g); }
+    else if(f==='rounded'){ roundRect(c,x,y,w,h,pad*0.5); c.stroke(); }
+    else if(f==='dots'){ c.setLineDash([lw*0.5,lw*2.2]); c.lineCap='round'; c.strokeRect(x,y,w,h); c.setLineDash([]); }
+    else if(f==='corners'){ const L=Math.min(w,h)*0.12; c.lineWidth=lw*1.3; [[x,y,1,1],[x+w,y,-1,1],[x,y+h,1,-1],[x+w,y+h,-1,-1]].forEach(a=>{ c.beginPath(); c.moveTo(a[0]+a[2]*L,a[1]); c.lineTo(a[0],a[1]); c.lineTo(a[0],a[1]+a[3]*L); c.stroke(); }); }
+    else if(f==='deco'){ c.strokeRect(x,y,w,h); const g=pad*0.16; c.lineWidth=lw*0.5; c.strokeRect(x+g,y+g,w-2*g,h-2*g); const sq=pad*0.22; [[x,y],[x+w,y],[x,y+h],[x+w,y+h]].forEach(a=>{ c.fillRect(a[0]-sq/2,a[1]-sq/2,sq,sq); }); }
+    else if(f==='ticks'){ c.strokeRect(x,y,w,h); const t=pad*0.45; c.lineWidth=lw*1.2; c.beginPath(); c.moveTo(x+w/2,y); c.lineTo(x+w/2,y+t); c.moveTo(x+w/2,y+h); c.lineTo(x+w/2,y+h-t); c.moveTo(x,y+h/2); c.lineTo(x+t,y+h/2); c.moveTo(x+w,y+h/2); c.lineTo(x+w-t,y+h/2); c.stroke(); }
+    c.restore(); }
+
+  // ===================== デザイン補助 v2 =====================
+  function mixHex(a,b,t){ const A=parseInt(toHex(a).slice(1),16), B=parseInt(toHex(b).slice(1),16); const r=Math.round(((A>>16)&255)+((((B>>16)&255)-((A>>16)&255))*t)); const g=Math.round(((A>>8)&255)+((((B>>8)&255)-((A>>8)&255))*t)); const bl=Math.round((A&255)+(((B&255)-(A&255))*t)); return '#'+((1<<24)+(r<<16)+(g<<8)+bl).toString(16).slice(1); }
+  function tint(h,t){ return mixHex(h,'#ffffff',t); }
+  function shade(h,t){ return mixHex(h,'#000000',t); }
+  function luma(h){ const x=toHex(h); const n=parseInt(x.slice(1),16); return (0.299*((n>>16)&255)+0.587*((n>>8)&255)+0.114*(n&255))/255; }
+  function onInk(fill){ return luma(fill)>0.55 ? '#33302a' : '#f6f3ec'; }
+  function setDF(c,px,weight,pref){ let k; if(cre.titleFont && cre.titleFont!=='theme' && FONTS[cre.titleFont]) k=cre.titleFont; else if(pref && FONTS[pref]) k=pref; else k=cre.font; c.font=(weight||'')+' '+px+'px '+fontStack(k); }
+  function fitDF(c,txt,px,weight,maxW,pref){ let p2=px; setDF(c,p2,weight,pref); while(c.measureText(txt).width>maxW && p2>7){ p2-=1; setDF(c,p2,weight,pref); } return p2; }
+  function tracked(c,txt,x,y,ls,align){ const chs=[...String(txt)]; const ws=chs.map(ch=>c.measureText(ch).width); const tw=ws.reduce((a,b)=>a+b,0)+ls*Math.max(0,chs.length-1); let sx=x; if(align==='center') sx=x-tw/2; else if(align==='right') sx=x-tw; const pa=c.textAlign; c.textAlign='left'; chs.forEach((ch,i)=>{ c.fillText(ch,sx,y); sx+=ws[i]+ls; }); c.textAlign=pa; return tw; }
+  function withShadow(c,col,blur,dx,dy,fn){ c.save(); c.shadowColor=col; c.shadowBlur=blur; c.shadowOffsetX=dx; c.shadowOffsetY=dy; fn(); c.restore(); }
+  function cardRect(c,x,y,w,h,r,fill,o){ o=o||{}; withShadow(c,o.sc||'rgba(35,28,20,0.18)', o.blur==null?Math.min(w,h)*0.10:o.blur, o.dx||0, o.dy==null?Math.min(w,h)*0.05:o.dy, function(){ c.fillStyle=fill; roundRect(c,x,y,w,h,r); c.fill(); }); if(o.stroke){ c.strokeStyle=o.stroke; c.lineWidth=o.lw||1; roundRect(c,x,y,w,h,r); c.stroke(); } }
+  function vignette(c,W,H,col,a){ const g=c.createRadialGradient(W/2,H*0.44,Math.min(W,H)*0.42,W/2,H/2,Math.max(W,H)*0.72); g.addColorStop(0,hexA(col,0)); g.addColorStop(1,hexA(col,a)); c.fillStyle=g; c.fillRect(0,0,W,H); }
+  function ambient(c,W,H,kind,S){ const rnd=mulberry32(24681357); const ink=cre.pal.ink; const unit=Math.max(W,H)/1000; const A=function(a){ return Math.min(0.5,a*S); }; c.save();
+    if(kind==='paper'){ const n=Math.min(5200,Math.floor(W*H*0.0011)); c.fillStyle=ink; for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H,r=(0.4+rnd()*1.2)*unit; c.globalAlpha=A(0.03+rnd()*0.05); c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill(); } }
+    else if(kind==='washi'){ const n=Math.min(1600,Math.floor(W*H*0.00028)); c.strokeStyle=ink; c.lineWidth=0.6*unit; for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H,len=(6+rnd()*20)*unit,a2=rnd()*Math.PI; c.globalAlpha=A(0.02+rnd()*0.04); c.beginPath(); c.moveTo(x,y); c.lineTo(x+Math.cos(a2)*len,y+Math.sin(a2)*len); c.stroke(); } }
+    else if(kind==='kraft'){ const n=Math.min(4200,Math.floor(W*H*0.0008)); c.fillStyle=ink; for(let i=0;i<n;i++){ const x=rnd()*W,y=rnd()*H,r=(0.5+rnd()*1.5)*unit; c.globalAlpha=A(0.02+rnd()*0.05); c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.fill(); } c.strokeStyle=ink; c.lineWidth=0.55*unit; const fn2=Math.min(520,Math.floor(W*H*0.00009)); for(let i=0;i<fn2;i++){ const x=rnd()*W,y=rnd()*H,len=(9+rnd()*26)*unit,a2=(rnd()-0.5)*0.5; c.globalAlpha=A(0.028); c.beginPath(); c.moveTo(x,y); c.lineTo(x+Math.cos(a2)*len,y+Math.sin(a2)*len); c.stroke(); } }
+    c.restore(); }
+  function blobShadow(c,cx,cy,rx,ry,col){ c.save(); c.fillStyle=col; c.beginPath(); c.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); c.fill(); c.restore(); }
+  function tape(c,cx,cy,w,h,ang,col){ c.save(); c.translate(cx,cy); c.rotate(ang); c.globalAlpha=0.55; c.fillStyle=col; const zz=3, seg=h/zz; c.beginPath(); c.moveTo(-w/2,-h/2); c.lineTo(w/2,-h/2); for(let i=1;i<=zz;i++){ c.lineTo(w/2+((i%2)?-h*0.13:h*0.03), -h/2+seg*i); } for(let i=1;i<=zz;i++){ c.lineTo(-w/2+((i%2)?h*0.13:-h*0.03), h/2-seg*i); } c.closePath(); c.fill(); c.globalAlpha=0.14; c.fillStyle='#ffffff'; c.fillRect(-w/2,-h*0.14,w,h*0.28); c.restore(); }
+  function stitch(c,x,y,w,h,r,col,u){ c.save(); c.strokeStyle=col; c.lineWidth=Math.max(0.7,u*0.5); c.setLineDash([u*1.7,u*1.4]); roundRect(c,x,y,w,h,r); c.stroke(); c.setLineDash([]); c.restore(); }
+  function starPath(c,cx,cy,r){ c.beginPath(); for(let i=0;i<10;i++){ const a=-Math.PI/2+i*Math.PI/5, rr=(i%2)?r*0.45:r; const X=cx+Math.cos(a)*rr, Y=cy+Math.sin(a)*rr; if(i) c.lineTo(X,Y); else c.moveTo(X,Y); } c.closePath(); }
+  function heartPath(c,cx,cy,s){ c.beginPath(); c.moveTo(cx,cy+s*0.62); c.bezierCurveTo(cx-s*1.05,cy-s*0.12,cx-s*0.52,cy-s*0.92,cx,cy-s*0.32); c.bezierCurveTo(cx+s*0.52,cy-s*0.92,cx+s*1.05,cy-s*0.12,cx,cy+s*0.62); c.closePath(); }
+  function recMark(c,rec,x,yMid,s,col){ const st=cre.recStyle; if(!rec || !st || st==='none') return 0; c.save(); c.fillStyle=col;
+    if(st==='heart'){ heartPath(c,x+s*0.55,yMid,s*0.5); c.fill(); c.restore(); return s*1.35; }
+    if(st==='dot'){ c.beginPath(); c.arc(x+s*0.4,yMid,s*0.3,0,Math.PI*2); c.fill(); c.restore(); return s*1.1; }
+    if(st==='label'){ setDF(c,s*0.66,'800','maru'); const t='おすすめ'; const tw=c.measureText(t).width; const h=s*1.12, w=tw+s*0.72; roundRect(c,x,yMid-h/2,w,h,h/2); c.fill(); c.fillStyle='#ffffff'; c.textAlign='left'; c.fillText(t,x+s*0.36,yMid+s*0.24); c.restore(); return w+s*0.42; }
+    starPath(c,x+s*0.55,yMid,s*0.55); c.fill(); c.restore(); return s*1.4; }
+  function measPrice(c,it,px,setP,w){ const pr=it.price||''; if(!pr) return 0; setP(px,w||'800'); const dw=c.measureText(pr).width; let uw=0; if(it.unit){ setP(px*0.6,'700'); uw=c.measureText(it.unit).width+px*0.12; } return dw+uw; }
+  function drawPriceR(c,rx,by,it,px,setP,w,col,ucol){ const pr=it.price||''; if(!pr) return; let x=rx; c.textAlign='left'; if(it.unit){ setP(px*0.6,'700'); const uw=c.measureText(it.unit).width; c.fillStyle=ucol||col; c.fillText(it.unit,rx-uw,by); x=rx-uw-px*0.12; } setP(px,w||'800'); c.fillStyle=col; c.textAlign='right'; c.fillText(pr,x,by); c.textAlign='left'; }
+  function drawPriceL(c,x,by,it,px,setP,w,col,ucol){ const pr=it.price||''; if(!pr) return 0; setP(px,w||'800'); c.fillStyle=col; c.textAlign='left'; c.fillText(pr,x,by); const dw=c.measureText(pr).width; let uw=0; if(it.unit){ setP(px*0.6,'700'); c.fillStyle=ucol||col; c.fillText(it.unit,x+dw+px*0.1,by); uw=c.measureText(it.unit).width+px*0.1; } return dw+uw; }
+  function leaderLine(c,x0,x1,y,kind,col,u){ if(x1-x0<u*2.2) return; c.save();
+    if(kind==='dots'){ c.fillStyle=col; for(let x=x0+u; x<x1; x+=u*2.6){ c.beginPath(); c.arc(x,y,u*0.5,0,Math.PI*2); c.fill(); } }
+    else if(kind==='dash'){ c.strokeStyle=col; c.lineWidth=Math.max(0.7,u*0.55); c.setLineDash([u*1.4,u*1.6]); c.beginPath(); c.moveTo(x0,y); c.lineTo(x1,y); c.stroke(); c.setLineDash([]); }
+    else { c.strokeStyle=col; c.lineWidth=Math.max(0.6,u*0.3); c.beginPath(); c.moveTo(x0,y); c.lineTo(x1,y); c.stroke(); }
+    c.restore(); }
+  function rowStd(c,x,y,colW,it,o){ const p=cre.pal; const setN=o.setN||function(px,w){ setFont(c,px,w); }; const setP=o.setP||setN; let nx=x; const has=!!(it.photo||(it.icon&&it.icon!=='none'&&ICONS[it.icon]));
+    if(o.iconSize && has){ drawItemVisual(c, x+o.iconSize*0.5, y+o.nPx*0.38, o.iconSize, it, p, o.iconShape||'circle', o.iconOpts); nx=x+o.iconSize+o.nPx*0.5; }
+    const base=y+o.nPx*0.82;
+    const pw=measPrice(c,it,o.pPx||o.nPx,setP,o.pW||'800');
+    const adv=recMark(c,it.rec,nx,base-o.nPx*0.3,o.nPx*0.62,o.recCol||p.accent); nx+=adv;
+    setN(o.nPx,o.nW||'600'); c.fillStyle=o.nCol||p.ink; c.textAlign='left';
+    const maxN=Math.max(o.nPx*2, colW-(nx-x)-pw-(pw?o.nPx*0.9:0));
+    const nm=ellipsize(c,it.name||'商品名',maxN); c.fillText(nm,nx,base); const nEnd=nx+c.measureText(nm).width;
+    if(pw){ if(o.leader){ const ls=nEnd+o.nPx*0.5, le=x+colW-pw-o.nPx*0.5; leaderLine(c,ls,le,base-o.nPx*0.28,o.leader,o.leadCol||hexA(p.sub,0.8),o.nPx*0.1); } drawPriceR(c,x+colW,base,it,o.pPx||o.nPx,setP,o.pW||'800',o.pCol||p.ink,o.uCol||o.pCol||p.ink); }
+    let yy=y+(o.lineH!=null?o.lineH:o.nPx*1.6);
+    if(it.desc && o.dPx){ setFont(c,o.dPx,''); c.fillStyle=o.dCol||p.sub; const dx0=nx-adv; const dl=wrap(c,it.desc,colW-(dx0-x)); dl.slice(0,o.descLines==null?2:o.descLines).forEach(function(l){ c.fillText(l,dx0,yy+o.dPx*0.82); yy+=o.dPx*1.4; }); }
+    return yy+(o.pad!=null?o.pad:o.nPx*0.5); }
+  function ornRule(c,ha,W,M,y,kind,col){ const lw=W*0.0022; c.save(); c.strokeStyle=col; c.fillStyle=col; c.lineWidth=lw; let x0,x1; const half=W*0.085; if(ha.a==='left'){ x0=M; x1=M+half*2; } else if(ha.a==='right'){ x0=W-M-half*2; x1=W-M; } else { x0=W/2-half; x1=W/2+half; }
+    if(kind==='bar'){ c.fillRect(x0,y-lw*2,x1-x0,lw*4.4); }
+    else if(kind==='full'){ c.fillRect(M,y-lw,W-M*2,lw*2.4); }
+    else if(kind==='dline'){ c.beginPath(); c.moveTo(x0,y); c.lineTo(x1,y); c.stroke(); c.beginPath(); c.moveTo(x0,y+lw*3.6); c.lineTo(x1,y+lw*3.6); c.stroke(); }
+    else { const cx=(x0+x1)/2, d=W*0.0075; c.beginPath(); c.moveTo(x0,y); c.lineTo(cx-d*2.4,y); c.moveTo(cx+d*2.4,y); c.lineTo(x1,y); c.stroke(); c.save(); c.translate(cx,y); c.rotate(Math.PI/4); c.fillRect(-d*0.85,-d*0.85,d*1.7,d*1.7); c.restore(); c.beginPath(); c.arc(x0-d*1.2,y,d*0.4,0,Math.PI*2); c.fill(); c.beginPath(); c.arc(x1+d*1.2,y,d*0.4,0,Math.PI*2); c.fill(); }
+    c.restore(); }
+  function headerBlock(c,W,y,o){ const ha=headAlign(o.M,W);
+    if(o.eyebrow){ setFont(c,o.eyeSize,'700'); c.fillStyle=o.eyeCol; tracked(c,o.eyebrow,ha.x,y+o.eyeSize,o.eyeSize*0.6,ha.a); y+=o.eyeSize*2.2; }
+    const title=cre.store||o.ph||'お店の名前'; const px=fitDF(c,title,o.size,o.weight,W-o.M*2,o.pref); c.fillStyle=o.col; c.textAlign=ha.a; if(o.track){ setDF(c,px,o.weight,o.pref); tracked(c,title,ha.x,y+px*0.86,px*o.track,ha.a); } else { c.fillText(title,ha.x,y+px*0.86); } y+=px*1.08;
+    if(cre.tag){ setFont(c,o.tagSize,o.tagW||''); c.fillStyle=o.tagCol; c.fillText(ellipsize(c,cre.tag,W-o.M*2),ha.x,y+o.tagSize*0.95); y+=o.tagSize*1.6; }
+    if(o.orn){ y+=o.size*0.14; ornRule(c,ha,W,o.M,y,o.orn,o.ornCol||cre.pal.accent); y+=o.size*0.26; }
+    c.textAlign='left'; return y; }
+  function fleur(c,x,y,sx,sy,d,col){ c.save(); c.fillStyle=col; c.translate(x,y); c.save(); c.translate(sx*d*1.15,sy*d*1.15); c.rotate(Math.PI/4); c.fillRect(-d*0.5,-d*0.5,d,d); c.restore(); c.beginPath(); c.arc(sx*d*2.35,sy*d*0.95,d*0.24,0,Math.PI*2); c.fill(); c.beginPath(); c.arc(sx*d*0.95,sy*d*2.35,d*0.24,0,Math.PI*2); c.fill(); c.restore(); }
+  function scallopBadge(c,cx,cy,r,n,fill){ c.beginPath(); for(let i=0;i<n;i++){ const a0=i/n*Math.PI*2, a1=(i+1)/n*Math.PI*2, am=(a0+a1)/2; const x0=cx+Math.cos(a0)*r*0.86, y0=cy+Math.sin(a0)*r*0.86; if(!i) c.moveTo(x0,y0); c.quadraticCurveTo(cx+Math.cos(am)*r*1.1, cy+Math.sin(am)*r*1.1, cx+Math.cos(a1)*r*0.86, cy+Math.sin(a1)*r*0.86); } c.closePath(); c.fillStyle=fill; c.fill(); }
+  function awning(c,W,h,colA,colB){ const n=10, sw=W/n; const path=function(){ c.beginPath(); c.moveTo(0,0); c.lineTo(W,0); c.lineTo(W,h); for(let i=n;i>0;i--){ const x1=(i-1)*sw, xm=x1+sw/2; c.quadraticCurveTo(xm,h+sw*0.5,x1,h); } c.closePath(); };
+    withShadow(c,'rgba(30,22,15,0.25)',h*0.22,0,h*0.10,function(){ path(); c.fillStyle=colA; c.fill(); });
+    c.save(); path(); c.clip(); c.fillStyle=colB; for(let i=0;i<n;i+=2){ c.fillRect(i*sw,0,sw,h+sw); } c.fillStyle='rgba(0,0,0,0.07)'; c.fillRect(0,0,W,h*0.16); c.restore(); }
+  function bunting(c,x0,x1,y,sag,size,cols,inkCol){ const mx=(x0+x1)/2, my=y+sag; c.save(); c.strokeStyle=hexA(inkCol,0.45); c.lineWidth=Math.max(1,size*0.07); c.beginPath(); c.moveTo(x0,y); c.quadraticCurveTo(mx,my,x1,y); c.stroke(); const n=Math.max(4,Math.floor((x1-x0)/(size*1.5))); for(let i=0;i<n;i++){ const t=(i+0.5)/n; const px=(1-t)*(1-t)*x0+2*(1-t)*t*mx+t*t*x1; const py=(1-t)*(1-t)*y+2*(1-t)*t*my+t*t*y; c.fillStyle=cols[i%cols.length]; c.beginPath(); c.moveTo(px-size*0.5,py); c.lineTo(px+size*0.5,py); c.lineTo(px,py+size*1.05); c.closePath(); c.fill(); } c.restore(); }
+  function seigaiha(c,x,y,w,h,col,a){ c.save(); c.beginPath(); c.rect(x,y,w,h); c.clip(); c.strokeStyle=hexA(col,a); const r=h*0.95; c.lineWidth=Math.max(1,h*0.07); for(let row=0; row<2; row++){ const cy=y+h*0.98+row*r*0.62; const off=(row%2)?r:0; for(let cx=x-r*2+off; cx<x+w+r*2; cx+=r*2){ for(let k=3;k>=1;k--){ c.beginPath(); c.arc(cx,cy,r*k/3,Math.PI,0); c.stroke(); } } } c.restore(); }
+  function chalkLine(c,x0,y0,x1,y1,wd,col,rnd,a){ const dx=x1-x0, dy=y1-y0, len=Math.max(1,Math.hypot(dx,dy)); const n=Math.max(3,Math.floor(len/(wd*3.2))); c.save(); c.lineCap='round'; for(let pass=0; pass<2; pass++){ c.strokeStyle=col; c.lineWidth=wd*(pass?0.5:1); c.globalAlpha=(a==null?0.9:a)*(pass?0.4:1); c.beginPath(); for(let i=0;i<=n;i++){ const t=i/n, j=(rnd()-0.5)*wd*1.15; const px=x0+dx*t+(-dy/len)*j, py=y0+dy*t+(dx/len)*j; if(i) c.lineTo(px,py); else c.moveTo(px,py); } c.stroke(); } c.restore(); }
+  function chalkRect(c,x,y,w,h,wd,col,rnd,a){ chalkLine(c,x,y,x+w,y,wd,col,rnd,a); chalkLine(c,x+w,y,x+w,y+h,wd,col,rnd,a); chalkLine(c,x+w,y+h,x,y+h,wd,col,rnd,a); chalkLine(c,x,y+h,x,y,wd,col,rnd,a); }
+  function sunburst(c,cx,cy,r0,r1,n,col,a){ c.save(); c.fillStyle=col; c.globalAlpha=a; for(let i=0;i<n;i++){ const a0=i/n*Math.PI*2, a1=a0+Math.PI/n*0.92; c.beginPath(); c.moveTo(cx+Math.cos(a0)*r0,cy+Math.sin(a0)*r0); c.lineTo(cx+Math.cos(a0)*r1,cy+Math.sin(a0)*r1); c.lineTo(cx+Math.cos(a1)*r1,cy+Math.sin(a1)*r1); c.lineTo(cx+Math.cos(a1)*r0,cy+Math.sin(a1)*r0); c.closePath(); c.fill(); } c.restore(); }
+  function halftone(c,x,y,w,h,col,a){ c.save(); c.fillStyle=col; const n=6; for(let j=0;j<n;j++){ for(let i=0;i<n;i++){ const t=(i+j)/(2*n-2); const r=(w/n)*0.32*(1-t*0.85); if(r<0.5) continue; c.globalAlpha=a*(1-t*0.65); c.beginPath(); c.arc(x+w-(i+0.5)*w/n, y+h-(j+0.5)*h/n, r, 0, Math.PI*2); c.fill(); } } c.restore(); }
+  function archPath(c,x,y,w,h){ const r=Math.min(w/2,h*0.72); c.beginPath(); c.moveTo(x,y+h); c.lineTo(x,y+r); c.ellipse(x+w/2,y+r,w/2,r,0,Math.PI,0); c.lineTo(x+w,y+h); c.closePath(); }
+  function foldCorner(c,x2,y2,s,pageBg,cardFill){ c.save(); c.fillStyle=pageBg; c.beginPath(); c.moveTo(x2-s,y2); c.lineTo(x2,y2-s); c.lineTo(x2,y2); c.closePath(); c.fill(); c.fillStyle=shade(cardFill,0.09); c.beginPath(); c.moveTo(x2-s,y2); c.lineTo(x2,y2-s); c.lineTo(x2-s,y2-s); c.closePath(); c.fill(); c.strokeStyle=hexA(shade(cardFill,0.3),0.35); c.lineWidth=Math.max(0.7,s*0.03); c.beginPath(); c.moveTo(x2-s,y2); c.lineTo(x2,y2-s); c.stroke(); c.restore(); }
+  function rivet(c,cx,cy,r,bgFill,col){ c.save(); c.fillStyle=bgFill; c.beginPath(); c.arc(cx,cy,r,0,Math.PI*2); c.fill(); c.strokeStyle=col; c.lineWidth=r*0.5; c.beginPath(); c.arc(cx,cy,r*0.86,0,Math.PI*2); c.stroke(); c.restore(); }
+  function laurel(c,cx,cy,r,col,lw){ c.save(); c.strokeStyle=col; c.fillStyle=col; c.lineWidth=lw; [-1,1].forEach(function(s){ const a0=Math.PI/2, a1=a0+s*1.28; c.beginPath(); c.arc(cx,cy,r,Math.min(a0,a1),Math.max(a0,a1)); c.stroke(); for(let i=1;i<=5;i++){ const a=a0+s*1.28*i/5; const px=cx+Math.cos(a)*r, py=cy+Math.sin(a)*r; c.save(); c.translate(px,py); c.rotate(a+s*0.55); c.beginPath(); c.ellipse(0,0,lw*2.7,lw*1.15,0,0,Math.PI*2); c.fill(); c.restore(); } }); c.restore(); }
+  function chipLabel(c,x,yMid,txt,px,fill,inkCol,pref){ setDF(c,px,'800',pref||'maru'); const w=c.measureText(txt).width+px*1.2, h=px*1.75; withShadow(c,'rgba(0,0,0,0.12)',px*0.4,0,px*0.16,function(){ c.fillStyle=fill; roundRect(c,x,yMid-h/2,w,h,h/2); c.fill(); }); c.fillStyle=inkCol; c.textAlign='left'; setDF(c,px,'800',pref||'maru'); c.fillText(txt,x+px*0.6,yMid+px*0.35); return w; }
+  function vText(c,txt,x,yTop,px,gap,weight,pref){ setDF(c,px,weight||'600',pref||'mincho'); c.textAlign='center'; let y=yTop; const chs=[...String(txt)]; for(const ch of chs){ c.fillText(ch,x,y+px*0.85); y+=px+gap; } c.textAlign='left'; return y; }
+  const WEBFONT_PROBE=[['700','Zen Maru Gothic'],['900','Zen Maru Gothic'],['700','Shippori Mincho'],['800','Shippori Mincho'],['800','Playfair Display'],['400','RocknRoll One'],['400','Hachi Maru Pop'],['400','Yomogi'],['700','Caveat'],['800','M PLUS Rounded 1c']];
+  function preloadFonts(){ try{ if(!(document.fonts&&document.fonts.load)) return Promise.resolve(); return Promise.all(WEBFONT_PROBE.map(function(f){ return document.fonts.load(f[0]+' 20px "'+f[1]+'"').catch(function(){ return null; }); })); }catch(e){ return Promise.resolve(); } }
+  // ===================== テンプレート（v2 デザイン刷新） =====================
+  const TEMPLATES = {
+    clean(c,W,H){
+      const p=cre.pal, M=W*0.09, fs=cre.fontScale; bg(c,W,H,p);
+      if(!cre.roomImage){ ambient(c,W,H,'paper',0.55); vignette(c,W,H,p.ink,0.07); }
+      let y=headerBlock(c,W,H*0.052,{M, ph:'お店の名前', eyebrow:'MENU', eyeSize:W*0.019*fs, eyeCol:p.accent, size:W*0.068*fs, weight:'700', pref:null, col:p.ink, tagSize:W*0.024*fs, tagCol:p.sub, orn:'diamond', ornCol:p.accent});
+      y+=H*0.012;
+      const groups=grouped(); const cols=colCount(W,H,1.15); const gap=W*0.06; const colW=(W-M*2-(cols-1)*gap)/cols;
+      let cx=M, cy=y, colTop=y, colIdx=0;
+      groups.forEach(function(g){
+        if(cy+W*0.12>H*0.94 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+        setFont(c,W*0.026*fs,'800'); c.fillStyle=p.accent; c.textAlign='left'; const gn=ellipsize(c,g.name,colW*0.72); c.fillText(gn,cx,cy+W*0.021*fs); const gw=c.measureText(gn).width;
+        c.strokeStyle=hexA(p.accent,0.4); c.lineWidth=W*0.0016; c.beginPath(); c.moveTo(cx+gw+W*0.028,cy+W*0.013*fs); c.lineTo(cx+colW,cy+W*0.013*fs); c.stroke();
+        c.fillStyle=p.accent2; c.save(); c.translate(cx+gw+W*0.017,cy+W*0.013*fs); c.rotate(Math.PI/4); c.fillRect(-W*0.0032,-W*0.0032,W*0.0064,W*0.0064); c.restore();
+        cy+=W*0.055*fs;
+        g.items.forEach(function(it){
+          if(cy+W*0.06>H*0.95 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+          cy=rowStd(c,cx,cy,colW,it,{nPx:W*0.03*fs, nW:'600', pPx:W*0.031*fs, pW:'700', pCol:p.ink, uCol:p.sub, dPx:W*0.02*fs, leader:'dots', leadCol:hexA(p.sub,0.7), iconSize:W*0.052, iconOpts:{plate:true, plateFill:hexA(p.accent2,0.16), iconCol:p.accent}, lineH:W*0.046*fs, pad:W*0.012*fs});
+        });
+        cy+=W*0.02*fs;
+      });
+    },
+
+    minimal(c,W,H){
+      const p=cre.pal, M=W*0.13, fs=cre.fontScale; bg(c,W,H,p);
+      if(!cre.roomImage){ vignette(c,W,H,p.ink,0.045); }
+      const ha=headAlign(M,W); let y=H*0.085;
+      const title=cre.store||'menu'; const px=fitDF(c,title,W*0.085*fs,'300',W-M*2,null); c.fillStyle=p.ink; setDF(c,px,'300',null); tracked(c,title,ha.x,y+px*0.84,px*0.06,ha.a); y+=px*1.12;
+      if(cre.tag){ setFont(c,W*0.02*fs,''); c.fillStyle=p.sub; tracked(c,ellipsize(c,cre.tag,W-M*2),ha.x,y+W*0.02*fs,W*0.004,ha.a); y+=W*0.048*fs; }
+      c.fillStyle=p.accent; const sq=W*0.011; const sqx=ha.a==='left'?M:(ha.a==='right'?W-M-sq:W/2-sq/2); c.fillRect(sqx,y+W*0.008,sq,sq); y+=H*0.05;
+      c.textAlign='left';
+      const groups=grouped(); const colW=W-M*2;
+      groups.forEach(function(g){
+        setFont(c,W*0.019*fs,'700'); c.fillStyle=p.sub; tracked(c,String(g.name).toUpperCase(),ha.x,y+W*0.016*fs,W*0.01,ha.a); y+=W*0.05*fs;
+        g.items.forEach(function(it){
+          if(y+W*0.05>H*0.94) return;
+          y=rowStd(c,M,y,colW,it,{nPx:W*0.028*fs, nW:'400', pPx:W*0.028*fs, pW:'500', pCol:p.sub, uCol:p.sub, dPx:W*0.019*fs, leader:null, lineH:W*0.05*fs, pad:W*0.004*fs, descLines:1});
+          c.strokeStyle=hexA(p.ink,0.08); c.lineWidth=Math.max(0.6,W*0.0008); c.beginPath(); c.moveTo(M,y); c.lineTo(W-M,y); c.stroke();
+          y+=W*0.016*fs;
+        });
+        y+=W*0.03*fs;
+      });
+      c.fillStyle=p.accent; c.beginPath(); c.arc(W/2,H-H*0.045,W*0.004,0,Math.PI*2); c.fill();
+    },
+    frame(c,W,H){
+      const p=cre.pal, M=W*0.115, fs=cre.fontScale; bg(c,W,H,p);
+      if(!cre.roomImage){ ambient(c,W,H,'paper',0.45); vignette(c,W,H,p.ink,0.06); }
+      const o1=W*0.042, o2=W*0.06;
+      c.strokeStyle=p.accent; c.lineWidth=W*0.0045; c.strokeRect(o1,o1,W-o1*2,H-o1*2);
+      c.strokeStyle=hexA(p.accent,0.55); c.lineWidth=W*0.0014; c.strokeRect(o2,o2,W-o2*2,H-o2*2);
+      const d=W*0.009;
+      fleur(c,o2,o2,1,1,d,p.accent); fleur(c,W-o2,o2,-1,1,d,p.accent); fleur(c,o2,H-o2,1,-1,d,p.accent); fleur(c,W-o2,H-o2,-1,-1,d,p.accent);
+      let y=headerBlock(c,W,H*0.082,{M, ph:'MENU', size:W*0.062*fs, weight:'500', pref:'mincho', col:p.ink, tagSize:W*0.023*fs, tagCol:p.sub, orn:'diamond', ornCol:p.accent, track:0.08});
+      y+=H*0.008;
+      const groups=grouped(); const cols=colCount(W,H,1.05); const gap=W*0.06; const colW=(W-M*2-(cols-1)*gap)/cols;
+      let colIdx=0,cx=M,cy=y,colTop=y;
+      groups.forEach(function(g){
+        if(cy+W*0.12>H*0.9 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+        setDF(c,W*0.03*fs,'600','mincho'); c.fillStyle=p.ink; c.textAlign='center'; const gn=ellipsize(c,g.name,colW*0.7); c.fillText(gn,cx+colW/2,cy+W*0.024*fs); const gw=c.measureText(gn).width;
+        c.fillStyle=p.accent; [-1,1].forEach(function(s){ c.save(); c.translate(cx+colW/2+s*(gw/2+W*0.03),cy+W*0.015*fs); c.rotate(Math.PI/4); c.fillRect(-W*0.004,-W*0.004,W*0.008,W*0.008); c.restore(); });
+        c.textAlign='left'; cy+=W*0.056*fs;
+        g.items.forEach(function(it){
+          if(cy+W*0.06>H*0.92 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+          cy=rowStd(c,cx,cy,colW,it,{nPx:W*0.029*fs, nW:'500', pPx:W*0.029*fs, pW:'600', pCol:p.ink, uCol:p.sub, dPx:W*0.019*fs, leader:'dots', leadCol:hexA(p.sub,0.65), lineH:W*0.045*fs, pad:W*0.013*fs});
+        });
+        cy+=W*0.026*fs;
+      });
+    },
+
+    vertical(c,W,H){
+      const p=cre.pal, M=W*0.09, fs=cre.fontScale, railW=W*0.155; bg(c,W,H,p);
+      if(!cre.roomImage){ ambient(c,W,H,'washi',0.8); vignette(c,W,H,p.ink,0.06); }
+      c.strokeStyle=hexA(p.ink,0.22); c.lineWidth=W*0.0016; c.beginPath(); c.moveTo(W-railW,H*0.055); c.lineTo(W-railW,H*0.945); c.stroke();
+      const ss=W*0.068; c.save(); c.translate(W-railW/2,H*0.075+ss/2); c.rotate(-0.03);
+      withShadow(c,'rgba(0,0,0,0.15)',ss*0.16,0,ss*0.08,function(){ c.fillStyle=p.accent; roundRect(c,-ss/2,-ss/2,ss,ss,ss*0.14); c.fill(); });
+      setDF(c,ss*0.62,'700','mincho'); c.fillStyle='#fffdf6'; c.textAlign='center'; c.textBaseline='middle'; c.fillText((cre.store||'味').charAt(0),0,ss*0.02); c.textBaseline='alphabetic'; c.restore(); c.textAlign='left';
+      const bodyW=W-railW-M;
+      let y=H*0.06;
+      setFont(c,W*0.02*fs,'600'); c.fillStyle=p.sub; tracked(c,'おしながき',M,y+W*0.017,W*0.012,'left'); y+=W*0.052;
+      const title=cre.store||'お店の名前'; const px=fitDF(c,title,W*0.062*fs,'600',bodyW-W*0.02,'mincho'); c.fillStyle=p.ink; c.fillText(title,M,y+px*0.85); y+=px*1.12;
+      if(cre.tag){ setFont(c,W*0.022*fs,''); c.fillStyle=p.sub; c.fillText(ellipsize(c,cre.tag,bodyW-W*0.02),M,y+W*0.02); y+=W*0.04; }
+      c.strokeStyle=p.accent; c.lineWidth=W*0.0028; c.beginPath(); c.moveTo(M,y+W*0.012); c.lineTo(M+W*0.11,y+W*0.012); c.stroke(); y+=H*0.03;
+      const groups=grouped(); const colW=bodyW-W*0.02;
+      groups.forEach(function(g){
+        const secTop=y;
+        g.items.forEach(function(it){
+          if(y+W*0.05>H*0.94) return;
+          y=rowStd(c,M,y,colW,it,{nPx:W*0.029*fs, nW:'500', pPx:W*0.029*fs, pW:'600', pCol:p.ink, uCol:p.sub, dPx:W*0.019*fs, leader:'dots', leadCol:hexA(p.sub,0.55), lineH:W*0.046*fs, pad:W*0.011*fs});
+        });
+        const nm=String(g.name); const midY=(secTop+y)/2; const vpx=Math.min(W*0.042, Math.max(W*0.024,(y-secTop)/(nm.length+1)));
+        c.fillStyle=p.accent; vText(c,nm,W-railW/2,midY-(nm.length*(vpx*1.18))/2,vpx,vpx*0.18,'600','mincho');
+        c.fillStyle=hexA(p.ink,0.35); c.beginPath(); c.arc(W-railW/2,y+W*0.004,W*0.0035,0,Math.PI*2); c.fill();
+        y+=W*0.035;
+      });
+    },
+    leaders(c,W,H){
+      const p=cre.pal, M=W*0.16, fs=cre.fontScale; bg(c,W,H,p);
+      if(!cre.roomImage){ ambient(c,W,H,'washi',0.85); vignette(c,W,H,p.ink,0.07); }
+      const ry=H*0.075; c.strokeStyle=hexA(p.ink,0.5); c.lineWidth=W*0.0016; c.beginPath(); c.moveTo(W*0.12,ry); c.lineTo(W*0.88,ry); c.stroke();
+      const er=W*0.036; c.fillStyle=p.bg; c.beginPath(); c.arc(W/2,ry,er*1.34,0,Math.PI*2); c.fill();
+      c.strokeStyle=p.accent; c.lineWidth=W*0.0035; c.beginPath(); c.arc(W/2,ry,er,0,Math.PI*2); c.stroke();
+      setDF(c,er*1.02,'600','mincho'); c.fillStyle=p.accent; c.textAlign='center'; c.textBaseline='middle'; c.fillText((cre.store||'菜').charAt(0),W/2,ry+er*0.05); c.textBaseline='alphabetic';
+      let y=ry+er*1.9;
+      const title=cre.store||'お品書き'; const px=fitDF(c,title,W*0.056*fs,'500',W-M*1.4,'mincho'); c.fillStyle=p.ink; setDF(c,px,'500','mincho'); tracked(c,title,W/2,y+px*0.85,px*0.14,'center'); y+=px*1.2;
+      if(cre.tag){ setFont(c,W*0.021*fs,''); c.fillStyle=p.sub; c.fillText(ellipsize(c,cre.tag,W-M*1.4),W/2,y+W*0.019); y+=W*0.04; }
+      c.textAlign='left'; y+=H*0.02;
+      const groups=grouped(); const colW=W-M*2;
+      groups.forEach(function(g){
+        setDF(c,W*0.026*fs,'600','mincho'); c.fillStyle=p.accent; c.textAlign='center'; const gn=ellipsize(c,g.name,colW*0.7); c.fillText(gn,W/2,y+W*0.021*fs); const gw=c.measureText(gn).width;
+        c.strokeStyle=hexA(p.accent,0.6); c.lineWidth=W*0.0014; [-1,1].forEach(function(s){ c.beginPath(); c.moveTo(W/2+s*(gw/2+W*0.028),y+W*0.013*fs); c.lineTo(W/2+s*(gw/2+W*0.075),y+W*0.013*fs); c.stroke(); });
+        c.textAlign='left'; y+=W*0.052*fs;
+        g.items.forEach(function(it){
+          if(y+W*0.05>H*0.9) return;
+          y=rowStd(c,M,y,colW,it,{nPx:W*0.028*fs, nW:'500', pPx:W*0.028*fs, pW:'600', pCol:p.ink, uCol:p.sub, dPx:W*0.019*fs, leader:'dots', leadCol:hexA(p.sub,0.6), lineH:W*0.047*fs, pad:W*0.012*fs});
+        });
+        y+=W*0.026*fs;
+      });
+      seigaiha(c,0,H-H*0.06,W,H*0.045,p.accent,0.4);
+      c.strokeStyle=hexA(p.ink,0.4); c.lineWidth=W*0.0014; c.beginPath(); c.moveTo(0,H-H*0.062); c.lineTo(W,H-H*0.062); c.stroke();
+    },
+
+    tri(c,W,H){
+      const p=cre.pal, M=W*0.07, fs=cre.fontScale; bg(c,W,H,p);
+      if(!cre.roomImage){ ambient(c,W,H,'paper',0.6); vignette(c,W,H,p.ink,0.06); }
+      const ha=headAlign(M,W); let y=H*0.045;
+      c.strokeStyle=hexA(p.ink,0.8); c.lineWidth=W*0.0014; c.beginPath(); c.moveTo(M,y); c.lineTo(W-M,y); c.stroke(); y+=W*0.01;
+      setFont(c,W*0.016*fs,'700'); c.fillStyle=p.sub; tracked(c,'DAILY MENU PRESS',ha.x,y+W*0.015,W*0.01,ha.a); y+=W*0.036;
+      const title=cre.store||'MENU'; const px=fitDF(c,title,W*0.08*fs,'800',W-M*2,'mincho'); c.fillStyle=p.ink; c.textAlign=ha.a; setDF(c,px,'800','mincho'); c.fillText(title,ha.x,y+px*0.84); y+=px*1.02;
+      c.fillStyle=p.ink; c.fillRect(M,y+W*0.006,W-M*2,W*0.0045); y+=W*0.018;
+      if(cre.tag){ setFont(c,W*0.019*fs,'600'); c.fillStyle=p.sub; c.textAlign='center'; c.fillText('◆ '+ellipsize(c,cre.tag,W-M*2-W*0.12)+' ◆',W/2,y+W*0.016); y+=W*0.028; }
+      c.strokeStyle=hexA(p.ink,0.8); c.lineWidth=W*0.0012; c.beginPath(); c.moveTo(M,y+W*0.004); c.lineTo(W-M,y+W*0.004); c.stroke(); y+=W*0.03;
+      c.textAlign='left';
+      const cols=3, gap=W*0.045; const colW=(W-M*2-(cols-1)*gap)/cols;
+      const top=y; let colH=[top,top,top];
+      for(let i=1;i<cols;i++){ const lx=M+i*(colW+gap)-gap/2; c.strokeStyle=hexA(p.ink,0.25); c.lineWidth=Math.max(0.6,W*0.0009); c.beginPath(); c.moveTo(lx,top); c.lineTo(lx,H*0.93); c.stroke(); }
+      const groups=grouped();
+      groups.forEach(function(g){
+        let ci=0; for(let i=1;i<cols;i++) if(colH[i]<colH[ci]) ci=i;
+        const cx=M+ci*(colW+gap); let cy=colH[ci];
+        setFont(c,W*0.023*fs,'800'); c.fillStyle=p.ink; c.fillText(ellipsize(c,String(g.name).toUpperCase(),colW),cx,cy+W*0.019*fs);
+        c.strokeStyle=hexA(p.ink,0.85); c.lineWidth=W*0.0016; c.beginPath(); c.moveTo(cx,cy+W*0.029*fs); c.lineTo(cx+colW,cy+W*0.029*fs); c.stroke(); cy+=W*0.048*fs;
+        g.items.forEach(function(it){
+          if(cy+W*0.045>H*0.93) return;
+          cy=rowStd(c,cx,cy,colW,it,{nPx:W*0.023*fs, nW:'500', pPx:W*0.023*fs, pW:'700', pCol:p.ink, uCol:p.sub, dPx:W*0.017*fs, leader:null, lineH:W*0.037*fs, pad:W*0.009*fs});
+        });
+        colH[ci]=cy+W*0.03;
+      });
+      c.fillStyle=p.ink; c.save(); c.translate(W/2,H*0.955); c.rotate(Math.PI/4); c.fillRect(-W*0.004,-W*0.004,W*0.008,W*0.008); c.restore();
+    },
+    notecard(c,W,H){
+      const p=cre.pal, M=W*0.075, fs=cre.fontScale; bg(c,W,H,p);
+      if(!cre.roomImage){ vignette(c,W,H,p.ink,0.05); }
+      const rnd=mulberry32(4207);
+      let y=headerBlock(c,W,H*0.045,{M, ph:'MENU', size:W*0.062*fs, weight:'800', pref:'maru', col:p.ink, tagSize:W*0.023*fs, tagCol:p.sub, orn:'diamond', ornCol:p.accent2});
+      y+=H*0.014;
+      const cols=(W/H>0.85)?2:1; const gap=W*0.045; const cardW=(W-M*2-(cols-1)*gap)/cols; const cardH=W*0.155*fs;
+      let i=0;
+      cre.items.forEach(function(it){
+        const col=i%cols, row=Math.floor(i/cols); const ccx=M+col*(cardW+gap)+cardW/2, cyC=y+row*(cardH+gap*0.95)+cardH/2;
+        const rot=(rnd()-0.5)*0.05; const tapeCol=(rnd()>0.5?p.accent:p.accent2);
+        if(cyC+cardH/2>H*0.965){ i++; return; }
+        c.save(); c.translate(ccx,cyC); c.rotate(rot);
+        cardRect(c,-cardW/2,-cardH/2,cardW,cardH,W*0.012,p.card,{blur:W*0.02,dy:W*0.008});
+        stitch(c,-cardW/2+W*0.012,-cardH/2+W*0.012,cardW-W*0.024,cardH-W*0.024,W*0.008,hexA(p.accent2,0.65),W*0.006);
+        foldCorner(c,cardW/2,cardH/2,W*0.03,p.bg,p.card);
+        tape(c,-cardW/2+cardW*0.17,-cardH/2+W*0.002,cardW*0.2,W*0.03,-0.35+rnd()*0.15,tapeCol);
+        chipLabel(c,-cardW/2+W*0.032,-cardH/2+W*0.01,ellipsize(c,it.name||'商品名',cardW*0.5),W*0.024*fs,p.accent,'#ffffff','maru');
+        if(it.photo||(it.icon&&it.icon!=='none'&&ICONS[it.icon])){ drawItemVisual(c,cardW/2-W*0.058,-cardH*0.03,W*0.062,it,p,'circle',{plate:true,plateFill:hexA(p.accent2,0.14),iconCol:p.accent,ring:true,ringCol:hexA(p.accent2,0.7),ringDash:true}); }
+        if(it.desc){ setFont(c,W*0.019*fs,''); c.fillStyle=p.sub; c.textAlign='left'; const dl=wrap(c,it.desc,cardW-W*0.2); dl.slice(0,2).forEach(function(l,k){ c.fillText(l,-cardW/2+W*0.034,-cardH/2+W*0.064*fs+k*W*0.027*fs); }); }
+        drawPriceL(c,-cardW/2+W*0.034,cardH/2-W*0.024*fs,it,W*0.038*fs,function(px2,w2){ setFont(c,px2,w2); },'800',p.accent,p.sub);
+        recMark(c,it.rec,cardW/2-W*0.08,cardH/2-W*0.032*fs,W*0.022*fs,p.accent2);
+        c.restore();
+        i++;
+      });
+    },
+
+    pop(c,W,H){
+      const p=cre.pal, M=W*0.075, fs=cre.fontScale; bg(c,W,H,p);
+      const rnd=mulberry32(777);
+      const ha=headAlign(M,W); const bx=ha.a==='left'?M+W*0.24:(ha.a==='right'?W-M-W*0.24:W/2);
+      sunburst(c,bx,H*0.095,W*0.05,W*0.34,30,p.accent2,0.15);
+      for(let i=0;i<7;i++){ const sx=M+rnd()*(W-M*2), sy=H*(0.03+rnd()*0.14), sr=W*(0.008+rnd()*0.011); c.fillStyle=hexA(rnd()>0.5?p.accent:p.accent2,0.85); starPath(c,sx,sy,sr); c.fill(); }
+      let y=H*0.055;
+      const title=cre.store||'MENU'; const px=fitDF(c,title,W*0.105*fs,'800',W-M*2,'display');
+      setDF(c,px,'800','display'); c.textAlign=ha.a; const off=Math.max(2,W*0.007);
+      c.fillStyle=p.accent2; c.fillText(title,ha.x+off,y+px*0.84+off);
+      c.fillStyle=p.accent; c.fillText(title,ha.x,y+px*0.84); y+=px*1.06;
+      if(cre.tag){ setFont(c,W*0.025*fs,'700'); c.fillStyle=p.ink; c.fillText(ellipsize(c,cre.tag,W-M*2),ha.x,y+W*0.023); y+=W*0.044; }
+      const sy2=y+W*0.008, sh=W*0.02; c.save(); roundRect(c,M,sy2,W-M*2,sh,sh/2); c.clip(); c.fillStyle=p.accent; c.fillRect(M,sy2,W-M*2,sh); c.fillStyle=p.accent2; const st=sh*1.6; for(let x=M-sh*2;x<W-M+sh;x+=st*2){ c.save(); c.translate(x,sy2); c.rotate(0.5); c.fillRect(0,-sh,st,sh*3); c.restore(); } c.restore();
+      y=sy2+sh+H*0.024; c.textAlign='left';
+      halftone(c,W-W*0.27,H-W*0.27,W*0.2,W*0.2,p.accent2,0.5);
+      const groups=grouped(); const cols=colCount(W,H,1.05); const gap=W*0.05; const colW=(W-M*2-(cols-1)*gap)/cols;
+      let colIdx=0,cx=M,cy=y,colTop=y;
+      groups.forEach(function(g){
+        if(cy+W*0.12>H*0.93 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+        chipLabel(c,cx,cy+W*0.02*fs,ellipsize(c,g.name,colW*0.6),W*0.026*fs,p.accent,'#ffffff','display');
+        cy+=W*0.064*fs;
+        g.items.forEach(function(it){
+          if(cy+W*0.07>H*0.95 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+          cy=rowStd(c,cx,cy,colW,it,{nPx:W*0.031*fs, nW:'700', pPx:W*0.034*fs, pW:'800', pCol:p.accent, uCol:p.sub, dPx:W*0.02*fs, leader:'dash', leadCol:hexA(p.accent2,0.6), iconSize:W*0.058, iconOpts:{plate:true, plateFill:'#ffffff', iconCol:p.accent, ring:true, ringCol:hexA(p.accent2,0.9)}, lineH:W*0.05*fs, pad:W*0.012*fs});
+        });
+        cy+=W*0.02*fs;
+      });
+    },
+    band(c,W,H){
+      const p=cre.pal, M=W*0.075, fs=cre.fontScale; bg(c,W,H,p);
+      if(!cre.roomImage){ vignette(c,W,H,p.ink,0.05); }
+      let y=headerBlock(c,W,H*0.042,{M, ph:'MENU', eyebrow:'TICKET', eyeSize:W*0.017*fs, eyeCol:p.accent2, size:W*0.07*fs, weight:'800', pref:'display', col:p.accent, tagSize:W*0.024*fs, tagW:'600', tagCol:p.sub});
+      y+=H*0.014;
+      const colW=W-M*2; const stubW=Math.max(W*0.15,colW*0.2);
+      const groups=grouped(); let idx=1;
+      groups.forEach(function(g){
+        if(y+W*0.1>H*0.96) return;
+        setFont(c,W*0.024*fs,'800'); c.fillStyle=p.sub; tracked(c,String(g.name).toUpperCase(),M,y+W*0.02*fs,W*0.006,'left'); y+=W*0.044*fs;
+        g.items.forEach(function(it){
+          const rowH=W*0.085*fs + (it.desc?W*0.026*fs:0);
+          if(y+rowH>H*0.965) return;
+          const fill=(idx%2)?p.card:tint(p.accent2,0.9); const rowInk=onInk(fill); const rowSub=hexA(rowInk,0.72); const rowAcc=(luma(fill)>0.55)?shade(p.accent,0.12):p.accent;
+          cardRect(c,M,y,colW,rowH,W*0.012,fill,{blur:W*0.014,dy:W*0.006,stroke:hexA(p.ink,0.1),lw:Math.max(0.7,W*0.001)});
+          const px0=M+colW-stubW;
+          c.strokeStyle=hexA(p.ink,0.35); c.lineWidth=Math.max(0.8,W*0.0014); c.setLineDash([W*0.007,W*0.007]); c.beginPath(); c.moveTo(px0,y+W*0.008); c.lineTo(px0,y+rowH-W*0.008); c.stroke(); c.setLineDash([]);
+          c.fillStyle=p.bg; c.beginPath(); c.arc(px0,y,W*0.011,0,Math.PI*2); c.fill(); c.beginPath(); c.arc(px0,y+rowH,W*0.011,0,Math.PI*2); c.fill();
+          const ncx=M+W*0.05, ncy=y+rowH/2;
+          c.strokeStyle=rowAcc; c.lineWidth=W*0.0035; c.beginPath(); c.arc(ncx,ncy,W*0.026,0,Math.PI*2); c.stroke();
+          setDF(c,W*0.026*fs,'800','display'); c.fillStyle=rowAcc; c.textAlign='center'; c.textBaseline='middle'; c.fillText(String(idx),ncx,ncy+W*0.001); c.textBaseline='alphabetic'; c.textAlign='left';
+          let tx=M+W*0.095;
+          const has=!!(it.photo||(it.icon&&it.icon!=='none'&&ICONS[it.icon]));
+          if(has){ drawItemVisual(c,tx+W*0.026,ncy-(it.desc?W*0.008:0),W*0.052,it,p,'circle',{plate:true,plateFill:'#ffffff',iconCol:p.accent,ring:true,ringCol:hexA(p.accent2,0.8)}); tx+=W*0.064; }
+          const ny=y+(it.desc?rowH*0.4:rowH*0.58);
+          const adv=recMark(c,it.rec,tx,ny-W*0.01*fs,W*0.02*fs,rowAcc);
+          setFont(c,W*0.031*fs,'700'); c.fillStyle=rowInk; const nm=ellipsize(c,it.name||'商品名',px0-tx-adv-W*0.03); c.fillText(nm,tx+adv,ny);
+          if(it.desc){ setFont(c,W*0.019*fs,''); c.fillStyle=rowSub; c.fillText(ellipsize(c,it.desc,px0-tx-W*0.03),tx,ny+W*0.028*fs); }
+          if(it.price){ setFont(c,W*0.013*fs,'700'); c.fillStyle=hexA(rowInk,0.7); tracked(c,'PRICE',px0+stubW/2,y+rowH*0.3,W*0.004,'center');
+            const setP2=function(px2,w2){ setFont(c,px2,w2); };
+            const pw=measPrice(c,it,W*0.032*fs,setP2,'800');
+            drawPriceR(c,px0+stubW/2+pw/2,y+rowH*0.66,it,W*0.032*fs,setP2,'800',rowAcc,rowSub); }
+          idx++; y+=rowH+W*0.018;
+        });
+        y+=W*0.016;
+      });
+    },
+
+    kraft(c,W,H){
+      const p=cre.pal, M=W*0.085, fs=cre.fontScale; bg(c,W,H,p);
+      c.fillStyle=hexA('#8a6a45',cre.roomImage?0.14:0.2); c.fillRect(0,0,W,H);
+      ambient(c,W,H,'kraft',1);
+      if(!cre.roomImage){ vignette(c,W,H,'#3c2f1f',0.1); }
+      const INKK=(luma(p.bg)>0.5)?shade(p.accent,0.28):tint(p.accent,0.45);
+      stitch(c,W*0.03,W*0.03,W-W*0.06,H-W*0.06,W*0.02,'rgba(255,252,240,0.75)',W*0.0075);
+      stitch(c,W*0.042,W*0.042,W-W*0.084,H-W*0.084,W*0.016,hexA(INKK,0.5),W*0.006);
+      const ha=headAlign(M,W); const title=cre.store||'MENU';
+      const tpx=fitDF(c,title,W*0.072*fs,'800',W*0.62,'type'); setDF(c,tpx,'800','type'); const tw=c.measureText(title).width;
+      const sw=tw+W*0.09, sh2=tpx*1.9+(cre.tag?W*0.035:0);
+      const scx=ha.a==='left'?M+sw/2:(ha.a==='right'?W-M-sw/2:W/2);
+      c.save(); c.translate(scx,H*0.05+sh2/2); c.rotate(-0.035);
+      c.strokeStyle=INKK; c.globalAlpha=0.9; c.lineWidth=W*0.006; roundRect(c,-sw/2,-sh2/2,sw,sh2,W*0.02); c.stroke();
+      c.lineWidth=W*0.0018; roundRect(c,-sw/2+W*0.012,-sh2/2+W*0.012,sw-W*0.024,sh2-W*0.024,W*0.014); c.stroke();
+      c.fillStyle=INKK; setDF(c,tpx,'800','type'); c.textAlign='center'; c.fillText(title,0,(cre.tag?-sh2*0.06:tpx*0.32));
+      if(cre.tag){ setFont(c,W*0.02*fs,'700'); c.fillText(ellipsize(c,cre.tag,sw-W*0.07),0,sh2/2-W*0.026); }
+      const srnd=mulberry32(99); for(let i=0;i<9;i++){ c.globalAlpha=0.25+srnd()*0.3; c.beginPath(); c.arc((srnd()-0.5)*sw,(srnd()-0.5)*sh2,W*0.0016+srnd()*W*0.0016,0,Math.PI*2); c.fill(); }
+      c.globalAlpha=1; c.restore(); c.textAlign='left';
+      let y=H*0.05+sh2+H*0.032;
+      const groups=grouped(); const cols=colCount(W,H,1.05); const gap=W*0.05; const colW=(W-M*2-(cols-1)*gap)/cols;
+      let colIdx=0,cx=M,cy=y,colTop=y;
+      groups.forEach(function(g){
+        if(cy+W*0.12>H*0.93 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+        setFont(c,W*0.027*fs,'800'); const gn=ellipsize(c,g.name,colW*0.7); const gw2=c.measureText(gn).width+W*0.052;
+        c.strokeStyle=INKK; c.lineWidth=W*0.0032; c.strokeRect(cx,cy,gw2,W*0.048*fs);
+        c.fillStyle=INKK; c.beginPath(); c.arc(cx+W*0.02,cy+W*0.024*fs,W*0.006,0,Math.PI*2); c.fill();
+        c.fillText(gn,cx+W*0.036,cy+W*0.034*fs);
+        cy+=W*0.07*fs;
+        g.items.forEach(function(it){
+          if(cy+W*0.055>H*0.945 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+          cy=rowStd(c,cx,cy,colW,it,{nPx:W*0.029*fs, nW:'700', nCol:shade(p.ink,0.05), pPx:W*0.031*fs, pW:'800', pCol:INKK, uCol:hexA(INKK,0.8), dPx:W*0.019*fs, leader:'dash', leadCol:hexA(INKK,0.5), iconSize:W*0.05, iconOpts:{iconCol:INKK}, recCol:INKK, lineH:W*0.047*fs, pad:W*0.012*fs});
+        });
+        cy+=W*0.02*fs;
+      });
+    },
+    banner(c,W,H){
+      const p=cre.pal, M=W*0.085, fs=cre.fontScale; bg(c,W,H,p);
+      if(!cre.roomImage){ vignette(c,W,H,p.ink,0.05); }
+      const awH=H*0.1; awning(c,W,awH,p.accent,'#fffdf7');
+      const title=cre.store||'お店の名前'; const tpx=fitDF(c,title,W*0.056*fs,'800',W*0.58,'maru'); setDF(c,tpx,'800','maru'); const tw=c.measureText(title).width;
+      const sw=Math.min(W*0.74,tw+W*0.12), sh2=tpx*1.8;
+      const sy=awH+W*0.055;
+      c.strokeStyle=hexA(shade(p.accent,0.2),0.75); c.lineWidth=W*0.0035;
+      c.beginPath(); c.moveTo(W/2-sw*0.36,sy+W*0.006); c.lineTo(W/2-sw*0.3,awH-W*0.012); c.moveTo(W/2+sw*0.36,sy+W*0.006); c.lineTo(W/2+sw*0.3,awH-W*0.012); c.stroke();
+      c.save(); c.translate(W/2,sy+sh2/2); c.rotate(0.012);
+      cardRect(c,-sw/2,-sh2/2,sw,sh2,W*0.02,p.card,{blur:W*0.018,dy:W*0.008,stroke:hexA(p.accent,0.4),lw:W*0.0022});
+      setDF(c,tpx,'800','maru'); c.fillStyle=p.ink; c.textAlign='center'; c.fillText(title,0,tpx*0.34); c.restore(); c.textAlign='left';
+      let y=sy+sh2+W*0.022;
+      if(cre.tag){ setFont(c,W*0.023*fs,'600'); c.fillStyle=p.sub; c.textAlign='center'; c.fillText(ellipsize(c,cre.tag,W-M*2),W/2,y+W*0.02); c.textAlign='left'; y+=W*0.038; }
+      bunting(c,M*1.1,W-M*1.1,y+W*0.012,W*0.035,W*0.03,[p.accent,p.accent2,tint(p.accent,0.55)],p.ink);
+      y+=W*0.09;
+      const groups=grouped(); const cols=colCount(W,H,1.05); const gap=W*0.05; const colW=(W-M*2-(cols-1)*gap)/cols;
+      let colIdx=0,cx=M,cy=y,colTop=y;
+      groups.forEach(function(g){
+        if(cy+W*0.12>H*0.94 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+        c.fillStyle=p.accent; c.beginPath(); c.moveTo(cx,cy+W*0.004); c.lineTo(cx+W*0.028,cy+W*0.016); c.lineTo(cx,cy+W*0.028); c.closePath(); c.fill();
+        setFont(c,W*0.028*fs,'800'); c.fillStyle=p.ink; c.fillText(ellipsize(c,g.name,colW-W*0.05),cx+W*0.04,cy+W*0.025*fs);
+        cy+=W*0.054*fs;
+        g.items.forEach(function(it){
+          if(cy+W*0.055>H*0.95 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+          cy=rowStd(c,cx,cy,colW,it,{nPx:W*0.029*fs, nW:'600', pPx:W*0.03*fs, pW:'800', pCol:p.accent, uCol:p.sub, dPx:W*0.019*fs, leader:'dots', leadCol:hexA(p.sub,0.7), iconSize:W*0.05, iconOpts:{plate:true,plateFill:hexA(p.accent2,0.16),iconCol:p.accent}, lineH:W*0.047*fs, pad:W*0.012*fs});
+        });
+        cy+=W*0.02*fs;
+      });
+    },
+
+    bistro(c,W,H){
+      const p=cre.pal, M=W*0.09, fs=cre.fontScale; bg(c,W,H,p);
+      if(!cre.roomImage){ ambient(c,W,H,'paper',0.4); }
+      const bandH=H*0.15; c.fillStyle=shade(p.accent,0.12); c.fillRect(0,0,W,bandH);
+      c.strokeStyle='rgba(253,250,244,0.55)'; c.lineWidth=W*0.0016; c.strokeRect(W*0.014,W*0.014,W-W*0.028,bandH-W*0.028);
+      c.strokeRect(W*0.022,W*0.022,W-W*0.044,bandH-W*0.044);
+      const ha=headAlign(M,W); const title=cre.store||'BISTRO';
+      const tpx=fitDF(c,title,W*0.056*fs,'700',W-M*2.4,'elegant'); setDF(c,tpx,'700','elegant'); c.fillStyle='#fdfaf4'; c.textBaseline='middle';
+      tracked(c,title,ha.x,bandH*(cre.tag?0.42:0.5),tpx*0.1,ha.a);
+      if(cre.tag){ setFont(c,W*0.02*fs,'600'); c.fillStyle='rgba(253,250,244,0.85)'; tracked(c,ellipsize(c,cre.tag,W-M*2),ha.x,bandH*0.68,W*0.003,ha.a); }
+      c.textBaseline='alphabetic'; c.textAlign='left';
+      laurel(c,W/2,bandH+W*0.03,W*0.045,p.accent2,W*0.003);
+      let y=bandH+W*0.105;
+      const groups=grouped(); const cols=colCount(W,H,1.05); const gap=W*0.06; const colW=(W-M*2-(cols-1)*gap)/cols;
+      let colIdx=0,cx=M,cy=y,colTop=y; const bottom=H-H*0.055;
+      groups.forEach(function(g){
+        if(cy+W*0.12>bottom && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+        c.strokeStyle=p.accent2; c.lineWidth=W*0.0026; c.beginPath(); c.moveTo(cx,cy+W*0.012*fs); c.lineTo(cx+W*0.032,cy+W*0.012*fs); c.stroke();
+        setFont(c,W*0.024*fs,'800'); c.fillStyle=p.accent; tracked(c,String(g.name).toUpperCase(),cx+W*0.044,cy+W*0.02*fs,W*0.007,'left');
+        cy+=W*0.05*fs;
+        g.items.forEach(function(it){
+          if(cy+W*0.055>bottom && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+          cy=rowStd(c,cx,cy,colW,it,{nPx:W*0.029*fs, nW:'600', pPx:W*0.029*fs, pW:'700', pCol:p.ink, uCol:p.sub, dPx:W*0.019*fs, leader:'dots', leadCol:hexA(p.sub,0.65), iconSize:W*0.048, iconOpts:{iconCol:p.accent2}, lineH:W*0.046*fs, pad:W*0.012*fs});
+        });
+        cy+=W*0.02*fs;
+      });
+      c.strokeStyle=hexA(shade(p.accent,0.12),0.5); c.lineWidth=W*0.0014; c.beginPath(); c.moveTo(0,H-H*0.036); c.lineTo(W,H-H*0.036); c.stroke();
+      c.fillStyle=p.accent2; c.fillRect(0,H-H*0.03,W,H*0.03);
+    },
+    grid(c,W,H){
+      const p=cre.pal, M=W*0.065, fs=cre.fontScale; bg(c,W,H,p);
+      const rnd=mulberry32(3141);
+      let y=headerBlock(c,W,H*0.045,{M, ph:'お店の名前', size:W*0.072*fs, weight:'900', pref:'maru', col:p.ink, tagSize:W*0.024*fs, tagW:'600', tagCol:p.sub});
+      y+=H*0.012;
+      const cols=colCount(W,H,0.9); const gap=W*0.04; const cardW=(W-M*2-(cols-1)*gap)/cols;
+      const fills=[tint(p.accent2,0.84),tint(p.accent,0.88),p.card];
+      let colH=new Array(cols).fill(y); let gi=0;
+      const groups=grouped();
+      groups.forEach(function(g){
+        let ci=0; for(let i=1;i<cols;i++) if(colH[i]<colH[ci]) ci=i;
+        const cx=M+ci*(cardW+gap); let cy=colH[ci];
+        let est=W*0.092*fs;
+        g.items.forEach(function(it){ est+=W*0.052*fs+(it.desc?W*0.028*fs:0); });
+        est+=W*0.018;
+        if(cy+W*0.06>H*0.97){ return; }
+        const fill=fills[gi%fills.length]; gi++; const cInk=onInk(fill); const cSub=hexA(cInk,0.66);
+        const rot=(rnd()-0.5)*0.016;
+        c.save(); c.translate(cx+cardW/2,cy+est/2); c.rotate(rot); c.translate(-(cx+cardW/2),-(cy+est/2));
+        c.fillStyle='rgba(0,0,0,0.16)'; roundRect(c,cx+W*0.007,cy+W*0.009,cardW,est,W*0.028); c.fill();
+        c.fillStyle=fill; roundRect(c,cx,cy,cardW,est,W*0.028); c.fill();
+        c.strokeStyle=cInk; c.lineWidth=W*0.0042; roundRect(c,cx,cy,cardW,est,W*0.028); c.stroke();
+        setDF(c,W*0.026*fs,'800','maru'); const gn=ellipsize(c,g.name,cardW*0.7); const gw2=c.measureText(gn).width+W*0.05;
+        c.fillStyle='#ffffff'; roundRect(c,cx+W*0.024,cy+W*0.02,gw2,W*0.048*fs,W*0.024*fs); c.fill();
+        c.strokeStyle=cInk; c.lineWidth=W*0.0028; roundRect(c,cx+W*0.024,cy+W*0.02,gw2,W*0.048*fs,W*0.024*fs); c.stroke();
+        c.fillStyle=cInk; setDF(c,W*0.026*fs,'800','maru'); c.fillText(gn,cx+W*0.049,cy+W*0.02+W*0.034*fs);
+        let iy=cy+W*0.096*fs;
+        c.save(); roundRect(c,cx,cy,cardW,est,W*0.028); c.clip();
+        g.items.forEach(function(it){
+          const has=!!(it.photo||(it.icon&&it.icon!=='none'&&ICONS[it.icon]));
+          let nx=cx+W*0.028;
+          if(has){ drawItemVisual(c,nx+W*0.024,iy+W*0.011*fs,W*0.048,it,p,'circle',{plate:true,plateFill:'#ffffff',iconCol:'#33302a',ring:true,ringCol:hexA(cInk,0.55)}); nx+=W*0.062; }
+          const adv=recMark(c,it.rec,nx,iy+W*0.014*fs,W*0.02*fs,p.accent);
+          const setP2=function(px2,w2){ setFont(c,px2,w2); };
+          const pw=measPrice(c,it,W*0.026*fs,setP2,'800');
+          const pilW=pw?pw+W*0.036:0;
+          setFont(c,W*0.028*fs,'800'); c.fillStyle=cInk; c.textAlign='left';
+          const nm=ellipsize(c,it.name||'商品名',cardW-(nx+adv-cx)-pilW-W*0.06); c.fillText(nm,nx+adv,iy+W*0.023*fs);
+          if(pw){ const prx=cx+cardW-W*0.028; const pilH=W*0.042*fs; c.fillStyle='#ffffff'; roundRect(c,prx-pilW,iy+W*0.001,pilW,pilH,pilH/2); c.fill(); c.strokeStyle=hexA(cInk,0.65); c.lineWidth=W*0.002; roundRect(c,prx-pilW,iy+W*0.001,pilW,pilH,pilH/2); c.stroke();
+            drawPriceR(c,prx-W*0.018,iy+W*0.001+pilH*0.72,it,W*0.026*fs,setP2,'800','#33302a',hexA('#33302a',0.75)); }
+          iy+=W*0.052*fs;
+          if(it.desc){ setFont(c,W*0.018*fs,''); c.fillStyle=cSub; c.fillText(ellipsize(c,it.desc,cardW-(nx-cx)-W*0.04),nx,iy+W*0.006); iy+=W*0.028*fs; }
+        });
+        c.restore(); c.restore();
+        colH[ci]=cy+est+W*0.035;
+      });
+    },
+
+    board(c,W,H){
+      const p=cre.pal, M=W*0.095, fs=cre.fontScale;
+      c.fillStyle='#28312b'; c.fillRect(0,0,W,H);
+      const rnd=mulberry32(8080);
+      c.save(); for(let i=0;i<14;i++){ c.strokeStyle='rgba(240,240,230,'+(0.015+rnd()*0.02).toFixed(3)+')'; c.lineWidth=W*(0.02+rnd()*0.05); c.lineCap='round'; const x0=rnd()*W,y0=rnd()*H,a=rnd()*Math.PI,len=W*(0.1+rnd()*0.25); c.beginPath(); c.moveTo(x0,y0); c.lineTo(x0+Math.cos(a)*len,y0+Math.sin(a)*len); c.stroke(); } c.restore();
+      const INK='rgba(246,243,232,0.95)', SUB='rgba(206,213,200,0.9)'; const PAS=tint(p.accent2,0.4);
+      chalkRect(c,W*0.045,W*0.045,W-W*0.09,H-W*0.09,W*0.0045,'rgba(246,243,232,0.8)',rnd,0.85);
+      const ha=headAlign(M,W); let y=H*0.075;
+      const title=cre.store||'MENU'; const tpx=fitDF(c,title,W*0.075*fs,'700',W-M*2,'chalk'); setDF(c,tpx,'700','chalk'); c.fillStyle=INK; c.textAlign=ha.a; c.fillText(title,ha.x,y+tpx*0.84);
+      const tw=c.measureText(title).width; let ux0,ux1; if(ha.a==='left'){ ux0=M; ux1=M+tw; } else if(ha.a==='right'){ ux0=W-M-tw; ux1=W-M; } else { ux0=W/2-tw/2; ux1=W/2+tw/2; }
+      y+=tpx*1.0;
+      const swy=y+W*0.006; c.save(); c.strokeStyle='rgba(246,243,232,0.85)'; c.lineWidth=W*0.004; c.lineCap='round'; c.beginPath(); const swn=8; for(let i=0;i<=swn;i++){ const t=i/swn; const sx=ux0+(ux1-ux0)*t; const sy3=swy+Math.sin(t*Math.PI)*W*0.006+(rnd()-0.5)*W*0.003; if(i) c.lineTo(sx,sy3); else c.moveTo(sx,sy3); } c.stroke(); c.restore();
+      y+=W*0.022;
+      if(cre.tag){ setDF(c,W*0.023*fs,'','chalk'); c.fillStyle=SUB; c.textAlign=ha.a; c.fillText(ellipsize(c,cre.tag,W-M*2),ha.x,y+W*0.02); y+=W*0.042; }
+      c.textAlign='left'; y+=H*0.014;
+      const groups=grouped(); const colW=W-M*2;
+      groups.forEach(function(g){
+        if(y+W*0.08>H*0.93) return;
+        c.strokeStyle=PAS; c.lineWidth=W*0.0035; c.lineCap='round'; c.beginPath(); c.moveTo(M,y+W*0.014*fs); c.lineTo(M+W*0.026,y+W*0.014*fs); c.moveTo(M+W*0.026,y+W*0.014*fs); c.lineTo(M+W*0.017,y+W*0.007*fs); c.moveTo(M+W*0.026,y+W*0.014*fs); c.lineTo(M+W*0.017,y+W*0.021*fs); c.stroke();
+        setDF(c,W*0.03*fs,'700','chalk'); c.fillStyle=PAS; c.fillText(ellipsize(c,g.name,colW-W*0.05),M+W*0.04,y+W*0.025*fs);
+        y+=W*0.054*fs;
+        g.items.forEach(function(it){
+          if(y+W*0.05>H*0.93) return;
+          y=rowStd(c,M,y,colW,it,{nPx:W*0.03*fs, nW:'500', nCol:INK, pPx:W*0.031*fs, pW:'700', pCol:INK, uCol:SUB, dPx:W*0.02*fs, dCol:SUB, leader:'dash', leadCol:'rgba(246,243,232,0.35)', recCol:PAS, lineH:W*0.048*fs, pad:W*0.013*fs});
+        });
+        y+=W*0.022*fs;
+      });
+    },
+    hero(c,W,H){
+      const p=cre.pal, M=W*0.065, fs=cre.fontScale; bg(c,W,H,p);
+      if(!cre.roomImage){ c.fillStyle=hexA(p.accent2,0.1); c.beginPath(); c.arc(W*0.06,H*0.05,W*0.24,0,Math.PI*2); c.fill(); c.beginPath(); c.arc(W*0.96,H*0.97,W*0.3,0,Math.PI*2); c.fill(); }
+      let y=headerBlock(c,W,H*0.045,{M, ph:'MENU', eyebrow:'PICK UP', eyeSize:W*0.017*fs, eyeCol:p.accent, size:W*0.075*fs, weight:'900', pref:'maru', col:p.accent, tagSize:W*0.025*fs, tagW:'600', tagCol:p.sub});
+      y+=H*0.014;
+      const cols=(W/H>0.95)?3:2; const gap=W*0.04; const cellW=(W-M*2-(cols-1)*gap)/cols; const cellH=cellW*1.2;
+      let i=0;
+      cre.items.forEach(function(it){
+        const col=i%cols, row=Math.floor(i/cols); const cx=M+col*(cellW+gap)+cellW/2, cyTop=y+row*(cellH+gap*0.8);
+        if(cyTop+cellH>H*0.985){ i++; return; }
+        const iconY=cyTop+cellH*0.32; const pr=cellW*0.3;
+        blobShadow(c,cx,iconY+pr+cellW*0.06,pr*0.95,pr*0.2,hexA(p.ink,0.1));
+        if(it.photo||(it.icon&&it.icon!=='none'&&ICONS[it.icon])){ drawItemVisual(c,cx,iconY,pr*2,it,p,'circle',{plate:true,plateFill:tint(p.accent2,0.82),iconCol:p.accent,ring:true,ringDash:true,ringOut:true,ringCol:hexA(p.accent2,0.85)}); }
+        else { c.fillStyle=tint(p.accent2,0.82); c.beginPath(); c.arc(cx,iconY,pr,0,Math.PI*2); c.fill(); c.save(); c.strokeStyle=hexA(p.accent2,0.85); c.setLineDash([cellW*0.03,cellW*0.032]); c.lineWidth=cellW*0.014; c.beginPath(); c.arc(cx,iconY,pr+cellW*0.05,0,Math.PI*2); c.stroke(); c.setLineDash([]); c.restore(); }
+        recMark(c,it.rec,cx-pr-cellW*0.03,iconY-pr*0.85,cellW*0.085,p.accent);
+        if(it.price){ const br=cellW*0.17, bx2=cx+pr*0.85, by2=iconY-pr*0.8;
+          c.save(); c.translate(bx2,by2); c.rotate(0.12);
+          withShadow(c,'rgba(0,0,0,0.15)',br*0.3,0,br*0.14,function(){ scallopBadge(c,0,0,br,12,p.accent); });
+          c.strokeStyle='rgba(255,255,255,0.6)'; c.lineWidth=br*0.05; c.beginPath(); c.arc(0,0,br*0.72,0,Math.PI*2); c.stroke();
+          c.fillStyle='#ffffff'; c.textAlign='center'; c.textBaseline='middle';
+          setFont(c,br*0.55,'800'); c.fillText(ellipsize(c,String(it.price),br*1.3),0,it.unit?-br*0.12:0);
+          if(it.unit){ setFont(c,br*0.32,'700'); c.fillText(it.unit,0,br*0.38); }
+          c.textBaseline='alphabetic'; c.restore(); c.textAlign='left'; }
+        setDF(c,W*0.029*fs,'800','maru'); c.fillStyle=p.ink; c.textAlign='center';
+        c.fillText(ellipsize(c,it.name||'商品名',cellW*0.98),cx,cyTop+cellH*0.76);
+        if(it.desc){ setFont(c,W*0.019*fs,''); c.fillStyle=p.sub; c.fillText(ellipsize(c,it.desc,cellW*0.98),cx,cyTop+cellH*0.87); }
+        c.textAlign='left';
+        i++;
+      });
+    },
+
+    showcase(c,W,H){
+      const p=cre.pal, M=W*0.085, fs=cre.fontScale; bg(c,W,H,p);
+      if(!cre.roomImage){ vignette(c,W,H,p.ink,0.05); }
+      let y=headerBlock(c,W,H*0.05,{M, ph:'MENU', eyebrow:'SELECTION', eyeSize:W*0.016*fs, eyeCol:p.accent, size:W*0.08*fs, weight:'800', pref:'elegant', col:p.ink, tagSize:W*0.024*fs, tagCol:p.sub, orn:'full', ornCol:hexA(p.ink,0.7)});
+      y+=H*0.016;
+      const rowH=W*0.165*fs; const iconBox=W*0.115;
+      let i=0;
+      cre.items.forEach(function(it){
+        if(y+rowH>H*0.97){ i++; return; }
+        const cyMid=y+rowH/2;
+        const num=('0'+(i+1)).slice(-2);
+        setDF(c,W*0.115,'800','elegant'); c.fillStyle=hexA(p.accent2,0.18); c.textAlign='left'; c.fillText(num,M-W*0.012,cyMid+W*0.042);
+        if(it.photo||(it.icon&&it.icon!=='none'&&ICONS[it.icon])){ drawItemVisual(c,M+W*0.085,cyMid,iconBox,it,p,'circle',{plate:true,plateFill:tint(p.accent,0.87),iconCol:shade(p.accent,0.05)}); }
+        const tx=M+W*0.165;
+        const setP2=function(px2,w2){ setFont(c,px2,w2); };
+        const pw=measPrice(c,it,W*0.042*fs,setP2,'800');
+        const adv=recMark(c,it.rec,tx,cyMid-W*0.02*fs,W*0.023*fs,p.accent);
+        setDF(c,W*0.042*fs,'700','elegant'); c.fillStyle=p.ink; c.textAlign='left';
+        const nm=ellipsize(c,it.name||'商品名',W-M-tx-adv-pw-W*0.05); c.fillText(nm,tx+adv,cyMid-W*0.006*fs);
+        drawPriceR(c,W-M,cyMid-W*0.006*fs,it,W*0.042*fs,setP2,'800',p.accent,p.sub);
+        if(it.desc){ setFont(c,W*0.022*fs,''); c.fillStyle=p.sub; const dl=wrap(c,it.desc,W-M-tx-W*0.02); dl.slice(0,2).forEach(function(l,k){ c.fillText(l,tx,cyMid+W*0.028*fs+k*W*0.03*fs); }); }
+        y+=rowH;
+        c.strokeStyle=hexA(p.ink,0.16); c.lineWidth=Math.max(0.7,W*0.001); c.beginPath(); c.moveTo(M,y-W*0.008); c.lineTo(W-M,y-W*0.008); c.stroke();
+        c.fillStyle=p.accent; c.fillRect(M,y-W*0.011,W*0.014,W*0.006);
+        i++;
+      });
+    },
+    split(c,W,H){
+      const p=cre.pal, fs=cre.fontScale, M=W*0.09; bg(c,W,H,p);
+      if(!cre.roomImage){ ambient(c,W,H,'paper',0.4); vignette(c,W,H,p.ink,0.05); }
+      const aw=W*0.7, ax=(W-aw)/2, ay=H*0.045, ah=H*0.285;
+      withShadow(c,'rgba(35,28,20,0.2)',W*0.02,0,W*0.01,function(){ archPath(c,ax,ay,aw,ah); c.fillStyle=cre.photo?'#111111':p.accent; c.fill(); });
+      c.save(); archPath(c,ax,ay,aw,ah); c.clip();
+      if(cre.photo){ const img=cre.photo; const ar=img.width/img.height; let dw=aw,dh=aw/ar; if(dh<ah){ dh=ah; dw=ah*ar; } c.drawImage(img,ax+(aw-dw)/2,ay+(ah-dh)/2,dw,dh); }
+      else { c.fillStyle='rgba(255,255,255,0.14)'; c.beginPath(); c.arc(ax+aw*0.72,ay+ah*0.36,aw*0.3,0,Math.PI*2); c.fill(); c.beginPath(); c.arc(ax+aw*0.2,ay+ah*0.85,aw*0.2,0,Math.PI*2); c.fill(); }
+      c.restore();
+      c.strokeStyle='rgba(255,255,255,0.65)'; c.lineWidth=W*0.0024; archPath(c,ax+W*0.012,ay+W*0.012,aw-W*0.024,ah-W*0.012); c.stroke();
+      const title=cre.store||'お店の名前'; const tpx=fitDF(c,title,W*0.05*fs,'700',W*0.5,null); setDF(c,tpx,'700',null); const tw=c.measureText(title).width;
+      const cw=Math.min(W*0.64,tw+W*0.1), ch=tpx*2.1;
+      const cyC=ay+ah;
+      cardRect(c,W/2-cw/2,cyC-ch*0.55,cw,ch,W*0.014,p.card,{blur:W*0.02,dy:W*0.008,stroke:hexA(p.accent,0.35),lw:W*0.002});
+      setDF(c,tpx,'700',null); c.fillStyle=p.ink; c.textAlign='center'; c.fillText(title,W/2,cyC-ch*0.55+ch*0.66);
+      let y=cyC+ch*0.55+W*0.02;
+      if(cre.tag){ setFont(c,W*0.022*fs,'600'); c.fillStyle=p.sub; c.fillText(ellipsize(c,cre.tag,W-M*2),W/2,y+W*0.02); y+=W*0.04; }
+      c.textAlign='left'; y+=H*0.012;
+      const groups=grouped(); const cols=colCount(W,H,0.72); const gap=W*0.06; const colW=(W-M*2-(cols-1)*gap)/cols;
+      let colIdx=0,cx=M,cy=y,colTop=y;
+      groups.forEach(function(g){
+        if(cy+W*0.12>H*0.955 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+        setFont(c,W*0.028*fs,'800'); c.fillStyle=p.accent; c.fillText(ellipsize(c,g.name,colW),cx,cy+W*0.023*fs);
+        c.strokeStyle=hexA(p.accent2,0.8); c.lineWidth=W*0.0024; c.beginPath(); c.moveTo(cx,cy+W*0.036*fs); c.lineTo(cx+colW,cy+W*0.036*fs); c.stroke();
+        cy+=W*0.058*fs;
+        g.items.forEach(function(it){
+          if(cy+W*0.05>H*0.96 && cols>1 && colIdx<cols-1){ colIdx++; cx=M+colIdx*(colW+gap); cy=colTop; }
+          cy=rowStd(c,cx,cy,colW,it,{nPx:W*0.028*fs, nW:'600', pPx:W*0.029*fs, pW:'700', pCol:p.ink, uCol:p.sub, dPx:W*0.019*fs, leader:'dots', leadCol:hexA(p.sub,0.7), iconSize:W*0.048, iconOpts:{plate:true,plateFill:hexA(p.accent2,0.16),iconCol:p.accent}, lineH:W*0.045*fs, pad:W*0.011*fs});
+        });
+        cy+=W*0.018*fs;
+      });
+    },
+
+    photo(c,W,H){
+      const p=cre.pal, M=W*0.07, fs=cre.fontScale; bg(c,W,H,p);
+      if(!cre.roomImage){ vignette(c,W,H,p.ink,0.06); }
+      const rnd=mulberry32(6060);
+      let y=headerBlock(c,W,H*0.045,{M, ph:'MENU', size:W*0.066*fs, weight:'800', pref:null, col:p.ink, tagSize:W*0.024*fs, tagW:'600', tagCol:p.sub, orn:'diamond', ornCol:p.accent});
+      y+=H*0.016;
+      const cols=(W/H>0.95)?3:2; const gap=W*0.045; const cardW=(W-M*2-(cols-1)*gap)/cols;
+      const imgH=cardW*0.78; const capH=W*0.078*fs; const cardH=imgH+capH+W*0.028;
+      let i=0;
+      cre.items.forEach(function(it){
+        const col=i%cols, row=Math.floor(i/cols); const ccx=M+col*(cardW+gap)+cardW/2, ccy=y+row*(cardH+gap*0.95)+cardH/2;
+        if(ccy+cardH/2>H*0.98){ i++; return; }
+        const rot=(rnd()-0.5)*0.07; const tcol=(rnd()>0.5?p.accent:p.accent2);
+        c.save(); c.translate(ccx,ccy); c.rotate(rot);
+        cardRect(c,-cardW/2,-cardH/2,cardW,cardH,W*0.004,'#fffdf9',{blur:W*0.022,dy:W*0.01});
+        const ix=-cardW/2+W*0.014, iy=-cardH/2+W*0.014, iw=cardW-W*0.028;
+        c.save(); c.beginPath(); c.rect(ix,iy,iw,imgH); c.clip();
+        if(it.photo){ const img=it.photo; const ar=img.width/img.height; let dw=iw,dh=iw/ar; if(dh<imgH){ dh=imgH; dw=imgH*ar; } c.drawImage(img,ix+(iw-dw)/2,iy+(imgH-dh)/2,dw,dh); }
+        else { c.fillStyle=tint(p.accent2,0.8); c.fillRect(ix,iy,iw,imgH); if(it.icon&&it.icon!=='none'&&ICONS[it.icon]){ c.lineCap='round'; c.lineJoin='round'; ICONS[it.icon](c,ix+iw/2,iy+imgH/2,Math.min(iw,imgH)*0.52,p.accent); } }
+        c.fillStyle='rgba(0,0,0,0.05)'; c.fillRect(ix,iy+imgH-W*0.01,iw,W*0.01);
+        c.restore();
+        tape(c,0,-cardH/2+W*0.004,cardW*0.34,W*0.03,(rnd()-0.5)*0.16,tcol);
+        const setP2=function(px2,w2){ setFont(c,px2,w2); };
+        const pw=measPrice(c,it,W*0.028*fs,setP2,'800');
+        const capY=iy+imgH;
+        const adv=recMark(c,it.rec,ix+W*0.006,capY+capH*0.36,W*0.018*fs,p.accent);
+        setDF(c,W*0.026*fs,'700','hand'); c.fillStyle=p.ink; c.textAlign='left';
+        const nm=ellipsize(c,it.name||'商品名',iw-adv-pw-W*0.04); c.fillText(nm,ix+W*0.006+adv,capY+capH*0.45);
+        drawPriceR(c,ix+iw-W*0.004,capY+capH*0.45,it,W*0.028*fs,setP2,'800',p.accent,p.sub);
+        if(it.desc){ setFont(c,W*0.017*fs,''); c.fillStyle=p.sub; c.fillText(ellipsize(c,it.desc,iw-W*0.01),ix+W*0.006,capY+capH*0.88); }
+        c.restore();
+        i++;
+      });
+    },
+    magazine(c,W,H){
+      const p=cre.pal, fs=cre.fontScale, M=W*0.085; bg(c,W,H,p);
+      const panelH=H*0.42;
+      c.save(); c.beginPath(); c.rect(0,0,W,panelH); c.clip();
+      if(cre.photo){ const img=cre.photo; const ar=img.width/img.height; let dw=W,dh=W/ar; if(dh<panelH){ dh=panelH; dw=panelH*ar; } c.drawImage(img,(W-dw)/2,(panelH-dh)/2,dw,dh); const g2=c.createLinearGradient(0,0,0,panelH); g2.addColorStop(0,'rgba(0,0,0,0.08)'); g2.addColorStop(0.55,'rgba(0,0,0,0.12)'); g2.addColorStop(1,'rgba(0,0,0,0.62)'); c.fillStyle=g2; c.fillRect(0,0,W,panelH); }
+      else { c.fillStyle=shade(p.accent,0.06); c.fillRect(0,0,W,panelH); c.fillStyle='rgba(255,255,255,0.1)'; c.beginPath(); c.arc(W*0.8,panelH*0.3,W*0.3,0,Math.PI*2); c.fill(); c.fillStyle='rgba(0,0,0,0.14)'; c.fillRect(0,panelH*0.7,W,panelH*0.3); }
+      c.restore();
+      if(cre.tag){ setFont(c,W*0.017*fs,'700'); c.fillStyle='rgba(255,255,255,0.92)'; tracked(c,ellipsize(c,cre.tag,W*0.72),M,H*0.045+W*0.015,W*0.006,'left'); }
+      c.fillStyle='rgba(255,255,255,0.85)'; c.fillRect(M,panelH-W*0.135,W*0.1,W*0.004);
+      const title=cre.store||'お店の名前'; const tpx=fitDF(c,title,W*0.088*fs,'800',W-M*2,'elegant'); setDF(c,tpx,'800','elegant'); c.fillStyle='#ffffff'; c.textAlign='left'; c.fillText(title,M,panelH-W*0.045);
+      c.save(); c.translate(W-W*0.028,panelH+H*0.035); c.rotate(Math.PI/2); setFont(c,W*0.016*fs,'700'); c.fillStyle=hexA(p.ink,0.4); tracked(c,cre.store||'MENU',0,0,W*0.008,'left'); c.restore();
+      let y=panelH+H*0.05; const colW=W-M*2-W*0.05; const groups=grouped();
+      const pr2=W*0.028;
+      groups.forEach(function(g){
+        if(y+W*0.07>H*0.96) return;
+        c.fillStyle=p.accent; c.fillRect(M,y+W*0.003,W*0.012,W*0.022);
+        setFont(c,W*0.024*fs,'800'); c.fillStyle=p.ink; tracked(c,String(g.name).toUpperCase(),M+W*0.026,y+W*0.021*fs,W*0.006,'left');
+        y+=W*0.05*fs;
+        g.items.forEach(function(it){
+          if(y+W*0.06>H*0.97) return;
+          const base=y+W*0.024*fs;
+          const adv=recMark(c,it.rec,M,base-W*0.01*fs,W*0.02*fs,p.accent);
+          setFont(c,W*0.029*fs,'600'); c.fillStyle=p.ink; c.textAlign='left';
+          const maxN=colW-adv-pr2*2-W*0.06;
+          const nm=ellipsize(c,it.name||'商品名',maxN); c.fillText(nm,M+adv,base); const nEnd=M+adv+c.measureText(nm).width;
+          const ccx2=M+colW;
+          if(it.price){ leaderLine(c,nEnd+W*0.02,ccx2-pr2*2-W*0.02,base-W*0.008,'line',hexA(p.ink,0.22),W*0.004);
+            c.strokeStyle=p.accent; c.lineWidth=W*0.0028; c.beginPath(); c.arc(ccx2-pr2,base-W*0.009,pr2,0,Math.PI*2); c.stroke();
+            setFont(c,pr2*0.62,'800'); c.fillStyle=p.ink; c.textAlign='center'; c.fillText(ellipsize(c,String(it.price),pr2*1.5),ccx2-pr2,base-W*0.002);
+            if(it.unit){ setFont(c,W*0.014*fs,'600'); c.fillStyle=p.sub; c.textAlign='left'; c.fillText(it.unit,ccx2+W*0.008,base); }
+            c.textAlign='left'; }
+          y+=W*0.05*fs;
+          if(it.desc){ setFont(c,W*0.018*fs,''); c.fillStyle=p.sub; c.fillText(ellipsize(c,it.desc,colW-W*0.1),M,y+W*0.004); y+=W*0.028*fs; }
+        });
+        y+=W*0.016*fs;
+      });
+    },
+
+    tags(c,W,H){
+      const p=cre.pal, M=W*0.07, fs=cre.fontScale; bg(c,W,H,p);
+      if(!cre.roomImage){ vignette(c,W,H,p.ink,0.05); }
+      const rnd=mulberry32(5150);
+      let y=headerBlock(c,W,H*0.045,{M, ph:'MENU', eyebrow:'PRICE LIST', eyeSize:W*0.016*fs, eyeCol:p.sub, size:W*0.068*fs, weight:'800', pref:null, col:p.accent, tagSize:W*0.024*fs, tagW:'600', tagCol:p.sub});
+      y+=H*0.016;
+      const cols=(W/H>0.9)?2:1; const gap=W*0.045; const cardW=(W-M*2-(cols-1)*gap)/cols; const cardH=W*0.13*fs;
+      let i=0;
+      cre.items.forEach(function(it){
+        const col=i%cols, row=Math.floor(i/cols); const ccx=M+col*(cardW+gap)+cardW/2, ccy=y+row*(cardH+gap*0.95)+cardH/2;
+        if(ccy+cardH/2>H*0.97){ i++; return; }
+        const rot=(rnd()-0.5)*0.06;
+        c.save(); c.translate(ccx,ccy); c.rotate(rot);
+        const notch=cardH*0.52; const rr=W*0.008;
+        const tagPath=function(){ c.beginPath(); c.moveTo(-cardW/2+notch*0.72,-cardH/2); c.lineTo(cardW/2-rr,-cardH/2); c.arcTo(cardW/2,-cardH/2,cardW/2,-cardH/2+rr,rr); c.lineTo(cardW/2,cardH/2-rr); c.arcTo(cardW/2,cardH/2,cardW/2-rr,cardH/2,rr); c.lineTo(-cardW/2+notch*0.72,cardH/2); c.lineTo(-cardW/2,0); c.closePath(); };
+        withShadow(c,'rgba(35,28,20,0.18)',W*0.014,0,W*0.007,function(){ tagPath(); c.fillStyle=p.card; c.fill(); });
+        c.strokeStyle=hexA(p.accent2,0.85); c.lineWidth=W*0.0022; tagPath(); c.stroke();
+        const hx=-cardW/2+notch*0.5;
+        rivet(c,hx,0,cardH*0.09,p.bg,hexA(p.accent2,0.95));
+        c.strokeStyle=hexA(p.ink,0.5); c.lineWidth=Math.max(0.8,W*0.0018); c.beginPath(); c.moveTo(hx-cardH*0.06,0); c.bezierCurveTo(hx-cardH*0.72,-cardH*0.3, hx-cardH*0.62,cardH*0.44, hx-cardH*0.12,cardH*0.24); c.stroke();
+        let tx=-cardW/2+notch*0.92;
+        const has=!!(it.photo||(it.icon&&it.icon!=='none'&&ICONS[it.icon]));
+        if(has){ drawItemVisual(c,tx+W*0.026,0,W*0.05,it,p,'circle',{plate:true,plateFill:hexA(p.accent2,0.14),iconCol:p.accent}); tx+=W*0.062; }
+        const setP2=function(px2,w2){ setFont(c,px2,w2); };
+        const pw=measPrice(c,it,W*0.036*fs,setP2,'800');
+        const nyy=(it.desc?-cardH*0.16:0);
+        const adv=recMark(c,it.rec,tx,nyy-W*0.008,W*0.019*fs,p.accent2);
+        setFont(c,W*0.029*fs,'700'); c.fillStyle=p.ink; c.textAlign='left';
+        const nm=ellipsize(c,it.name||'商品名',cardW/2-tx-adv-pw-W*0.055);
+        c.fillText(nm,tx+adv,nyy+W*0.01);
+        if(it.desc){ setFont(c,W*0.018*fs,''); c.fillStyle=p.sub; c.fillText(ellipsize(c,it.desc,cardW/2-tx-pw-W*0.055),tx,cardH*0.22); }
+        drawPriceR(c,cardW/2-W*0.028,W*0.012,it,W*0.036*fs,setP2,'800',p.accent,p.sub);
+        c.restore();
+        i++;
+      });
+      c.textAlign='left';
+    }
+  };
+  if(typeof window!=='undefined' && window.__CRE_TPL_HOOK){ try{ window.__CRE_TPL_HOOK({cre:cre,TEMPLATES:TEMPLATES,PALETTES:PALETTES,FONTS:FONTS,CATS:CATS,ICONS:ICONS}); }catch(e){} }
+  const TEMPLATE_LIST=[['clean','喫茶クラシック'],['hero','まるっとPOP'],['showcase','エディトリアル'],['split','アーチ写真'],['photo','ポラロイド'],['magazine','マガジン'],['pop','レトロポップ'],['band','チケット'],['notecard','ノートカード'],['grid','ベントー'],['frame','額装ビストロ'],['minimal','ミニマル'],['bistro','ブラッスリー'],['banner','オーニング'],['vertical','和モダン'],['kraft','クラフト'],['tri','新聞'],['leaders','お品書き'],['tags','値札タグ'],['board','黒板カフェ']];
+  const FRAME_LIST=[['none','なし'],['line','線'],['double','二重'],['rounded','角丸'],['dots','点線'],['corners','コーナー'],['deco','装飾'],['ticks','ティック']];
+  const TEMPLATE_GROUPS=[{label:'写真を活かす', ids:['hero','showcase','split','photo','magazine']},{label:'シンプル・上品', ids:['clean','minimal','frame','vertical','notecard','leaders']},{label:'にぎやか・元気', ids:['pop','band','kraft','banner','bistro','grid','tags']},{label:'個性派', ids:['tri','board']}];
+  const TPL_LABEL=Object.fromEntries(TEMPLATE_LIST);
+
+  // ===================== レンダリング =====================
+  const previewCv = $('crePreview');
+  function renderTo(canvas, W, H){
+    canvas.width=W; canvas.height=H; const c=canvas.getContext('2d'); c.clearRect(0,0,W,H);
+    if(cre.roomImage){ const img=cre.roomImage; const ar=img.width/img.height; const z=cre.roomSize||1; let dw=W,dh=W/ar; if(dh<H){ dh=H; dw=H*ar; } dw*=z; dh*=z; const ox=(W-dw)/2; const oy=(H-dh)/2 + (cre.roomPosY||0)*Math.max(0,(dh-H)/2); c.drawImage(img,ox,oy,dw,dh); c.fillStyle=hexA(cre.pal.bg, Math.max(0.06, 1-(cre.roomOpacity||0.2))); c.fillRect(0,0,W,H); }
+    else { c.fillStyle=cre.pal.bg; c.fillRect(0,0,W,H); }
+    const framed=cre.frame&&cre.frame!=='none'; const pad=framed?Math.min(W,H)*0.05:0;
+    c.save(); if(pad){ c.translate(pad,pad); c.scale((W-2*pad)/W,(H-2*pad)/H); }
+    (TEMPLATES[cre.template]||TEMPLATES.clean)(c,W,H);
+    if(cre.photo && cre.template!=='split'){ drawPhoto(c,W,H); }
+    c.restore();
+    if(cre.texture && cre.texture!=='none'){ drawTexture(c,W,H); }
+    if(framed){ drawFrame(c,W,H,pad); }
+  }
+  function renderPreview(){ if(!previewCv) return; const long=Math.max(cre.ratioW,cre.ratioH); const sc=Math.min(1, 1100/long); renderTo(previewCv, Math.round(cre.ratioW*sc), Math.round(cre.ratioH*sc)); }
+
+  // ===================== ウィザード =====================
+  const STEPS=[ {key:'store',label:'お店'}, {key:'tpl',label:'デザイン'}, {key:'ratio',label:'サイズ'}, {key:'items',label:'商品'}, {key:'style',label:'仕上げ'} ];
+  const stepBar=$('creStepBar'), panel=$('crePanel');
+
+  function applyCat(key){
+    const ct=CATS[key]; if(!ct) return;
+    cre.cat=key; cre.pal=Object.assign({},PALETTES[ct.pal]); cre.palBase=Object.assign({},PALETTES[ct.pal]);
+    cre.template=ct.tpl; cre.font=ct.font||'gothic';
+    if(!cre.items.length || cre._fromSample){ cre.items=ct.samples.map(s=>({name:s[0],price:s[1],unit:s[2],desc:s[3],icon:s[4],section:s[5],rec:!!s[6]})); cre._fromSample=true; }
+  }
+  function renderStepBar(){ if(!stepBar) return; stepBar.innerHTML=''; STEPS.forEach((s,i)=>{ const b=document.createElement('button'); b.className='cre-step'+(i===cre.step?' active':'')+(i<cre.step?' done':''); b.innerHTML='<span class="cre-step-n">'+(i+1)+'</span><span class="cre-step-l">'+s.label+'</span>'; b.addEventListener('click',()=>{ cre.step=i; renderStep(); }); stepBar.appendChild(b); }); }
+  function renderStep(){
+    renderStepBar(); renderPreview(); if(!panel) return; panel.innerHTML='';
+    const k=STEPS[cre.step].key;
+    if(k==='store') stepStore(); else if(k==='tpl') stepTpl(); else if(k==='ratio') stepRatio(); else if(k==='items') stepItems(); else if(k==='style') stepStyle();
+    const nav=document.createElement('div'); nav.className='cre-nav';
+    const back=document.createElement('button'); back.className='cre-btn ghost'; back.textContent='← 戻る'; back.disabled=cre.step===0; back.addEventListener('click',()=>{ if(cre.step>0){ cre.step--; renderStep(); } });
+    const next=document.createElement('button'); next.className='cre-btn'; next.textContent=cre.step<STEPS.length-1?'次へ →':'画像をダウンロード'; next.addEventListener('click',()=>{ if(cre.step<STEPS.length-1){ cre.step++; renderStep(); } else exportImage(); });
+    const skip=document.createElement('button'); skip.className='cre-btn link'; skip.textContent='スキップ'; skip.style.display=cre.step<STEPS.length-1?'':'none'; skip.addEventListener('click',()=>{ cre.step++; renderStep(); });
+    nav.appendChild(back); nav.appendChild(skip); nav.appendChild(next); panel.appendChild(nav);
+  }
+  function field(label, el){ const w=document.createElement('label'); w.className='cre-field'; const s=document.createElement('span'); s.className='cre-flabel'; s.textContent=label; w.appendChild(s); w.appendChild(el); return w; }
+  function segBtns(opts, getCur, onpick){ const g=document.createElement('div'); g.className='cre-seg'; opts.forEach(([val,lab])=>{ const b=document.createElement('button'); b.className='cre-segbtn'+(getCur()===val?' on':''); b.textContent=lab; b.addEventListener('click',()=>{ onpick(val); g.querySelectorAll('.cre-segbtn').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderPreview(); }); g.appendChild(b); }); return g; }
+
+  function stepStore(){
+    const h=document.createElement('div'); h.className='cre-h'; h.textContent='お店の基本'; panel.appendChild(h);
+    
+    const nameIn=document.createElement('input'); nameIn.className='cre-in'; nameIn.value=cre.store; nameIn.placeholder='例）みのりカフェ'; nameIn.addEventListener('input',()=>{ cre.store=nameIn.value; renderPreview(); }); panel.appendChild(field('お店の名前', nameIn));
+    const tagIn=document.createElement('input'); tagIn.className='cre-in'; tagIn.value=cre.tag; tagIn.placeholder='例）季節の国産素材を使用'; tagIn.addEventListener('input',()=>{ cre.tag=tagIn.value; renderPreview(); }); panel.appendChild(field('ひとことキャッチ（任意）', tagIn));
+    const cg=document.createElement('div'); cg.className='cre-chips';
+    Object.keys(CATS).forEach(key=>{ const b=document.createElement('button'); b.className='cre-chip'+(cre.cat===key?' on':''); b.textContent=CATS[key].label; b.addEventListener('click',()=>{ applyCat(key); cg.querySelectorAll('.cre-chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderPreview(); }); cg.appendChild(b); });
+    panel.appendChild(field('お店のカテゴリ', cg));
+  }
+
+  function stepTpl(){
+    const h=document.createElement('div'); h.className='cre-h'; h.textContent='デザインを選ぶ'; panel.appendChild(h);
+    const tphint=document.createElement('div'); tphint.className='cre-flabel'; tphint.textContent='グループを開いて選べます'; panel.appendChild(tphint);
+    TEMPLATE_GROUPS.forEach((grp,gi)=>{
+      const hd=document.createElement('button'); hd.style.cssText='display:flex;align-items:center;justify-content:space-between;width:100%;text-align:left;background:var(--cre-card,#fff);border:1px solid rgba(91,156,184,0.25);border-radius:10px;padding:9px 12px;margin:6px 0 2px;font-weight:700;font-size:13px;color:var(--cre-ink,#3a3327);cursor:pointer';
+      const tt=document.createElement('span'); tt.textContent=grp.label; const arrow=document.createElement('span'); arrow.textContent='▾'; arrow.style.cssText='transition:transform 0.2s;color:#5b9cb8;font-size:12px';
+      hd.appendChild(tt); hd.appendChild(arrow);
+      const grid=document.createElement('div'); grid.className='cre-tplgrid'; let rendered=false;
+      const renderGroup=()=>{ if(rendered) return; rendered=true; grp.ids.forEach(id=>{ const label=TPL_LABEL[id]||id; const card=document.createElement('button'); card.className='cre-tplcard'+(cre.template===id?' on':''); const cv=document.createElement('canvas'); cv.className='cre-tplthumb'; const prevT=cre.template; cre.template=id; renderTo(cv,240,320); cre.template=prevT; card.appendChild(cv); const lb=document.createElement('span'); lb.className='cre-tpllabel'; lb.textContent=label; card.appendChild(lb); card.addEventListener('click',()=>{ cre.template=id; panel.querySelectorAll('.cre-tplcard').forEach(x=>x.classList.remove('on')); card.classList.add('on'); renderPreview(); }); grid.appendChild(card); }); };
+      const setOpen=(o)=>{ grid.style.display=o?'':'none'; arrow.style.transform=o?'':'rotate(-90deg)'; if(o) renderGroup(); };
+      hd.addEventListener('click',()=>setOpen(grid.style.display==='none'));
+      panel.appendChild(hd); panel.appendChild(grid);
+      setOpen(gi===0 || grp.ids.includes(cre.template));
+    });
+    const th=document.createElement('div'); th.className='cre-h sub'; th.textContent='見出しのフォント（タイトル）'; panel.appendChild(th);
+    const tg=document.createElement('div'); tg.className='cre-chips';
+    [['theme','本文と同じ']].concat(Object.entries(FONTS).map(([k,f])=>[k,f.label])).forEach(([key,lab])=>{ const b=document.createElement('button'); b.className='cre-chip'+(cre.titleFont===key?' on':''); b.textContent=lab; if(FONTS[key]) b.style.fontFamily=FONTS[key].stack; b.addEventListener('click',()=>{ cre.titleFont=key; tg.querySelectorAll('.cre-chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderPreview(); }); tg.appendChild(b); });
+    panel.appendChild(tg);
+    const fh=document.createElement('div'); fh.className='cre-h sub'; fh.textContent='本文のフォント'; panel.appendChild(fh);
+    const fg=document.createElement('div'); fg.className='cre-chips';
+    Object.entries(FONTS).forEach(([key,f])=>{ const b=document.createElement('button'); b.className='cre-chip'+(cre.font===key?' on':''); b.textContent=f.label; b.style.fontFamily=f.stack; b.addEventListener('click',()=>{ cre.font=key; fg.querySelectorAll('.cre-chip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderPreview(); }); fg.appendChild(b); });
+    panel.appendChild(fg);
+    const ah=document.createElement('div'); ah.className='cre-h sub'; ah.textContent='文字の揃え・配置'; panel.appendChild(ah);
+    panel.appendChild(field('タイトルの揃え', segBtns([['left','左'],['center','中央'],['right','右']], ()=>cre.align, v=>cre.align=v)));
+    panel.appendChild(field('段組（列の数）', segBtns([['auto','おまかせ'],['1','1列'],['2','2列']], ()=>cre.cols, v=>cre.cols=v)));
+    panel.appendChild(field('おすすめの表示', segBtns([['star','★'],['heart','♥'],['dot','●'],['label','【おすすめ】'],['none','なし']], ()=>cre.recStyle, v=>cre.recStyle=v)));
+    panel.appendChild(field('枠（フレーム）', segBtns(FRAME_LIST, ()=>cre.frame, v=>cre.frame=v)));
+    const ph=document.createElement('div'); ph.className='cre-h sub'; ph.textContent='色のテーマ'; panel.appendChild(ph);
+    const pg=document.createElement('div'); pg.className='cre-palrow';
+    Object.entries(PALETTES).forEach(([key,p])=>{ const b=document.createElement('button'); b.className='cre-palchip'; b.title=key; b.style.background=p.bg; b.innerHTML='<i style="background:'+p.accent+'"></i><i style="background:'+p.accent2+'"></i><i style="background:'+p.ink+'"></i>'; if(cre.pal&&cre.pal.accent===p.accent&&cre.pal.bg===p.bg) b.classList.add('on'); b.addEventListener('click',()=>{ cre.pal=Object.assign({},p); cre.palBase=Object.assign({},p); pg.querySelectorAll('.cre-palchip').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderPreview(); }); pg.appendChild(b); });
+    panel.appendChild(pg);
+  }
+
+  const RATIO_PICKS=['ポスター枠M','ポスター枠S','ポスター枠SS','掛け軸','張り紙','スマホ','名刺','単行本・平','文庫・平'];
+  function ratioCard(nm,w,hh,onpick){ const b=document.createElement('button'); b.className='cre-ratiocard'+(cre.ratioW===w&&cre.ratioH===hh?' on':''); const box=document.createElement('div'); box.className='cre-ratiobox'; const ar=w/hh; box.style.width=(ar>=1?'46px':(46*ar)+'px'); box.style.height=(ar>=1?(46/ar)+'px':'46px'); b.appendChild(box); const lb=document.createElement('span'); lb.textContent=nm; b.appendChild(lb); b.addEventListener('click',()=>{ onpick(); document.querySelectorAll('#crePanel .cre-ratiocard,#crePanel .cre-searchitem').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderPreview(); }); return b; }
+  function stepRatio(){
+    const h=document.createElement('div'); h.className='cre-h'; h.textContent='サイズ・比率'; panel.appendChild(h);
+    
+    const ALL=(window.__CRE_CATS||[]); const findItem=(name)=>{ for(const cat of ALL){ for(const it of (cat.items||[])){ if(it.name===name) return it; } } return null; };
+    const qg=document.createElement('div'); qg.className='cre-ratiogrid'; let any=false;
+    RATIO_PICKS.forEach(name=>{ const it=findItem(name); if(it){ any=true; const base=Math.max(it.w,it.h), sc=1400/base; qg.appendChild(ratioCard(it.name, Math.round(it.w*sc), Math.round(it.h*sc), ()=>{ cre.ratioW=Math.round(it.w*sc); cre.ratioH=Math.round(it.h*sc); })); } });
+    if(any){ const lab=document.createElement('div'); lab.className='cre-flabel'; lab.textContent='アイテム比（ポスター・縦長）'; panel.appendChild(lab); panel.appendChild(qg); }
+    const sin=document.createElement('input'); sin.className='cre-in'; sin.placeholder='例）ポスター / 黒板 / テレビ / スマホ';
+    const res=document.createElement('div'); res.className='cre-searchres';
+    function doSearch(){ const q=sin.value.trim(); res.innerHTML=''; if(!q) return; const hits=[]; ALL.forEach(cat=> (cat.items||[]).forEach(it=>{ if(it.name.includes(q)) hits.push(it); })); hits.slice(0,30).forEach(it=>{ const b=document.createElement('button'); b.className='cre-searchitem'; b.innerHTML='<span>'+it.name+'</span><em>'+it.w+' : '+it.h+'</em>'; b.addEventListener('click',()=>{ const base=Math.max(it.w,it.h), sc=1400/base; cre.ratioW=Math.round(it.w*sc); cre.ratioH=Math.round(it.h*sc); document.querySelectorAll('#crePanel .cre-ratiocard,#crePanel .cre-searchitem').forEach(x=>x.classList.remove('on')); b.classList.add('on'); renderPreview(); }); res.appendChild(b); }); if(!hits.length){ const e=document.createElement('div'); e.className='cre-note'; e.textContent='見つかりませんでした'; res.appendChild(e); } }
+    sin.addEventListener('input',doSearch); panel.appendChild(field('アイテム比を検索', sin)); panel.appendChild(res);
+  }
+
+  function stepItems(){
+    const h=document.createElement('div'); h.className='cre-h'; h.textContent='商品を編集'; panel.appendChild(h);
+    
+    const list=document.createElement('div'); list.className='cre-itemlist'; cre.items.forEach((it,idx)=> list.appendChild(itemRow(it,idx)) ); panel.appendChild(list);
+    const add=document.createElement('button'); add.className='cre-btn ghost full'; add.textContent='＋ 商品を追加'; add.addEventListener('click',()=>{ cre._fromSample=false; const last=cre.items[cre.items.length-1]; cre.items.push({name:'',price:'',unit:'円',desc:'',icon:'coffee',section:last?last.section:'MENU',rec:false}); renderStep(); }); panel.appendChild(add);
+  }
+  function itemRow(it,idx){
+    const row=document.createElement('div'); row.className='cre-itemrow';
+    const head=document.createElement('div'); head.className='cre-itemhead';
+    const ic=document.createElement('canvas'); ic.className='cre-itemicon'; ic.width=44; ic.height=44;
+    const drawMini=()=>{ const c=ic.getContext('2d'); c.clearRect(0,0,44,44); c.lineCap='round'; c.lineJoin='round'; if(it.photo||(it.icon&&ICONS[it.icon])) drawItemVisual(c,22,22,40,it,cre.pal||PALETTES.cream,'circle'); }; drawMini(); head.appendChild(ic);
+    const nm=document.createElement('input'); nm.className='cre-in tight'; nm.value=it.name; nm.placeholder='商品名'; nm.addEventListener('input',()=>{ it.name=nm.value; cre._fromSample=false; renderPreview(); }); head.appendChild(nm);
+    const del=document.createElement('button'); del.className='cre-x'; del.textContent='×'; del.title='削除'; del.addEventListener('click',()=>{ cre.items.splice(idx,1); cre._fromSample=false; renderStep(); }); head.appendChild(del);
+    row.appendChild(head);
+    const r2=document.createElement('div'); r2.className='cre-itemr2';
+    const pr=document.createElement('input'); pr.className='cre-in tight num'; pr.value=it.price; pr.placeholder='価格'; pr.inputMode='numeric'; pr.addEventListener('input',()=>{ it.price=pr.value; renderPreview(); });
+    const un=document.createElement('input'); un.className='cre-in tight unit'; un.value=it.unit; un.placeholder='円'; un.addEventListener('input',()=>{ it.unit=un.value; renderPreview(); });
+    const sec=document.createElement('input'); sec.className='cre-in tight sec'; sec.value=it.section; sec.placeholder='区分'; sec.addEventListener('input',()=>{ it.section=sec.value; renderPreview(); });
+    r2.appendChild(pr); r2.appendChild(un); r2.appendChild(sec);
+    const rec=document.createElement('button'); rec.className='cre-rec'+(it.rec?' on':''); rec.textContent='★おすすめ'; rec.addEventListener('click',()=>{ it.rec=!it.rec; rec.classList.toggle('on',it.rec); renderPreview(); }); r2.appendChild(rec);
+    row.appendChild(r2);
+    const ds=document.createElement('input'); ds.className='cre-in tight'; ds.value=it.desc; ds.placeholder='説明（任意）'; ds.addEventListener('input',()=>{ it.desc=ds.value; renderPreview(); }); row.appendChild(ds);
+    const icBtn=document.createElement('button'); icBtn.className='cre-btn link small'; icBtn.textContent='アイコンを選ぶ ▾';
+    const wrapEl=document.createElement('div'); wrapEl.className='cre-iconwrap'; wrapEl.style.display='none';
+    const tabs=document.createElement('div'); tabs.className='cre-icontabs'; const grid=document.createElement('div'); grid.className='cre-iconpick';
+    let curGenre=genreOf(it.icon)||'drink';
+    ['food','drink','dessert'].forEach(g=>{ const tb=document.createElement('button'); tb.className='cre-icontab'+(g===curGenre?' on':''); tb.textContent=GENRE_LABEL[g]; tb.addEventListener('click',()=>{ curGenre=g; tabs.querySelectorAll('.cre-icontab').forEach(x=>x.classList.remove('on')); tb.classList.add('on'); fillIcons(); }); tabs.appendChild(tb); });
+    function fillIcons(){ grid.innerHTML=''; ICON_GENRE[curGenre].concat(['none']).forEach(name=>{ const b=document.createElement('button'); b.className='cre-iconopt'+(it.icon===name?' on':''); b.title=ICON_LABEL[name]||name; const cv=document.createElement('canvas'); cv.width=34; cv.height=34; const cc=cv.getContext('2d'); cc.lineCap='round'; cc.lineJoin='round'; if(ICONS[name]) ICONS[name](cc,17,17,30,cre.pal?cre.pal.accent:'#c2410c'); b.appendChild(cv); const lb=document.createElement('span'); lb.textContent=(name==='none'?'なし':(ICON_LABEL[name]||name)); lb.style.cssText='font-size:9px;line-height:1.1;margin-top:2px;max-width:46px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--cre-sub,#8a7f6b)'; b.style.cssText='display:flex;flex-direction:column;align-items:center;height:auto;padding:5px 3px'; b.appendChild(lb); b.addEventListener('click',()=>{ it.icon=name; grid.querySelectorAll('.cre-iconopt').forEach(x=>x.classList.remove('on')); b.classList.add('on'); drawMini(); renderPreview(); }); grid.appendChild(b); }); }
+    fillIcons(); wrapEl.appendChild(tabs); wrapEl.appendChild(grid);
+    icBtn.addEventListener('click',()=>{ wrapEl.style.display=wrapEl.style.display==='none'?'block':'none'; });
+    row.appendChild(icBtn); row.appendChild(wrapEl);
+    const imgBtn=document.createElement('button'); imgBtn.className='cre-btn link small'; imgBtn.textContent=it.photo?'商品画像 ✓（変更）':'商品画像を貼る'; const imgFile=document.createElement('input'); imgFile.type='file'; imgFile.accept='image/*'; imgFile.style.display='none';
+    const rmImg=document.createElement('button'); rmImg.className='cre-btn link small cre-imgrm'; rmImg.textContent='画像を外す'; rmImg.addEventListener('click',()=>{ it.photo=null; drawMini(); renderPreview(); imgBtn.textContent='商品画像を貼る'; rmImg.remove(); });
+    imgBtn.addEventListener('click',()=>imgFile.click()); imgFile.addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return; const img=new Image(); img.onload=()=>{ it.photo=img; cre._fromSample=false; drawMini(); renderPreview(); imgBtn.textContent='商品画像 ✓（変更）'; if(!row.querySelector('.cre-imgrm')) row.appendChild(rmImg); }; img.src=URL.createObjectURL(f); });
+    row.appendChild(imgBtn); row.appendChild(imgFile); if(it.photo) row.appendChild(rmImg);
+    return row;
+  }
+
+  function stepStyle(){
+    const h=document.createElement('div'); h.className='cre-h'; h.textContent='仕上げ調整'; panel.appendChild(h);
+    const fsWrap=document.createElement('div'); fsWrap.className='cre-slider';
+    const fsIn=document.createElement('input'); fsIn.type='range'; fsIn.min='0.8'; fsIn.max='1.3'; fsIn.step='0.02'; fsIn.value=String(cre.fontScale);
+    const fsVal=document.createElement('span'); fsVal.className='cre-sval'; fsVal.textContent=Math.round(cre.fontScale*100)+'%';
+    fsIn.addEventListener('input',()=>{ cre.fontScale=parseFloat(fsIn.value); fsVal.textContent=Math.round(cre.fontScale*100)+'%'; renderPreview(); }); fsWrap.appendChild(fsIn); fsWrap.appendChild(fsVal); panel.appendChild(field('文字の大きさ（自動で枠内に収まります）', fsWrap));
+    // 質感
+    const txh=document.createElement('div'); txh.className='cre-h sub'; txh.textContent='質感（テクスチャ）'; panel.appendChild(txh);
+    panel.appendChild(segBtns([['none','なし'],['paper','紙'],['kraft','クラフト紙'],['washi','和紙'],['linen','リネン'],['canvas','キャンバス'],['wood','木目'],['stone','石・コンクリ'],['noise','ノイズ'],['dots','ドット'],['grid','方眼']], ()=>cre.texture, v=>cre.texture=v));
+    const tsWrap=document.createElement('div'); tsWrap.className='cre-slider'; const tsIn=document.createElement('input'); tsIn.type='range'; tsIn.min='0.3'; tsIn.max='1.8'; tsIn.step='0.05'; tsIn.value=String(cre.textureStrength); const tsVal=document.createElement('span'); tsVal.className='cre-sval'; tsVal.textContent=Math.round(cre.textureStrength*100)+'%'; tsIn.addEventListener('input',()=>{ cre.textureStrength=parseFloat(tsIn.value); tsVal.textContent=Math.round(cre.textureStrength*100)+'%'; renderPreview(); }); tsWrap.appendChild(tsIn); tsWrap.appendChild(tsVal); panel.appendChild(field('質感の強さ', tsWrap));
+    panel.appendChild(field('商品画像のふち（枠線）', segBtns([['on','あり'],['off','なし']], ()=>cre.itemPhotoBorder===false?'off':'on', v=>cre.itemPhotoBorder=(v==='on'))));
+    const rh=document.createElement('div'); rh.className='cre-h sub'; rh.textContent='お部屋・背景の画像'; panel.appendChild(rh);
+    
+    const rmBtn=document.createElement('button'); rmBtn.className='cre-btn ghost full'; rmBtn.textContent=cre.roomImage?'背景を変更':'背景画像を読み込む'; const rmFile=document.createElement('input'); rmFile.type='file'; rmFile.accept='image/*'; rmFile.style.display='none'; rmBtn.addEventListener('click',()=>rmFile.click()); rmFile.addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return; const img=new Image(); img.onload=()=>{ cre.roomImage=img; renderStep(); }; img.src=URL.createObjectURL(f); }); panel.appendChild(rmBtn); panel.appendChild(rmFile);
+    if(cre.roomImage){
+      const mkSlider=(label,mn,mx,st,get,set,fmt)=>{ const wrap=document.createElement('div'); wrap.className='cre-slider'; const inp=document.createElement('input'); inp.type='range'; inp.min=mn; inp.max=mx; inp.step=st; inp.value=String(get()); const val=document.createElement('span'); val.className='cre-sval'; val.textContent=fmt(get()); inp.addEventListener('input',()=>{ set(parseFloat(inp.value)); val.textContent=fmt(get()); renderPreview(); }); wrap.appendChild(inp); wrap.appendChild(val); return field(label,wrap); };
+      panel.appendChild(mkSlider('画像の大きさ',1,2.2,0.05,()=>cre.roomSize,v=>cre.roomSize=v,v=>Math.round(v*100)+'%'));
+      panel.appendChild(mkSlider('上下の位置',-1,1,0.05,()=>cre.roomPosY,v=>cre.roomPosY=v,v=>(v>0.02?'下':(v<-0.02?'上':'中央'))));
+      panel.appendChild(mkSlider('画像の濃さ（不透明度）',0.05,0.9,0.05,()=>cre.roomOpacity,v=>cre.roomOpacity=v,v=>Math.round(v*100)+'%'));
+      const rrm=document.createElement('button'); rrm.className='cre-btn link small'; rrm.textContent='↩ 背景を外す'; rrm.addEventListener('click',()=>{ cre.roomImage=null; cre.roomSize=1; cre.roomPosY=0; cre.roomOpacity=0.2; renderStep(); }); panel.appendChild(rrm);
+    }
+    // 色
+    const colRow=document.createElement('div'); colRow.className='cre-colrow';
+    [['bg','背景'],['card','カード'],['ink','文字'],['sub','補助'],['accent','アクセント'],['accent2','サブ']].forEach(([key,lb])=>{ const w=document.createElement('label'); w.className='cre-colcell'; const ci=document.createElement('input'); ci.type='color'; ci.value=toHex(cre.pal[key]); ci.addEventListener('input',()=>{ cre.pal[key]=ci.value; renderPreview(); }); const s=document.createElement('span'); s.textContent=lb; w.appendChild(ci); w.appendChild(s); colRow.appendChild(w); });
+    panel.appendChild(field('色を細かく調整（6色）', colRow));
+    const reset=document.createElement('button'); reset.className='cre-btn link small'; reset.textContent='↺ テーマの色に戻す'; reset.addEventListener('click',()=>{ if(cre.palBase){ cre.pal=Object.assign({},cre.palBase); renderStep(); } }); panel.appendChild(reset);
+    // お店・スタッフ画像
+    const ph=document.createElement('div'); ph.className='cre-h sub'; ph.textContent='お店・スタッフ画像'; panel.appendChild(ph);
+    
+    const avBtn=document.createElement('button'); avBtn.className='cre-btn ghost full'; avBtn.textContent=cre.photo?'画像を変更':'画像を読み込む'; const avFile=document.createElement('input'); avFile.type='file'; avFile.accept='image/*'; avFile.style.display='none'; avBtn.addEventListener('click',()=>avFile.click()); avFile.addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return; const img=new Image(); img.onload=()=>{ cre.photo=img; renderStep(); }; img.src=URL.createObjectURL(f); }); panel.appendChild(avBtn); panel.appendChild(avFile);
+    if(cre.photo){
+      panel.appendChild(field('位置', segBtns([['br','右下'],['bl','左下'],['tr','右上'],['tl','左上']], ()=>cre.photoPos, v=>cre.photoPos=v)));
+      panel.appendChild(field('形', segBtns([['circle','丸'],['round','角丸']], ()=>cre.photoShape, v=>cre.photoShape=v)));
+      const szWrap=document.createElement('div'); szWrap.className='cre-slider'; const szIn=document.createElement('input'); szIn.type='range'; szIn.min='0.14'; szIn.max='0.34'; szIn.step='0.01'; szIn.value=String(cre.photoSize); const szVal=document.createElement('span'); szVal.className='cre-sval'; szVal.textContent=Math.round(cre.photoSize*100)+'%'; szIn.addEventListener('input',()=>{ cre.photoSize=parseFloat(szIn.value); szVal.textContent=Math.round(cre.photoSize*100)+'%'; renderPreview(); }); szWrap.appendChild(szIn); szWrap.appendChild(szVal); panel.appendChild(field('大きさ', szWrap));
+      const rm=document.createElement('button'); rm.className='cre-btn link small'; rm.textContent='↩ 戻す（画像を外す）'; rm.addEventListener('click',()=>{ cre.photo=null; cre.photoPos='br'; cre.photoSize=0.22; cre.photoShape='circle'; renderStep(); }); panel.appendChild(rm);
+    }
+    const exp=document.createElement('button'); exp.className='cre-btn full big'; exp.textContent='⬇ 画像をダウンロード'; exp.addEventListener('click',exportImage); panel.appendChild(exp);
+  }
+
+  function toHex(col){ if(!col) return '#000000'; if(col[0]==='#'){ if(col.length===4) return '#'+col[1]+col[1]+col[2]+col[2]+col[3]+col[3]; return col.slice(0,7); } const m=col.match(/\d+/g); if(m){ return '#'+m.slice(0,3).map(n=>(+n).toString(16).padStart(2,'0')).join(''); } return '#000000'; }
+  function exportImage(){
+    const long=Math.max(cre.ratioW,cre.ratioH); const sc=Math.min(2.4, 2000/long);
+    const W=Math.round(cre.ratioW*sc), H=Math.round(cre.ratioH*sc);
+    const cv=document.createElement('canvas'); renderTo(cv,W,H);
+    cv.toBlob(b=>{ if(!b) return; const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=(cre.store||'メニュー表')+'.png'; document.body.appendChild(a); a.click(); a.remove(); if(typeof window.showToast==='function') window.showToast('画像をダウンロードしました'); setTimeout(()=>URL.revokeObjectURL(a.href),4000); },'image/png');
+  }
+  function init(){ if(!cre.pal){ applyCat('cafe'); } cre.step=0; renderStep(); preloadFonts().then(function(){ try{ renderStep(); }catch(e){} }); }
+  window.__creInit=init;
+  const closeBtn=$('creClose'); if(closeBtn) closeBtn.addEventListener('click',()=>{ ov.hidden=true; });
+})();
+
+
+</script>
+<script>
+(function(){ var c=document.getElementById('creClose'); if(c){ c.addEventListener('click', function(){ if(history.length>1){ history.back(); } else { location.href='./'; } }); } if(window.__creInit) window.__creInit(); })();
+</script>
+</body>
+</html>

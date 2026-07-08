@@ -4038,6 +4038,8 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
 .hh-mk.is-wip{opacity:.55;cursor:default;}
 .hh-mk.is-wip:hover{transform:none;box-shadow:0 4px 14px rgba(70,100,140,.08);}
 .hh-mk.is-wip .hh-mk-go{color:#8a95a1;background:#eef1f4;}
+.hh-mk3.hh-pick .hh-mk{animation:hhpick .9s ease 2;}
+@keyframes hhpick{0%,100%{box-shadow:0 4px 14px rgba(70,100,140,.08);}40%{box-shadow:0 0 0 3px var(--c),0 10px 22px rgba(70,100,140,.2);transform:translateY(-3px);}}
 @media (max-width:680px){.hh-mk3{grid-template-columns:1fr;}.hh-mk{flex-direction:row;align-items:center;}.hh-mk-top{height:auto;width:74px;align-self:stretch;border-bottom:none;border-right:2.5px solid #48526e;}.hh-mk-top svg{width:30px;height:30px;}.hh-mk-go{margin:0 12px 0 0;align-self:center;}}
 .hh-btn{border:2px solid #48526e;cursor:pointer;font-weight:800;font-size:12px;padding:7px 15px;text-decoration:none;display:inline-flex;color:#48526a;background:#fff;border-radius:999px;transition:transform .16s;}
 .hh-btn:hover{transform:translateY(-1px);}
@@ -4173,12 +4175,12 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
       +'</div>';
     }
     if(id==='make'){
-      return shot(C,'menu','pre2.png','作るくん')
+      return shot(C,'pick','pre2.png','作るくん')
       +'<div class="hh-lead"><h2>作るくん</h2><p>テンプレートを選んで、画像をゼロから作るツールです。色や書体を選ぶだけでサッと作れます。いまは3種類、これから少しずつ増えていきます。</p></div>'
       +'<div class="hh-mk3">'
         +'<button class="hh-mk" style="--c:#e0588f" data-act="menu"><span class="hh-mk-top">'+S(ICN.menu)+'</span><span class="hh-mk-body"><span class="hh-mk-name">メニュー</span><span class="hh-mk-desc">カフェ・お品書き風のメニュー表を色と書体を選んで作成</span></span><span class="hh-mk-go">ひらく →</span></button>'
         +'<button class="hh-mk" style="--c:#5b9cb8" data-act="thumb"><span class="hh-mk-top">'+S(ICN.thumb)+'</span><span class="hh-mk-body"><span class="hh-mk-name">サムネ</span><span class="hh-mk-desc">配信・紹介用の16:9部屋サムネをテンプレから作成</span></span><span class="hh-mk-go">ひらく →</span></button>'
-        +'<button class="hh-mk is-wip" style="--c:#9aa6b2" disabled><span class="hh-mk-top">'+S(ICN.room)+'</span><span class="hh-mk-body"><span class="hh-mk-name">ルーム紹介</span><span class="hh-mk-desc">お部屋の紹介カードを作成（ただいま準備中）</span></span><span class="hh-mk-go">準備中</span></button>'
+        +'<button class="hh-mk" style="--c:#7aa87f" data-act="room"><span class="hh-mk-top">'+S(ICN.room)+'</span><span class="hh-mk-body"><span class="hh-mk-name">ルーム紹介</span><span class="hh-mk-desc">訪問したお部屋を紹介する画像を作成</span></span><span class="hh-mk-go">ひらく →</span></button>'
       +'</div>'
       +sticky('お知らせ', news([['NEW','メニュー画像にデザイン追加（全20種＋グループ表示）','#e0588f']]),'#ffe6f0','#e0588f');
     }
@@ -4197,8 +4199,10 @@ body.ratio-guide-on.sidebar-hidden #ratioGuide { display: none; }
     content.querySelectorAll('[data-act]').forEach(el=>{ if(el.disabled) return;
       el.addEventListener('click',()=>{ const a=el.dataset.act;
         if(a==='edit'){ hideHome(); return; }
-        if(a==='menu'){ const b=document.getElementById('slCreate'); if(b) b.click(); return; }
-        if(a==='thumb'){ const b=document.getElementById('slThumb'); if(b) b.click(); return; }
+        if(a==='pick'){ const g=content.querySelector('.hh-mk3'); if(g){ g.scrollIntoView({behavior:'smooth',block:'center'}); g.classList.remove('hh-pick'); void g.offsetWidth; g.classList.add('hh-pick'); } return; }
+        if(a==='menu'){ location.href='menu.html'; return; }
+        if(a==='thumb'){ location.href='heyasamune.html'; return; }
+        if(a==='room'){ location.href='Houmon.html'; return; }
         if(a==='rotate'){ const b=document.getElementById('slRotate'); if(b) b.click(); return; }
       });
     });
@@ -10705,7 +10709,7 @@ layerPanelToggle.addEventListener('click', () => {
   btn.addEventListener('click', e=>{ e.stopPropagation(); fan.classList.contains('open')?closeFan():openFan(); });
   document.addEventListener('pointerdown', e=>{ if(!fan.classList.contains('open')) return; if(fan.contains(e.target)||btn.contains(e.target)) return; closeFan(); }, true);
   const slThumb=document.getElementById('slThumb'), slRotate=document.getElementById('slRotate');
-  if(slThumb) slThumb.addEventListener('click', ()=>{ closeFan(); location.href='thumb.html'; });
+  if(slThumb) slThumb.addEventListener('click', ()=>{ closeFan(); location.href='heyasamune.html'; });
   if(slRotate) slRotate.addEventListener('click', ()=>{ closeFan(); const ov=document.getElementById('rotKunOverlay'); if(ov){ ov.hidden=false; if(window.__rkInit) window.__rkInit(); } });
   { const slCreate=document.getElementById('slCreate'); if(slCreate) slCreate.addEventListener('click', ()=>{ closeFan(); location.href='menu.html'; }); }
 

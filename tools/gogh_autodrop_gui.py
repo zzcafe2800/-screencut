@@ -88,9 +88,28 @@ def tile_pos(corners, cols, rows, idx):
 
 
 # ───────────── マウス操作 (Windows) ─────────────
+class _MI(ctypes.Structure):
+    _fields_ = [("dx", ctypes.c_long), ("dy", ctypes.c_long), ("mouseData", ctypes.c_ulong),
+                ("dwFlags", ctypes.c_ulong), ("time", ctypes.c_ulong), ("dwExtraInfo", ctypes.c_size_t)]
+
+
+class _IN(ctypes.Structure):
+    class _U(ctypes.Union):
+        _fields_ = [("mi", _MI)]
+    _anonymous_ = ("u",)
+    _fields_ = [("type", ctypes.c_ulong), ("u", _U)]
+
+
 class Mouse:
+    """SendInput を使い、本物のマウス操作と同じ信号を送る (SetCursorPos より確実にドラッグが始まる)"""
+
     def __init__(self):
         self.u = ctypes.windll.user32
+        self.slow = 1.0  # ゆっくり度 (1.0 = 標準)
+
+    def _send(self, flags, x=0, y=0):
+        i = _IN(type=0, mi=_MI(x, y, 0, flags, 0, 0))
+        self.u.SendInput(1, ctypes.byref(i), ctypes.sizeof(_IN))
 
     def pos(self):
         class P(ctypes.Structure):
@@ -100,20 +119,28 @@ class Mouse:
         return p.x, p.y
 
     def move(self, x, y):
-        self.u.SetCursorPos(int(x), int(y))
+        vx, vy = self.u.GetSystemMetrics(76), self.u.GetSystemMetrics(77)
+        vw, vh = self.u.GetSystemMetrics(78), self.u.GetSystemMetrics(79)
+        ax = int((x - vx) * 65535 / max(vw - 1, 1))
+        ay = int((y - vy) * 65535 / max(vh - 1, 1))
+        self._send(0x0001 | 0x8000 | 0x4000, ax, ay)   # MOVE | ABSOLUTE | VIRTUALDESK
 
-    def glide(self, x, y, sec=0.4, steps=25):
+    def glide(self, x, y, sec=0.4, steps=30):
         x0, y0 = self.pos()
+        sec *= self.slow
         for i in range(1, steps + 1):
             t = i / steps
             self.move(x0 + (x - x0) * t, y0 + (y - y0) * t)
             time.sleep(sec / steps)
 
+    def wait(self, sec):
+        time.sleep(sec * self.slow)
+
     def down(self):
-        self.u.mouse_event(0x0002, 0, 0, 0, 0)
+        self._send(0x0002)
 
     def up(self):
-        self.u.mouse_event(0x0004, 0, 0, 0, 0)
+        self._send(0x0004)
 
     def esc_pressed(self):
         return bool(self.u.GetAsyncKeyState(0x1B) & 0x8000)
@@ -182,6 +209,9 @@ class App:
         ttk.Label(f2, text="  待ち秒").pack(side="left", padx=(12, 2))
         self.wait = tk.DoubleVar(value=1.5)
         ttk.Spinbox(f2, from_=0.3, to=10, increment=0.5, width=4, textvariable=self.wait).pack(side="left")
+        ttk.Label(f2, text="  ゆっくり度").pack(side="left", padx=(12, 2))
+        self.slow = tk.DoubleVar(value=1.0)
+        ttk.Spinbox(f2, from_=0.5, to=5, increment=0.5, width=4, textvariable=self.slow).pack(side="left")
 
         f3 = ttk.LabelFrame(r, text="③ 位置を教える (goghとフォルダを並べて表示してから)")
         f3.pack(fill="x", **pad)
@@ -200,7 +230,8 @@ class App:
         f4.pack(fill="x", **pad)
         row = ttk.Frame(f4); row.pack(pady=6)
         ttk.Button(row, text="テスト(動くだけ)", command=lambda: self.run(True)).pack(side="left", padx=8)
-        self.btn_go = ttk.Button(row, text="開始", command=lambda: self.run(False))
+        ttk.Button(row, text="1枚だけ試す(開始番号)", command=lambda: self.run(False, True)).pack(side="left", padx=8)
+        self.btn_go = ttk.Button(row, text="全部開始", command=lambda: self.run(False))
         self.btn_go.pack(side="left", padx=8)
 
         self.log = tk.Text(r, height=12, state="disabled", font=("Meiryo UI", 9))
@@ -290,7 +321,7 @@ class App:
         ], done)
 
     # --- 実行 ---
-    def run(self, dry):
+    def run(self, dry, single=False):
         if self.running:
             return
         n = self.cols.get() * self.rows.get()
@@ -299,21 +330,22 @@ class App:
         if not self.corners or not self.fpts:
             return messagebox.showinfo("gogh 自動ドロップくん", "③ で位置を教えてください。")
         if not dry and not messagebox.askokcancel(
-                "確認", f"{min(n, len(self.files))}枚を貼り付けます。\n"
+                "確認", f"{1 if single else min(n, len(self.files))}枚を貼り付けます。\n"
                         "この間マウスは自動で動きます。止めるときは Esc キーを押してください。\n\n"
                         "goghの画面とフォルダが見えていますか?"):
             return
         self.running = True
         self.root.iconify()
-        threading.Thread(target=self._worker, args=(dry,), daemon=True).start()
+        threading.Thread(target=self._worker, args=(dry, single), daemon=True).start()
 
     def _ask_main(self, msg):
         ev = threading.Event()
         self.root.after(0, lambda: (self.root.deiconify(), messagebox.showinfo("gogh 自動ドロップくん", msg), ev.set()))
         ev.wait()
 
-    def _worker(self, dry):
+    def _worker(self, dry, single=False):
         m = self.mouse
+        m.slow = self.slow.get()
         cols, rows = self.cols.get(), self.rows.get()
         n = min(cols * rows, len(self.files))
         # ファイルの縦間隔: 先頭と末尾の2点から。見えている数は「末尾までの個数」=
@@ -332,19 +364,12 @@ class App:
                 return
             start = max(1, self.start.get())
             step = (fy1 - fy0) / max(n - 1, 1)
-            for k in range(start - 1, n):
+            for k in range(start - 1, start if single else n):
                 self._check(m)
                 src = (fx, int(fy0 + step * k))
                 dst = tile_pos(self.corners, cols, rows, k)
                 self.say(f"{k + 1:02d}/{n}  {self.files[k]} → {k // cols + 1}行{k % cols + 1}列")
-                m.glide(*src, 0.3)
-                m.down(); time.sleep(0.15)
-                m.glide(src[0] + 15, src[1] + 5, 0.1, 5)   # ドラッグ開始を認識させる
-                m.glide(*dst, 0.6)
-                time.sleep(0.3)
-                m.glide(dst[0] + 2, dst[1] + 2, 0.05, 3)
-                time.sleep(0.3)
-                m.up()
+                self._drag(m, src, dst)
                 t0 = time.time()
                 while time.time() - t0 < self.wait.get():
                     self._check(m); time.sleep(0.05)
@@ -358,6 +383,23 @@ class App:
         finally:
             self.running = False
             self.root.after(0, self.root.deiconify)
+
+    def _drag(self, m, src, dst):
+        """つかむ → 少し動かして『ドラッグ開始』を認識させる → ゲーム上へ運ぶ → 揺らしてホバーを認識させる → 離す"""
+        try:
+            m.glide(*src, 0.3)
+            m.wait(0.3)
+            m.down()
+            m.wait(0.25)
+            for k in range(1, 6):                      # ドラッグ開始のしきい値(数px)を超える
+                m.glide(src[0] + 8 * k, src[1] + 3 * k, 0.05, 3)
+            m.glide(*dst, 0.8, 50)
+            for dx, dy in ((4, 0), (-4, 2), (3, -3), (0, 0)):  # 落とす先にいると伝える
+                m.glide(dst[0] + dx, dst[1] + dy, 0.12, 4)
+            m.wait(0.4)
+        finally:
+            m.up()                                     # 何があっても必ず離す
+        m.wait(0.3)
 
     @staticmethod
     def _check(m):

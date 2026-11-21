@@ -13367,11 +13367,11 @@ function stopAnimation() {
 }
 
 /* ===== Info ===== */
-function formatBytes(b) {
-  if (b == null) return '—';
-  if (b < 1024) return b + ' B';
-  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
-  return (b / 1024 / 1024).toFixed(2) + ' MB';
+function formatBytes(n) {
+  if (n == null || isNaN(n)) return '—';
+  if (n < 1024) return n + ' B';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+  return (n / 1024 / 1024).toFixed(2) + ' MB';
 }
 function sizeTier(bytes) {
   if (bytes == null) return 'white';
@@ -13541,10 +13541,6 @@ function updateBrightnessGauge() {
 function getQualityScale(level = state.quality) {
   if (level <= 0) return 1;
   return 1 / Math.sqrt(Math.pow(QUALITY_FACTOR, level));
-}
-function formatBytes(n) {
-  if (n >= 1024 * 1024) return (n / 1024 / 1024).toFixed(2) + ' MB';
-  return (n / 1024).toFixed(1) + ' KB';
 }
 /* 実測: 代表フレームを元解像度と画質低下後解像度で実際にPNG化してサイズ比を求める */
 function measureQualityRatio() {
@@ -18267,8 +18263,8 @@ makeDroppable(recommendFileLabel, f => {
   recommendFile.dispatchEvent(new Event('change'));
 });
 // 加工くん の 2 つのスロット
-if (typeof roomSlotRoom !== 'undefined' && roomSlotRoom) {
-  makeDroppable(roomSlotRoom, f => {
+{
+  makeDroppable(document.querySelector('label[for="roomFileRoom"]'), f => {
     const dt = new DataTransfer();
     dt.items.add(f);
     roomFileRoom.files = dt.files;

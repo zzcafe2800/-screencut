@@ -13,7 +13,8 @@
 8. 止めたいときは **Esc キー**
 
 ## 安全性
-- Python標準機能のみ・外部ライブラリなし。インターネット通信なし。管理者権限なし。
+- Python標準機能のみ・外部ライブラリなし。管理者権限なし。
+- 通信は `gogh_start.bat` の自動アップデート(このリポジトリの `gogh_autodrop_gui.py` を取得)だけです。止めたいときは、同じフォルダに `no_update.txt` という空のファイルを置いてください。
 - ゲームのメモリやファイルには触らず、マウスを動かすだけです。
 - ソースは `tools/gogh_autodrop_gui.py` 1ファイルで、誰でも中身を確認できます。
 - exeはGitHub Actionsが公開ソースから自動で作ります(Actions タブ → Build gogh-autodrop → Artifacts)。

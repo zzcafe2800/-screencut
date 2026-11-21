@@ -23,7 +23,7 @@ import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-VERSION = "v0.6 (2026-11-21)"   # 更新するたびにここを上げる
+VERSION = "v0.7 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 SETTINGS = os.path.join(
     os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)),
@@ -238,6 +238,7 @@ class App:
         self.files = []
         self.corners = None   # 4隅のタイル中心
         self.running = False
+        self._cache = {}
         self._load()
         self._build()
         self._refresh()
@@ -289,11 +290,11 @@ class App:
         self.start = tk.IntVar(value=1)
         ttk.Spinbox(f2, from_=1, to=999, width=4, textvariable=self.start).pack(side="left")
         ttk.Label(f2, text="  待ち秒").pack(side="left", padx=(12, 2))
-        self.wait = tk.DoubleVar(value=1.5)
-        ttk.Spinbox(f2, from_=0.3, to=10, increment=0.5, width=4, textvariable=self.wait).pack(side="left")
-        ttk.Label(f2, text="  ゆっくり度").pack(side="left", padx=(12, 2))
-        self.slow = tk.DoubleVar(value=1.0)
-        ttk.Spinbox(f2, from_=0.5, to=5, increment=0.5, width=4, textvariable=self.slow).pack(side="left")
+        self.wait = tk.DoubleVar(value=0.3)
+        ttk.Spinbox(f2, from_=0.0, to=10, increment=0.1, width=4, textvariable=self.wait).pack(side="left")
+        ttk.Label(f2, text="  ゆっくり度(小=速い)").pack(side="left", padx=(12, 2))
+        self.slow = tk.DoubleVar(value=0.5)
+        ttk.Spinbox(f2, from_=0.1, to=5, increment=0.1, width=4, textvariable=self.slow).pack(side="left")
 
         f3 = ttk.LabelFrame(r, text="③ gのタイルの位置を教える (gogh を編集モードにして、タイルが全部見える状態で)")
         f3.pack(fill="x", **pad)
@@ -478,13 +479,16 @@ class App:
     def _locate(self, m, leaf, filename):
         """ファイルの『つかむ位置』を返す。見えていなければスクロールして探す"""
         for attempt in range(25):
-            _, items = uia_query(leaf)
-            r = find_item(items, filename)
+            r = find_item(self._cache, filename)            # 位置は使い回す (毎回聞くと遅い)
+            if not r:
+                _, self._cache = uia_query(leaf)
+                r = find_item(self._cache, filename)
             if r:
                 x, y, w, h = r
                 return x + min(40, w // 2), y + h // 2         # 名前とアイコンの上
             self._check(m)
             self._scroll(m, -5 if attempt < 12 else 5)
+            self._cache = {}
         raise RuntimeError(f"{filename} がエクスプローラーで見つかりません。")
 
     def _worker(self, dry, single=False):
@@ -496,6 +500,7 @@ class App:
             time.sleep(1.0)
             leaf = self._open_explorer(m)
             self._scroll(m, 100)                                # 先頭までスクロール
+            self._cache = {}
             if dry:
                 self.say("テスト: 4隅のタイルを順に指します…")
                 for i in (0, cols - 1, cols * rows - cols, cols * rows - 1):
@@ -526,21 +531,22 @@ class App:
             self.root.after(0, self.root.deiconify)
 
     def _drag(self, m, src, dst):
-        """つかむ → 少し動かして『ドラッグ開始』を認識させる → ゲーム上へ運ぶ → 揺らしてホバーを認識させる → 離す"""
+        """つかむ → 少し動かして『ドラッグ開始』を認識させる → ゲーム上へ運ぶ → 揺らす → 離す
+        (時間はすべて「速さ」の倍率で伸び縮みします)"""
         try:
-            m.glide(*src, 0.3)
-            m.wait(0.3)
+            m.glide(*src, 0.12, 12)
+            m.wait(0.08)
             m.down()
-            m.wait(0.25)
-            for k in range(1, 6):                      # ドラッグ開始のしきい値(数px)を超える
-                m.glide(src[0] + 8 * k, src[1] + 3 * k, 0.05, 3)
-            m.glide(*dst, 0.8, 50)
-            for dx, dy in ((4, 0), (-4, 2), (3, -3), (0, 0)):  # 落とす先にいると伝える
-                m.glide(dst[0] + dx, dst[1] + dy, 0.12, 4)
-            m.wait(0.4)
+            m.wait(0.08)
+            for k in range(1, 4):                      # ドラッグ開始のしきい値(数px)を超える
+                m.glide(src[0] + 10 * k, src[1] + 4 * k, 0.03, 2)
+            m.glide(*dst, 0.3, 20)
+            for dx, dy in ((3, 0), (-3, 2), (0, 0)):   # 落とす先にいると伝える
+                m.glide(dst[0] + dx, dst[1] + dy, 0.05, 2)
+            m.wait(0.12)
         finally:
             m.up()                                     # 何があっても必ず離す
-        m.wait(0.3)
+        m.wait(0.1)
 
     @staticmethod
     def _check(m):

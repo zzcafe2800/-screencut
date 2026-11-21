@@ -10,10 +10,12 @@ gogh 自動ドロップくん (Windows 用 / 画面つき)
   - 管理者権限は不要。ファイルは設定ファイル (gogh_autodrop_settings.json) 以外書き込みません。
   - Esc キーを押すといつでも中止できます。
 """
+import base64
 import ctypes
 import json
 import os
 import re
+import subprocess
 import sys
 import threading
 import time
@@ -87,6 +89,54 @@ def tile_pos(corners, cols, rows, idx):
     return int(round(x)), int(round(y))
 
 
+# ───────────── エクスプローラーのファイル位置を OS の UI Automation で取得 ─────────────
+# 画面の色や画像を読むのではなく、Windows が公開している「ファイル名と枠の位置」を聞くだけ。
+_PS = r"""
+$ErrorActionPreference='Stop'
+[Console]::OutputEncoding=[Text.Encoding]::UTF8
+Add-Type -AssemblyName UIAutomationClient,UIAutomationTypes
+$AE=[System.Windows.Automation.AutomationElement]
+$leaf=$env:GOGH_LEAF
+$wc=New-Object System.Windows.Automation.PropertyCondition($AE::ClassNameProperty,'CabinetWClass')
+$win=$null
+foreach($w in $AE::RootElement.FindAll('Children',$wc)){ if($w.Current.Name -like "*$leaf*"){ $win=$w; break } }
+if(-not $win){ exit 0 }
+"HWND`t$($win.Current.NativeWindowHandle)"
+$lc=New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty,[System.Windows.Automation.ControlType]::ListItem)
+foreach($i in $win.FindAll('Descendants',$lc)){
+  if($i.Current.IsOffscreen){ continue }
+  $r=$i.Current.BoundingRectangle
+  "{0}`t{1}`t{2}`t{3}`t{4}" -f $i.Current.Name,[int]$r.X,[int]$r.Y,[int]$r.Width,[int]$r.Height
+}
+"""
+
+
+def uia_query(leaf):
+    """(hwnd, {表示名: (x,y,w,h)}) を返す。窓が見つからなければ (None, {})"""
+    enc = base64.b64encode(_PS.encode("utf-16-le")).decode()
+    r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-EncodedCommand", enc],
+                       capture_output=True, timeout=40, creationflags=0x08000000,
+                       env=dict(os.environ, GOGH_LEAF=leaf))
+    hwnd, items = None, {}
+    for line in r.stdout.decode("utf-8", "ignore").splitlines():
+        t = line.strip("\r").split("\t")
+        if t[0] == "HWND" and len(t) == 2 and t[1].isdigit():
+            hwnd = int(t[1])
+        elif len(t) == 5:
+            try:
+                items[t[0]] = tuple(int(v) for v in t[1:])
+            except ValueError:
+                pass
+    return hwnd, items
+
+
+def find_item(items, filename):
+    """表示名は拡張子つき/なしどちらでも見つける"""
+    stem = os.path.splitext(filename)[0]
+    low = {k.lower(): v for k, v in items.items()}
+    return low.get(filename.lower()) or low.get(stem.lower())
+
+
 # ───────────── マウス操作 (Windows) ─────────────
 class _MI(ctypes.Structure):
     _fields_ = [("dx", ctypes.c_long), ("dy", ctypes.c_long), ("mouseData", ctypes.c_ulong),
@@ -142,6 +192,10 @@ class Mouse:
     def up(self):
         self._send(0x0004)
 
+    def wheel(self, notches):
+        i = _IN(type=0, mi=_MI(0, 0, (-120 * notches) & 0xFFFFFFFF, 0x0800, 0, 0))
+        self.u.SendInput(1, ctypes.byref(i), ctypes.sizeof(_IN))
+
     def esc_pressed(self):
         return bool(self.u.GetAsyncKeyState(0x1B) & 0x8000)
 
@@ -160,7 +214,6 @@ class App:
         self.folder = ""
         self.files = []
         self.corners = None   # 4隅のタイル中心
-        self.fpts = None      # ファイル先頭/末尾 (見えている範囲)
         self.running = False
         self._load()
         self._build()
@@ -172,14 +225,13 @@ class App:
             with open(SETTINGS, encoding="utf-8") as f:
                 d = json.load(f)
             self.corners = [tuple(p) for p in d["corners"]] if d.get("corners") else None
-            self.fpts = [tuple(p) for p in d["fpts"]] if d.get("fpts") else None
         except Exception:
             pass
 
     def _save(self):
         try:
             with open(SETTINGS, "w", encoding="utf-8") as f:
-                json.dump({"corners": self.corners, "fpts": self.fpts}, f)
+                json.dump({"corners": self.corners}, f)
         except Exception:
             pass
 
@@ -213,18 +265,14 @@ class App:
         self.slow = tk.DoubleVar(value=1.0)
         ttk.Spinbox(f2, from_=0.5, to=5, increment=0.5, width=4, textvariable=self.slow).pack(side="left")
 
-        f3 = ttk.LabelFrame(r, text="③ 位置を教える (goghとフォルダを並べて表示してから)")
+        f3 = ttk.LabelFrame(r, text="③ gのタイルの位置を教える (gogh を編集モードにして、タイルが全部見える状態で)")
         f3.pack(fill="x", **pad)
         row = ttk.Frame(f3); row.pack(fill="x", pady=3)
         ttk.Button(row, text="gのタイル4隅を指定", command=self.calib_tiles).pack(side="left", padx=8)
         self.lbl_tiles = ttk.Label(row, text="")
         self.lbl_tiles.pack(side="left")
-        row = ttk.Frame(f3); row.pack(fill="x", pady=3)
-        ttk.Button(row, text="ファイルの位置を指定", command=self.calib_files).pack(side="left", padx=8)
-        self.lbl_files = ttk.Label(row, text="")
-        self.lbl_files.pack(side="left")
-        row = ttk.Frame(f3); row.pack(fill="x", pady=3)
-        ttk.Button(row, text="フォルダをエクスプローラーで開く", command=self.open_folder).pack(side="left", padx=8)
+        ttk.Label(f3, text="※ ファイルの場所はソフトが自動で見つけます(エクスプローラーも自動で開きます)",
+                  foreground="#555").pack(anchor="w", padx=8, pady=2)
 
         f4 = ttk.LabelFrame(r, text="④ 実行 (止めるときは Esc キー)")
         f4.pack(fill="x", **pad)
@@ -236,7 +284,7 @@ class App:
 
         self.log = tk.Text(r, height=12, state="disabled", font=("Meiryo UI", 9))
         self.log.pack(fill="both", expand=True, **pad)
-        self.say("使い方: ①フォルダを選ぶ → ②数を確認 → ③位置を教える → ④テスト → 開始")
+        self.say("使い方: ①フォルダを選ぶ → ②数を確認 → ③gの4隅を教える → ④テスト → 開始")
 
     def say(self, msg):
         def f():
@@ -248,7 +296,6 @@ class App:
 
     def _refresh(self):
         self.lbl_tiles.config(text="設定済み ✔" if self.corners else "未設定")
-        self.lbl_files.config(text="設定済み ✔" if self.fpts else "未設定")
 
     def pick_folder(self):
         d = filedialog.askdirectory(title="分割した画像のフォルダを選んでください")
@@ -264,13 +311,6 @@ class App:
         n = self.cols.get() * self.rows.get()
         if len(self.files) != n:
             self.say(f"⚠ 画像は {len(self.files)} 枚ですが、タイルは {n} 枚です。数を確認してください。")
-
-    def open_folder(self):
-        if self.folder:
-            os.startfile(self.folder)
-            self.say("エクスプローラーを「表示 → 詳細」「名前順」にして、gogh のタイルを隠さない位置に置いてください。")
-        else:
-            messagebox.showinfo("gogh 自動ドロップくん", "先にフォルダを選んでください。")
 
     # --- 位置指定: 画面全体を薄く覆ってクリックを拾う ---
     def collect_clicks(self, prompts, done):
@@ -310,16 +350,6 @@ class App:
             "④ 右下のgタイルの中心をクリック",
         ], done)
 
-    def calib_files(self):
-        def done(p):
-            self.fpts = p
-            self._save(); self._refresh()
-            self.say("ファイル位置を保存しました。")
-        self.collect_clicks([
-            "エクスプローラーの【一番上のファイル(01)】をクリック",
-            "エクスプローラーの【一番下に見えているファイル】をクリック",
-        ], done)
-
     # --- 実行 ---
     def run(self, dry, single=False):
         if self.running:
@@ -327,12 +357,12 @@ class App:
         n = self.cols.get() * self.rows.get()
         if not self.files:
             return messagebox.showinfo("gogh 自動ドロップくん", "先にフォルダを選んでください。")
-        if not self.corners or not self.fpts:
+        if not self.corners:
             return messagebox.showinfo("gogh 自動ドロップくん", "③ で位置を教えてください。")
         if not dry and not messagebox.askokcancel(
                 "確認", f"{1 if single else min(n, len(self.files))}枚を貼り付けます。\n"
                         "この間マウスは自動で動きます。止めるときは Esc キーを押してください。\n\n"
-                        "goghの画面とフォルダが見えていますか?"):
+                        "goghの画面が見えていますか?(エクスプローラーは自動で開きます)"):
             return
         self.running = True
         self.root.iconify()
@@ -343,32 +373,75 @@ class App:
         self.root.after(0, lambda: (self.root.deiconify(), messagebox.showinfo("gogh 自動ドロップくん", msg), ev.set()))
         ev.wait()
 
+    # --- エクスプローラーの準備 ---
+    def _open_explorer(self, m):
+        """フォルダを開き、g のタイルと重ならない側に配置して、(hwnd) を返す"""
+        leaf = os.path.basename(os.path.normpath(self.folder))
+        hwnd, _ = uia_query(leaf)
+        if not hwnd:
+            os.startfile(self.folder)
+            for _ in range(8):
+                time.sleep(1.0)
+                hwnd, _ = uia_query(leaf)
+                if hwnd:
+                    break
+        if not hwnd:
+            raise RuntimeError("エクスプローラーのウィンドウが見つかりません。")
+        u = m.u
+        sw, sh = u.GetSystemMetrics(0), u.GetSystemMetrics(1)
+        xs = [p[0] for p in self.corners]
+        w = int(sw * 0.36)
+        # タイルが右寄りなら左に、左寄りなら右に置く
+        x = 0 if (sum(xs) / len(xs)) > sw / 2 else sw - w
+        u.ShowWindow(hwnd, 9)                                   # 最大化されていれば元に戻す
+        u.SetWindowPos(hwnd, 0, x, 0, w, int(sh * 0.92), 0x0040)
+        u.SetForegroundWindow(hwnd)
+        time.sleep(0.8)
+        self._exp_rect = (x, 0, w, int(sh * 0.92))
+        return leaf
+
+    def _scroll(self, m, notches):
+        x, y, w, h = self._exp_rect
+        m.move(x + w // 2, y + h // 2)
+        time.sleep(0.1)
+        m.wheel(notches)
+        time.sleep(0.6)
+
+    def _locate(self, m, leaf, filename):
+        """ファイルの『つかむ位置』を返す。見えていなければスクロールして探す"""
+        for attempt in range(25):
+            _, items = uia_query(leaf)
+            r = find_item(items, filename)
+            if r:
+                x, y, w, h = r
+                return x + min(40, w // 2), y + h // 2         # 名前とアイコンの上
+            self._check(m)
+            self._scroll(m, -5 if attempt < 12 else 5)
+        raise RuntimeError(f"{filename} がエクスプローラーで見つかりません。")
+
     def _worker(self, dry, single=False):
         m = self.mouse
         m.slow = self.slow.get()
         cols, rows = self.cols.get(), self.rows.get()
         n = min(cols * rows, len(self.files))
-        # ファイルの縦間隔: 先頭と末尾の2点から。見えている数は「末尾までの個数」=
-        # 画像数 n が見えている前提。入りきらない場合は下で分けて処理
-        (fx, fy0), (_, fy1) = self.fpts
         try:
-            time.sleep(2.0)
+            time.sleep(1.0)
+            leaf = self._open_explorer(m)
+            self._scroll(m, 100)                                # 先頭までスクロール
             if dry:
                 self.say("テスト: 4隅のタイルを順に指します…")
                 for i in (0, cols - 1, cols * rows - cols, cols * rows - 1):
                     self._check(m); m.glide(*tile_pos(self.corners, cols, rows, i), 0.6); time.sleep(0.5)
-                self.say("テスト: 最初のファイルと最後のファイルを指します…")
-                m.glide(fx, fy0, 0.6); time.sleep(0.5)
-                m.glide(fx, fy1, 0.6)
-                self.say("テスト終了。位置が合っていなければ③をやり直してください。")
+                self.say("テスト: 最初のファイルを探して指します…")
+                m.glide(*self._locate(m, leaf, self.files[0]), 0.6)
+                self.say("テスト終了。4隅が合っていなければ③をやり直してください。")
                 return
             start = max(1, self.start.get())
-            step = (fy1 - fy0) / max(n - 1, 1)
             for k in range(start - 1, start if single else n):
                 self._check(m)
-                src = (fx, int(fy0 + step * k))
-                dst = tile_pos(self.corners, cols, rows, k)
                 self.say(f"{k + 1:02d}/{n}  {self.files[k]} → {k // cols + 1}行{k % cols + 1}列")
+                src = self._locate(m, leaf, self.files[k])
+                dst = tile_pos(self.corners, cols, rows, k)
                 self._drag(m, src, dst)
                 t0 = time.time()
                 while time.time() - t0 < self.wait.get():

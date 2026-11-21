@@ -18,16 +18,38 @@ import re
 import subprocess
 import sys
 import threading
+import urllib.request
 import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-VERSION = "v0.5 (2026-11-21)"   # 更新するたびにここを上げる
+VERSION = "v0.6 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 SETTINGS = os.path.join(
     os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)),
     "gogh_autodrop_settings.json",
 )
+
+
+UPDATE_URL = "https://raw.githubusercontent.com/zzcafe2800/-screencut/claude/gallant-heisenberg-4vjhkx/tools/gogh_autodrop_gui.py"
+SELF = os.path.abspath(__file__)
+
+
+def ver_tuple(text):
+    m = re.search(r"v(\d+(?:\.\d+)*)", text or "")
+    return tuple(int(x) for x in m.group(1).split(".")) if m else (0,)
+
+
+def fetch_latest():
+    """GitHub から最新版のソースを取得して返す (失敗したら例外)"""
+    req = urllib.request.Request(UPDATE_URL, headers={"User-Agent": "gogh-autodrop"})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        return r.read().decode("utf-8")
+
+
+def remote_version(src):
+    m = re.search(r'^VERSION = "([^"]+)"', src, re.M)
+    return m.group(1) if m else ""
 
 
 # ───────────── 計算 (OSに依存しない部分) ─────────────
@@ -219,6 +241,7 @@ class App:
         self._load()
         self._build()
         self._refresh()
+        threading.Thread(target=self.check_update, daemon=True).start()
 
     # --- 設定の保存 ---
     def _load(self):
@@ -241,7 +264,12 @@ class App:
         r = self.root
         pad = {"padx": 12, "pady": 4}
         ttk.Label(r, text="gogh 自動ドロップくん", font=("Meiryo UI", 15, "bold")).pack(padx=12, pady=(8, 0))
-        ttk.Label(r, text=f"バージョン {VERSION}", foreground="#555").pack(pady=(0, 4))
+        ttk.Label(r, text=f"バージョン {VERSION}", foreground="#555").pack(pady=(0, 2))
+        fu = ttk.Frame(r); fu.pack(pady=(0, 4))
+        self.btn_upd = ttk.Button(fu, text="最新版に更新", command=self.do_update)
+        self.btn_upd.pack(side="left", padx=6)
+        self.lbl_upd = ttk.Label(fu, text="")
+        self.lbl_upd.pack(side="left")
 
         f1 = ttk.LabelFrame(r, text="① 画像フォルダ (便利くんGの分割ZIPを展開したもの)")
         f1.pack(fill="x", **pad)
@@ -287,6 +315,44 @@ class App:
         self.log = tk.Text(r, height=12, state="disabled", font=("Meiryo UI", 9))
         self.log.pack(fill="both", expand=True, **pad)
         self.say("使い方: ①フォルダを選ぶ → ②数を確認 → ③gの4隅を教える → ④テスト → 開始")
+
+    # --- アップデート ---
+    def check_update(self):
+        try:
+            rv = remote_version(fetch_latest())
+            if ver_tuple(rv) > ver_tuple(VERSION):
+                self.root.after(0, lambda: self.lbl_upd.config(text=f"新しい版があります: {rv}", foreground="#c00"))
+            else:
+                self.root.after(0, lambda: self.lbl_upd.config(text="最新版です ✔", foreground="#080"))
+        except Exception:
+            self.root.after(0, lambda: self.lbl_upd.config(text="(更新を確認できません)", foreground="#555"))
+
+    def do_update(self):
+        if getattr(sys, "frozen", False):
+            return messagebox.showinfo("更新", "exe版は更新ボタンに未対応です。新しい exe をダウンロードしてください。")
+        if self.running:
+            return
+        try:
+            src = fetch_latest()
+            compile(src, "gogh_autodrop_gui.py", "exec")          # 壊れたファイルで上書きしない
+            rv = remote_version(src)
+            if not rv:
+                raise ValueError("バージョン情報が見つかりません")
+            if rv == VERSION:
+                return messagebox.showinfo("更新", f"すでに最新版です ({VERSION})")
+            tmp = SELF + ".new"
+            with open(tmp, "w", encoding="utf-8", newline="") as f:
+                f.write(src)
+            try:
+                os.replace(SELF, SELF + ".bak")                     # 元のファイルはバックアップ
+            except OSError:
+                pass
+            os.replace(tmp, SELF)
+        except Exception as e:
+            return messagebox.showerror("更新", f"更新できませんでした。\n{e}")
+        messagebox.showinfo("更新", f"{rv} に更新しました。ソフトを再起動します。")
+        subprocess.Popen([sys.executable, SELF])
+        self.root.destroy()
 
     def say(self, msg):
         def f():

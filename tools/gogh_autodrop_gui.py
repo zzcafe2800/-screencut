@@ -35,7 +35,7 @@ from array import array
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-VERSION = "v0.15 (2026-11-21)"   # 更新するたびにここを上げる
+VERSION = "v0.16 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 BASE_DIR = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 SETTINGS = os.path.join(BASE_DIR, "gogh_autodrop_settings.json")
@@ -219,6 +219,30 @@ def _orientations(patches, L):
     med = sorted(abs(v) for v in mg.values())[len(mg) // 2]
     th = max(0.002, 0.3 * med)                     # 差が小さすぎるマスは「どちらとも言えない」→ 回転しない
     return {k: ("up" if v > 0 else "down") for k, v in mg.items() if abs(v) >= th}
+
+
+def explorer_place(work, board, margin=24, minw=240, minh=260, maxw=620):
+    """エクスプローラーをカードと重ならない一番広い空き場所に置く位置 (x, y, w, h) と、
+    十分な広さがあったか (True/False) を返す。work = 画面の使える範囲 (左, 上, 右, 下)"""
+    L, T, R, B = work
+    xs = [p[0] for p in board]; ys = [p[1] for p in board]
+    bl, bt, br, bb = min(xs) - margin, min(ys) - margin, max(xs) + margin, max(ys) + margin
+    cands = [
+        (L, T, bl - L, B - T),            # 左
+        (br, T, R - br, B - T),           # 右
+        (L, T, R - L, bt - T),            # 上
+        (L, bb, R - L, B - bb),           # 下
+    ]
+    cands = [(x, y, w, h) for x, y, w, h in cands if w > 0 and h > 0]
+    if not cands:
+        return (L, T, minw, minh), False
+    ok = [c for c in cands if c[2] >= minw and c[3] >= minh]
+    pool = ok or cands
+    x, y, w, h = max(pool, key=lambda c: min(c[2], maxw) * c[3])
+    if w > maxw:                          # 広すぎるときは、カードから遠い側に寄せる
+        x = x if x < bl else x + w - maxw
+        w = maxw
+    return (int(x), int(y), int(w), int(h)), bool(ok)
 
 
 def png_size(path):
@@ -1401,15 +1425,32 @@ class App:
         if not hwnd:
             raise RuntimeError("エクスプローラーのウィンドウが見つかりません。")
         u = m.u
-        sw, sh = u.GetSystemMetrics(0), u.GetSystemMetrics(1)
-        cx = sum(p[0] for p in self.board) / 4
-        w = int(sw * 0.34)
-        x = 0 if cx > sw / 2 else sw - w        # カードが右寄りなら左に置く
-        u.ShowWindow(hwnd, 9)
-        u.SetWindowPos(hwnd, 0, x, 0, w, int(sh * 0.92), 0x0040)
+        self._hwnd = hwnd
+
+        class RECT(ctypes.Structure):
+            _fields_ = [("l", ctypes.c_long), ("t", ctypes.c_long), ("r", ctypes.c_long), ("b", ctypes.c_long)]
+        wa = RECT()
+        if not u.SystemParametersInfoW(0x0030, 0, ctypes.byref(wa), 0):   # タスクバーを除いた画面の範囲
+            wa = RECT(0, 0, u.GetSystemMetrics(0), u.GetSystemMetrics(1))
+        (x, y, w, h), roomy = explorer_place((wa.l, wa.t, wa.r, wa.b), self.board)
+        u.ShowWindow(hwnd, 9)                                  # 最大化されていれば元に戻す
+        u.SetWindowPos(hwnd, 0, x, y, w, h, 0x0040)
         u.SetForegroundWindow(hwnd)
         time.sleep(0.6)
-        self._exp_rect = (x, 0, w, int(sh * 0.92))
+        rc = RECT()
+        u.GetWindowRect(hwnd, ctypes.byref(rc))                # 実際の位置 (最小サイズで大きくなることがある)
+        self._exp_rect = (rc.l, rc.t, rc.r - rc.l, rc.b - rc.t)
+        self._exp_home = (rc.l, rc.t)
+        # どのマスの上にもエクスプローラーが乗っていないか確かめる
+        cols, rows = self.cols.get(), self.rows.get()
+        over = [k for k in range(cols * rows)
+                if rc.l <= self._target(k, cols, rows)[0] < rc.r and rc.t <= self._target(k, cols, rows)[1] < rc.b]
+        self._dodge = bool(over)
+        if over:
+            self.say(f"⚠ 画面が狭く、エクスプローラーがマス {len(over)} 個に重なります。"
+                     "ファイルをつかんだ後にエクスプローラーを一時的に画面の端へよけてから離します。")
+        elif not roomy:
+            self.say("エクスプローラーを小さめにして、カードと重ならない所に置きました。")
 
     def _locate(self, m, filename):
         """ファイルの名前が画面に見える状態にして、つかむ位置を返す"""
@@ -1541,13 +1582,28 @@ class App:
             m.wait(0.08)
             for k in range(1, 4):
                 m.glide(src[0] + 10 * k, src[1] + 4 * k, 0.03, 2)
+            if getattr(self, "_dodge", False):
+                self._move_explorer_aside(m, dst)
             m.glide(*dst, 0.3, 20)
             for dx, dy in ((3, 0), (-3, 2), (0, 0)):
                 m.glide(dst[0] + dx, dst[1] + dy, 0.05, 2)
             m.wait(0.12)
         finally:
             m.up()
+            if getattr(self, "_dodge", False) and getattr(self, "_exp_home", None):
+                time.sleep(0.15)
+                m.u.SetWindowPos(self._hwnd, 0, self._exp_home[0], self._exp_home[1], 0, 0,
+                                 0x0001 | 0x0004 | 0x0010 | 0x4000)    # 元の位置へ戻す
+                time.sleep(0.2)
         m.wait(0.1)
+
+    def _move_explorer_aside(self, m, dst):
+        """ドラッグ中に、エクスプローラーを離す場所から遠い画面の端へずらす (ほぼ画面の外)"""
+        x, y, w, h = self._exp_rect
+        sw = m.u.GetSystemMetrics(0)
+        nx = sw - 40 if dst[0] < sw / 2 else 40 - w
+        m.u.SetWindowPos(self._hwnd, 0, nx, y, 0, 0, 0x0001 | 0x0004 | 0x0010 | 0x4000)  # 大きさ・重なり順は変えない
+        time.sleep(0.15)
 
     @staticmethod
     def _check(m):

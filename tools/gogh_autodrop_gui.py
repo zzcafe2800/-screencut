@@ -22,6 +22,7 @@ import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
+VERSION = "v0.5 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 SETTINGS = os.path.join(
     os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)),
@@ -208,7 +209,7 @@ class Cancelled(Exception):
 class App:
     def __init__(self, root):
         self.root = root
-        root.title("gogh 自動ドロップくん")
+        root.title(f"gogh 自動ドロップくん {VERSION}")
         root.geometry("560x620")
         self.mouse = Mouse()
         self.folder = ""
@@ -239,7 +240,8 @@ class App:
     def _build(self):
         r = self.root
         pad = {"padx": 12, "pady": 4}
-        ttk.Label(r, text="gogh 自動ドロップくん", font=("Meiryo UI", 15, "bold")).pack(**pad)
+        ttk.Label(r, text="gogh 自動ドロップくん", font=("Meiryo UI", 15, "bold")).pack(padx=12, pady=(8, 0))
+        ttk.Label(r, text=f"バージョン {VERSION}", foreground="#555").pack(pady=(0, 4))
 
         f1 = ttk.LabelFrame(r, text="① 画像フォルダ (便利くんGの分割ZIPを展開したもの)")
         f1.pack(fill="x", **pad)

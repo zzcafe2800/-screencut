@@ -35,7 +35,7 @@ from array import array
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-VERSION = "v0.17 (2026-11-21)"   # 更新するたびにここを上げる
+VERSION = "v0.18 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 BASE_DIR = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 SETTINGS = os.path.join(BASE_DIR, "gogh_autodrop_settings.json")
@@ -726,6 +726,176 @@ def fit_size(w, h, maxside):
     return max(1, round(w * f)), max(1, round(h * f))
 
 
+# ───────────── GIF (動く GIF も、全コマをそのまま180度回転できるように) ─────────────
+def _lzw_decode(data, min_size, npix):
+    clear, end = 1 << min_size, (1 << min_size) + 1
+    size = min_size + 1
+    dic = [bytes([i]) for i in range(clear)] + [b"", b""]
+    out = bytearray()
+    prev = None
+    bitbuf = nbits = 0
+    for byte in data:
+        bitbuf |= byte << nbits
+        nbits += 8
+        while nbits >= size:
+            code = bitbuf & ((1 << size) - 1)
+            bitbuf >>= size; nbits -= size
+            if code == clear:
+                size = min_size + 1
+                dic = dic[:clear + 2]
+                prev = None
+                continue
+            if code == end:
+                return bytes(out[:npix])
+            if prev is None:
+                entry = dic[code]
+            elif code < len(dic):
+                entry = dic[code]
+                dic.append(prev + entry[:1])
+            else:
+                entry = prev + prev[:1]
+                dic.append(entry)
+            out += entry
+            prev = entry
+            if len(dic) == (1 << size) and size < 12:
+                size += 1
+    return bytes(out[:npix])
+
+
+def _lzw_encode(indices, min_size):
+    clear, end = 1 << min_size, (1 << min_size) + 1
+    size = min_size + 1
+    out = bytearray()
+    bitbuf = nbits = 0
+
+    def put(code):
+        nonlocal bitbuf, nbits
+        bitbuf |= code << nbits
+        nbits += size
+        while nbits >= 8:
+            out.append(bitbuf & 255); bitbuf >>= 8; nbits -= 8
+    dic = {bytes([i]): i for i in range(clear)}
+    nxt = end + 1
+    put(clear)
+    w = b""
+    for b in indices:
+        wc = w + bytes([b])
+        if wc in dic:
+            w = wc
+            continue
+        put(dic[w])
+        if nxt < 4096:
+            dic[wc] = nxt
+            nxt += 1
+            if nxt > (1 << size) and size < 12:
+                size += 1
+        else:
+            put(clear)
+            dic = {bytes([i]): i for i in range(clear)}
+            nxt = end + 1
+            size = min_size + 1
+        w = bytes([b])
+    if w:
+        put(dic[w])
+    put(end)
+    if nbits:
+        out.append(bitbuf & 255)
+    return bytes(out)
+
+
+def _gif_subblocks(data, pos):
+    out = bytearray()
+    while True:
+        n = data[pos]; pos += 1
+        if n == 0:
+            return bytes(out), pos
+        out += data[pos:pos + n]; pos += n
+
+
+def _deinterlace(ix, w, h):
+    rows = [ix[i * w:(i + 1) * w] for i in range(h)]
+    order = list(range(0, h, 8)) + list(range(4, h, 8)) + list(range(2, h, 4)) + list(range(1, h, 2))
+    res = [b""] * h
+    for src, dst in enumerate(order):
+        res[dst] = rows[src]
+    return b"".join(res)
+
+
+def gif_process(data, rotate=False):
+    """GIF を読み、rotate なら全コマを180度回転した GIF のバイト列を返す。
+    あわせて1コマ目の (幅, 高さ, RGBA) も返す (完成予想用)"""
+    if data[:3] != b"GIF":
+        raise ValueError("GIF ではありません")
+    W, H = int.from_bytes(data[6:8], "little"), int.from_bytes(data[8:10], "little")
+    flags = data[10]
+    pos = 13
+    gpal = None
+    if flags & 0x80:
+        n = 3 << ((flags & 7) + 1)
+        gpal = data[pos:pos + n]; pos += n
+    out = bytearray(data[:pos])
+    first = None
+    trans = None
+    while pos < len(data):
+        t = data[pos]
+        if t == 0x3B:
+            out.append(0x3B)
+            break
+        if t == 0x21:                                   # 拡張ブロックはそのまま
+            label = data[pos + 1]
+            start = pos
+            if label == 0xF9 and data[pos + 2] == 4:
+                trans = data[pos + 6] if data[pos + 3] & 1 else None
+            pos += 2
+            _, pos = _gif_subblocks(data, pos)
+            out += data[start:pos]
+            continue
+        if t != 0x2C:
+            raise ValueError("GIF の形式が読めません")
+        left, top = int.from_bytes(data[pos + 1:pos + 3], "little"), int.from_bytes(data[pos + 3:pos + 5], "little")
+        w, h = int.from_bytes(data[pos + 5:pos + 7], "little"), int.from_bytes(data[pos + 7:pos + 9], "little")
+        f = data[pos + 9]
+        pos += 10
+        lpal = None
+        if f & 0x80:
+            n = 3 << ((f & 7) + 1)
+            lpal = data[pos:pos + n]; pos += n
+        min_size = data[pos]; pos += 1
+        lzw, pos = _gif_subblocks(data, pos)
+        ix = _lzw_decode(lzw, min_size, w * h)
+        ix = ix + bytes(w * h - len(ix))
+        if f & 0x40:
+            ix = _deinterlace(ix, w, h)
+        if first is None:                               # 1コマ目の見た目 (透明は透明のまま)
+            pal = lpal or gpal or bytes(768)
+            rgba = bytearray(W * H * 4)
+            for yy in range(h):
+                for xx in range(w):
+                    ci = ix[yy * w + xx]
+                    X, Y = left + xx, top + yy
+                    if X < W and Y < H and ci != trans and ci * 3 + 2 < len(pal):
+                        o = (Y * W + X) * 4
+                        rgba[o:o + 4] = bytes((pal[ci * 3], pal[ci * 3 + 1], pal[ci * 3 + 2], 255))
+            first = (W, H, rgba)
+        if rotate:
+            ix = ix[::-1]
+            left, top = W - left - w, H - top - h
+        out += b"\x2C" + left.to_bytes(2, "little") + top.to_bytes(2, "little") \
+            + w.to_bytes(2, "little") + h.to_bytes(2, "little") + bytes([f & ~0x40])
+        if lpal:
+            out += lpal
+        out.append(min_size)
+        enc = _lzw_encode(ix, min_size) if rotate or (f & 0x40) else lzw
+        for i in range(0, len(enc), 255):
+            chunk = enc[i:i + 255]
+            out.append(len(chunk)); out += chunk
+        out.append(0)
+        trans = None
+    if first is None:
+        raise ValueError("GIF にコマがありません")
+    return bytes(out), first
+
+
 def prepare_images(folder, files, maxside, flips, outdir, progress=None):
     """全画像を先に読み込んで確認し、縮小・回転したものを outdir に書き出す。
     戻り値: (サムネイル[(w,h,rgba) または None], 問題のメッセージ一覧, 元の合計サイズ, 新しい合計サイズ)"""
@@ -737,8 +907,22 @@ def prepare_images(folder, files, maxside, flips, outdir, progress=None):
         dst = os.path.join(outdir, name)
         before += os.path.getsize(src)
         try:
+            if name.lower().endswith(".gif"):            # GIF: 大きさはそのまま、逆さまのマスは全コマ回転
+                with open(src, "rb") as f:
+                    raw = f.read()
+                data, (gw, gh, grgba) = gif_process(raw, rotate=(k in flips))
+                if k not in flips:
+                    data = raw
+                with open(dst, "wb") as f:
+                    f.write(data)
+                after += len(data)
+                tw, th = fit_size(gw, gh, 96)
+                thumbs.append((tw, th, resize_box(gw, gh, grgba, tw, th)))
+                if progress:
+                    progress(k + 1, len(files))
+                continue
             if not name.lower().endswith(".png"):
-                raise ValueError("PNG 以外はそのまま使います")
+                raise ValueError("PNG・GIF 以外はそのまま使います")
             w, h, rgba = png_decode(src)
             nw, nh = fit_size(w, h, maxside)
             small = resize_box(w, h, rgba, nw, nh)
@@ -821,6 +1005,18 @@ while($true){
     $p=$line.Split("`t"); $win=GetWin
     if(-not $win){ Say "NOWIN" }
     elseif($p[0] -eq 'HWND'){ Say ("HWND`t"+$win.Current.NativeWindowHandle) }
+    elseif($p[0] -eq 'LIST'){
+      $list=$win.FindFirst($TS::Descendants,(Cond $AE::ControlTypeProperty $CT::List))
+      if(-not $list){ Say "NOLIST" } else {
+        $lr=$list.Current.BoundingRectangle
+        Say ("LR`t{0}`t{1}`t{2}`t{3}" -f [int]$lr.X,[int]$lr.Y,[int]$lr.Width,[int]$lr.Height)
+        foreach($it in $list.FindAll($TS::Children,(Cond $AE::ControlTypeProperty $CT::ListItem))){
+          try{
+            if($it.Current.IsOffscreen){ continue }
+            $nc=$it.FindFirst($TS::Children,(Cond $AE::AutomationIdProperty 'System.ItemNameDisplay'))
+            if($nc){ $r=$nc.Current.BoundingRectangle } else { $r=$it.Current.BoundingRectangle }
+            Say ("I`t{0}`t{1}`t{2}`t{3}`t{4}" -f $it.Current.Name,[int]$r.X,[int]$r.Y,[int]$r.Width,[int]$r.Height)
+          }catch{} } } }
     elseif($p[0] -eq 'FIND'){
       $list=$win.FindFirst($TS::Descendants,(Cond $AE::ControlTypeProperty $CT::List))
       if(-not $list){ Say "NOLIST" } else {
@@ -838,7 +1034,7 @@ while($true){
         if(-not $it){ Say "NOITEM" } else {
           try{ $it.GetCurrentPattern([System.Windows.Automation.VirtualizedItemPattern]::Pattern).Realize() }catch{}
           try{ $it.GetCurrentPattern([System.Windows.Automation.ScrollItemPattern]::Pattern).ScrollIntoView() }catch{}
-          Start-Sleep -Milliseconds 120
+          Start-Sleep -Milliseconds 70
           $lr=$list.Current.BoundingRectangle
           $nc=$it.FindFirst($TS::Children,(Cond $AE::AutomationIdProperty 'System.ItemNameDisplay'))
           if($nc){ $r=$nc.Current.BoundingRectangle } else { $r=$it.Current.BoundingRectangle }
@@ -893,6 +1089,20 @@ class ExplorerFinder:
             if t[0] == "ITEM" and len(t) == 9:
                 return tuple(int(v) for v in t[1:])
         return res[0] if res else "NORES"
+
+    def list_visible(self):
+        """見えているファイル全部の (名前欄の位置) と 一覧の範囲 をまとめて返す"""
+        items, lr = {}, None
+        for s_ in self.cmd("LIST"):
+            t = s_.split("\t")
+            if t[0] == "LR" and len(t) == 5:
+                lr = tuple(int(v) for v in t[1:])
+            elif t[0] == "I" and len(t) == 6:
+                try:
+                    items[t[1].lower()] = tuple(int(v) for v in t[2:])
+                except ValueError:
+                    pass
+        return items, lr
 
     def close(self):
         try:
@@ -1026,6 +1236,10 @@ class App:
         self.orient_mem = {}     # これまでに分かった向き {"30x32": {マス番号: "up"/"down"}} (貼った後は g が見えないため)
         self.orient_final = {}
         self.orient_src = {}
+        self.bg_color = None      # g のマスの地の色 (ピンク) と g の色。入れ漏れ確認に使う
+        self.glyph_color = None
+        self._pos = {}            # エクスプローラーに見えているファイルの位置 (毎回聞くと遅いので覚えておく)
+        self._lr = None
         self._load()
         self._build()
         self._refresh()
@@ -1080,9 +1294,9 @@ class App:
         ttk.Label(f2, text="  開始番号").pack(side="left", padx=(12, 2))
         self.start = tk.IntVar(value=1)
         ttk.Spinbox(f2, from_=1, to=999, width=4, textvariable=self.start).pack(side="left")
-        ttk.Label(f2, text="  待ち秒").pack(side="left", padx=(12, 2))
-        self.wait = tk.DoubleVar(value=0.2)
-        ttk.Spinbox(f2, from_=0.0, to=10, increment=0.1, width=4, textvariable=self.wait).pack(side="left")
+        ttk.Label(f2, text="  入れ直し間隔").pack(side="left", padx=(12, 2))
+        self.wait = tk.DoubleVar(value=0.6)
+        ttk.Spinbox(f2, from_=0.2, to=5, increment=0.1, width=4, textvariable=self.wait).pack(side="left")
         ttk.Label(f2, text="  ゆっくり度").pack(side="left", padx=(12, 2))
         self.slow = tk.DoubleVar(value=0.5)
         ttk.Spinbox(f2, from_=0.1, to=5, increment=0.1, width=4, textvariable=self.slow).pack(side="left")
@@ -1095,8 +1309,11 @@ class App:
         ttk.Checkbutton(r, text="g が逆さまのマスは、画像を180度回転してから貼る",
                         variable=self.autoflip).pack(anchor="w", padx=20)
         self.autowait = tk.BooleanVar(value=True)
-        ttk.Checkbutton(r, text="ゲームが画像を読み込み終わるまで待ってから次へ(おすすめ)",
+        ttk.Checkbutton(r, text="マスが画像に変わるまで同じマスに入れ続け、変わったらすぐ次へ(おすすめ)",
                         variable=self.autowait).pack(anchor="w", padx=20)
+        self.verify = tk.BooleanVar(value=True)
+        ttk.Checkbutton(r, text="最後にカード全体を見て、ピンクの g が残ったマスを入れ直す",
+                        variable=self.verify).pack(anchor="w", padx=20)
 
         f3 = ttk.LabelFrame(r, text="③ プロジェクター(カード全体)の4つの角を教える")
         f3.pack(fill="x", **pad)
@@ -1347,6 +1564,8 @@ class App:
 
     def _analyzed(self, buf, w, h, x, y, targets, info, cols, rows, prep, pv):
         self.lbl_an.config(text="確認待ち")
+        if info.get("bg"):
+            self.bg_color, self.glyph_color = info["bg"], info.get("glyph")
         self._merge_orient(info, cols, rows)
         if (self.cols.get(), self.rows.get()) != (cols, rows):
             self.cols.set(cols); self.rows.set(rows)
@@ -1575,34 +1794,62 @@ class App:
         over = [k for k in range(cols * rows)
                 if rc.l <= self._target(k, cols, rows)[0] < rc.r and rc.t <= self._target(k, cols, rows)[1] < rc.b]
         self._dodge = bool(over)
+        self._refresh_pos()
         if over:
             self.say(f"⚠ 画面が狭く、エクスプローラーがマス {len(over)} 個に重なります。"
                      "ファイルをつかんだ後にエクスプローラーを一時的に画面の端へよけてから離します。")
         elif not roomy:
             self.say("エクスプローラーを小さめにして、カードと重ならない所に置きました。")
 
+    def _visible(self, gx, gy, lr):
+        lx, ly, lw, lh = lr
+        return lx + 3 <= gx <= lx + lw - 8 and ly + 3 <= gy <= ly + lh - 4
+
+    def _grab_point(self, rect):
+        nx, ny, nw, nh = rect
+        return nx + min(16, max(nw // 2, 1)), ny + nh // 2      # 名前(またはアイコン)の上
+
+    def _refresh_pos(self):
+        self._pos, self._lr = self.finder.list_visible()
+
+    def _cached(self, filename):
+        if not self._lr:
+            return None
+        stem = os.path.splitext(filename)[0].lower()
+        r = self._pos.get(filename.lower()) or self._pos.get(stem)
+        if r and r[2] > 4 and r[3] > 4:
+            gx, gy = self._grab_point(r)
+            if self._visible(gx, gy, self._lr):
+                return gx, gy
+        return None
+
     def _locate(self, m, filename):
-        """ファイルの名前が画面に見える状態にして、つかむ位置を返す"""
+        """ファイルの名前が見える状態にして、つかむ位置を返す (見えている間は覚えた位置をすぐ使う)"""
+        p_ = self._cached(filename)
+        if p_:
+            return p_
         last = ""
         for attempt in range(6):
             self._check(m)
-            r = self.finder.find(filename)
+            r = self.finder.find(filename)             # 隠れていればスクロールして表示させる
             if isinstance(r, tuple):
+                self._refresh_pos()                    # スクロールしたので、見えている位置をまとめて覚え直す
+                p_ = self._cached(filename)
+                if p_:
+                    return p_
                 nx, ny, nw, nh, lx, ly, lw, lh = r
-                gx, gy = nx + min(18, max(nw // 2, 1)), ny + nh // 2
-                # 名前が一覧の見えている範囲に入っているか (見出し行の下〜下端の上)
-                if lx + 4 <= gx <= lx + lw - 20 and ly + 22 <= gy <= ly + lh - 20 and nw > 4 and nh > 4:
+                gx, gy = self._grab_point((nx, ny, nw, nh))
+                if nw > 4 and nh > 4 and self._visible(gx, gy, (lx, ly, lw, lh)):
                     return gx, gy
                 last = "名前が見えない位置にあります"
-                ex, ey, ew, eh = self._exp_rect
-                m.move(lx + lw // 2 if lw > 0 else ex + ew // 2, ly + lh // 2 if lh > 0 else ey + eh // 2)
-                if gx < lx + 4 or gx > lx + lw - 20:
-                    m.hwheel(-10)                # 横スクロールを左へ
-                elif gy < ly + 22:
+                m.move(lx + lw // 2, ly + lh // 2)
+                if gx < lx + 3 or gx > lx + lw - 8:
+                    m.hwheel(-10)
+                elif gy < ly + 3:
                     m.wheel(-2)
                 else:
                     m.wheel(2)
-                time.sleep(0.3)
+                time.sleep(0.25)
             else:
                 last = {"NOWIN": "エクスプローラーが閉じています", "NOLIST": "一覧が見つかりません",
                         "NOITEM": "その名前のファイルが見つかりません"}.get(r.split("\t")[0], r)
@@ -1611,38 +1858,101 @@ class App:
                 time.sleep(0.3)
         raise RuntimeError(f"{filename} をつかめません ({last})")
 
-    # --- ゲームの読み込み待ち: 貼ったマスの見た目が変わって落ち着くまで待つ ---
+    # --- 入れる: マスがピンクの g から変わるまで同じマスに入れ続け、変わったら即次へ ---
+    def _dominant(self, patch):
+        hist = {}
+        for i in range(0, len(patch), 4 * max(1, len(patch) // 1600)):
+            q = (patch[i + 2] >> 4, patch[i + 1] >> 4, patch[i] >> 4)
+            hist[q] = hist.get(q, 0) + 1
+        q = max(hist, key=hist.get)
+        return (q[0] * 16 + 8, q[1] * 16 + 8, q[2] * 16 + 8)
+
+    def _pink_ratio(self, patch, col):
+        n = hit = 0
+        for i in range(0, len(patch), 4 * max(1, len(patch) // 1600)):
+            n += 1
+            if abs(patch[i + 2] - col[0]) + abs(patch[i + 1] - col[1]) + abs(patch[i] - col[2]) < 60:
+                hit += 1
+        return hit / max(n, 1)
+
+    def _fill(self, m, order, cols, rows, n):
+        interval = max(0.2, self.wait.get())
+        for i_, k in enumerate(order):
+            self._check(m)
+            if i_ and i_ % 15 == 0:
+                self._refresh_pos()                    # 念のため、ときどきファイルの位置を取り直す
+            name = self.files[k]
+            dst = self._target(k, cols, rows)
+            if not self.autowait.get():
+                self._drag(m, self._locate(m, name), dst)
+                self.say(f"{k + 1:02d}/{n}  {name}")
+                continue
+            rect = self._patch_rect(dst)
+            before = grab(*rect)
+            col = self.bg_color or self._dominant(before)      # このマスの「g のピンク」の色
+            pink0 = self._pink_ratio(before, col)
+            noise = patch_diff(before, grab(*rect))
+            th = max(6.0, noise * 3 + 4)
+            t0, tries = time.time(), 0
+            while True:
+                self._drag(m, self._locate(m, name), dst)
+                tries += 1
+                t1 = time.time()
+                changed = False
+                while time.time() - t1 < interval:             # 入れたマスが変わったか、すぐ確かめる
+                    self._check(m)
+                    time.sleep(0.04)
+                    cur = grab(*rect)
+                    if patch_diff(cur, before) > th or self._pink_ratio(cur, col) < pink0 * 0.5:
+                        changed = True
+                        break
+                if changed:
+                    self.say(f"{k + 1:02d}/{n}  {name} ✔ {time.time() - t0:.1f}秒" + (f" ({tries}回)" if tries > 1 else ""))
+                    break
+                if time.time() - t0 > 30:
+                    self.say(f"{k + 1:02d}/{n}  {name} ⚠ 30秒入らないので次へ (最後の確認で入れ直します)")
+                    break
+
+    def _find_missing(self, m, cols, rows):
+        """カード全体を撮影して、まだピンクの g が残っているマスの番号を返す"""
+        time.sleep(0.8)                                # 最後の画像が表示されるのを待つ
+        moved = False
+        if getattr(self, "_dodge", False):
+            self._move_explorer_aside(m, self._target(0, cols, rows)); moved = True
+        x, y, w, h = capture_rect(self.board)
+        bufs = []
+        for i in range(3):                             # 落ち葉対策で3回撮る
+            if i:
+                time.sleep(0.5)
+            bufs.append(grab(x, y, w, h))
+        if moved:
+            m.u.SetWindowPos(self._hwnd, 0, self._exp_home[0], self._exp_home[1], 0, 0, 0x0001 | 0x0004 | 0x0010 | 0x4000)
+        buf = median_n(bufs)
+        bg = self.bg_color
+        gl = self.glyph_color
+        missing = []
+        r = max(4, int(self.tile * 0.3))
+        for k in range(cols * rows):
+            tx, ty = self._target(k, cols, rows)
+            n_ = pink = white = 0
+            for yy in range(ty - r, ty + r + 1, 2):
+                for xx in range(tx - r, tx + r + 1, 2):
+                    if not (x <= xx < x + w and y <= yy < y + h):
+                        continue
+                    i = ((yy - y) * w + (xx - x)) * 4
+                    c = (buf[i + 2], buf[i + 1], buf[i])
+                    n_ += 1
+                    if bg and _dist(c, bg) < 60:
+                        pink += 1
+                    elif gl and _dist(c, gl) < 70:
+                        white += 1
+            if n_ and bg and pink / n_ > 0.45 and (gl is None or white / n_ > 0.02):
+                missing.append(k)
+        return missing
+
     def _patch_rect(self, dst):
         r = max(6, int(self.tile * 0.3))
         return dst[0] - r, dst[1] - r, 2 * r, 2 * r
-
-    def _wait_loaded(self, m, before, noise, rect):
-        """'ok'(変わって落ち着いた) / 'nochange'(反応なし)"""
-        th_change = max(4.0, noise * 3 + 3)       # 暗い画面でも反応を拾えるよう、ちらつきに合わせて決める
-        th_stable = max(2.0, noise * 1.5 + 1)
-        t0 = time.time()
-        changed, prev, stable = False, None, 0
-        while time.time() - t0 < 15:
-            self._check(m)
-            time.sleep(0.12)
-            try:
-                cur = grab(*rect)
-            except Exception:
-                return "ok"
-            if not changed:
-                if patch_diff(cur, before) > th_change:
-                    changed, prev = True, cur
-                elif time.time() - t0 > 4:
-                    return "nochange"
-                continue
-            if patch_diff(cur, prev) < th_stable:
-                stable += 1
-                if stable >= 3:
-                    return "ok"
-            else:
-                stable = 0
-            prev = cur
-        return "ok"
 
     def _worker(self, dry, single=False):
         m = self.mouse
@@ -1668,29 +1978,27 @@ class App:
                 self.say("テスト終了。")
                 return
             start = max(1, self.start.get())
-            for k in range(start - 1, start if single else n):
-                self._check(m)
-                self.say(f"{k + 1:02d}/{n}  {self.files[k]} → {k // cols + 1}行{k % cols + 1}列")
-                dst = self._target(k, cols, rows)
-                if self.autowait.get():
-                    rect = self._patch_rect(dst)
-                    before = grab(*rect)
-                    time.sleep(0.1)
-                    noise = patch_diff(before, grab(*rect))
-                    for attempt in range(2):
-                        src = self._locate(m, self.files[k])
-                        self._drag(m, src, dst)
-                        t1 = time.time()
-                        if self._wait_loaded(m, before, noise, rect) == "ok":
-                            self.say(f"      読み込み完了 ({time.time() - t1:.1f}秒)")
-                            break
-                        self.say("      反応がないので、もう一度入れます…" if attempt == 0
-                                 else "      ⚠ 反応なし。このマスは後で確認してください。")
+            order = list(range(start - 1, start if single else n))
+            t_all = time.time()
+            self._fill(m, order, cols, rows, n)
+            dt = time.time() - t_all
+            self.say(f"{len(order)} 枚を {dt:.0f} 秒で入れました (1枚あたり {dt / max(len(order), 1):.1f} 秒)。")
+            if self.verify.get() and not single:
+                for rnd in range(3):                    # 入れ漏れ確認 → 入れ直し (最大3回)
+                    missing = [k for k in self._find_missing(m, cols, rows) if k < n]
+                    if not missing:
+                        self.say("✔ 入れ漏れ確認: ピンクの g は残っていません。完成です!")
+                        break
+                    self.say(f"入れ漏れ確認: {len(missing)} マスがまだ g のままです → 番号 "
+                             + ", ".join(str(k + 1) for k in missing[:30]) + (" …" if len(missing) > 30 else "")
+                             + " を入れ直します。")
+                    self._fill(m, missing, cols, rows, n)
                 else:
-                    self._drag(m, self._locate(m, self.files[k]), dst)
-                t0 = time.time()
-                while time.time() - t0 < self.wait.get():
-                    self._check(m); time.sleep(0.05)
+                    left = [k for k in self._find_missing(m, cols, rows) if k < n]
+                    if left:
+                        self.say("⚠ まだ g のままのマス: " + ", ".join(str(k + 1) for k in left[:30]))
+                    else:
+                        self.say("✔ 入れ漏れ確認: ピンクの g は残っていません。完成です!")
             self.say("完了!")
         except Cancelled:
             m.up()
@@ -1703,28 +2011,28 @@ class App:
             self.root.after(0, self.root.deiconify)
 
     def _drag(self, m, src, dst):
-        """つかむ → 少し動かしてドラッグ開始 → カードへ運ぶ → 揺らす → 離す"""
+        """最短の動きで: つかむ → ドラッグ開始に必要なだけ少し動かす → 一気に運ぶ → 少しだけ動かして離す
+        (時間はすべて「ゆっくり度」の倍率。小さいほど速い)"""
         try:
-            m.glide(*src, 0.12, 12)
-            m.wait(0.08)
+            m.move(*src)
+            m.wait(0.05)
             m.down()
-            m.wait(0.08)
-            for k in range(1, 4):
-                m.glide(src[0] + 10 * k, src[1] + 4 * k, 0.03, 2)
+            m.wait(0.05)
+            m.move(src[0] + 6, src[1] + 3); m.wait(0.03)        # Windows のドラッグ開始のしきい値を超える
+            m.move(src[0] + 14, src[1] + 6); m.wait(0.05)
             if getattr(self, "_dodge", False):
                 self._move_explorer_aside(m, dst)
-            m.glide(*dst, 0.3, 20)
-            for dx, dy in ((3, 0), (-3, 2), (0, 0)):
-                m.glide(dst[0] + dx, dst[1] + dy, 0.05, 2)
-            m.wait(0.12)
+            mx, my = (src[0] + dst[0]) / 2, (src[1] + dst[1]) / 2
+            m.move(mx, my); m.wait(0.03)                         # 途中で1回 (ゲームの窓に入ったことを伝える)
+            m.move(dst[0] - 4, dst[1] - 2); m.wait(0.05)
+            m.move(*dst); m.wait(0.08)                           # 落とす先にいることを伝える
         finally:
             m.up()
             if getattr(self, "_dodge", False) and getattr(self, "_exp_home", None):
-                time.sleep(0.15)
+                time.sleep(0.1)
                 m.u.SetWindowPos(self._hwnd, 0, self._exp_home[0], self._exp_home[1], 0, 0,
                                  0x0001 | 0x0004 | 0x0010 | 0x4000)    # 元の位置へ戻す
-                time.sleep(0.2)
-        m.wait(0.1)
+                time.sleep(0.15)
 
     def _move_explorer_aside(self, m, dst):
         """ドラッグ中に、エクスプローラーを離す場所から遠い画面の端へずらす (ほぼ画面の外)"""

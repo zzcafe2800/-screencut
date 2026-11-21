@@ -7,6 +7,7 @@ gogh 自動ドロップくん (Windows 用 / 画面つき)
 ■ 安全性
   - 外部ライブラリなし (Python 標準のみ)。通信は起動用 bat の自動アップデートのみ (no_update.txt で停止)。
   - ゲームのメモリやファイルには触りません。人間と同じようにマウスを動かすだけです。
+  - g の位置確認と読み込み待ちのため、指定した範囲だけ画面を撮影します。撮影した画像はメモリ上で解析するだけで、送信しません(確認用の縮小画像だけ一時フォルダに置きます)。
   - 管理者権限は不要。ファイルは設定ファイル (gogh_autodrop_settings.json) 以外書き込みません。
   - Esc キーを押すといつでも中止できます。
 """
@@ -17,13 +18,14 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 import threading
 import urllib.request
 import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-VERSION = "v0.8 (2026-11-21)"   # 更新するたびにここを上げる
+VERSION = "v0.9 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 SETTINGS = os.path.join(
     os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)),
@@ -112,6 +114,168 @@ def tile_pos(corners, cols, rows, idx):
     v = r / (rows - 1) if rows > 1 else 0.0
     x, y = apply_h(h, u, v)
     return int(round(x)), int(round(y))
+
+
+def fit_h(src, dst):
+    """src→dst の射影変換を最小二乗で求める (4点以上)。9要素のリストを返す"""
+    A, b = [], []
+    for (x, y), (u, v) in zip(src, dst):
+        A.append([x, y, 1, 0, 0, 0, -u * x, -u * y]); b.append(u)
+        A.append([0, 0, 0, x, y, 1, -v * x, -v * y]); b.append(v)
+    if len(A) == 8:
+        return solve_linear(A, b) + [1.0]
+    AtA = [[sum(A[k][i] * A[k][j] for k in range(len(A))) for j in range(8)] for i in range(8)]
+    Atb = [sum(A[k][i] * b[k] for k in range(len(A))) for i in range(8)]
+    return solve_linear(AtA, Atb) + [1.0]
+
+
+def inv3(h):
+    a, b, c, d, e, f, g, i_, j = h
+    A_, B_, C_ = e * j - f * i_, -(d * j - f * g), d * i_ - e * g
+    det = a * A_ + b * B_ + c * C_
+    if abs(det) < 1e-12:
+        raise ValueError("4隅の位置が正しくありません。")
+    return [A_ / det, -(b * j - c * i_) / det, (b * f - c * e) / det,
+            B_ / det, (a * j - c * g) / det, -(a * f - c * d) / det,
+            C_ / det, -(a * i_ - b * g) / det, (a * e - b * d) / det]
+
+
+def grid_corners(cols, rows):
+    return [(0, 0), (cols - 1, 0), (0, rows - 1), (cols - 1, rows - 1)]
+
+
+def quad_area(c):
+    tl, tr, bl, br = c
+    pts = [tl, tr, br, bl]
+    return abs(sum(pts[i][0] * pts[(i + 1) % 4][1] - pts[(i + 1) % 4][0] * pts[i][1] for i in range(4))) / 2
+
+
+def capture_rect(corners, cols, rows):
+    """4隅から、撮影すべき画面の範囲 (x, y, w, h) を返す (タイル半分の余白つき)"""
+    tile = (quad_area(corners) / max((cols - 1) * (rows - 1), 1)) ** 0.5
+    m = int(tile * 0.8) + 4
+    xs = [p[0] for p in corners]; ys = [p[1] for p in corners]
+    x0, y0 = int(min(xs)) - m, int(min(ys)) - m
+    return max(x0, 0), max(y0, 0), int(max(xs)) + m - max(x0, 0), int(max(ys)) + m - max(y0, 0)
+
+
+def _dist(c1, c2):
+    return abs(c1[0] - c2[0]) + abs(c1[1] - c2[1]) + abs(c1[2] - c2[2])
+
+
+def analyze_grid(buf, bw, bh, ox, oy, corners, cols, rows):
+    """撮影した画像 (BGRA, 左上が画面の ox,oy) から g の位置を解析する。
+
+    1. 指定された4隅から「だいたいのマス目」を作る
+    2. マス目の中で一番多い色 = タイルの地の色、2番目に多い色 = g の文字の色 とみなす
+    3. マスごとに g の色の点の重心を求める (= そのマスの g の位置)
+    4. 見つかった g 全部を使って射影変換を最小二乗で合わせ直す (4隅のクリックのズレを補正)
+    5. g が見つからないマスは、合わせ直した変換から位置を予測する
+    戻り値: (targets[(x, y, 見つかったか)], 情報dict)
+    """
+    gsrc = grid_corners(cols, rows)
+    H0 = fit_h(gsrc, corners)
+    Hi = inv3(H0)
+    tile_area = quad_area(corners) / max((cols - 1) * (rows - 1), 1)
+    tile = tile_area ** 0.5
+    step = max(1, int((bw * bh / 150000) ** 0.5))
+    pix = []
+    hist = {}
+    for y in range(0, bh, step):
+        row = y * bw
+        for x in range(0, bw, step):
+            gu, gv = apply_h(Hi, ox + x, oy + y)
+            if not (-0.5 <= gu <= cols - 0.5 and -0.5 <= gv <= rows - 0.5):
+                continue
+            i = (row + x) * 4
+            col = (buf[i + 2], buf[i + 1], buf[i])
+            pix.append((gu, gv, x, y, col))
+            k = (col[0] >> 4, col[1] >> 4, col[2] >> 4)
+            hist[k] = hist.get(k, 0) + 1
+    if not pix:
+        raise ValueError("撮影範囲が空です。")
+
+    def mean_of(bin_):
+        cs = [p[4] for p in pix if (p[4][0] >> 4, p[4][1] >> 4, p[4][2] >> 4) == bin_]
+        return tuple(sum(c[i] for c in cs) / len(cs) for i in range(3))
+
+    bg = mean_of(max(hist, key=hist.get))
+    hist2 = {}
+    for p in pix:
+        if _dist(p[4], bg) > 90:
+            k = (p[4][0] >> 4, p[4][1] >> 4, p[4][2] >> 4)
+            hist2[k] = hist2.get(k, 0) + 1
+    info = {"bg": bg, "detected": 0, "total": cols * rows, "fitted": False}
+    targets0 = [apply_h(H0, i % cols, i // cols) for i in range(cols * rows)]
+    if not hist2:
+        return [(int(x), int(y), False) for x, y in targets0], info
+    glyph = mean_of(max(hist2, key=hist2.get))
+    info["glyph"] = glyph
+
+    acc = {}
+    for gu, gv, x, y, col in pix:
+        dg = _dist(col, glyph)
+        if dg < 90 and dg < _dist(col, bg):
+            c, r = int(round(gu)), int(round(gv))
+            if abs(gu - c) < 0.42 and abs(gv - r) < 0.42 and 0 <= c < cols and 0 <= r < rows:
+                a = acc.setdefault((c, r), [0, 0.0, 0.0])
+                a[0] += 1; a[1] += ox + x; a[2] += oy + y
+    samples = tile_area / (step * step)
+    found = {}
+    for (c, r), (n, sx, sy) in acc.items():
+        if 0.015 * samples <= n <= 0.55 * samples:
+            found[(c, r)] = (sx / n, sy / n)
+
+    H = H0
+    if len(found) >= 6:
+        keys = list(found)
+        for _ in range(2):                 # 外れ値を除いて2回合わせる
+            try:
+                H = fit_h(keys, [found[k] for k in keys])
+            except ValueError:
+                H = H0; break
+            good = [k for k in keys
+                    if ((apply_h(H, *k)[0] - found[k][0]) ** 2 + (apply_h(H, *k)[1] - found[k][1]) ** 2) ** 0.5 < 0.35 * tile]
+            if len(good) == len(keys) or len(good) < 6:
+                break
+            keys = good
+        found = {k: found[k] for k in keys}
+        info["fitted"] = H is not H0
+    info["detected"] = len(found)
+    targets = []
+    for i in range(cols * rows):
+        c, r = i % cols, i // cols
+        x, y = apply_h(H, c, r)
+        targets.append((int(round(x)), int(round(y)), (c, r) in found))
+    info["tile"] = tile
+    return targets, info
+
+
+def patch_diff(a, b):
+    """2枚の小さな撮影画像の違いの大きさ (0〜255 の平均)"""
+    if not a or not b or len(a) != len(b):
+        return 255.0
+    n = len(a) // 4
+    stp = max(1, n // 400)
+    tot = cnt = 0
+    for i in range(0, n, stp):
+        j = i * 4
+        tot += abs(a[j] - b[j]) + abs(a[j + 1] - b[j + 1]) + abs(a[j + 2] - b[j + 2])
+        cnt += 3
+    return tot / max(cnt, 1)
+
+
+def to_ppm(buf, bw, bh, maxw, maxh):
+    """BGRA → 縮小した PPM 画像 (tk で表示する用)。(ppmバイト列, 縮小率) を返す"""
+    f = max(bw / maxw, bh / maxh, 1.0)
+    pw, ph = max(1, int(bw / f)), max(1, int(bh / f))
+    out = bytearray()
+    for yy in range(ph):
+        row = int(yy * f) * bw
+        for xx in range(pw):
+            i = (row + int(xx * f)) * 4
+            out += bytes((buf[i + 2], buf[i + 1], buf[i]))
+    return b"P6 %d %d 255\n" % (pw, ph) + bytes(out), f
 
 
 # ───────────── エクスプローラーのファイル位置を OS の UI Automation で取得 ─────────────
@@ -225,6 +389,40 @@ class Mouse:
         return bool(self.u.GetAsyncKeyState(0x1B) & 0x8000)
 
 
+def grab(x, y, w, h):
+    """画面の一部を撮影して BGRA のバイト列を返す (Windows 標準の GDI。保存も送信もしない)"""
+    u, g = ctypes.windll.user32, ctypes.windll.gdi32
+    vp = ctypes.c_void_p
+    u.GetDC.restype = vp; u.GetDC.argtypes = [vp]
+    u.ReleaseDC.argtypes = [vp, vp]
+    g.CreateCompatibleDC.restype = vp; g.CreateCompatibleDC.argtypes = [vp]
+    g.CreateCompatibleBitmap.restype = vp; g.CreateCompatibleBitmap.argtypes = [vp, ctypes.c_int, ctypes.c_int]
+    g.SelectObject.restype = vp; g.SelectObject.argtypes = [vp, vp]
+    g.BitBlt.argtypes = [vp, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, vp, ctypes.c_int, ctypes.c_int, ctypes.c_ulong]
+    g.GetDIBits.argtypes = [vp, vp, ctypes.c_uint, ctypes.c_uint, vp, vp, ctypes.c_uint]
+    g.DeleteObject.argtypes = [vp]; g.DeleteDC.argtypes = [vp]
+
+    class BIH(ctypes.Structure):
+        _fields_ = [("biSize", ctypes.c_uint32), ("biWidth", ctypes.c_int32), ("biHeight", ctypes.c_int32),
+                    ("biPlanes", ctypes.c_uint16), ("biBitCount", ctypes.c_uint16), ("biCompression", ctypes.c_uint32),
+                    ("biSizeImage", ctypes.c_uint32), ("biXPelsPerMeter", ctypes.c_int32),
+                    ("biYPelsPerMeter", ctypes.c_int32), ("biClrUsed", ctypes.c_uint32), ("biClrImportant", ctypes.c_uint32)]
+
+    hdc = u.GetDC(None)
+    mdc = g.CreateCompatibleDC(hdc)
+    bmp = g.CreateCompatibleBitmap(hdc, w, h)
+    old = g.SelectObject(mdc, bmp)
+    try:
+        g.BitBlt(mdc, 0, 0, w, h, hdc, x, y, 0x00CC0020)       # SRCCOPY
+        bih = BIH(40, w, -h, 1, 32, 0, 0, 0, 0, 0, 0)            # 上から下へ・32bit
+        buf = ctypes.create_string_buffer(w * h * 4)
+        g.SelectObject(mdc, old)
+        g.GetDIBits(mdc, bmp, 0, h, buf, ctypes.byref(bih), 0)
+        return buf.raw
+    finally:
+        g.DeleteObject(bmp); g.DeleteDC(mdc); u.ReleaseDC(None, hdc)
+
+
 class Cancelled(Exception):
     pass
 
@@ -241,6 +439,8 @@ class App:
         self.corners = None   # 4隅のタイル中心
         self.running = False
         self._cache = {}
+        self.targets = None   # 解析で決まった各マスの位置 [(x, y, 見つかったか)]
+        self.tile = 40
         self._load()
         self._build()
         self._refresh()
@@ -297,6 +497,8 @@ class App:
         ttk.Label(f2, text="  ゆっくり度(小=速い)").pack(side="left", padx=(12, 2))
         self.slow = tk.DoubleVar(value=0.5)
         ttk.Spinbox(f2, from_=0.1, to=5, increment=0.1, width=4, textvariable=self.slow).pack(side="left")
+        self.autowait = tk.BooleanVar(value=True)
+        ttk.Checkbutton(r, text="ゲームが画像を読み込み終わるまで待つ(おすすめ)", variable=self.autowait).pack(anchor="w", padx=20)
 
         f3 = ttk.LabelFrame(r, text="③ gのタイルの位置を教える (gogh を編集モードにして、タイルが全部見える状態で)")
         f3.pack(fill="x", **pad)
@@ -304,6 +506,10 @@ class App:
         ttk.Button(row, text="gのタイル4隅を指定", command=self.calib_tiles).pack(side="left", padx=8)
         self.lbl_tiles = ttk.Label(row, text="")
         self.lbl_tiles.pack(side="left")
+        row = ttk.Frame(f3); row.pack(fill="x", pady=3)
+        ttk.Button(row, text="gの位置を解析(画像で確認)", command=self.analyze).pack(side="left", padx=8)
+        self.lbl_an = ttk.Label(row, text="未解析")
+        self.lbl_an.pack(side="left")
         ttk.Label(f3, text="※ ファイルの場所はソフトが自動で見つけます(エクスプローラーも自動で開きます)",
                   foreground="#555").pack(anchor="w", padx=8, pady=2)
 
@@ -317,7 +523,7 @@ class App:
 
         self.log = tk.Text(r, height=12, state="disabled", font=("Meiryo UI", 9))
         self.log.pack(fill="both", expand=True, **pad)
-        self.say("使い方: ①フォルダを選ぶ → ②数を確認 → ③gの4隅を教える → ④テスト → 開始")
+        self.say("使い方: ①フォルダを選ぶ → ②数を確認 → ③gの4隅を教える(自動で解析) → ④テスト → 開始")
 
     # --- アップデート ---
     def check_update(self):
@@ -413,13 +619,106 @@ class App:
         def done(p):
             self.corners = p
             self._save(); self._refresh()
-            self.say("タイル位置を保存しました。")
+            self.say("タイル位置を保存しました。続けて画像で解析します…")
+            self.root.after(300, self.analyze)
         self.collect_clicks([
             "① 左上のgタイルの中心をクリック",
             "② 右上のgタイルの中心をクリック",
             "③ 左下のgタイルの中心をクリック",
             "④ 右下のgタイルの中心をクリック",
         ], done)
+
+    # --- 画像で g の位置を解析 ---
+    def analyze(self):
+        if not self.corners:
+            return messagebox.showinfo("gogh 自動ドロップくん", "先に「gのタイル4隅を指定」をしてください。")
+        cols, rows = self.cols.get(), self.rows.get()
+        if cols < 2 or rows < 2:
+            return messagebox.showinfo("gogh 自動ドロップくん", "解析は 横2以上・縦2以上 のときに使えます。")
+        self.root.iconify()                       # 自分の画面が写り込まないように隠す
+        self.root.after(600, lambda: self._analyze2(cols, rows))
+
+    def _analyze2(self, cols, rows):
+        try:
+            x, y, w, h = capture_rect(self.corners, cols, rows)
+            buf = grab(x, y, w, h)
+            targets, info = analyze_grid(buf, w, h, x, y, self.corners, cols, rows)
+        except Exception as e:
+            self.root.deiconify()
+            return messagebox.showerror("解析", f"解析できませんでした: {e}")
+        self.root.deiconify()
+        self.say(f"解析: g を {info['detected']}/{info['total']} マスで発見。"
+                 + ("全体のズレを補正しました。" if info["fitted"] else "見つかった数が少ないため4隅の位置から計算します。"))
+        self._preview(buf, w, h, x, y, targets, info, cols)
+
+    def _preview(self, buf, w, h, ox, oy, targets, info, cols):
+        ppm, f = to_ppm(buf, w, h, 640, 560)
+        path = os.path.join(tempfile.gettempdir(), "gogh_autodrop_preview.ppm")
+        with open(path, "wb") as fp:
+            fp.write(ppm)
+        win = tk.Toplevel(self.root)
+        win.title("解析結果: この順番で貼ります")
+        win.attributes("-topmost", True)
+        img = tk.PhotoImage(file=path)
+        cv = tk.Canvas(win, width=img.width(), height=img.height(), highlightthickness=0)
+        cv.pack(padx=8, pady=8)
+        cv.create_image(0, 0, image=img, anchor="nw")
+        cv.image = img
+        for i, (tx, ty, ok) in enumerate(targets):
+            px, py = (tx - ox) / f, (ty - oy) / f
+            color = "#00e000" if ok else "#ff9900"
+            cv.create_oval(px - 9, py - 9, px + 9, py + 9, outline=color, width=2)
+            cv.create_text(px, py, text=str(i + 1), fill="white", font=("Meiryo UI", 8, "bold"))
+        ttk.Label(win, text=f"緑 = g を見つけた位置 ({info['detected']}個) / オレンジ = 周りから予測した位置\n"
+                            "番号が 01.png, 02.png … の貼る先です。ズレていれば4隅を指定し直してください。").pack(padx=8)
+        bar = ttk.Frame(win); bar.pack(pady=8)
+
+        def ok():
+            self.targets = targets
+            self.tile = info.get("tile", 40)
+            self.targets_key = (cols, self.rows.get(), tuple(map(tuple, self.corners)))
+            self.lbl_an.config(text=f"解析済み ✔ (g発見 {info['detected']}/{info['total']})")
+            win.destroy()
+
+        ttk.Button(bar, text="この配置でOK", command=ok).pack(side="left", padx=8)
+        ttk.Button(bar, text="やめる", command=win.destroy).pack(side="left", padx=8)
+
+    def _target(self, k, cols, rows):
+        key = (cols, rows, tuple(map(tuple, self.corners)))
+        if self.targets and getattr(self, "targets_key", None) == key and k < len(self.targets):
+            return self.targets[k][:2]
+        return tile_pos(self.corners, cols, rows, k)
+
+    # --- ゲームの読み込み待ち: 貼ったマスの見た目が変わって落ち着くまで待つ ---
+    def _patch_rect(self, dst):
+        r = max(6, int(self.tile * 0.3))
+        return dst[0] - r, dst[1] - r, 2 * r, 2 * r
+
+    def _wait_loaded(self, m, before, rect):
+        """戻り値: 'ok'(変わって落ち着いた) / 'nochange'(反応なし)"""
+        t0 = time.time()
+        changed, prev, stable = False, None, 0
+        while time.time() - t0 < 15:
+            self._check(m)
+            time.sleep(0.12)
+            try:
+                cur = grab(*rect)
+            except Exception:
+                return "ok"
+            if not changed:
+                if patch_diff(cur, before) > 10:
+                    changed, prev = True, cur
+                elif time.time() - t0 > 4:
+                    return "nochange"
+                continue
+            if patch_diff(cur, prev) < 2.5:
+                stable += 1
+                if stable >= 3:
+                    return "ok"
+            else:
+                stable = 0
+            prev = cur
+        return "ok"
 
     # --- 実行 ---
     def run(self, dry, single=False):
@@ -506,7 +805,7 @@ class App:
             if dry:
                 self.say("テスト: 4隅のタイルを順に指します…")
                 for i in (0, cols - 1, cols * rows - cols, cols * rows - 1):
-                    self._check(m); m.glide(*tile_pos(self.corners, cols, rows, i), 0.6); time.sleep(0.5)
+                    self._check(m); m.glide(*self._target(i, cols, rows), 0.6); time.sleep(0.5)
                 self.say("テスト: 最初のファイルを探して指します…")
                 m.glide(*self._locate(m, leaf, self.files[0]), 0.6)
                 self.say("テスト終了。4隅が合っていなければ③をやり直してください。")
@@ -516,8 +815,21 @@ class App:
                 self._check(m)
                 self.say(f"{k + 1:02d}/{n}  {self.files[k]} → {k // cols + 1}行{k % cols + 1}列")
                 src = self._locate(m, leaf, self.files[k])
-                dst = tile_pos(self.corners, cols, rows, k)
-                self._drag(m, src, dst)
+                dst = self._target(k, cols, rows)
+                if self.autowait.get():
+                    rect = self._patch_rect(dst)
+                    before = grab(*rect)
+                    for attempt in range(2):
+                        self._drag(m, src, dst)
+                        t1 = time.time()
+                        res = self._wait_loaded(m, before, rect)
+                        if res == "ok":
+                            self.say(f"      読み込み完了 ({time.time() - t1:.1f}秒)")
+                            break
+                        self.say("      反応がないので、もう一度入れます…" if attempt == 0
+                                 else "      ⚠ 反応なし。このマスは後で確認してください。")
+                else:
+                    self._drag(m, src, dst)
                 t0 = time.time()
                 while time.time() - t0 < self.wait.get():
                     self._check(m); time.sleep(0.05)

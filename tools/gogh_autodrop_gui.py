@@ -30,10 +30,12 @@ import tempfile
 import threading
 import time
 import urllib.request
+import zlib
+from array import array
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-VERSION = "v0.11 (2026-11-21)"   # 更新するたびにここを上げる
+VERSION = "v0.12 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 BASE_DIR = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 SETTINGS = os.path.join(BASE_DIR, "gogh_autodrop_settings.json")
@@ -161,6 +163,52 @@ def _period(vals, max_n=40):
     return (best_n, best) if best >= 0.3 else (None, best)
 
 
+def _orientations(grids, thresh, N):
+    """マスごとの g の形 (N×N の点の数) から、上向き 'up' / 逆さま 'down' を判定する。
+    1. g(9 の形) の丸い穴が文字の上側にあれば上向き、下側にあれば逆さま
+    2. 穴が見えないマスは、判定できたマスから作った「お手本」と形を比べる"""
+    occ = {key: [[g[j][i] >= thresh for i in range(N)] for j in range(N)] for key, g in grids.items()}
+    res = {}
+    for key, o in occ.items():
+        pts = [(i, j) for j in range(N) for i in range(N) if o[j][i]]
+        if len(pts) < 4:
+            continue
+        seen = [[False] * N for _ in range(N)]
+        stack = [(i, j) for j in range(N) for i in range(N)
+                 if (i in (0, N - 1) or j in (0, N - 1)) and not o[j][i]]
+        for i, j in stack:
+            seen[j][i] = True
+        while stack:                              # 外側から塗りつぶし → 残った空白 = 穴
+            i, j = stack.pop()
+            for a, b in ((i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)):
+                if 0 <= a < N and 0 <= b < N and not seen[b][a] and not o[b][a]:
+                    seen[b][a] = True; stack.append((a, b))
+        holes = [(i, j) for j in range(N) for i in range(N) if not o[j][i] and not seen[j][i]]
+        if holes:
+            gy = sum(j for _, j in pts) / len(pts)
+            hy = sum(j for _, j in holes) / len(holes)
+            if hy < gy - 0.3:
+                res[key] = "up"
+            elif hy > gy + 0.3:
+                res[key] = "down"
+    T = [[0] * N for _ in range(N)]
+    for key, d in res.items():
+        o = occ[key]
+        for j in range(N):
+            for i in range(N):
+                if (o[j][i] if d == "up" else o[N - 1 - j][N - 1 - i]):
+                    T[j][i] += 1
+    if res:
+        for key, o in occ.items():
+            if key in res:
+                continue
+            up = sum(T[j][i] for j in range(N) for i in range(N) if o[j][i])
+            dn = sum(T[N - 1 - j][N - 1 - i] for j in range(N) for i in range(N) if o[j][i])
+            if max(up, dn) > 0 and abs(up - dn) > 0.15 * max(up, dn):
+                res[key] = "up" if up > dn else "down"
+    return res
+
+
 def analyze_board(buf, bw, bh, ox, oy, board, cols, rows):
     """撮影画像 (BGRA, 左上が画面の ox,oy) から g を探し、位置を補正する。
 
@@ -170,7 +218,8 @@ def analyze_board(buf, bw, bh, ox, oy, board, cols, rows):
     戻り値: (targets[(x, y, gが見つかったか)], info)
     """
     geo = geo_targets(board, cols, rows)
-    info = {"mode": "geometry", "reason": "", "detected": 0, "wall": None, "mismatch": False}
+    info = {"mode": "geometry", "reason": "", "detected": 0, "wall": None, "mismatch": False,
+            "flip": [], "orient_known": 0}
     Hb = fit_h(UNIT, board)
     Hbi = inv3(Hb)
     tile = (quad_area(board) / (cols * rows)) ** 0.5
@@ -264,6 +313,23 @@ def analyze_board(buf, bw, bh, ox, oy, board, cols, rows):
         t_ = tot.get(key, 1)
         if bgc.get(key, 0) / t_ >= 0.3 and 0.01 * t_ <= n <= 0.5 * t_:
             found[key] = (sx / n, sy / n)
+    # g の向き (逆さまのマスを探す)
+    N = 14
+    grids = {}
+    for k in mask:
+        lu, lv = uv[k][0] * cols, uv[k][1] * rows
+        key = (int(lu), int(lv))
+        if key not in found:
+            continue
+        fx, fy = lu - key[0], lv - key[1]
+        if 0.08 < fx < 0.92 and 0.08 < fy < 0.92:
+            g_ = grids.setdefault(key, [[0] * N for _ in range(N)])
+            g_[min(N - 1, int((fy - 0.08) / 0.84 * N))][min(N - 1, int((fx - 0.08) / 0.84 * N))] += 1
+    cell = (tile * 0.84 / N / step) ** 2
+    ori = _orientations(grids, max(1.0, 0.3 * cell), N)
+    info["flip"] = sorted(r * cols + c for (c, r), d in ori.items() if d == "down")
+    info["orient_known"] = len(ori)
+
     info["detected"] = len(found)
     if len(found) < 6:
         info["reason"] = f"g が {len(found)} 個しか見つからないため、補正しません"
@@ -315,6 +381,223 @@ def to_ppm(buf, bw, bh, maxw, maxh):
     return b"P6 %d %d 255\n" % (pw, ph) + bytes(out), f
 
 
+# ───────────── 画像の読み書き (PNG を Python 標準だけで扱う) ─────────────
+def png_decode(path):
+    """PNG を読み込んで (幅, 高さ, RGBA の bytearray) を返す。読めない形式なら ValueError"""
+    with open(path, "rb") as f:
+        data = f.read()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise ValueError("PNG ではありません")
+    pos, idat, plte, trns = 8, [], None, None
+    w = h = bd = ct = il = None
+    while pos < len(data):
+        n = int.from_bytes(data[pos:pos + 4], "big")
+        typ = data[pos + 4:pos + 8]
+        body = data[pos + 8:pos + 8 + n]
+        pos += 12 + n
+        if typ == b"IHDR":
+            w, h = int.from_bytes(body[0:4], "big"), int.from_bytes(body[4:8], "big")
+            bd, ct, il = body[8], body[9], body[12]
+        elif typ == b"PLTE":
+            plte = body
+        elif typ == b"tRNS":
+            trns = body
+        elif typ == b"IDAT":
+            idat.append(body)
+        elif typ == b"IEND":
+            break
+    if il:
+        raise ValueError("インターレース PNG には未対応です")
+    if bd not in (8, 16) and not (ct == 3 and bd in (1, 2, 4)):
+        raise ValueError(f"未対応の PNG 形式です (bit={bd})")
+    chans = {0: 1, 2: 3, 3: 1, 4: 2, 6: 4}[ct]
+    bpp_bits = chans * bd
+    stride = (w * bpp_bits + 7) // 8
+    bpp = max(1, bpp_bits // 8)
+    raw = zlib.decompress(b"".join(idat))
+    out = bytearray(stride * h)
+    prev = bytearray(stride)
+    p_ = 0
+    for y in range(h):
+        ft = raw[p_]; line = bytearray(raw[p_ + 1:p_ + 1 + stride]); p_ += 1 + stride
+        if ft == 1:
+            for i in range(bpp, stride):
+                line[i] = (line[i] + line[i - bpp]) & 255
+        elif ft == 2:
+            for i in range(stride):
+                line[i] = (line[i] + prev[i]) & 255
+        elif ft == 3:
+            for i in range(stride):
+                a = line[i - bpp] if i >= bpp else 0
+                line[i] = (line[i] + ((a + prev[i]) >> 1)) & 255
+        elif ft == 4:
+            for i in range(stride):
+                a = line[i - bpp] if i >= bpp else 0
+                b = prev[i]
+                c = prev[i - bpp] if i >= bpp else 0
+                pa, pb, pc = abs(b - c), abs(a - c), abs(a + b - 2 * c)
+                line[i] = (line[i] + (a if pa <= pb and pa <= pc else (b if pb <= pc else c))) & 255
+        out[y * stride:(y + 1) * stride] = line
+        prev = line
+    rgba = bytearray(w * h * 4)
+    if ct == 3:
+        pal = [(plte[i * 3], plte[i * 3 + 1], plte[i * 3 + 2], trns[i] if trns and i < len(trns) else 255)
+               for i in range(len(plte) // 3)]
+        per = 8 // bd
+        for y in range(h):
+            row = y * stride
+            for x in range(w):
+                if bd == 8:
+                    idx = out[row + x]
+                else:
+                    byte = out[row + x // per]
+                    idx = (byte >> (8 - bd * (x % per + 1))) & ((1 << bd) - 1)
+                o = (y * w + x) * 4
+                rgba[o:o + 4] = bytes(pal[idx] if idx < len(pal) else (0, 0, 0, 255))
+        return w, h, rgba
+    step = 2 if bd == 16 else 1                 # 16bit は上位バイトだけ使う
+    src = out[::step] if step == 2 else out
+    n = w * h
+    if ct == 6:
+        rgba[:] = src[:n * 4]
+    elif ct == 2:
+        rgba[0::4] = src[0::3][:n]; rgba[1::4] = src[1::3][:n]; rgba[2::4] = src[2::3][:n]
+        rgba[3::4] = b"\xff" * n
+    elif ct == 0:
+        g_ = src[:n]
+        rgba[0::4] = g_; rgba[1::4] = g_; rgba[2::4] = g_; rgba[3::4] = b"\xff" * n
+    elif ct == 4:
+        g_ = src[0::2][:n]
+        rgba[0::4] = g_; rgba[1::4] = g_; rgba[2::4] = g_; rgba[3::4] = src[1::2][:n]
+    return w, h, rgba
+
+
+def png_encode(w, h, rgba):
+    """RGBA → PNG のバイト列 (不透明なら RGB にして軽くする)"""
+    opaque = all(a == 255 for a in rgba[3::4])
+    if opaque:
+        rgb = bytearray(w * h * 3)
+        rgb[0::3] = rgba[0::4]; rgb[1::3] = rgba[1::4]; rgb[2::3] = rgba[2::4]
+        px, ct, ch = rgb, 2, 3
+    else:
+        px, ct, ch = rgba, 6, 4
+    stride = w * ch
+    raw = bytearray()
+    for y in range(h):                          # Sub フィルタ (軽くて圧縮も効く)
+        line = px[y * stride:(y + 1) * stride]
+        f = bytearray(line)
+        for i in range(stride - 1, ch - 1, -1):
+            f[i] = (line[i] - line[i - ch]) & 255
+        raw += b"\x01" + f
+
+    def chunk(t, b):
+        return len(b).to_bytes(4, "big") + t + b + (zlib.crc32(t + b) & 0xFFFFFFFF).to_bytes(4, "big")
+    ihdr = w.to_bytes(4, "big") + h.to_bytes(4, "big") + bytes((8, ct, 0, 0, 0))
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", zlib.compress(bytes(raw), 9)) + chunk(b"IEND", b"")
+
+
+def resize_box(w, h, rgba, nw, nh):
+    """面積平均で縮小 (ギザギザになりにくい)"""
+    if (nw, nh) == (w, h):
+        return bytearray(rgba)
+    out = bytearray(nw * nh * 4)
+    for y in range(nh):
+        y0, y1 = y * h // nh, max(y * h // nh + 1, (y + 1) * h // nh)
+        for x in range(nw):
+            x0, x1 = x * w // nw, max(x * w // nw + 1, (x + 1) * w // nw)
+            s0 = s1 = s2 = s3 = 0
+            for yy in range(y0, y1):
+                row = (yy * w + x0) * 4
+                for i in range(row, row + (x1 - x0) * 4, 4):
+                    s0 += rgba[i]; s1 += rgba[i + 1]; s2 += rgba[i + 2]; s3 += rgba[i + 3]
+            n = (y1 - y0) * (x1 - x0)
+            o = (y * nw + x) * 4
+            out[o] = s0 // n; out[o + 1] = s1 // n; out[o + 2] = s2 // n; out[o + 3] = s3 // n
+    return out
+
+
+def rotate180(rgba):
+    a = array("I"); a.frombytes(bytes(rgba)); a.reverse()
+    return bytearray(a.tobytes())
+
+
+def fit_size(w, h, maxside):
+    if not maxside or max(w, h) <= maxside:
+        return w, h
+    f = maxside / max(w, h)
+    return max(1, round(w * f)), max(1, round(h * f))
+
+
+def prepare_images(folder, files, maxside, flips, outdir, progress=None):
+    """全画像を先に読み込んで確認し、縮小・回転したものを outdir に書き出す。
+    戻り値: (サムネイル[(w,h,rgba) または None], 問題のメッセージ一覧, 元の合計サイズ, 新しい合計サイズ)"""
+    os.makedirs(outdir, exist_ok=True)
+    thumbs, problems = [], []
+    before = after = 0
+    for k, name in enumerate(files):
+        src = os.path.join(folder, name)
+        dst = os.path.join(outdir, name)
+        before += os.path.getsize(src)
+        try:
+            if not name.lower().endswith(".png"):
+                raise ValueError("PNG 以外はそのまま使います")
+            w, h, rgba = png_decode(src)
+            nw, nh = fit_size(w, h, maxside)
+            small = resize_box(w, h, rgba, nw, nh)
+            out = rotate180(small) if k in flips else small
+            data = png_encode(nw, nh, out)
+            if k not in flips and (nw, nh) == (w, h) and len(data) >= os.path.getsize(src):
+                with open(src, "rb") as f:                 # 小さくならなければ元のまま
+                    data = f.read()
+            with open(dst, "wb") as f:
+                f.write(data)
+            after += len(data)
+            tw, th = fit_size(nw, nh, 96)
+            thumbs.append((tw, th, resize_box(nw, nh, small, tw, th)))   # 完成予想は正しい向きで
+        except Exception as e:
+            with open(src, "rb") as f:
+                data = f.read()
+            with open(dst, "wb") as f:
+                f.write(data)
+            after += len(data)
+            thumbs.append(None)
+            problems.append(f"{name}: {e}" + (" (回転できません)" if k in flips else ""))
+        if progress:
+            progress(k + 1, len(files))
+    return thumbs, problems, before, after
+
+
+def render_preview(buf, bw, bh, ox, oy, board, cols, rows, thumbs, maxw, maxh):
+    """撮影画像のカードの上に、画像を斜めに合わせて貼った「完成予想」を PPM で作る"""
+    f = max(bw / maxw, bh / maxh, 1.0)
+    pw, ph = max(1, int(bw / f)), max(1, int(bh / f))
+    Hi = inv3(fit_h(UNIT, board))
+    out = bytearray()
+    for yy in range(ph):
+        sy = int(yy * f)
+        for xx in range(pw):
+            sx = int(xx * f)
+            u, v = apply_h(Hi, ox + sx, oy + sy)
+            col = None
+            if 0 <= u < 1 and 0 <= v < 1:
+                c, r = int(u * cols), int(v * rows)
+                k = r * cols + c
+                t = thumbs[k] if k < len(thumbs) else None
+                if t:
+                    tw, th, px = t
+                    tx = min(tw - 1, int((u * cols - c) * tw)); ty = min(th - 1, int((v * rows - r) * th))
+                    i = (ty * tw + tx) * 4
+                    a = px[i + 3] / 255
+                    j = (sy * bw + sx) * 4
+                    col = (int(px[i] * a + buf[j + 2] * (1 - a)), int(px[i + 1] * a + buf[j + 1] * (1 - a)),
+                           int(px[i + 2] * a + buf[j] * (1 - a)))
+            if col is None:
+                j = (sy * bw + sx) * 4
+                col = (buf[j + 2], buf[j + 1], buf[j])
+            out += bytes(col)
+    return b"P6 %d %d 255\n" % (pw, ph) + bytes(out), f
+
+
 # ───────────── エクスプローラーのファイルを UI Automation で探す ─────────────
 # 1つの PowerShell を起動したままにして、ファイル名を送ると
 #   横スクロールを左端に戻す → その名前の行を(隠れていれば)スクロールして表示 → 「名前」の欄の位置
@@ -331,7 +614,8 @@ function Say($s){ [Console]::Out.WriteLine($s); [Console]::Out.Flush() }
 function Cond($p,$v){ New-Object System.Windows.Automation.PropertyCondition($p,$v) }
 function GetWin(){
   foreach($w in $AE::RootElement.FindAll($TS::Children,(Cond $AE::ClassNameProperty 'CabinetWClass'))){
-    if($w.Current.Name -like "*$($env:GOGH_LEAF)*"){ return $w } }
+    $n=$w.Current.Name; $l=$env:GOGH_LEAF
+    if($n -eq $l -or $n -like "*\$l"){ return $w } }
   return $null }
 while($true){
   $line=[Console]::In.ReadLine(); if($line -eq $null){ break }
@@ -528,7 +812,7 @@ class App:
     def __init__(self, root):
         self.root = root
         root.title(f"gogh 自動ドロップくん {VERSION}")
-        root.geometry("580x680")
+        root.geometry("600x760")
         self.mouse = Mouse()
         self.folder = ""
         self.files = []
@@ -536,6 +820,9 @@ class App:
         self.targets = None     # 解析で決まった各マスの位置
         self.targets_key = None
         self.tile = 40
+        self.flip = set()        # 逆さまの g のマス (この番号の画像は 180度回転して貼る)
+        self.thumbs = None
+        self.prepared_key = None
         self.running = False
         self.finder = None
         self._load()
@@ -594,6 +881,14 @@ class App:
         ttk.Label(f2, text="  ゆっくり度").pack(side="left", padx=(12, 2))
         self.slow = tk.DoubleVar(value=0.5)
         ttk.Spinbox(f2, from_=0.1, to=5, increment=0.1, width=4, textvariable=self.slow).pack(side="left")
+        fq = ttk.Frame(r); fq.pack(anchor="w", padx=20)
+        ttk.Label(fq, text="画質 (長い辺の最大px。小さいほどゲームの読み込みが速い):").pack(side="left")
+        self.quality = tk.StringVar(value="512")
+        ttk.Combobox(fq, textvariable=self.quality, width=8, state="readonly",
+                     values=["元のまま", "1024", "768", "512", "384", "256"]).pack(side="left", padx=4)
+        self.autoflip = tk.BooleanVar(value=True)
+        ttk.Checkbutton(r, text="g が逆さまのマスは、画像を180度回転してから貼る",
+                        variable=self.autoflip).pack(anchor="w", padx=20)
         self.autowait = tk.BooleanVar(value=True)
         ttk.Checkbutton(r, text="ゲームが画像を読み込み終わるまで待ってから次へ(おすすめ)",
                         variable=self.autowait).pack(anchor="w", padx=20)
@@ -684,6 +979,7 @@ class App:
         if g:
             self.cols.set(g[0]); self.rows.set(g[1])
             self.say(f"フォルダ名から {g[0]}×{g[1]} を自動で設定しました。")
+        self.prepared_key = None; self.thumbs = None
         n = self.cols.get() * self.rows.get()
         if len(self.files) != n:
             self.say(f"⚠ 画像は {len(self.files)} 枚ですが、マスは {n} 個です。数を確認してください。")
@@ -729,6 +1025,27 @@ class App:
         ov.bind("<Escape>", lambda e: finish(False))
         ov.focus_force()
 
+    # --- 画像の準備 (縮小・回転して作業用フォルダへ) ---
+    def _maxside(self):
+        q = self.quality.get()
+        return int(q) if q.isdigit() else 0
+
+    def _ready_dir(self):
+        leaf = os.path.basename(os.path.normpath(self.folder))
+        return os.path.join(self.folder, leaf + "_gogh")
+
+    def _flips(self):
+        return set(self.flip) if self.autoflip.get() else set()
+
+    def _prepare(self, progress=None):
+        key = (self.folder, self._maxside(), tuple(sorted(self._flips())), tuple(self.files))
+        if self.prepared_key == key and os.path.isdir(self._ready_dir()):
+            return None
+        res = prepare_images(self.folder, self.files, self._maxside(), self._flips(), self._ready_dir(), progress)
+        self.thumbs = res[0]
+        self.prepared_key = key
+        return res
+
     # --- 位置の確認 (画像で g を探して補正) ---
     def analyze(self):
         if not self.board:
@@ -741,37 +1058,89 @@ class App:
         try:
             x, y, w, h = capture_rect(self.board)
             buf = grab(x, y, w, h)
-            targets, info = analyze_board(buf, w, h, x, y, self.board, cols, rows)
         except Exception as e:
             self.root.deiconify()
-            return messagebox.showerror("確認", f"確認できませんでした: {e}")
+            return messagebox.showerror("確認", f"撮影できませんでした: {e}")
         self.root.deiconify()
+        self.lbl_an.config(text="解析中…")
+
+        def work():
+            try:
+                targets, info = analyze_board(buf, w, h, x, y, self.board, cols, rows)
+                self.flip = set(info.get("flip", []))
+                prep = None
+                if self.files:
+                    self.prepared_key = None
+                    prep = self._prepare(lambda i, n: self.root.after(
+                        0, lambda: self.lbl_an.config(text=f"画像を読み込み中… {i}/{n}")))
+                pv = None
+                if self.thumbs:
+                    pv = render_preview(buf, w, h, x, y, self.board, cols, rows, self.thumbs, 640, 520)
+                self.root.after(0, lambda: self._analyzed(buf, w, h, x, y, targets, info, cols, rows, prep, pv))
+            except Exception as e:
+                err = str(e)
+                self.root.after(0, lambda: (self.lbl_an.config(text="失敗"),
+                                            messagebox.showerror("確認", f"確認できませんでした: {err}")))
+        threading.Thread(target=work, daemon=True).start()
+
+    def _analyzed(self, buf, w, h, x, y, targets, info, cols, rows, prep, pv):
+        self.lbl_an.config(text="確認待ち")
         if info["mode"] == "refined":
             self.say(f"確認: g を {info['detected']} 個見つけて、位置を補正しました。")
         else:
             self.say(f"確認: {info['reason']} → カードの4つの角を {cols}×{rows} に等分して位置を決めました。")
-        self._preview(buf, w, h, x, y, targets, info, cols, rows)
+        if info["flip"]:
+            self.say(f"確認: g が逆さまのマス {len(info['flip'])} 個 → 番号 "
+                     + ", ".join(str(k + 1) for k in info["flip"]) + " の画像を180度回転します。")
+        if prep:
+            _, problems, before, after = prep
+            self.say(f"画像 {len(self.files)} 枚を読み込み確認: {before // 1024}KB → {after // 1024}KB")
+            for msg in problems:
+                self.say("  ⚠ " + msg)
+        self._preview(buf, w, h, x, y, targets, info, cols, rows, pv)
 
-    def _preview(self, buf, w, h, ox, oy, targets, info, cols, rows):
-        ppm, f = to_ppm(buf, w, h, 640, 560)
-        path = os.path.join(tempfile.gettempdir(), "gogh_autodrop_preview.ppm")
-        with open(path, "wb") as fp:
-            fp.write(ppm)
+    def _preview(self, buf, w, h, ox, oy, targets, info, cols, rows, pv=None):
+        def photo(ppm, name):
+            path = os.path.join(tempfile.gettempdir(), name)
+            with open(path, "wb") as fp:
+                fp.write(ppm)
+            return tk.PhotoImage(file=path)
+
+        ppm, f = to_ppm(buf, w, h, 640, 520)
+        img_now = photo(ppm, "gogh_autodrop_now.ppm")
+        img_done = photo(pv[0], "gogh_autodrop_done.ppm") if pv else None
         win = tk.Toplevel(self.root)
         win.title("確認: この番号のマスに 01.png, 02.png … を貼ります")
         win.attributes("-topmost", True)
-        img = tk.PhotoImage(file=path)
-        cv = tk.Canvas(win, width=img.width(), height=img.height(), highlightthickness=0)
+        cv = tk.Canvas(win, width=img_now.width(), height=img_now.height(), highlightthickness=0)
         cv.pack(padx=8, pady=8)
-        cv.create_image(0, 0, image=img, anchor="nw")
-        cv.image = img
+        cv.imgs = (img_now, img_done)
+        bg_id = cv.create_image(0, 0, image=img_done or img_now, anchor="nw")
         b = [((x - ox) / f, (y - oy) / f) for x, y in self.board]
-        cv.create_polygon(*b[0], *b[1], *b[3], *b[2], outline="#00c8ff", fill="", width=2)
+        cv.create_polygon(*b[0], *b[1], *b[3], *b[2], outline="#00c8ff", fill="", width=2, tags="mark")
+        flips = set(info.get("flip", []))
         for i, (tx, ty, ok) in enumerate(targets):
             px, py = (tx - ox) / f, (ty - oy) / f
             color = "#00e000" if ok else "#ff9900"
-            cv.create_oval(px - 10, py - 10, px + 10, py + 10, outline=color, width=2, fill="#000000")
-            cv.create_text(px, py, text=str(i + 1), fill="white", font=("Meiryo UI", 8, "bold"))
+            if i in flips and self.autoflip.get():
+                color = "#00c8ff"
+            cv.create_oval(px - 10, py - 10, px + 10, py + 10, outline=color, width=2, fill="#000000", tags="mark")
+            cv.create_text(px, py, text=("↻" if i in flips and self.autoflip.get() else str(i + 1)),
+                           fill="white", font=("Meiryo UI", 8, "bold"), tags="mark")
+        state = {"done": img_done is not None, "marks": True}
+
+        def toggle_view():
+            state["done"] = not state["done"] and img_done is not None
+            cv.itemconfigure(bg_id, image=img_done if state["done"] else img_now)
+            btn_v.config(text="今の画面を見る" if state["done"] else "完成予想を見る")
+
+        def toggle_marks():
+            state["marks"] = not state["marks"]
+            cv.itemconfigure("mark", state="normal" if state["marks"] else "hidden")
+        top = ttk.Frame(win); top.pack()
+        btn_v = ttk.Button(top, text="今の画面を見る" if img_done else "(画像フォルダ未選択)", command=toggle_view)
+        btn_v.pack(side="left", padx=4)
+        ttk.Button(top, text="番号の表示/非表示", command=toggle_marks).pack(side="left", padx=4)
         if info.get("mismatch"):
             wc, wr = info["wall"]
             tk.Label(win, fg="#c00", font=("Meiryo UI", 10, "bold"), justify="left",
@@ -779,8 +1148,11 @@ class App:
                           f"   ファイルに合わせて {cols}×{rows} に等分した位置に貼ります。").pack(padx=8)
         mode = (f"g を {info['detected']} 個見つけて位置を補正しました。" if info["mode"] == "refined"
                 else f"{info['reason']} → 4つの角を {cols}×{rows} に等分しました。")
-        ttk.Label(win, text=mode + "\n緑 = g を確認したマス / オレンジ = 計算で決めたマス。"
-                                   "番号の位置がズレていれば、4つの角を指定し直してください。",
+        flip_txt = (f"\n水色の ↻ = g が逆さまのマス ({len(flips)}個)。画像を180度回転して貼ります。"
+                    if flips and self.autoflip.get() else "")
+        ttk.Label(win, text=mode + "\n緑 = g を確認したマス / オレンジ = 計算で決めたマス。" + flip_txt
+                            + "\n最初は「完成予想」(画像を貼った後の見え方) を表示しています。"
+                              "位置がズレていれば4つの角を指定し直してください。",
                   justify="left").pack(padx=8)
         bar = ttk.Frame(win); bar.pack(pady=8)
 
@@ -819,7 +1191,8 @@ class App:
 
     def _open_explorer(self, m):
         """フォルダを開き、カードと重ならない側に配置する"""
-        leaf = os.path.basename(os.path.normpath(self.folder))
+        folder = self._ready_dir()
+        leaf = os.path.basename(os.path.normpath(folder))
         if self.finder is None or self.finder.p.poll() is not None or getattr(self, "_leaf", None) != leaf:
             if self.finder:
                 self.finder.close()
@@ -827,7 +1200,7 @@ class App:
             self._leaf = leaf
         hwnd = self.finder.hwnd()
         if not hwnd:
-            os.startfile(self.folder)
+            os.startfile(folder)
             for _ in range(10):
                 time.sleep(0.8)
                 hwnd = self.finder.hwnd()
@@ -915,7 +1288,13 @@ class App:
         cols, rows = self.cols.get(), self.rows.get()
         n = min(cols * rows, len(self.files))
         try:
-            time.sleep(0.8)
+            prep = self._prepare(lambda i, n: self.say(f"  画像の準備 {i}/{n}") if i in (1, n) else None)
+            if prep:
+                self.say(f"画像を準備しました ({prep[2] // 1024}KB → {prep[3] // 1024}KB"
+                         + (f"、{len(self._flips())}枚を180度回転" if self._flips() else "") + ")")
+                for msg in prep[1]:
+                    self.say("  ⚠ " + msg)
+            time.sleep(0.5)
             self._open_explorer(m)
             if dry:
                 self.say("テスト: 4隅のマスを順に指します…")

@@ -35,7 +35,7 @@ from array import array
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-VERSION = "v0.13 (2026-11-21)"   # 更新するたびにここを上げる
+VERSION = "v0.14 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 BASE_DIR = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 SETTINGS = os.path.join(BASE_DIR, "gogh_autodrop_settings.json")
@@ -150,7 +150,7 @@ def _dist(c1, c2):
     return abs(c1[0] - c2[0]) + abs(c1[1] - c2[1]) + abs(c1[2] - c2[2])
 
 
-def _period(vals, max_n=40):
+def _period(vals, max_n=60):
     """0〜1 に並んだ g の位置から、マスがいくつ並んでいるかを数える (マス中心が (i+0.5)/n)"""
     if len(vals) < 40:
         return None, 0.0
@@ -219,6 +219,40 @@ def _orientations(patches, L):
     med = sorted(abs(v) for v in mg.values())[len(mg) // 2]
     th = max(0.002, 0.3 * med)                     # 差が小さすぎるマスは「どちらとも言えない」→ 回転しない
     return {k: ("up" if v > 0 else "down") for k, v in mg.items() if abs(v) >= th}
+
+
+def png_size(path):
+    """PNG の幅と高さだけを読む (速い)。読めなければ None"""
+    try:
+        with open(path, "rb") as f:
+            head = f.read(24)
+        if head[:8] == b"\x89PNG\r\n\x1a\n" and head[12:16] == b"IHDR":
+            return int.from_bytes(head[16:20], "big"), int.from_bytes(head[20:24], "big")
+    except OSError:
+        pass
+    return None
+
+
+def board_aspect(board):
+    tl, tr, bl, br = board
+    return (math.dist(tl, tr) + math.dist(bl, br)) / max(math.dist(tl, bl) + math.dist(tr, br), 1e-6)
+
+
+def guess_grid(n, piece, aspect):
+    """ファイルの枚数 n を 横×縦 に分ける。並べた全体の縦横比 (1枚の大きさ piece から計算) が
+    aspect (カードの縦横比) に一番近い組み合わせを選ぶ"""
+    if n < 1:
+        return None
+    pw, ph = piece if piece else (1, 1)
+    best = None
+    for c in range(1, n + 1):
+        if n % c:
+            continue
+        r = n // c
+        err = abs(math.log((c * pw) / (r * ph) / aspect))
+        if best is None or err < best[0]:
+            best = (err, c, r)
+    return best[1], best[2]
 
 
 def analyze_board(buf, bw, bh, ox, oy, board, cols, rows):
@@ -850,7 +884,7 @@ class App:
     def __init__(self, root):
         self.root = root
         root.title(f"gogh 自動ドロップくん {VERSION}")
-        root.geometry("600x760")
+        root.geometry("640x760")
         self.mouse = Mouse()
         self.folder = ""
         self.files = []
@@ -902,7 +936,7 @@ class App:
         self.lbl_folder = ttk.Label(f1, text="未選択")
         self.lbl_folder.pack(side="left", padx=4)
 
-        f2 = ttk.LabelFrame(r, text="② マスの数 (フォルダ名の 5x8 などから自動) と速さ")
+        f2 = ttk.LabelFrame(r, text="② マスの数 (カードの画像・フォルダ名・枚数から自動) と速さ")
         f2.pack(fill="x", **pad)
         self.cols = tk.IntVar(value=5)
         self.rows = tk.IntVar(value=8)
@@ -910,6 +944,8 @@ class App:
         ttk.Spinbox(f2, from_=1, to=50, width=4, textvariable=self.cols).pack(side="left")
         ttk.Label(f2, text="× 縦").pack(side="left", padx=(8, 2))
         ttk.Spinbox(f2, from_=1, to=50, width=4, textvariable=self.rows).pack(side="left")
+        self.autogrid = tk.BooleanVar(value=True)
+        ttk.Checkbutton(f2, text="自動", variable=self.autogrid).pack(side="left", padx=(4, 0))
         ttk.Label(f2, text="  開始番号").pack(side="left", padx=(12, 2))
         self.start = tk.IntVar(value=1)
         ttk.Spinbox(f2, from_=1, to=999, width=4, textvariable=self.start).pack(side="left")
@@ -1013,14 +1049,28 @@ class App:
         self.folder = d
         self.files = list_images(d)
         self.lbl_folder.config(text=f"{os.path.basename(d)}  ({len(self.files)}枚)")
-        g = parse_grid(d)
-        if g:
-            self.cols.set(g[0]); self.rows.set(g[1])
-            self.say(f"フォルダ名から {g[0]}×{g[1]} を自動で設定しました。")
         self.prepared_key = None; self.thumbs = None
+        if self.autogrid.get():
+            self._grid_from_files()
         n = self.cols.get() * self.rows.get()
         if len(self.files) != n:
             self.say(f"⚠ 画像は {len(self.files)} 枚ですが、マスは {n} 個です。数を確認してください。")
+        if self.board:
+            self.say("カードの4つの角は前回のものを使います。「位置を確認」でマス数も画像から数えます。")
+
+    def _grid_from_files(self):
+        """フォルダ名 (…_30x32) → だめならファイルの枚数とカードの形からマス数を決める"""
+        g = parse_grid(self.folder) if self.folder else None
+        if g and g[0] * g[1] == len(self.files):
+            self.cols.set(g[0]); self.rows.set(g[1])
+            self.say(f"フォルダ名から 横{g[0]}×縦{g[1]} にしました。")
+            return
+        if self.files:
+            piece = png_size(os.path.join(self.folder, self.files[0]))
+            aspect = board_aspect(self.board) if self.board else 16 / 9
+            c, r = guess_grid(len(self.files), piece, aspect)
+            self.cols.set(c); self.rows.set(r)
+            self.say(f"画像 {len(self.files)} 枚とカードの形から 横{c}×縦{r} にしました。")
 
     # --- 4つの角: 画面全体を薄く覆ってクリックを拾う ---
     def calib(self):
@@ -1056,6 +1106,8 @@ class App:
                 return
             self.board = pts
             self._save(); self._refresh()
+            if self.autogrid.get() and self.files:
+                self._grid_from_files()
             self.say("カードの4つの角を保存しました。続けて位置を確認します…")
             self.root.after(300, self.analyze)
 
@@ -1104,7 +1156,12 @@ class App:
 
         def work():
             try:
-                targets, info = analyze_board(buf, w, h, x, y, self.board, cols, rows)
+                c_, r_ = cols, rows
+                targets, info = analyze_board(buf, w, h, x, y, self.board, c_, r_)
+                if self.autogrid.get() and info.get("wall") and info["wall"] != (c_, r_):
+                    c_, r_ = info["wall"]               # カードの g の並びから数えたマス数を使う
+                    targets, info = analyze_board(buf, w, h, x, y, self.board, c_, r_)
+                    info["auto_grid"] = (c_, r_)
                 self.flip = set(info.get("flip", []))
                 prep = None
                 if self.files:
@@ -1113,8 +1170,8 @@ class App:
                         0, lambda: self.lbl_an.config(text=f"画像を読み込み中… {i}/{n}")))
                 pv = None
                 if self.thumbs:
-                    pv = render_preview(buf, w, h, x, y, self.board, cols, rows, self.thumbs, 640, 520)
-                self.root.after(0, lambda: self._analyzed(buf, w, h, x, y, targets, info, cols, rows, prep, pv))
+                    pv = render_preview(buf, w, h, x, y, self.board, c_, r_, self.thumbs, 640, 520)
+                self.root.after(0, lambda: self._analyzed(buf, w, h, x, y, targets, info, c_, r_, prep, pv))
             except Exception as e:
                 err = str(e)
                 self.root.after(0, lambda: (self.lbl_an.config(text="失敗"),
@@ -1123,6 +1180,13 @@ class App:
 
     def _analyzed(self, buf, w, h, x, y, targets, info, cols, rows, prep, pv):
         self.lbl_an.config(text="確認待ち")
+        if (self.cols.get(), self.rows.get()) != (cols, rows):
+            self.cols.set(cols); self.rows.set(rows)
+        if info.get("wall"):
+            self.say(f"確認: カードの g は 横{info['wall'][0]}×縦{info['wall'][1]} マスと数えました。")
+        if self.files and len(self.files) != cols * rows:
+            self.say(f"⚠ マスは {cols * rows} 個ですが、画像は {len(self.files)} 枚です。"
+                     f"便利くんGで 横{cols}×縦{rows} に分割すると、ぴったり合います。")
         if info["mode"] == "refined":
             self.say(f"確認: g を {info['detected']} 個見つけて、位置を補正しました。")
         else:
@@ -1179,6 +1243,10 @@ class App:
         btn_v = ttk.Button(top, text="今の画面を見る" if img_done else "(画像フォルダ未選択)", command=toggle_view)
         btn_v.pack(side="left", padx=4)
         ttk.Button(top, text="番号の表示/非表示", command=toggle_marks).pack(side="left", padx=4)
+        if self.files and len(self.files) != cols * rows:
+            tk.Label(win, fg="#c00", font=("Meiryo UI", 10, "bold"), justify="left",
+                     text=f"⚠ カードは 横{cols}×縦{rows} = {cols * rows}マス、画像は {len(self.files)} 枚です。\n"
+                          f"   便利くんGで 横{cols}×縦{rows} に分割し直すとぴったり合います。").pack(padx=8)
         if info.get("mismatch"):
             wc, wr = info["wall"]
             tk.Label(win, fg="#c00", font=("Meiryo UI", 10, "bold"), justify="left",

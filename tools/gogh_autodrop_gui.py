@@ -35,7 +35,7 @@ from array import array
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-VERSION = "v0.18 (2026-11-21)"   # 更新するたびにここを上げる
+VERSION = "v0.19 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 BASE_DIR = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 SETTINGS = os.path.join(BASE_DIR, "gogh_autodrop_settings.json")
@@ -1294,9 +1294,9 @@ class App:
         ttk.Label(f2, text="  開始番号").pack(side="left", padx=(12, 2))
         self.start = tk.IntVar(value=1)
         ttk.Spinbox(f2, from_=1, to=999, width=4, textvariable=self.start).pack(side="left")
-        ttk.Label(f2, text="  入れ直し間隔").pack(side="left", padx=(12, 2))
-        self.wait = tk.DoubleVar(value=0.6)
-        ttk.Spinbox(f2, from_=0.2, to=5, increment=0.1, width=4, textvariable=self.wait).pack(side="left")
+        ttk.Label(f2, text="  2回目まで待つ秒").pack(side="left", padx=(12, 2))
+        self.wait = tk.DoubleVar(value=3.0)
+        ttk.Spinbox(f2, from_=1.0, to=15, increment=0.5, width=4, textvariable=self.wait).pack(side="left")
         ttk.Label(f2, text="  ゆっくり度").pack(side="left", padx=(12, 2))
         self.slow = tk.DoubleVar(value=0.5)
         ttk.Spinbox(f2, from_=0.1, to=5, increment=0.1, width=4, textvariable=self.slow).pack(side="left")
@@ -1309,7 +1309,7 @@ class App:
         ttk.Checkbutton(r, text="g が逆さまのマスは、画像を180度回転してから貼る",
                         variable=self.autoflip).pack(anchor="w", padx=20)
         self.autowait = tk.BooleanVar(value=True)
-        ttk.Checkbutton(r, text="マスが画像に変わるまで同じマスに入れ続け、変わったらすぐ次へ(おすすめ)",
+        ttk.Checkbutton(r, text="マスが画像に変わったらすぐ次へ (変わらなければもう1回だけ入れる。最大2回)",
                         variable=self.autowait).pack(anchor="w", padx=20)
         self.verify = tk.BooleanVar(value=True)
         ttk.Checkbutton(r, text="最後にカード全体を見て、ピンクの g が残ったマスを入れ直す",
@@ -1876,7 +1876,7 @@ class App:
         return hit / max(n, 1)
 
     def _fill(self, m, order, cols, rows, n):
-        interval = max(0.2, self.wait.get())
+        interval = max(1.0, self.wait.get())          # 1回入れてから、2回目を入れるまで待つ時間
         for i_, k in enumerate(order):
             self._check(m)
             if i_ and i_ % 15 == 0:
@@ -1894,14 +1894,14 @@ class App:
             noise = patch_diff(before, grab(*rect))
             th = max(6.0, noise * 3 + 4)
             t0, tries = time.time(), 0
-            while True:
+            while tries < 2:                                   # 入れすぎるとゲームが重くなるので最大2回
                 self._drag(m, self._locate(m, name), dst)
                 tries += 1
                 t1 = time.time()
                 changed = False
                 while time.time() - t1 < interval:             # 入れたマスが変わったか、すぐ確かめる
                     self._check(m)
-                    time.sleep(0.04)
+                    time.sleep(0.08)
                     cur = grab(*rect)
                     if patch_diff(cur, before) > th or self._pink_ratio(cur, col) < pink0 * 0.5:
                         changed = True
@@ -1909,9 +1909,8 @@ class App:
                 if changed:
                     self.say(f"{k + 1:02d}/{n}  {name} ✔ {time.time() - t0:.1f}秒" + (f" ({tries}回)" if tries > 1 else ""))
                     break
-                if time.time() - t0 > 30:
-                    self.say(f"{k + 1:02d}/{n}  {name} ⚠ 30秒入らないので次へ (最後の確認で入れ直します)")
-                    break
+            else:
+                self.say(f"{k + 1:02d}/{n}  {name} ⚠ 2回入れても変わらないので次へ (最後の確認で入れ直します)")
 
     def _find_missing(self, m, cols, rows):
         """カード全体を撮影して、まだピンクの g が残っているマスの番号を返す"""
@@ -1984,7 +1983,7 @@ class App:
             dt = time.time() - t_all
             self.say(f"{len(order)} 枚を {dt:.0f} 秒で入れました (1枚あたり {dt / max(len(order), 1):.1f} 秒)。")
             if self.verify.get() and not single:
-                for rnd in range(3):                    # 入れ漏れ確認 → 入れ直し (最大3回)
+                for rnd in range(2):                    # 入れ漏れ確認 → 入れ直し (最大2周)
                     missing = [k for k in self._find_missing(m, cols, rows) if k < n]
                     if not missing:
                         self.say("✔ 入れ漏れ確認: ピンクの g は残っていません。完成です!")

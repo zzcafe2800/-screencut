@@ -35,7 +35,7 @@ from array import array
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-VERSION = "v0.12 (2026-11-21)"   # 更新するたびにここを上げる
+VERSION = "v0.13 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 BASE_DIR = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 SETTINGS = os.path.join(BASE_DIR, "gogh_autodrop_settings.json")
@@ -163,50 +163,62 @@ def _period(vals, max_n=40):
     return (best_n, best) if best >= 0.3 else (None, best)
 
 
-def _orientations(grids, thresh, N):
-    """マスごとの g の形 (N×N の点の数) から、上向き 'up' / 逆さま 'down' を判定する。
-    1. g(9 の形) の丸い穴が文字の上側にあれば上向き、下側にあれば逆さま
-    2. 穴が見えないマスは、判定できたマスから作った「お手本」と形を比べる"""
-    occ = {key: [[g[j][i] >= thresh for i in range(N)] for j in range(N)] for key, g in grids.items()}
-    res = {}
-    for key, o in occ.items():
-        pts = [(i, j) for j in range(N) for i in range(N) if o[j][i]]
-        if len(pts) < 4:
-            continue
-        seen = [[False] * N for _ in range(N)]
-        stack = [(i, j) for j in range(N) for i in range(N)
-                 if (i in (0, N - 1) or j in (0, N - 1)) and not o[j][i]]
-        for i, j in stack:
-            seen[j][i] = True
-        while stack:                              # 外側から塗りつぶし → 残った空白 = 穴
-            i, j = stack.pop()
-            for a, b in ((i + 1, j), (i - 1, j), (i, j + 1), (i, j - 1)):
-                if 0 <= a < N and 0 <= b < N and not seen[b][a] and not o[b][a]:
-                    seen[b][a] = True; stack.append((a, b))
-        holes = [(i, j) for j in range(N) for i in range(N) if not o[j][i] and not seen[j][i]]
-        if holes:
-            gy = sum(j for _, j in pts) / len(pts)
-            hy = sum(j for _, j in holes) / len(holes)
-            if hy < gy - 0.3:
-                res[key] = "up"
-            elif hy > gy + 0.3:
-                res[key] = "down"
-    T = [[0] * N for _ in range(N)]
-    for key, d in res.items():
-        o = occ[key]
-        for j in range(N):
-            for i in range(N):
-                if (o[j][i] if d == "up" else o[N - 1 - j][N - 1 - i]):
-                    T[j][i] += 1
-    if res:
-        for key, o in occ.items():
-            if key in res:
-                continue
-            up = sum(T[j][i] for j in range(N) for i in range(N) if o[j][i])
-            dn = sum(T[N - 1 - j][N - 1 - i] for j in range(N) for i in range(N) if o[j][i])
-            if max(up, dn) > 0 and abs(up - dn) > 0.15 * max(up, dn):
-                res[key] = "up" if up > dn else "down"
-    return res
+def _norm(v):
+    m = sum(v) / len(v)
+    d = [x - m for x in v]
+    n = math.sqrt(sum(x * x for x in d)) or 1.0
+    return [x / n for x in d]
+
+
+def _dot(a, b):
+    return sum(x * y for x, y in zip(a, b))
+
+
+def _skew_y(P, L):
+    """形の縦方向の偏り。「9」(尻尾が下) なら正、「6」なら負"""
+    tot = sum(P) or 1.0
+    ys = [j - (L - 1) / 2 for j in range(L) for _ in range(L)]
+    my = sum(w * y for w, y in zip(P, ys)) / tot
+    v = sum(w * (y - my) ** 2 for w, y in zip(P, ys)) / tot or 1.0
+    return sum(w * (y - my) ** 3 for w, y in zip(P, ys)) / tot / v ** 1.5
+
+
+def _orientations(patches, L):
+    """patches: {マス: L×L の g らしさ (重心を中心・マスの傾きに合わせて切り出したもの)} → {マス: 'up'/'down'}
+    小さな g 1つでは形がはっきりしないので、全部のマスを使う:
+    1. 「同じ向き」「逆向き」の2グループに分ける (揃えて平均したお手本と、そのお手本を180度回したものの
+       どちらに近いかで振り分けて、お手本を作り直す…をくり返す)
+    2. 揃えたお手本が「9」の形 (下に尻尾) になる側を、正しい向きとする"""
+    if len(patches) < 2:
+        return {}
+    keys = list(patches)
+    G = {k: _norm(patches[k]) for k in keys}
+    side = {k: _skew_y(patches[k], L) >= 0 for k in keys}      # 最初は1マスごとの偏りで振り分け
+    for _ in range(10):
+        T = [0.0] * (L * L)
+        for k in keys:
+            v = G[k] if side[k] else G[k][::-1]
+            for i in range(L * L):
+                T[i] += v[i]
+        Tr = T[::-1]
+        new = {k: _dot(G[k], T) >= _dot(G[k], Tr) for k in keys}
+        if new == side:
+            break
+        side = new
+    T = [0.0] * (L * L)
+    for k in keys:
+        v = patches[k] if side[k] else patches[k][::-1]
+        for i in range(L * L):
+            T[i] += v[i]
+    if _skew_y(T, L) < 0:                          # お手本が「6」なら意味を入れ替える
+        side = {k: not v for k, v in side.items()}
+        T = T[::-1]
+    Tn = _norm(T)
+    Tr = Tn[::-1]
+    mg = {k: _dot(G[k], Tn) - _dot(G[k], Tr) for k in keys}
+    med = sorted(abs(v) for v in mg.values())[len(mg) // 2]
+    th = max(0.002, 0.3 * med)                     # 差が小さすぎるマスは「どちらとも言えない」→ 回転しない
+    return {k: ("up" if v > 0 else "down") for k, v in mg.items() if abs(v) >= th}
 
 
 def analyze_board(buf, bw, bh, ox, oy, board, cols, rows):
@@ -313,23 +325,6 @@ def analyze_board(buf, bw, bh, ox, oy, board, cols, rows):
         t_ = tot.get(key, 1)
         if bgc.get(key, 0) / t_ >= 0.3 and 0.01 * t_ <= n <= 0.5 * t_:
             found[key] = (sx / n, sy / n)
-    # g の向き (逆さまのマスを探す)
-    N = 14
-    grids = {}
-    for k in mask:
-        lu, lv = uv[k][0] * cols, uv[k][1] * rows
-        key = (int(lu), int(lv))
-        if key not in found:
-            continue
-        fx, fy = lu - key[0], lv - key[1]
-        if 0.08 < fx < 0.92 and 0.08 < fy < 0.92:
-            g_ = grids.setdefault(key, [[0] * N for _ in range(N)])
-            g_[min(N - 1, int((fy - 0.08) / 0.84 * N))][min(N - 1, int((fx - 0.08) / 0.84 * N))] += 1
-    cell = (tile * 0.84 / N / step) ** 2
-    ori = _orientations(grids, max(1.0, 0.3 * cell), N)
-    info["flip"] = sorted(r * cols + c for (c, r), d in ori.items() if d == "down")
-    info["orient_known"] = len(ori)
-
     info["detected"] = len(found)
     if len(found) < 6:
         info["reason"] = f"g が {len(found)} 個しか見つからないため、補正しません"
@@ -350,6 +345,49 @@ def analyze_board(buf, bw, bh, ox, oy, board, cols, rows):
         return [(x, y, (k % cols, k // cols) in found) for k, (x, y) in enumerate(geo)], info
     info["mode"] = "refined"
     info["detected"] = len(keys)
+
+    # g の向き (逆さまのマスを探す)
+    def color_at(fx, fy):                          # 画面上の小数座標の色 (周り4点から補間)
+        x0, y0 = int(fx), int(fy)
+        ax, ay = fx - x0, fy - y0
+        x0 -= ox; y0 -= oy
+        if not (0 <= x0 < bw - 1 and 0 <= y0 < bh - 1):
+            return bg
+        out = [0.0, 0.0, 0.0]
+        for dx, dy, wt in ((0, 0, (1 - ax) * (1 - ay)), (1, 0, ax * (1 - ay)), (0, 1, (1 - ax) * ay), (1, 1, ax * ay)):
+            i = ((y0 + dy) * bw + x0 + dx) * 4
+            out[0] += buf[i + 2] * wt; out[1] += buf[i + 1] * wt; out[2] += buf[i] * wt
+        return out
+
+    span = max(_dist(glyph, bg), 1.0)
+
+    def glyphness(c):
+        if _dist(c, glyph) > _dist(c, bg):
+            return 0.0
+        return min(1.0, max(0.0, (_dist(c, bg) - 0.15 * span) / (0.7 * span)))
+
+    L = 13
+    grid = [(-0.3 + 0.6 * i / (L - 1)) for i in range(L)]
+    patches = {}
+    for (c, r) in keys:
+        # このマスの横・縦の向きと大きさ (隣のマスの位置から。斜め・あおりも自動で合う)
+        ex = [(a_ - b_) / 2 for a_, b_ in zip(apply_h(H, c + 1, r), apply_h(H, c - 1, r))]
+        ey = [(a_ - b_) / 2 for a_, b_ in zip(apply_h(H, c, r + 1), apply_h(H, c, r - 1))]
+        cx, cy = found[(c, r)]
+        for _ in range(2):                         # g の重心を細かく合わせる
+            sw = sx = sy = 0.0
+            for b_ in grid:
+                for a_ in grid:
+                    px_, py_ = cx + a_ * ex[0] + b_ * ey[0], cy + a_ * ex[1] + b_ * ey[1]
+                    w_ = glyphness(color_at(px_, py_))
+                    sw += w_; sx += w_ * px_; sy += w_ * py_
+            if sw > 0:
+                cx, cy = sx / sw, sy / sw
+        patches[(c, r)] = [glyphness(color_at(cx + a_ * ex[0] + b_ * ey[0], cy + a_ * ex[1] + b_ * ey[1]))
+                           for b_ in grid for a_ in grid]
+    ori = _orientations(patches, L)
+    info["flip"] = sorted(r * cols + c for (c, r), d in ori.items() if d == "down")
+    info["orient_known"] = len(ori)
     return [(int(round(x)), int(round(y)), (k % cols, k // cols) in keys)
             for k, (x, y) in enumerate(fitted)], info
 

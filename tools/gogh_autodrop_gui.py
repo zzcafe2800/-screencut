@@ -25,7 +25,7 @@ import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-VERSION = "v0.9 (2026-11-21)"   # 更新するたびにここを上げる
+VERSION = "v0.10 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 SETTINGS = os.path.join(
     os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)),
@@ -163,92 +163,157 @@ def _dist(c1, c2):
     return abs(c1[0] - c2[0]) + abs(c1[1] - c2[1]) + abs(c1[2] - c2[2])
 
 
+def _count_period(vals, max_f=40):
+    """g の位置 (0〜1 に正規化) の並びから「マスの間隔の数」を数える。数えられなければ None"""
+    if len(vals) < 30:
+        return None
+    import math
+    vals = vals[:: max(1, len(vals) // 4000)]
+    scores = {}
+    for f in range(1, max_f + 1):
+        scores[f] = sum(math.cos(2 * math.pi * f * v) for v in vals) / len(vals)
+    best = max(scores.values())
+    if best < 0.25:
+        return None
+    for f in range(1, max_f + 1):           # 倍数でも高くなるので、条件を満たす一番小さいものを選ぶ
+        if scores[f] >= 0.75 * best:
+            return f
+    return None
+
+
 def analyze_grid(buf, bw, bh, ox, oy, corners, cols, rows):
     """撮影した画像 (BGRA, 左上が画面の ox,oy) から g の位置を解析する。
 
-    1. 指定された4隅から「だいたいのマス目」を作る
-    2. マス目の中で一番多い色 = タイルの地の色、2番目に多い色 = g の文字の色 とみなす
-    3. マスごとに g の色の点の重心を求める (= そのマスの g の位置)
-    4. 見つかった g 全部を使って射影変換を最小二乗で合わせ直す (4隅のクリックのズレを補正)
-    5. g が見つからないマスは、合わせ直した変換から位置を予測する
-    戻り値: (targets[(x, y, 見つかったか)], 情報dict)
+    1. マス目の中で一番多い色 = タイルの地の色 (ピンク)
+    2. 「地の色に囲まれた小さな模様」の色 = g の文字の色 (貼り済みの画像は地の色に囲まれていないので除外)
+    3. g の並びの周期から、壁が実際に何列×何行あるかを数える
+    4. マスごとに g の重心を求め、見つかった g 全部で射影変換を合わせ直す (クリックのズレを補正)
+    5. g が無いマス (貼り済みなど) は、合わせ直した変換から位置を予測
+    戻り値: (targets[(x, y, 見つかったか)] 画像の枚数分, info)
     """
-    gsrc = grid_corners(cols, rows)
-    H0 = fit_h(gsrc, corners)
-    Hi = inv3(H0)
-    tile_area = quad_area(corners) / max((cols - 1) * (rows - 1), 1)
-    tile = tile_area ** 0.5
+    Hu = fit_h([(0, 0), (1, 0), (0, 1), (1, 1)], corners)   # 4隅のマス中心 → 0〜1
+    Hiu = inv3(Hu)
+    tile = (quad_area(corners) / max((cols - 1) * (rows - 1), 1)) ** 0.5
     step = max(1, int((bw * bh / 150000) ** 0.5))
-    pix = []
+    gw, gh = (bw + step - 1) // step, (bh + step - 1) // step
+    mu, mv = 0.55 / max(cols - 1, 1), 0.55 / max(rows - 1, 1)
+    cols_px = [None] * (gw * gh)
+    uv = [None] * (gw * gh)
     hist = {}
-    for y in range(0, bh, step):
-        row = y * bw
-        for x in range(0, bw, step):
-            gu, gv = apply_h(Hi, ox + x, oy + y)
-            if not (-0.5 <= gu <= cols - 0.5 and -0.5 <= gv <= rows - 0.5):
+    for gy in range(gh):
+        y = gy * step
+        for gx in range(gw):
+            x = gx * step
+            u, v = apply_h(Hiu, ox + x, oy + y)
+            if not (-mu <= u <= 1 + mu and -mv <= v <= 1 + mv):
                 continue
-            i = (row + x) * 4
-            col = (buf[i + 2], buf[i + 1], buf[i])
-            pix.append((gu, gv, x, y, col))
-            k = (col[0] >> 4, col[1] >> 4, col[2] >> 4)
-            hist[k] = hist.get(k, 0) + 1
-    if not pix:
+            i = (y * bw + x) * 4
+            c = (buf[i + 2], buf[i + 1], buf[i])
+            k = gy * gw + gx
+            cols_px[k] = c; uv[k] = (u, v)
+            b_ = (c[0] >> 4, c[1] >> 4, c[2] >> 4)
+            hist[b_] = hist.get(b_, 0) + 1
+    if not hist:
         raise ValueError("撮影範囲が空です。")
+    top = max(hist, key=hist.get)
+    cs = [c for c in cols_px if c and (c[0] >> 4, c[1] >> 4, c[2] >> 4) == top]
+    bg = tuple(sum(c[i] for c in cs) / len(cs) for i in range(3))
+    isbg = [c is not None and _dist(c, bg) < 70 for c in cols_px]
+    d = max(1, int(0.22 * tile / step))
 
-    def mean_of(bin_):
-        cs = [p[4] for p in pix if (p[4][0] >> 4, p[4][1] >> 4, p[4][2] >> 4) == bin_]
-        return tuple(sum(c[i] for c in cs) / len(cs) for i in range(3))
+    def bg_around(k):
+        gx, gy = k % gw, k // gw
+        n = 0
+        for dx, dy in ((d, 0), (-d, 0), (0, d), (0, -d)):
+            xx, yy = gx + dx, gy + dy
+            if 0 <= xx < gw and 0 <= yy < gh and isbg[yy * gw + xx]:
+                n += 1
+        return n
 
-    bg = mean_of(max(hist, key=hist.get))
+    # g の色: 地の色に2方向以上囲まれた、地ではない点で一番多い色
     hist2 = {}
-    for p in pix:
-        if _dist(p[4], bg) > 90:
-            k = (p[4][0] >> 4, p[4][1] >> 4, p[4][2] >> 4)
-            hist2[k] = hist2.get(k, 0) + 1
-    info = {"bg": bg, "detected": 0, "total": cols * rows, "fitted": False}
-    targets0 = [apply_h(H0, i % cols, i // cols) for i in range(cols * rows)]
+    cand = []
+    for k, c in enumerate(cols_px):
+        if c is None or isbg[k] or _dist(c, bg) < 100:
+            continue
+        if bg_around(k) >= 2:
+            cand.append(k)
+            b_ = (c[0] >> 4, c[1] >> 4, c[2] >> 4)
+            hist2[b_] = hist2.get(b_, 0) + 1
+    info = {"bg": bg, "detected": 0, "fitted": False, "tile": tile,
+            "wall": (cols, rows), "user": (cols, rows), "mismatch": False}
+
+    def targets_from(H, wc, wr, found):
+        t = []
+        for k in range(cols * rows):
+            c, r = k % cols, k // cols
+            x, y = apply_h(H, c, r)
+            t.append((int(round(x)), int(round(y)), (c, r) in found))
+        extra = [tuple(int(round(z)) for z in apply_h(H, c, r))
+                 for r in range(wr) for c in range(wc) if c >= cols or r >= rows]
+        return t, extra
+
+    H0 = fit_h(grid_corners(cols, rows), corners)
     if not hist2:
-        return [(int(x), int(y), False) for x, y in targets0], info
-    glyph = mean_of(max(hist2, key=hist2.get))
+        t, info["extra"] = targets_from(H0, cols, rows, set())
+        return t, info
+    gb = max(hist2, key=hist2.get)
+    gcs = [cols_px[k] for k in cand if (cols_px[k][0] >> 4, cols_px[k][1] >> 4, cols_px[k][2] >> 4) == gb]
+    glyph = tuple(sum(c[i] for c in gcs) / len(gcs) for i in range(3))
     info["glyph"] = glyph
+    mask = [k for k in cand if _dist(cols_px[k], glyph) < 90 and _dist(cols_px[k], glyph) < _dist(cols_px[k], bg)]
 
-    acc = {}
-    for gu, gv, x, y, col in pix:
-        dg = _dist(col, glyph)
-        if dg < 90 and dg < _dist(col, bg):
-            c, r = int(round(gu)), int(round(gv))
-            if abs(gu - c) < 0.42 and abs(gv - r) < 0.42 and 0 <= c < cols and 0 <= r < rows:
-                a = acc.setdefault((c, r), [0, 0.0, 0.0])
-                a[0] += 1; a[1] += ox + x; a[2] += oy + y
-    samples = tile_area / (step * step)
+    # 壁が実際に何列×何行か (4隅をクリックしたマスの間を数える)
+    fu = _count_period([uv[k][0] for k in mask])
+    fv = _count_period([uv[k][1] for k in mask])
+    wc = fu + 1 if fu else cols
+    wr = fv + 1 if fv else rows
+    info["wall"] = (wc, wr)
+    info["mismatch"] = (wc, wr) != (cols, rows)
+
+    # マスごとの g の重心と、地の色の割合
+    acc, bgc, tot = {}, {}, {}
+    for k, c in enumerate(cols_px):
+        if c is None:
+            continue
+        gu, gv = uv[k][0] * (wc - 1), uv[k][1] * (wr - 1)
+        cc, rr = int(round(gu)), int(round(gv))
+        if not (0 <= cc < wc and 0 <= rr < wr) or abs(gu - cc) > 0.45 or abs(gv - rr) > 0.45:
+            continue
+        tot[(cc, rr)] = tot.get((cc, rr), 0) + 1
+        if isbg[k]:
+            bgc[(cc, rr)] = bgc.get((cc, rr), 0) + 1
+    for k in mask:
+        gu, gv = uv[k][0] * (wc - 1), uv[k][1] * (wr - 1)
+        cc, rr = int(round(gu)), int(round(gv))
+        if 0 <= cc < wc and 0 <= rr < wr and abs(gu - cc) < 0.42 and abs(gv - rr) < 0.42:
+            a = acc.setdefault((cc, rr), [0, 0.0, 0.0])
+            a[0] += 1; a[1] += ox + (k % gw) * step; a[2] += oy + (k // gw) * step
     found = {}
-    for (c, r), (n, sx, sy) in acc.items():
-        if 0.015 * samples <= n <= 0.55 * samples:
-            found[(c, r)] = (sx / n, sy / n)
+    for key, (n, sx, sy) in acc.items():
+        t_ = tot.get(key, 1)
+        if bgc.get(key, 0) / t_ >= 0.3 and 0.01 * t_ <= n <= 0.5 * t_:
+            found[key] = (sx / n, sy / n)
 
-    H = H0
+    Hw = fit_h(grid_corners(wc, wr), corners)
+    H = Hw
     if len(found) >= 6:
         keys = list(found)
-        for _ in range(2):                 # 外れ値を除いて2回合わせる
+        for _ in range(2):                  # 外れ値を除いて合わせ直す
             try:
                 H = fit_h(keys, [found[k] for k in keys])
             except ValueError:
-                H = H0; break
-            good = [k for k in keys
-                    if ((apply_h(H, *k)[0] - found[k][0]) ** 2 + (apply_h(H, *k)[1] - found[k][1]) ** 2) ** 0.5 < 0.35 * tile]
+                H = Hw; break
+            good = [k for k in keys if ((apply_h(H, *k)[0] - found[k][0]) ** 2
+                                        + (apply_h(H, *k)[1] - found[k][1]) ** 2) ** 0.5 < 0.35 * tile]
             if len(good) == len(keys) or len(good) < 6:
                 break
             keys = good
         found = {k: found[k] for k in keys}
-        info["fitted"] = H is not H0
+        info["fitted"] = H is not Hw
     info["detected"] = len(found)
-    targets = []
-    for i in range(cols * rows):
-        c, r = i % cols, i // cols
-        x, y = apply_h(H, c, r)
-        targets.append((int(round(x)), int(round(y)), (c, r) in found))
-    info["tile"] = tile
-    return targets, info
+    t, info["extra"] = targets_from(H, wc, wr, found)
+    return t, info
 
 
 def patch_diff(a, b):
@@ -647,7 +712,7 @@ class App:
             self.root.deiconify()
             return messagebox.showerror("解析", f"解析できませんでした: {e}")
         self.root.deiconify()
-        self.say(f"解析: g を {info['detected']}/{info['total']} マスで発見。"
+        self.say(f"解析: 壁は 横{info['wall'][0]}×縦{info['wall'][1]} マス、g を {info['detected']} マスで発見。"
                  + ("全体のズレを補正しました。" if info["fitted"] else "見つかった数が少ないため4隅の位置から計算します。"))
         self._preview(buf, w, h, x, y, targets, info, cols)
 
@@ -664,11 +729,20 @@ class App:
         cv.pack(padx=8, pady=8)
         cv.create_image(0, 0, image=img, anchor="nw")
         cv.image = img
+        for tx, ty in info.get("extra", []):          # 画像が足りず使わないマス
+            px, py = (tx - ox) / f, (ty - oy) / f
+            cv.create_line(px - 6, py - 6, px + 6, py + 6, fill="#888", width=2)
+            cv.create_line(px - 6, py + 6, px + 6, py - 6, fill="#888", width=2)
         for i, (tx, ty, ok) in enumerate(targets):
             px, py = (tx - ox) / f, (ty - oy) / f
             color = "#00e000" if ok else "#ff9900"
             cv.create_oval(px - 9, py - 9, px + 9, py + 9, outline=color, width=2)
             cv.create_text(px, py, text=str(i + 1), fill="white", font=("Meiryo UI", 8, "bold"))
+        if info.get("mismatch"):
+            wc, wr = info["wall"]; uc, ur = info["user"]
+            tk.Label(win, fg="#c00", font=("Meiryo UI", 10, "bold"), justify="left",
+                     text=f"⚠ 壁の g は 横{wc}×縦{wr} マスに見えます。設定(画像)は 横{uc}×縦{ur} です。\n"
+                          f"   便利くんGで {wc}×{wr} に分割し直すのがおすすめです。(このままなら左上から詰めて貼り、×のマスは空きます)").pack(padx=8)
         ttk.Label(win, text=f"緑 = g を見つけた位置 ({info['detected']}個) / オレンジ = 周りから予測した位置\n"
                             "番号が 01.png, 02.png … の貼る先です。ズレていれば4隅を指定し直してください。").pack(padx=8)
         bar = ttk.Frame(win); bar.pack(pady=8)
@@ -677,7 +751,7 @@ class App:
             self.targets = targets
             self.tile = info.get("tile", 40)
             self.targets_key = (cols, self.rows.get(), tuple(map(tuple, self.corners)))
-            self.lbl_an.config(text=f"解析済み ✔ (g発見 {info['detected']}/{info['total']})")
+            self.lbl_an.config(text=f"解析済み ✔ (壁 {info['wall'][0]}×{info['wall'][1]} / g発見 {info['detected']})")
             win.destroy()
 
         ttk.Button(bar, text="この配置でOK", command=ok).pack(side="left", padx=8)

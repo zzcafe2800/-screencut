@@ -1,0 +1,35 @@
+name: Build gogh-autodrop (Windows exe)
+on:
+  workflow_dispatch:
+  push:
+    tags: ["gogh-v*"]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyinstaller
+      - run: pyinstaller --noconfirm --onedir --windowed --name gogh-autodrop tools/gogh_autodrop_gui.py
+      - name: Zip and hash
+        shell: pwsh
+        run: |
+          Compress-Archive -Path dist/gogh-autodrop -DestinationPath gogh-autodrop-win.zip
+          (Get-FileHash gogh-autodrop-win.zip -Algorithm SHA256).Hash | Out-File sha256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gogh-autodrop-win
+          path: |
+            gogh-autodrop-win.zip
+            sha256.txt
+      - name: Release (tag builds only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            gogh-autodrop-win.zip
+            sha256.txt

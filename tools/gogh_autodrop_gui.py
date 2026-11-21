@@ -23,7 +23,7 @@ import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-VERSION = "v0.7 (2026-11-21)"   # 更新するたびにここを上げる
+VERSION = "v0.8 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 SETTINGS = os.path.join(
     os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__)),
@@ -42,7 +42,9 @@ def ver_tuple(text):
 
 def fetch_latest():
     """GitHub から最新版のソースを取得して返す (失敗したら例外)"""
-    req = urllib.request.Request(UPDATE_URL, headers={"User-Agent": "gogh-autodrop"})
+    # GitHub の配信キャッシュ(数分間古い版が返る)を避けるため、毎回違う URL で取りに行く
+    req = urllib.request.Request(f"{UPDATE_URL}?nocache={int(time.time())}",
+                                 headers={"User-Agent": "gogh-autodrop", "Cache-Control": "no-cache"})
     with urllib.request.urlopen(req, timeout=10) as r:
         return r.read().decode("utf-8")
 

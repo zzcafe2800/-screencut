@@ -35,7 +35,7 @@ from array import array
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-VERSION = "v0.14 (2026-11-21)"   # 更新するたびにここを上げる
+VERSION = "v0.15 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 BASE_DIR = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 SETTINGS = os.path.join(BASE_DIR, "gogh_autodrop_settings.json")
@@ -255,6 +255,82 @@ def guess_grid(n, piece, aspect):
     return best[1], best[2]
 
 
+def median3(a, b, c):
+    """3枚の撮影画像のピクセルごとの中央値。動く落ち葉などは2枚以上で同じ所にないので消える"""
+    return bytes(max(min(x, y), min(max(x, y), z)) for x, y, z in zip(a, b, c))
+
+
+def median_n(bufs):
+    if len(bufs) == 3:
+        return median3(*bufs)
+    m = len(bufs) // 2
+    return bytes(sorted(v)[m] for v in zip(*bufs))
+
+
+def composite_clean(bufs, bg, glyph):
+    """ピクセルごとに、複数枚の中から「タイルの地の色か g の色に一番近い」ものを選ぶ。
+    落ち葉などの別の色が乗っている枚は選ばれないので、1枚でも見えていれば復元できる"""
+    n = len(bufs[0])
+    out = bytearray(n)
+    b0, b1, b2 = bg[2], bg[1], bg[0]               # BGRA の並びに合わせる
+    g0, g1, g2 = glyph[2], glyph[1], glyph[0]
+    for i in range(0, n, 4):
+        best = None
+        for b in bufs:
+            x, y, z = b[i], b[i + 1], b[i + 2]
+            d = min(abs(x - b0) + abs(y - b1) + abs(z - b2), abs(x - g0) + abs(y - g1) + abs(z - g2))
+            if best is None or d < best[0]:
+                best = (d, b)
+        out[i:i + 4] = best[1][i:i + 4]
+    return bytes(out)
+
+
+def analyze_multi(bufs, bw, bh, ox, oy, board, cols, rows, autogrid=True):
+    """1秒おきに撮った複数枚を使って解析する。
+    - 中央値の画像 (落ち葉を消したもの) で位置・マス数・向きを解析
+    - さらに1枚ずつでも向きを判定し、多数決で g / 6 を決める (二重チェック)"""
+    clean = median_n(bufs) if len(bufs) >= 3 else bufs[0]
+    c_, r_ = cols, rows
+    targets, info = analyze_board(clean, bw, bh, ox, oy, board, c_, r_)
+    if autogrid and info.get("wall") and info["wall"] != (c_, r_):
+        c_, r_ = info["wall"]
+        targets, info = analyze_board(clean, bw, bh, ox, oy, board, c_, r_)
+        info["auto_grid"] = (c_, r_)
+    if len(bufs) >= 2 and info.get("glyph") and info.get("bg"):
+        # 中央値でも消えない葉 (2枚以上に写った葉) は、色で選んだ合成画像で消す
+        comp = composite_clean(bufs, info["bg"], info["glyph"])
+        targets2, info2 = analyze_board(comp, bw, bh, ox, oy, board, c_, r_)
+        if info2["mode"] == "refined" or info["mode"] != "refined":
+            clean, targets, info = comp, targets2, info2
+            if c_ != cols or r_ != rows:
+                info["auto_grid"] = (c_, r_)
+    info["frames"] = len(bufs)
+    info["disagree"] = 0
+    if info["mode"] == "refined" and len(bufs) >= 2:
+        results = [info["orient"]]
+        for b in bufs:
+            _, inf = analyze_board(b, bw, bh, ox, oy, board, c_, r_)
+            if inf["mode"] == "refined":
+                results.append(inf["orient"])
+        final = {}
+        for k in range(c_ * r_):
+            votes = [res[k] for res in results if k in res]
+            if not votes:
+                continue
+            up, dn = votes.count("up"), votes.count("down")
+            if up != dn:
+                final[k] = "up" if up > dn else "down"
+            elif k in info["orient"]:
+                final[k] = info["orient"][k]          # 同数なら落ち葉を消した画像の判定
+            if up and dn:
+                info["disagree"] += 1
+        info["orient"] = final
+        info["flip"] = sorted(k for k, d in final.items() if d == "down")
+        info["orient_known"] = len(final)
+        info["votes"] = len(results)
+    return clean, targets, info, c_, r_
+
+
 def analyze_board(buf, bw, bh, ox, oy, board, cols, rows):
     """撮影画像 (BGRA, 左上が画面の ox,oy) から g を探し、位置を補正する。
 
@@ -265,7 +341,7 @@ def analyze_board(buf, bw, bh, ox, oy, board, cols, rows):
     """
     geo = geo_targets(board, cols, rows)
     info = {"mode": "geometry", "reason": "", "detected": 0, "wall": None, "mismatch": False,
-            "flip": [], "orient_known": 0}
+            "flip": [], "orient": {}, "orient_known": 0}
     Hb = fit_h(UNIT, board)
     Hbi = inv3(Hb)
     tile = (quad_area(board) / (cols * rows)) ** 0.5
@@ -421,6 +497,7 @@ def analyze_board(buf, bw, bh, ox, oy, board, cols, rows):
                            for b_ in grid for a_ in grid]
     ori = _orientations(patches, L)
     info["flip"] = sorted(r * cols + c for (c, r), d in ori.items() if d == "down")
+    info["orient"] = {r * cols + c: d for (c, r), d in ori.items()}
     info["orient_known"] = len(ori)
     return [(int(round(x)), int(round(y)), (k % cols, k // cols) in keys)
             for k, (x, y) in enumerate(fitted)], info
@@ -1145,23 +1222,29 @@ class App:
         self.root.after(600, lambda: self._analyze2(cols, rows))
 
     def _analyze2(self, cols, rows):
-        try:
-            x, y, w, h = capture_rect(self.board)
-            buf = grab(x, y, w, h)
-        except Exception as e:
-            self.root.deiconify()
-            return messagebox.showerror("確認", f"撮影できませんでした: {e}")
-        self.root.deiconify()
-        self.lbl_an.config(text="解析中…")
+        self.lbl_an.config(text="撮影中… (カメラを動かさないで)")
+        x, y, w, h = capture_rect(self.board)
 
         def work():
             try:
-                c_, r_ = cols, rows
-                targets, info = analyze_board(buf, w, h, x, y, self.board, c_, r_)
-                if self.autogrid.get() and info.get("wall") and info["wall"] != (c_, r_):
-                    c_, r_ = info["wall"]               # カードの g の並びから数えたマス数を使う
-                    targets, info = analyze_board(buf, w, h, x, y, self.board, c_, r_)
-                    info["auto_grid"] = (c_, r_)
+                bufs = []
+                for i in range(3):                   # 1秒おきに3回撮る (落ち葉対策)
+                    if i:
+                        time.sleep(1.0)
+                    bufs.append(grab(x, y, w, h))
+                self.root.after(0, lambda: (self.root.deiconify(), self.lbl_an.config(text="解析中…")))
+                buf, targets, info, c_, r_ = analyze_multi(bufs, w, h, x, y, self.board, cols, rows,
+                                                           self.autogrid.get())
+                if info.get("disagree", 0) > 0.1 * c_ * r_:   # 判定が割れたマスが多い → 2枚足して5枚で
+                    self.root.after(0, lambda: (self.root.iconify(),
+                                                self.lbl_an.config(text="葉が多いので追加で撮影中…")))
+                    time.sleep(0.6)
+                    for _ in range(2):
+                        time.sleep(1.0)
+                        bufs.append(grab(x, y, w, h))
+                    self.root.after(0, lambda: (self.root.deiconify(), self.lbl_an.config(text="解析中…")))
+                    buf, targets, info, c_, r_ = analyze_multi(bufs, w, h, x, y, self.board, c_, r_,
+                                                               self.autogrid.get())
                 self.flip = set(info.get("flip", []))
                 prep = None
                 if self.files:
@@ -1174,7 +1257,7 @@ class App:
                 self.root.after(0, lambda: self._analyzed(buf, w, h, x, y, targets, info, c_, r_, prep, pv))
             except Exception as e:
                 err = str(e)
-                self.root.after(0, lambda: (self.lbl_an.config(text="失敗"),
+                self.root.after(0, lambda: (self.root.deiconify(), self.lbl_an.config(text="失敗"),
                                             messagebox.showerror("確認", f"確認できませんでした: {err}")))
         threading.Thread(target=work, daemon=True).start()
 
@@ -1191,6 +1274,9 @@ class App:
             self.say(f"確認: g を {info['detected']} 個見つけて、位置を補正しました。")
         else:
             self.say(f"確認: {info['reason']} → カードの4つの角を {cols}×{rows} に等分して位置を決めました。")
+        if info.get("votes"):
+            self.say(f"確認: {info['frames']}回撮影して落ち葉などを消し、向きを {info['votes']} 回判定して多数決しました"
+                     + (f" (判定が割れたマス {info['disagree']} 個も多数決で確定)" if info["disagree"] else " (全部一致)") + "。")
         if info["flip"]:
             self.say(f"確認: g が逆さまのマス {len(info['flip'])} 個 → 番号 "
                      + ", ".join(str(k + 1) for k in info["flip"]) + " の画像を180度回転します。")

@@ -35,7 +35,7 @@ from array import array
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
-VERSION = "v0.16 (2026-11-21)"   # 更新するたびにここを上げる
+VERSION = "v0.17 (2026-11-21)"   # 更新するたびにここを上げる
 IMG_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
 BASE_DIR = os.path.dirname(sys.executable if getattr(sys, "frozen", False) else os.path.abspath(__file__))
 SETTINGS = os.path.join(BASE_DIR, "gogh_autodrop_settings.json")
@@ -243,6 +243,27 @@ def explorer_place(work, board, margin=24, minw=240, minh=260, maxw=620):
         x = x if x < bl else x + w - maxw
         w = maxw
     return (int(x), int(y), int(w), int(h)), bool(ok)
+
+
+def infer_orient(known, cols, rows):
+    """向きが分からないマスを、一番近い「分かっているマス」の多数決で埋める (逆さまはパネル単位でまとまるため)"""
+    out = {}
+    if not known:
+        return out
+    pts = [(k % cols, k // cols, d) for k, d in known.items()]
+    for k in range(cols * rows):
+        if k in known:
+            continue
+        c, r = k % cols, k // cols
+        best, votes = None, []
+        for pc, pr, d in pts:
+            dist = (pc - c) ** 2 + (pr - r) ** 2
+            if best is None or dist < best:
+                best, votes = dist, [d]
+            elif dist == best:
+                votes.append(d)
+        out[k] = "down" if votes.count("down") > votes.count("up") else "up"
+    return out
 
 
 def png_size(path):
@@ -460,27 +481,30 @@ def analyze_board(buf, bw, bh, ox, oy, board, cols, rows):
         if bgc.get(key, 0) / t_ >= 0.3 and 0.01 * t_ <= n <= 0.5 * t_:
             found[key] = (sx / n, sy / n)
     info["detected"] = len(found)
+    Hg = fit_h([(c_ - 0.5, r_ - 0.5) for c_, r_ in ((0, 0), (cols, 0), (0, rows), (cols, rows))], board)
+    H = Hg                                     # (c, r) → 画面。まずは4つの角の等分
+    keys = list(found)
     if len(found) < 6:
         info["reason"] = f"g が {len(found)} 個しか見つからないため、補正しません"
-        return [(x, y, (k % cols, k // cols) in found) for k, (x, y) in enumerate(geo)], info
+    else:
+        Hf = None
+        for _ in range(2):                     # 外れ値を除いて合わせ直す
+            Hf = fit_h(keys, [found[k] for k in keys])
+            good = [k for k in keys if math.dist(apply_h(Hf, *k), found[k]) < 0.35 * tile]
+            if len(good) == len(keys) or len(good) < 6:
+                break
+            keys = good
+        fitted = [apply_h(Hf, k % cols, k // cols) for k in range(cols * rows)]
+        worst = max(math.dist(f, g) for f, g in zip(fitted, geo))
+        if worst > 0.45 * tile:                # 補正が4つの角と食い違いすぎる → 位置は4つの角を使う
+            info["reason"] = "補正結果が4つの角と大きく違うため、4つの角を使います"
+            keys = list(found)
+        else:
+            H = Hf
+            info["mode"] = "refined"
+            info["detected"] = len(keys)
 
-    keys = list(found)
-    H = None
-    for _ in range(2):                         # 外れ値を除いて合わせ直す
-        H = fit_h(keys, [found[k] for k in keys])
-        good = [k for k in keys if math.dist(apply_h(H, *k), found[k]) < 0.35 * tile]
-        if len(good) == len(keys) or len(good) < 6:
-            break
-        keys = good
-    fitted = [apply_h(H, k % cols, k // cols) for k in range(cols * rows)]
-    worst = max(math.dist(f, g) for f, g in zip(fitted, geo))
-    if worst > 0.45 * tile:                    # 補正が4つの角と食い違いすぎる → 信用しない
-        info["reason"] = "補正結果が4つの角と大きく違うため、4つの角を使います"
-        return [(x, y, (k % cols, k // cols) in found) for k, (x, y) in enumerate(geo)], info
-    info["mode"] = "refined"
-    info["detected"] = len(keys)
-
-    # g の向き (逆さまのマスを探す)
+    # g の向き (逆さまのマスを探す) … 位置の決め方に関係なく、見えている g は全部調べる
     def color_at(fx, fy):                          # 画面上の小数座標の色 (周り4点から補間)
         x0, y0 = int(fx), int(fy)
         ax, ay = fx - x0, fy - y0
@@ -523,8 +547,9 @@ def analyze_board(buf, bw, bh, ox, oy, board, cols, rows):
     info["flip"] = sorted(r * cols + c for (c, r), d in ori.items() if d == "down")
     info["orient"] = {r * cols + c: d for (c, r), d in ori.items()}
     info["orient_known"] = len(ori)
+    pos = [apply_h(H, k % cols, k // cols) for k in range(cols * rows)]
     return [(int(round(x)), int(round(y)), (k % cols, k // cols) in keys)
-            for k, (x, y) in enumerate(fitted)], info
+            for k, (x, y) in enumerate(pos)], info
 
 
 def patch_diff(a, b):
@@ -998,6 +1023,9 @@ class App:
         self.prepared_key = None
         self.running = False
         self.finder = None
+        self.orient_mem = {}     # これまでに分かった向き {"30x32": {マス番号: "up"/"down"}} (貼った後は g が見えないため)
+        self.orient_final = {}
+        self.orient_src = {}
         self._load()
         self._build()
         self._refresh()
@@ -1010,13 +1038,15 @@ class App:
                 d = json.load(f)
             if d.get("board"):
                 self.board = [tuple(p) for p in d["board"]]
+            self.orient_mem = {g: {int(k): v for k, v in m.items()} for g, m in d.get("orient", {}).items()}
         except Exception:
             pass
 
     def _save(self):
         try:
             with open(SETTINGS, "w", encoding="utf-8") as f:
-                json.dump({"board": self.board}, f)
+                json.dump({"board": self.board,
+                           "orient": {g: {str(k): v for k, v in m.items()} for g, m in self.orient_mem.items()}}, f)
         except Exception:
             pass
 
@@ -1078,6 +1108,7 @@ class App:
         ttk.Button(row, text="位置を確認(画像で解析)", command=self.analyze).pack(side="left", padx=8)
         self.lbl_an = ttk.Label(row, text="未確認")
         self.lbl_an.pack(side="left")
+        ttk.Button(row, text="向きの記憶を消す", command=self.clear_orient).pack(side="right", padx=8)
         ttk.Label(f3, text="※ g を4つの角にするのではなく、カード全体の外側の角をクリックします。\n"
                            "※ ファイルの場所はソフトが自動で探します(エクスプローラーも自動で開きます)。",
                   foreground="#555", justify="left").pack(anchor="w", padx=8, pady=2)
@@ -1285,8 +1316,38 @@ class App:
                                             messagebox.showerror("確認", f"確認できませんでした: {err}")))
         threading.Thread(target=work, daemon=True).start()
 
+    def clear_orient(self):
+        if messagebox.askokcancel("向きの記憶", "これまでに覚えた g の向き(逆さまかどうか)を消しますか?\n"
+                                              "別の壁に貼るときや、記憶がおかしいときに使います。"):
+            self.orient_mem = {}
+            self._save()
+            self.say("向きの記憶を消しました。")
+
+    def _merge_orient(self, info, cols, rows):
+        """今見えた向き + 前に覚えた向き + 周りからの推定 をまとめる"""
+        gkey = f"{cols}x{rows}"
+        seen = info.get("orient", {})
+        mem = self.orient_mem.get(gkey, {})
+        final, src = {}, {}
+        for k in range(cols * rows):
+            if k in seen:
+                final[k], src[k] = seen[k], "seen"
+            elif k in mem:
+                final[k], src[k] = mem[k], "mem"
+        for k, d in infer_orient(final, cols, rows).items():
+            final[k], src[k] = d, "guess"
+        self.orient_final, self.orient_src = final, src
+        info["flip"] = sorted(k for k, d in final.items() if d == "down")
+        self.flip = set(info["flip"])
+        n_mem = sum(1 for v in src.values() if v == "mem")
+        n_guess = sum(1 for v in src.values() if v == "guess")
+        if n_mem or n_guess:
+            self.say(f"確認: g が見えないマスのうち、{n_mem} 個は前に覚えた向き、{n_guess} 個は周りから推定した向きを使います"
+                     "(確認画面でクリックすると直せます)。")
+
     def _analyzed(self, buf, w, h, x, y, targets, info, cols, rows, prep, pv):
         self.lbl_an.config(text="確認待ち")
+        self._merge_orient(info, cols, rows)
         if (self.cols.get(), self.rows.get()) != (cols, rows):
             self.cols.set(cols); self.rows.set(rows)
         if info.get("wall"):
@@ -1330,16 +1391,63 @@ class App:
         bg_id = cv.create_image(0, 0, image=img_done or img_now, anchor="nw")
         b = [((x - ox) / f, (y - oy) / f) for x, y in self.board]
         cv.create_polygon(*b[0], *b[1], *b[3], *b[2], outline="#00c8ff", fill="", width=2, tags="mark")
-        flips = set(info.get("flip", []))
-        for i, (tx, ty, ok) in enumerate(targets):
-            px, py = (tx - ox) / f, (ty - oy) / f
-            color = "#00e000" if ok else "#ff9900"
-            if i in flips and self.autoflip.get():
-                color = "#00c8ff"
-            cv.create_oval(px - 10, py - 10, px + 10, py + 10, outline=color, width=2, fill="#000000", tags="mark")
-            cv.create_text(px, py, text=("↻" if i in flips and self.autoflip.get() else str(i + 1)),
-                           fill="white", font=("Meiryo UI", 8, "bold"), tags="mark")
+        orient = dict(self.orient_final)
+        src = dict(self.orient_src)
+        pts = [((tx - ox) / f, (ty - oy) / f) for tx, ty, _ in targets]
+        rad = max(4, min(10, int(min((math.dist(pts[i], pts[i + 1]) for i in range(len(pts) - 1)), default=20) / 2.4)))
+        flip_col = {"seen": "#00c8ff", "mem": "#b070ff", "guess": "#ffd000", "manual": "#ff40c0"}
+
+        def draw_marks():
+            cv.delete("tile")
+            for i, (px, py) in enumerate(pts):
+                flip = orient.get(i) == "down" and self.autoflip.get()
+                color = flip_col.get(src.get(i), "#00c8ff") if flip else ("#00e000" if targets[i][2] else "#ff9900")
+                if not flip and src.get(i) == "guess":
+                    color = "#ffd000"
+                cv.create_oval(px - rad, py - rad, px + rad, py + rad, outline=color, width=2,
+                               fill="#000000", tags=("mark", "tile"))
+                if rad >= 7 or flip:
+                    cv.create_text(px, py, text=("↻" if flip else str(i + 1)), fill="white",
+                                   font=("Meiryo UI", 8 if rad >= 7 else 6, "bold"), tags=("mark", "tile"))
+            if not state["marks"]:
+                cv.itemconfigure("mark", state="hidden")
+
+        drag = {}
+
+        def press(e):
+            drag["p"] = (e.x, e.y)
+            drag["rect"] = cv.create_rectangle(e.x, e.y, e.x, e.y, outline="#ff40c0", dash=(3, 2))
+
+        def motion(e):
+            if "rect" in drag:
+                cv.coords(drag["rect"], *drag["p"], e.x, e.y)
+
+        def release(e):
+            if "p" not in drag:
+                return
+            x0, y0 = drag["p"]
+            cv.delete(drag.pop("rect", None))
+            drag.clear()
+            if abs(e.x - x0) < 6 and abs(e.y - y0) < 6:      # クリック: 一番近いマスを切り替え
+                i = min(range(len(pts)), key=lambda j: math.dist(pts[j], (e.x, e.y)))
+                if math.dist(pts[i], (e.x, e.y)) > rad * 2:
+                    return
+                sel = [i]
+            else:                                          # ドラッグ: 囲んだマスをまとめて
+                lx, hx, ly, hy = min(x0, e.x), max(x0, e.x), min(y0, e.y), max(y0, e.y)
+                sel = [j for j, (px, py) in enumerate(pts) if lx <= px <= hx and ly <= py <= hy]
+                if not sel:
+                    return
+            new = "up" if orient.get(sel[0]) == "down" else "down"
+            for j in sel:
+                orient[j] = new; src[j] = "manual"
+            draw_marks()
+
+        cv.bind("<ButtonPress-1>", press)
+        cv.bind("<B1-Motion>", motion)
+        cv.bind("<ButtonRelease-1>", release)
         state = {"done": img_done is not None, "marks": True}
+        draw_marks()
 
         def toggle_view():
             state["done"] = not state["done"] and img_done is not None
@@ -1364,8 +1472,10 @@ class App:
                           f"   ファイルに合わせて {cols}×{rows} に等分した位置に貼ります。").pack(padx=8)
         mode = (f"g を {info['detected']} 個見つけて位置を補正しました。" if info["mode"] == "refined"
                 else f"{info['reason']} → 4つの角を {cols}×{rows} に等分しました。")
-        flip_txt = (f"\n水色の ↻ = g が逆さまのマス ({len(flips)}個)。画像を180度回転して貼ります。"
-                    if flips and self.autoflip.get() else "")
+        nflip = sum(1 for d in orient.values() if d == "down")
+        flip_txt = (f"\n↻ = 画像を180度回転して貼るマス ({nflip}個)。水色=g を見て判定 / 紫=前に覚えた向き / "
+                    "黄=周りから推定 / ピンク=手で変更。\nマスをクリック(またはドラッグで囲む)と、回転する・しないを切り替えられます。"
+                    if self.autoflip.get() else "")
         ttk.Label(win, text=mode + "\n緑 = g を確認したマス / オレンジ = 計算で決めたマス。" + flip_txt
                             + "\n最初は「完成予想」(画像を貼った後の見え方) を表示しています。"
                               "位置がズレていれば4つの角を指定し直してください。",
@@ -1373,6 +1483,20 @@ class App:
         bar = ttk.Frame(win); bar.pack(pady=8)
 
         def ok():
+            self.orient_final, self.orient_src = dict(orient), dict(src)
+            newflip = {k for k, d in orient.items() if d == "down"}
+            if newflip != self.flip:
+                self.flip = newflip
+                self.prepared_key = None
+            gkey = f"{cols}x{rows}"
+            mem = self.orient_mem.setdefault(gkey, {})
+            for k, d in orient.items():
+                if src.get(k) in ("seen", "manual", "mem"):
+                    mem[k] = d
+            self._save()
+            if newflip and self.autoflip.get():
+                self.say(f"回転して貼る画像: {len(newflip)} 枚 (番号 "
+                         + ", ".join(str(k + 1) for k in sorted(newflip)[:40]) + (" …" if len(newflip) > 40 else "") + ")")
             self.targets = targets
             self.tile = info.get("tile", 40)
             self.targets_key = (cols, rows, tuple(map(tuple, self.board)))
@@ -1397,6 +1521,11 @@ class App:
             return messagebox.showinfo("gogh 自動ドロップくん", "先にフォルダを選んでください。")
         if not self.board:
             return messagebox.showinfo("gogh 自動ドロップくん", "③ でカードの4つの角を教えてください。")
+        key = (self.cols.get(), self.rows.get(), tuple(map(tuple, self.board)))
+        if not dry and self.targets_key != key:
+            messagebox.showinfo("gogh 自動ドロップくん", "先に位置と g の向き(逆さまかどうか)を確認します。\n"
+                                                        "確認画面で「この配置でOK」を押してから、もう一度開始してください。")
+            return self.analyze()
         if not dry and not messagebox.askokcancel(
                 "確認", f"{1 if single else min(n, len(self.files))}枚を貼り付けます。\n"
                         "この間マウスは自動で動きます。止めるときは Esc キーを押してください。"):
